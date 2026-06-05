@@ -87,6 +87,25 @@ function ProfilePage() {
         </Card>
       )}
 
+      <Card className="p-6 space-y-4">
+        <div>
+          <h3 className="font-display font-semibold">Change password</h3>
+          <p className="text-sm text-muted-foreground mt-1">Use at least 8 characters.</p>
+        </div>
+        <div><Label>New password</Label><Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1" /></div>
+        <div><Label>Confirm new password</Label><Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1" /></div>
+        <Button
+          onClick={() => {
+            if (newPassword.length < 8) return toast.error("Password must be at least 8 characters");
+            if (newPassword !== confirmPassword) return toast.error("Passwords don't match");
+            changePw.mutate();
+          }}
+          disabled={changePw.isPending || !newPassword}
+        >
+          {changePw.isPending ? "Updating…" : "Update password"}
+        </Button>
+      </Card>
+
       <Card className="p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
