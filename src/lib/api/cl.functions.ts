@@ -2,6 +2,21 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+// ---------- Bootstrap (first admin) ----------
+export const bootstrapAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count } = await supabaseAdmin
+      .from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
+    if ((count ?? 0) > 0) throw new Error("An admin already exists.");
+    const { error } = await supabaseAdmin
+      .from("user_roles").insert({ user_id: context.userId, role: "admin" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 // ---------- Profile & Role ----------
 export const getMe = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
