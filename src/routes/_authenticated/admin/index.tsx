@@ -19,6 +19,7 @@ type Appt = Awaited<ReturnType<typeof getAdminDashboard>>["upcomingCalls"][numbe
 
 function AdminDashboard() {
   const { data } = useSuspenseQuery(opts);
+  const [openAppt, setOpenAppt] = useState<Appt | null>(null);
 
   return (
     <div className="space-y-6 max-w-7xl">
@@ -31,12 +32,14 @@ function AdminDashboard() {
       </div>
 
       <Section title="Upcoming calls" icon={Clock} empty="No upcoming calls scheduled.">
-        {data.upcomingCalls.map((a) => <CallRow key={a.id} appt={a} showTimeOnly={false} />)}
+        {data.upcomingCalls.map((a) => <CallRow key={a.id} appt={a} showTimeOnly={false} onOpen={setOpenAppt} />)}
       </Section>
 
       <Section title="Calls going live today" icon={Video} empty="Nothing on the schedule for today.">
-        {data.callsGoingLiveToday.map((a) => <CallRow key={a.id} appt={a} showTimeOnly />)}
+        {data.callsGoingLiveToday.map((a) => <CallRow key={a.id} appt={a} showTimeOnly onOpen={setOpenAppt} />)}
       </Section>
+
+      <AppointmentDetailDialog appt={openAppt} onClose={() => setOpenAppt(null)} />
     </div>
   );
 }
@@ -55,13 +58,16 @@ function Section({ title, icon: Icon, children, empty }: { title: string; icon: 
   );
 }
 
-function CallRow({ appt, showTimeOnly }: { appt: Appt; showTimeOnly: boolean }) {
+function CallRow({ appt, showTimeOnly, onOpen }: { appt: Appt; showTimeOnly: boolean; onOpen: (a: Appt) => void }) {
   const dt = new Date(appt.scheduled_at);
   const when = showTimeOnly
     ? dt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
     : dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   return (
-    <Card className="p-3 flex items-start gap-3 flex-wrap">
+    <Card
+      className="p-3 flex items-start gap-3 flex-wrap cursor-pointer hover:bg-muted/30 transition-colors"
+      onClick={() => onOpen(appt)}
+    >
       <div className="h-10 w-10 rounded-lg bg-success/15 text-success flex items-center justify-center shrink-0">
         <Video className="h-5 w-5" />
       </div>
@@ -71,13 +77,13 @@ function CallRow({ appt, showTimeOnly }: { appt: Appt; showTimeOnly: boolean }) 
           <div className="text-xs text-muted-foreground">{when}</div>
         </div>
         <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-          {appt.phone && <a href={`tel:${appt.phone}`} className="flex items-center gap-1 text-primary"><Phone className="h-3 w-3" />{appt.phone}</a>}
+          {appt.phone && <a href={`tel:${appt.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-primary"><Phone className="h-3 w-3" />{appt.phone}</a>}
           {appt.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{appt.email}</span>}
         </div>
         {appt.context && <div className="text-xs mt-1 text-muted-foreground">{appt.context}</div>}
       </div>
       {appt.meeting_url && (
-        <Button asChild size="sm" variant="outline">
+        <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}>
           <a href={appt.meeting_url} target="_blank" rel="noreferrer" className="flex items-center gap-1">
             <ExternalLink className="h-3 w-3" /> Join
           </a>
