@@ -139,7 +139,8 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
   };
 
   const mut = useMutation({
-    mutationFn: (vars: Parameters<typeof updateLead>[0]["data"]) => updateLead({ data: vars }),
+    mutationFn: (vars: { id: string; status?: string; notes?: string | null; contacted?: boolean; do_not_contact?: boolean; callback_at?: string | null }) =>
+      updateLead({ data: vars as Parameters<typeof updateLead>[0]["data"] }),
     onSuccess: () => { toast.success("Lead updated"); invalidate(); },
   });
 
