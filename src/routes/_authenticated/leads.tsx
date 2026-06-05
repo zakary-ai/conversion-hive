@@ -233,7 +233,7 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
   const [phone, setPhone] = useState(lead.phone ?? "");
   const [email, setEmail] = useState(lead.email ?? "");
   const [context, setContext] = useState("");
-  const [when, setWhen] = useState(defaultDateTime());
+  const [when, setWhen] = useState<Date>(defaultDateTime());
 
   useEffect(() => {
     if (open) {
@@ -246,7 +246,7 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
     mutationFn: async () => {
       await createAppointment({ data: {
         lead_id: lead.id, type: "booking",
-        scheduled_at: new Date(when).toISOString(),
+        scheduled_at: when.toISOString(),
         name, phone: phone || null, email: email || null, context: context || null,
       }});
       await updateLead({ data: { id: lead.id, status: "Booked", contacted: true } });
@@ -257,18 +257,18 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Book appointment</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <Field label="Name"><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
           <Field label="Phone"><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
           <Field label="Email"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-          <Field label="Date & time"><Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} /></Field>
+          <Field label="When"><DateTimePicker value={when} onChange={setWhen} /></Field>
           <Field label="Context"><Textarea rows={3} value={context} onChange={(e) => setContext(e.target.value)} placeholder="What does the lead need?" /></Field>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => submit.mutate()} disabled={!name || !when || submit.isPending}>Book</Button>
+          <Button onClick={() => submit.mutate()} disabled={!name || submit.isPending}>Book</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -276,14 +276,14 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
 }
 
 function CallbackDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boolean; onClose: () => void; onDone: () => void }) {
-  const [when, setWhen] = useState(defaultDateTime());
+  const [when, setWhen] = useState<Date>(defaultDateTime());
   const [note, setNote] = useState("");
 
   useEffect(() => { if (open) { setWhen(defaultDateTime()); setNote(""); } }, [open]);
 
   const submit = useMutation({
     mutationFn: async () => {
-      const iso = new Date(when).toISOString();
+      const iso = when.toISOString();
       await createAppointment({ data: {
         lead_id: lead.id, type: "callback", scheduled_at: iso,
         name: lead.name, phone: lead.phone, email: lead.email, context: note || null,
@@ -296,15 +296,15 @@ function CallbackDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boo
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Schedule a callback</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <Field label="Call back at"><Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} /></Field>
+          <Field label="Call back at"><DateTimePicker value={when} onChange={setWhen} /></Field>
           <Field label="Note (optional)"><Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => submit.mutate()} disabled={!when || submit.isPending}>Schedule</Button>
+          <Button onClick={() => submit.mutate()} disabled={submit.isPending}>Schedule</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -323,7 +323,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function defaultDateTime() {
   const d = new Date(Date.now() + 60 * 60 * 1000);
   d.setMinutes(0, 0, 0);
-  // format yyyy-MM-ddTHH:mm in local time
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return d;
 }
+
