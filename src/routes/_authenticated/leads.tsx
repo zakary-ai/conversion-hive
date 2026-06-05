@@ -167,17 +167,17 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
   return (
     <>
       <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
+        <DialogContent className="max-w-lg h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-y-auto p-4 sm:p-6 gap-3 sm:gap-4">
           {lead && (
             <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 flex-wrap">
+              <DialogHeader className="space-y-1">
+                <DialogTitle className="flex items-center gap-2 flex-wrap text-base sm:text-lg">
                   <span>{lead.name}</span>
                   <StatusPill status={lead.status} />
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-5 mt-2">
+              <div className="space-y-3 sm:space-y-5">
                 {/* Full details */}
                 <div className="rounded-lg border border-border divide-y divide-border text-sm">
                   <DetailRow icon={Building2} label="Company" value={lead.company || "—"} />
@@ -219,28 +219,28 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
                 <div className="space-y-2">
                   <div className="text-xs uppercase tracking-widest text-muted-foreground">Set outcome</div>
                   <div className="grid grid-cols-2 gap-2">
-                    <Button onClick={() => setBookOpen(true)} className="h-12 bg-success text-success-foreground hover:bg-success/90">
+                    <Button onClick={() => setBookOpen(true)} className="h-10 sm:h-12 bg-success text-success-foreground hover:bg-success/90">
                       <CheckCircle2 className="h-4 w-4" /> Book
                     </Button>
-                    <Button onClick={handleNoPickup} variant="outline" className="h-12">
+                    <Button onClick={handleNoPickup} variant="outline" className="h-10 sm:h-12">
                       <PhoneOff className="h-4 w-4" /> No Pickup
                     </Button>
-                    <Button onClick={handleNotInterested} variant="outline" className="h-12 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive">
+                    <Button onClick={handleNotInterested} variant="outline" className="h-10 sm:h-12 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive">
                       <XCircle className="h-4 w-4" /> Not Interested
                     </Button>
-                    <Button onClick={() => setCallbackOpen(true)} variant="outline" className="h-12">
+                    <Button onClick={() => setCallbackOpen(true)} variant="outline" className="h-10 sm:h-12">
                       <CalendarClock className="h-4 w-4" /> Call Back
                     </Button>
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-xs uppercase tracking-widest text-muted-foreground">Notes</label>
-                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="mt-1" />
+                <details className="group">
+                  <summary className="cursor-pointer text-xs uppercase tracking-widest text-muted-foreground">Notes</summary>
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="mt-2" />
                   <Button size="sm" variant="outline" className="mt-2" onClick={() => mut.mutate({ id: lead.id, notes })}>
                     Save notes
                   </Button>
-                </div>
+                </details>
 
                 <details className="text-xs text-muted-foreground">
                   <summary className="cursor-pointer">Change status manually</summary>
