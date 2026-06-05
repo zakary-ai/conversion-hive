@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { listModules, listQuizQuestions, createQuestion, updateQuestion, deleteQuestion } from "@/lib/api/cl.functions";
 import { PageHeader } from "@/components/ui-bits";
