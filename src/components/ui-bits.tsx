@@ -43,6 +43,8 @@ const STATUS_STYLES: Record<string, string> = {
   "Booked": "bg-success/30 text-success border-success/40",
   "Not Interested": "bg-destructive/15 text-destructive border-destructive/30",
   "Follow Up": "bg-warning/20 text-warning border-warning/30",
+  "Call Again": "bg-warning/15 text-warning border-warning/30",
+  "Call Back": "bg-blue-500/15 text-blue-300 border-blue-500/30",
 };
 
 export function StatusPill({ status }: { status: string }) {
