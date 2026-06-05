@@ -199,7 +199,11 @@ export const updateLead = createServerFn({ method: "POST" })
     contacted: z.boolean().optional(),
   }).parse)
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      status?: typeof data.status;
+      notes?: string | null;
+      contacted_at?: string | null;
+    } = {};
     if (data.status !== undefined) patch.status = data.status;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.contacted === true) patch.contacted_at = new Date().toISOString();
