@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Shield } from "lucide-react";
+import { Shield, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -75,6 +75,25 @@ function ProfilePage() {
           </div>
         </Card>
       )}
+
+      <Card className="p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-display font-semibold">Sign out</h3>
+            <p className="text-sm text-muted-foreground mt-1">End your session on this device.</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              toast.success("Signed out");
+              navigate({ to: "/auth", replace: true });
+            }}
+          >
+            <LogOut className="h-4 w-4 mr-2" /> Sign out
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 }
