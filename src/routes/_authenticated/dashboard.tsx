@@ -58,7 +58,7 @@ function ClientDashboard() {
           <div className="space-y-2">
             <QuickLink to="/training" icon={GraduationCap} label="Training modules" />
             <QuickLink to="/leads" icon={Briefcase} label="My leads" />
-            <QuickLink to="/quizzes" icon={ListChecks} label="Take a quiz" />
+            <QuickLink to="/profile" icon={ListChecks} label="My profile" />
             <QuickLink to="/commissions" icon={DollarSign} label="View commissions" />
           </div>
         </Card>

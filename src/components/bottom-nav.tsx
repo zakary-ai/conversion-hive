@@ -9,7 +9,6 @@ const clientItems = [
   { title: "Home", url: "/dashboard", icon: LayoutDashboard },
   { title: "Training", url: "/training", icon: GraduationCap },
   { title: "Leads", url: "/leads", icon: Briefcase },
-  { title: "Quizzes", url: "/quizzes", icon: ListChecks },
   { title: "Earn", url: "/commissions", icon: DollarSign },
   { title: "Profile", url: "/profile", icon: UserCog },
 ] as const;
@@ -37,7 +36,7 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
       className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="grid grid-cols-6">
+      <ul className={isAdmin ? "grid grid-cols-6" : "grid grid-cols-5"}>
         {items.map((item) => {
           const active = isActive(item.url);
           return (

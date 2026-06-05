@@ -18,10 +18,8 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCommissionsRouteImport } from './routes/_authenticated/commissions'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authenticated/training.index'
-import { Route as AuthenticatedQuizzesIndexRouteImport } from './routes/_authenticated/quizzes.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
-import { Route as AuthenticatedQuizzesModuleIdRouteImport } from './routes/_authenticated/quizzes.$moduleId'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminQuizzesRouteImport } from './routes/_authenticated/admin/quizzes'
 import { Route as AuthenticatedAdminModulesRouteImport } from './routes/_authenticated/admin/modules'
@@ -76,12 +74,6 @@ const AuthenticatedTrainingIndexRoute =
     path: '/training/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedQuizzesIndexRoute =
-  AuthenticatedQuizzesIndexRouteImport.update({
-    id: '/quizzes/',
-    path: '/quizzes/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -91,12 +83,6 @@ const AuthenticatedTrainingModuleIdRoute =
   AuthenticatedTrainingModuleIdRouteImport.update({
     id: '/training/$moduleId',
     path: '/training/$moduleId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedQuizzesModuleIdRoute =
-  AuthenticatedQuizzesModuleIdRouteImport.update({
-    id: '/quizzes/$moduleId',
-    path: '/quizzes/$moduleId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminSettingsRoute =
@@ -154,10 +140,8 @@ export interface FileRoutesByFullPath {
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
   '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
-  '/quizzes/': typeof AuthenticatedQuizzesIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
@@ -174,10 +158,8 @@ export interface FileRoutesByTo {
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
   '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
-  '/quizzes': typeof AuthenticatedQuizzesIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/admin/clients': typeof AuthenticatedAdminClientsIndexRoute
@@ -197,10 +179,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/modules': typeof AuthenticatedAdminModulesRoute
   '/_authenticated/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/_authenticated/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
-  '/_authenticated/quizzes/': typeof AuthenticatedQuizzesIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
   '/_authenticated/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
@@ -220,10 +200,8 @@ export interface FileRouteTypes {
     | '/admin/modules'
     | '/admin/quizzes'
     | '/admin/settings'
-    | '/quizzes/$moduleId'
     | '/training/$moduleId'
     | '/admin/'
-    | '/quizzes/'
     | '/training/'
     | '/admin/clients/$userId'
     | '/admin/clients/'
@@ -240,10 +218,8 @@ export interface FileRouteTypes {
     | '/admin/modules'
     | '/admin/quizzes'
     | '/admin/settings'
-    | '/quizzes/$moduleId'
     | '/training/$moduleId'
     | '/admin'
-    | '/quizzes'
     | '/training'
     | '/admin/clients/$userId'
     | '/admin/clients'
@@ -262,10 +238,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/modules'
     | '/_authenticated/admin/quizzes'
     | '/_authenticated/admin/settings'
-    | '/_authenticated/quizzes/$moduleId'
     | '/_authenticated/training/$moduleId'
     | '/_authenticated/admin/'
-    | '/_authenticated/quizzes/'
     | '/_authenticated/training/'
     | '/_authenticated/admin/clients/$userId'
     | '/_authenticated/admin/clients/'
@@ -342,13 +316,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrainingIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/quizzes/': {
-      id: '/_authenticated/quizzes/'
-      path: '/quizzes'
-      fullPath: '/quizzes/'
-      preLoaderRoute: typeof AuthenticatedQuizzesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -361,13 +328,6 @@ declare module '@tanstack/react-router' {
       path: '/training/$moduleId'
       fullPath: '/training/$moduleId'
       preLoaderRoute: typeof AuthenticatedTrainingModuleIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/quizzes/$moduleId': {
-      id: '/_authenticated/quizzes/$moduleId'
-      path: '/quizzes/$moduleId'
-      fullPath: '/quizzes/$moduleId'
-      preLoaderRoute: typeof AuthenticatedQuizzesModuleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/settings': {
@@ -456,9 +416,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
-  AuthenticatedQuizzesModuleIdRoute: typeof AuthenticatedQuizzesModuleIdRoute
   AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
-  AuthenticatedQuizzesIndexRoute: typeof AuthenticatedQuizzesIndexRoute
   AuthenticatedTrainingIndexRoute: typeof AuthenticatedTrainingIndexRoute
 }
 
@@ -468,9 +426,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
-  AuthenticatedQuizzesModuleIdRoute: AuthenticatedQuizzesModuleIdRoute,
   AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
-  AuthenticatedQuizzesIndexRoute: AuthenticatedQuizzesIndexRoute,
   AuthenticatedTrainingIndexRoute: AuthenticatedTrainingIndexRoute,
 }
 
