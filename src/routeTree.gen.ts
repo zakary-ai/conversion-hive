@@ -22,6 +22,7 @@ import { Route as AuthenticatedQuizzesIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
 import { Route as AuthenticatedQuizzesModuleIdRouteImport } from './routes/_authenticated/quizzes.$moduleId'
+import { Route as AuthenticatedAdminQuizzesRouteImport } from './routes/_authenticated/admin/quizzes'
 import { Route as AuthenticatedAdminModulesRouteImport } from './routes/_authenticated/admin/modules'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
 import { Route as AuthenticatedAdminClientsUserIdRouteImport } from './routes/_authenticated/admin/clients.$userId'
@@ -95,6 +96,12 @@ const AuthenticatedQuizzesModuleIdRoute =
     path: '/quizzes/$moduleId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminQuizzesRoute =
+  AuthenticatedAdminQuizzesRouteImport.update({
+    id: '/quizzes',
+    path: '/quizzes',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminModulesRoute =
   AuthenticatedAdminModulesRouteImport.update({
     id: '/modules',
@@ -123,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
+  '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
+  '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -158,6 +167,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/admin/modules': typeof AuthenticatedAdminModulesRoute
+  '/_authenticated/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/_authenticated/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/profile'
     | '/admin/modules'
+    | '/admin/quizzes'
     | '/quizzes/$moduleId'
     | '/training/$moduleId'
     | '/admin/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/profile'
     | '/admin/modules'
+    | '/admin/quizzes'
     | '/quizzes/$moduleId'
     | '/training/$moduleId'
     | '/admin'
@@ -211,6 +223,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/profile'
     | '/_authenticated/admin/modules'
+    | '/_authenticated/admin/quizzes'
     | '/_authenticated/quizzes/$moduleId'
     | '/_authenticated/training/$moduleId'
     | '/_authenticated/admin/'
@@ -319,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQuizzesModuleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/quizzes': {
+      id: '/_authenticated/admin/quizzes'
+      path: '/quizzes'
+      fullPath: '/admin/quizzes'
+      preLoaderRoute: typeof AuthenticatedAdminQuizzesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/modules': {
       id: '/_authenticated/admin/modules'
       path: '/modules'
@@ -345,6 +365,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminModulesRoute: typeof AuthenticatedAdminModulesRoute
+  AuthenticatedAdminQuizzesRoute: typeof AuthenticatedAdminQuizzesRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminClientsUserIdRoute: typeof AuthenticatedAdminClientsUserIdRoute
   AuthenticatedAdminClientsIndexRoute: typeof AuthenticatedAdminClientsIndexRoute
@@ -353,6 +374,7 @@ interface AuthenticatedAdminRouteRouteChildren {
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminModulesRoute: AuthenticatedAdminModulesRoute,
+    AuthenticatedAdminQuizzesRoute: AuthenticatedAdminQuizzesRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
     AuthenticatedAdminClientsUserIdRoute: AuthenticatedAdminClientsUserIdRoute,
     AuthenticatedAdminClientsIndexRoute: AuthenticatedAdminClientsIndexRoute,
@@ -398,3 +420,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
