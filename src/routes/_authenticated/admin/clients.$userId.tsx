@@ -45,7 +45,7 @@ function ClientDetailPage() {
     <div className="space-y-6 max-w-7xl">
       <PageHeader
         title={data.profile?.full_name || data.profile?.email || "Client"}
-        description={data.profile?.email}
+        description={data.profile?.email ?? undefined}
         action={<Button variant="ghost" asChild><Link to="/admin/clients">← All clients</Link></Button>}
       />
 
