@@ -1,15 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
-  GraduationCap, Settings, Briefcase,
+  GraduationCap, Settings, Briefcase, Calendar as CalendarIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const clientItems = [
   { title: "Home", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Training", url: "/training", icon: GraduationCap },
   { title: "Leads", url: "/leads", icon: Briefcase },
-  { title: "Earn", url: "/commissions", icon: DollarSign },
+  { title: "Calendar", url: "/calendar", icon: CalendarIcon },
+  { title: "Training", url: "/training", icon: GraduationCap },
   { title: "Profile", url: "/profile", icon: UserCog },
 ] as const;
 
