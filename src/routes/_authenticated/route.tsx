@@ -1,14 +1,10 @@
-import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getMe } from "@/lib/api/cl.functions";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
-import { toast } from "sonner";
 
 export const meQueryOptions = queryOptions({
   queryKey: ["me"],
@@ -27,13 +23,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { data: me } = useSuspenseQuery(meQueryOptions);
-  const navigate = useNavigate();
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("Signed out");
-    navigate({ to: "/auth", replace: true });
-  };
 
   return (
     <SidebarProvider>
