@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { getAdminDashboard } from "@/lib/api/cl.functions";
 import { PageHeader, StatCard } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarCheck2, Video, PhoneCall, Clock, ExternalLink, Mail, Phone } from "lucide-react";
+import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 
 const opts = queryOptions({ queryKey: ["admin-dashboard"], queryFn: () => getAdminDashboard() });
 
