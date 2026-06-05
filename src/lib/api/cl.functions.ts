@@ -401,21 +401,33 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase } = context;
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const [clients, leads, contactedToday, commissions, recentLeads, recentCommissions] = await Promise.all([
+    const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
+    const nowISO = new Date().toISOString();
+    const todayStartISO = todayStart.toISOString();
+    const todayEndISO = todayEnd.toISOString();
+
+    const [clients, leads, contactedToday, commissions, callsBookedToday, callsGoingLiveToday, upcomingCalls] = await Promise.all([
       supabase.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "client"),
       supabase.from("leads").select("id", { count: "exact", head: true }),
-      supabase.from("leads").select("id", { count: "exact", head: true }).gte("contacted_at", todayStart.toISOString()),
+      supabase.from("leads").select("id", { count: "exact", head: true }).gte("contacted_at", todayStartISO),
       supabase.from("commissions").select("amount"),
-      supabase.from("leads").select("id, name, status, created_at").order("created_at", { ascending: false }).limit(5),
-      supabase.from("commissions").select("id, amount, note, created_at").order("created_at", { ascending: false }).limit(5),
+      supabase.from("appointments").select("id", { count: "exact", head: true })
+        .eq("type", "booking").gte("created_at", todayStartISO).lt("created_at", todayEndISO),
+      supabase.from("appointments").select("*")
+        .eq("type", "booking").gte("scheduled_at", todayStartISO).lt("scheduled_at", todayEndISO)
+        .order("scheduled_at", { ascending: true }),
+      supabase.from("appointments").select("*")
+        .eq("type", "booking").gte("scheduled_at", nowISO)
+        .order("scheduled_at", { ascending: true }).limit(25),
     ]);
     return {
       totalClients: clients.count ?? 0,
       totalLeads: leads.count ?? 0,
       contactedToday: contactedToday.count ?? 0,
       totalCommissions: (commissions.data ?? []).reduce((s, c) => s + Number(c.amount), 0),
-      recentLeads: recentLeads.data ?? [],
-      recentCommissions: recentCommissions.data ?? [],
+      callsBookedToday: callsBookedToday.count ?? 0,
+      callsGoingLiveToday: callsGoingLiveToday.data ?? [],
+      upcomingCalls: upcomingCalls.data ?? [],
     };
   });
 
