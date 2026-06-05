@@ -91,8 +91,8 @@ function ApptView({
   );
 
   return (
-    <div className="grid lg:grid-cols-[auto,1fr] gap-6">
-      <Card className="p-3 w-fit">
+    <div className="grid lg:grid-cols-[auto,1fr] gap-6 justify-items-center lg:justify-items-stretch">
+      <Card className="p-3 w-fit mx-auto lg:mx-0">
         <Calendar
           mode="single"
           selected={date}
