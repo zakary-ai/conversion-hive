@@ -50,9 +50,6 @@ function AuthenticatedLayout() {
                 <div className="text-sm font-medium">{me.profile?.full_name || me.profile?.email || "User"}</div>
                 <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : "Client"}</div>
               </div>
-              <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out">
-                <LogOut className="h-4 w-4" />
-              </Button>
             </div>
           </header>
           <main
