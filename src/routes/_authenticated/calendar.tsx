@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarClock, CheckCircle2, Phone, Mail, Trash2, User } from "lucide-react";
+import { CalendarClock, CheckCircle2, Phone, Mail, Trash2, User, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -165,6 +165,11 @@ function ApptList({ items, canDelete, showOwner, empty }: { items: Appt[]; canDe
                 <span className="uppercase tracking-wider">{a.type}</span>
               </div>
               {a.context && <div className="text-xs mt-1">{a.context}</div>}
+              {a.meeting_url && (
+                <a href={a.meeting_url} target="_blank" rel="noreferrer" className="text-xs mt-1 inline-flex items-center gap-1 text-primary hover:underline">
+                  <ExternalLink className="h-3 w-3" /> Join meeting
+                </a>
+              )}
             </div>
             {canDelete && (
               <Button size="icon" variant="ghost" onClick={() => del.mutate(a.id)}>
