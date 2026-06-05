@@ -88,9 +88,10 @@ function ModuleDialog({ open, onOpenChange, module: m }: { open: boolean; onOpen
   }
 
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const payload = { title, description, video_url: videoUrl, order_index: orderIndex, is_active: isActive };
-      return m ? updateModule({ data: { ...payload, id: m.id } }) : createModule({ data: payload });
+      if (m) await updateModule({ data: { ...payload, id: m.id } });
+      else await createModule({ data: payload });
     },
     onSuccess: () => {
       toast.success(m ? "Updated" : "Created");
