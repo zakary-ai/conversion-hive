@@ -23,6 +23,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
 import { Route as AuthenticatedQuizzesModuleIdRouteImport } from './routes/_authenticated/quizzes.$moduleId'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
+import { Route as AuthenticatedAdminClientsUserIdRouteImport } from './routes/_authenticated/admin/clients.$userId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -99,6 +100,12 @@ const AuthenticatedAdminClientsIndexRoute =
     path: '/clients/',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminClientsUserIdRoute =
+  AuthenticatedAdminClientsUserIdRouteImport.update({
+    id: '/clients/$userId',
+    path: '/clients/$userId',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/quizzes/': typeof AuthenticatedQuizzesIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
+  '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -127,6 +135,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/quizzes': typeof AuthenticatedQuizzesIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
+  '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/admin/clients': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesById {
@@ -144,6 +153,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/quizzes/': typeof AuthenticatedQuizzesIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
+  '/_authenticated/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRouteTypes {
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/quizzes/'
     | '/training/'
+    | '/admin/clients/$userId'
     | '/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/quizzes'
     | '/training'
+    | '/admin/clients/$userId'
     | '/admin/clients'
   id:
     | '__root__'
@@ -191,6 +203,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/quizzes/'
     | '/_authenticated/training/'
+    | '/_authenticated/admin/clients/$userId'
     | '/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
 }
@@ -300,17 +313,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminClientsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/clients/$userId': {
+      id: '/_authenticated/admin/clients/$userId'
+      path: '/clients/$userId'
+      fullPath: '/admin/clients/$userId'
+      preLoaderRoute: typeof AuthenticatedAdminClientsUserIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminClientsUserIdRoute: typeof AuthenticatedAdminClientsUserIdRoute
   AuthenticatedAdminClientsIndexRoute: typeof AuthenticatedAdminClientsIndexRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+    AuthenticatedAdminClientsUserIdRoute: AuthenticatedAdminClientsUserIdRoute,
     AuthenticatedAdminClientsIndexRoute: AuthenticatedAdminClientsIndexRoute,
   }
 
