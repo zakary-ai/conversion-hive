@@ -27,13 +27,11 @@ function AdminQuizzes() {
   const [moduleId, setModuleId] = useState<string>(modules[0]?.id ?? "");
   const qc = useQueryClient();
 
-  const qOpts = queryOptions({
+  const questions = useQuery({
     queryKey: ["questions", moduleId],
     queryFn: () => listQuizQuestions({ data: { module_id: moduleId } }),
     enabled: !!moduleId,
   });
-  const questions = useSuspenseQuery({ ...qOpts, enabled: undefined as never });
-  // Actually, use useQuery since enabled. Simpler: just gate render.
 
   return (
     <div className="space-y-6 max-w-5xl">
