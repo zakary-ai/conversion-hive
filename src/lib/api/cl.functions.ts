@@ -240,12 +240,20 @@ const AppointmentInput = z.object({
   context: z.string().max(5000).optional().nullable(),
 });
 
+function generateZoomLikeUrl() {
+  // Placeholder Zoom-style join URL. Swap for the real Zoom API when credentials are connected.
+  const id = Math.floor(1_000_000_000 + Math.random() * 9_000_000_000).toString();
+  const pwd = Math.random().toString(36).slice(2, 12);
+  return `https://zoom.us/j/${id}?pwd=${pwd}`;
+}
+
 export const createAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(AppointmentInput.parse)
   .handler(async ({ data, context }) => {
+    const meeting_url = data.type === "booking" ? generateZoomLikeUrl() : null;
     const { error, data: row } = await context.supabase.from("appointments")
-      .insert({ ...data, user_id: context.userId }).select().single();
+      .insert({ ...data, user_id: context.userId, meeting_url }).select().single();
     if (error) throw new Error(error.message);
     return row;
   });
