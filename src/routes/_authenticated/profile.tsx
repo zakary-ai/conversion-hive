@@ -22,6 +22,17 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(me.profile?.full_name ?? "");
   const [company, setCompany] = useState(me.profile?.company_name ?? "");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const changePw = useMutation({
+    mutationFn: () => changeMyPassword({ data: { new_password: newPassword } }),
+    onSuccess: () => {
+      toast.success("Password updated");
+      setNewPassword(""); setConfirmPassword("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const save = useMutation({
     mutationFn: () => updateProfile({ data: { full_name: fullName, company_name: company } }),
