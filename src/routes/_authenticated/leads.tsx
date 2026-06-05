@@ -1,17 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { listMyLeads, updateLead, createAppointment } from "@/lib/api/cl.functions";
+import { listMyLeads, updateLead, createAppointment, listMyAppointments } from "@/lib/api/cl.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff } from "lucide-react";
+import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff, Building2, Tag, Clock, Video, Ban } from "lucide-react";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { toast } from "sonner";
 
@@ -130,6 +129,13 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
   const [bookOpen, setBookOpen] = useState(false);
   const [callbackOpen, setCallbackOpen] = useState(false);
 
+  const { data: appts = [] } = useQuery({
+    queryKey: ["my-appointments"],
+    queryFn: () => listMyAppointments(),
+    enabled: !!lead,
+  });
+  const leadAppts = lead ? appts.filter((a) => a.lead_id === lead.id) : [];
+
   useEffect(() => { if (lead) setNotes(lead.notes ?? ""); }, [lead?.id]);
 
   const invalidate = () => {
@@ -156,28 +162,60 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
     onClose();
   };
 
+  const fmt = (s?: string | null) => s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
+
   return (
     <>
-      <Sheet open={!!lead} onOpenChange={(o) => !o && onClose()}>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+      <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
           {lead && (
             <>
-              <SheetHeader>
-                <SheetTitle>{lead.name}</SheetTitle>
-              </SheetHeader>
-              <div className="space-y-5 mt-6">
-                <div className="space-y-2 text-sm">
-                  {lead.company && <div className="text-muted-foreground">{lead.company}</div>}
-                  {lead.phone && (
-                    <a href={`tel:${lead.phone}`} className="flex items-center gap-2 text-primary font-medium">
-                      <Phone className="h-4 w-4" />{lead.phone}
-                    </a>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 flex-wrap">
+                  <span>{lead.name}</span>
+                  <StatusPill status={lead.status} />
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-5 mt-2">
+                {/* Full details */}
+                <div className="rounded-lg border border-border divide-y divide-border text-sm">
+                  <DetailRow icon={Building2} label="Company" value={lead.company || "—"} />
+                  <DetailRow icon={Phone} label="Phone" value={lead.phone ? <a href={`tel:${lead.phone}`} className="text-primary font-medium">{lead.phone}</a> : "—"} />
+                  <DetailRow icon={Mail} label="Email" value={lead.email || "—"} />
+                  <DetailRow icon={Tag} label="Source" value={lead.source || "—"} />
+                  <DetailRow icon={Clock} label="Added" value={fmt(lead.created_at)} />
+                  <DetailRow icon={CheckCircle2} label="Last contacted" value={fmt(lead.contacted_at)} />
+                  <DetailRow icon={CalendarClock} label="Callback at" value={fmt(lead.callback_at)} />
+                  {lead.do_not_contact && (
+                    <DetailRow icon={Ban} label="Do not contact" value={<span className="text-destructive font-medium">Yes</span>} />
                   )}
-                  {lead.email && <div className="flex items-center gap-2"><Mail className="h-3 w-3" />{lead.email}</div>}
-                  {lead.source && <div className="text-xs text-muted-foreground">Source: {lead.source}</div>}
-                  <div className="pt-1"><StatusPill status={lead.status} /></div>
                 </div>
 
+                {/* Appointment history */}
+                {leadAppts.length > 0 && (
+                  <div>
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Appointments</div>
+                    <div className="space-y-2">
+                      {leadAppts.map((a) => (
+                        <div key={a.id} className="rounded-lg border border-border p-2 text-sm">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="font-medium capitalize">{a.type}</div>
+                            <div className="text-xs text-muted-foreground">{fmt(a.scheduled_at)}</div>
+                          </div>
+                          {a.context && <div className="text-xs text-muted-foreground mt-1">{a.context}</div>}
+                          {a.meeting_url && (
+                            <a href={a.meeting_url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                              <Video className="h-3 w-3" /> Join meeting
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Outcome actions */}
                 <div className="space-y-2">
                   <div className="text-xs uppercase tracking-widest text-muted-foreground">Set outcome</div>
                   <div className="grid grid-cols-2 gap-2">
@@ -216,8 +254,8 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
               </div>
             </>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       {lead && (
         <>
@@ -226,6 +264,16 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
         </>
       )}
     </>
+  );
+}
+
+function DetailRow({ icon: Icon, label, value }: { icon: typeof Phone; label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      <div className="text-xs uppercase tracking-wider text-muted-foreground w-28 shrink-0">{label}</div>
+      <div className="text-sm flex-1 min-w-0 truncate text-right">{value}</div>
+    </div>
   );
 }
 
