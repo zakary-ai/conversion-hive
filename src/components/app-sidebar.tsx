@@ -5,13 +5,14 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
-  GraduationCap, Sparkles, Settings, Briefcase,
+  GraduationCap, Sparkles, Settings, Briefcase, Calendar as CalendarIcon,
 } from "lucide-react";
 
 const clientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Training", url: "/training", icon: GraduationCap },
   { title: "Leads", url: "/leads", icon: Briefcase },
+  { title: "Calendar", url: "/calendar", icon: CalendarIcon },
+  { title: "Training", url: "/training", icon: GraduationCap },
   { title: "Commissions", url: "/commissions", icon: DollarSign },
   { title: "Profile", url: "/profile", icon: UserCog },
 ] as const;
@@ -19,9 +20,10 @@ const clientItems = [
 const adminItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Clients", url: "/admin/clients", icon: Users },
+  { title: "Leads", url: "/admin/leads", icon: Briefcase },
+  { title: "Calendar", url: "/calendar", icon: CalendarIcon },
   { title: "Modules", url: "/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/admin/quizzes", icon: ListChecks },
-  { title: "Leads", url: "/admin/leads", icon: Briefcase },
   { title: "Commissions", url: "/admin/commissions", icon: DollarSign },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ] as const;
