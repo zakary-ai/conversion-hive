@@ -12,7 +12,6 @@ const clientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Training", url: "/training", icon: GraduationCap },
   { title: "Leads", url: "/leads", icon: Briefcase },
-  { title: "Quizzes", url: "/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/commissions", icon: DollarSign },
   { title: "Profile", url: "/profile", icon: UserCog },
 ] as const;
