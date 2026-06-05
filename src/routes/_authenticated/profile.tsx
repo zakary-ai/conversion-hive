@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { meQueryOptions } from "./route";
-import { updateProfile, bootstrapAdmin } from "@/lib/api/cl.functions";
+import { updateProfile, bootstrapAdmin, changeMyPassword } from "@/lib/api/cl.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
@@ -22,6 +22,17 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(me.profile?.full_name ?? "");
   const [company, setCompany] = useState(me.profile?.company_name ?? "");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const changePw = useMutation({
+    mutationFn: () => changeMyPassword({ data: { new_password: newPassword } }),
+    onSuccess: () => {
+      toast.success("Password updated");
+      setNewPassword(""); setConfirmPassword("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const save = useMutation({
     mutationFn: () => updateProfile({ data: { full_name: fullName, company_name: company } }),
@@ -75,6 +86,25 @@ function ProfilePage() {
           </div>
         </Card>
       )}
+
+      <Card className="p-6 space-y-4">
+        <div>
+          <h3 className="font-display font-semibold">Change password</h3>
+          <p className="text-sm text-muted-foreground mt-1">Use at least 8 characters.</p>
+        </div>
+        <div><Label>New password</Label><Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="mt-1" /></div>
+        <div><Label>Confirm new password</Label><Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1" /></div>
+        <Button
+          onClick={() => {
+            if (newPassword.length < 8) return toast.error("Password must be at least 8 characters");
+            if (newPassword !== confirmPassword) return toast.error("Passwords don't match");
+            changePw.mutate();
+          }}
+          disabled={changePw.isPending || !newPassword}
+        >
+          {changePw.isPending ? "Updating…" : "Update password"}
+        </Button>
+      </Card>
 
       <Card className="p-6">
         <div className="flex items-center justify-between gap-4">

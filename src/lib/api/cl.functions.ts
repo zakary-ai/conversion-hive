@@ -447,3 +447,75 @@ export const getClientDetail = createServerFn({ method: "GET" })
       balance,
     };
   });
+
+// ---------- Admin: invite client ----------
+export const DEFAULT_CLIENT_PASSWORD = "ConversionLab1095!";
+
+export const inviteClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    email: z.string().email().max(200),
+    full_name: z.string().min(1).max(120),
+    company_name: z.string().max(120).optional().nullable(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    // Verify caller is admin
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) {
+      throw new Error("Admin only");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Create the auth user with default password (email auto-confirmed)
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: DEFAULT_CLIENT_PASSWORD,
+      email_confirm: true,
+      user_metadata: {
+        full_name: data.full_name,
+        company_name: data.company_name ?? "",
+      },
+    });
+    if (error) throw new Error(error.message);
+    const newUserId = created.user?.id;
+    if (!newUserId) throw new Error("Failed to create user");
+
+    // Ensure profile reflects provided fields (trigger may have created it)
+    await supabaseAdmin.from("profiles").update({
+      full_name: data.full_name,
+      company_name: data.company_name ?? "",
+    }).eq("user_id", newUserId);
+
+    // Best-effort: send Supabase's built-in invite/magic-link email so they get notified.
+    // Falls back silently if email infra isn't configured.
+    try {
+      await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email: data.email,
+      });
+    } catch {
+      // ignore
+    }
+
+    return {
+      ok: true,
+      email: data.email,
+      default_password: DEFAULT_CLIENT_PASSWORD,
+    };
+  });
+
+export const changeMyPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    new_password: z.string().min(8).max(200),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(context.userId, {
+      password: data.new_password,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
