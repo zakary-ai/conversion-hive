@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authenticated/training.index'
+import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -40,17 +41,25 @@ const AuthenticatedTrainingIndexRoute =
     path: '/training/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedTrainingModuleIdRoute =
+  AuthenticatedTrainingModuleIdRouteImport.update({
+    id: '/training/$moduleId',
+    path: '/training/$moduleId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
 }
 export interface FileRoutesById {
@@ -59,19 +68,21 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/training/'
+  fullPaths: '/' | '/auth' | '/dashboard' | '/training/$moduleId' | '/training/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/training'
+  to: '/' | '/auth' | '/dashboard' | '/training/$moduleId' | '/training'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/training/$moduleId'
     | '/_authenticated/training/'
   fileRoutesById: FileRoutesById
 }
@@ -118,16 +129,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrainingIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/training/$moduleId': {
+      id: '/_authenticated/training/$moduleId'
+      path: '/training/$moduleId'
+      fullPath: '/training/$moduleId'
+      preLoaderRoute: typeof AuthenticatedTrainingModuleIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
   AuthenticatedTrainingIndexRoute: typeof AuthenticatedTrainingIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
   AuthenticatedTrainingIndexRoute: AuthenticatedTrainingIndexRoute,
 }
 
