@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authenticated/training.index'
+import { Route as AuthenticatedQuizzesIndexRouteImport } from './routes/_authenticated/quizzes.index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -41,6 +42,12 @@ const AuthenticatedTrainingIndexRoute =
     path: '/training/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedQuizzesIndexRoute =
+  AuthenticatedQuizzesIndexRouteImport.update({
+    id: '/quizzes/',
+    path: '/quizzes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTrainingModuleIdRoute =
   AuthenticatedTrainingModuleIdRouteImport.update({
     id: '/training/$moduleId',
@@ -53,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/quizzes/': typeof AuthenticatedQuizzesIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
 }
 export interface FileRoutesByTo {
@@ -60,6 +68,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/quizzes': typeof AuthenticatedQuizzesIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
 }
 export interface FileRoutesById {
@@ -69,13 +78,26 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/_authenticated/quizzes/': typeof AuthenticatedQuizzesIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/training/$moduleId' | '/training/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/training/$moduleId'
+    | '/quizzes/'
+    | '/training/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/training/$moduleId' | '/training'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/training/$moduleId'
+    | '/quizzes'
+    | '/training'
   id:
     | '__root__'
     | '/'
@@ -83,6 +105,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/training/$moduleId'
+    | '/_authenticated/quizzes/'
     | '/_authenticated/training/'
   fileRoutesById: FileRoutesById
 }
@@ -129,6 +152,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrainingIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/quizzes/': {
+      id: '/_authenticated/quizzes/'
+      path: '/quizzes'
+      fullPath: '/quizzes/'
+      preLoaderRoute: typeof AuthenticatedQuizzesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/training/$moduleId': {
       id: '/_authenticated/training/$moduleId'
       path: '/training/$moduleId'
@@ -142,12 +172,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
+  AuthenticatedQuizzesIndexRoute: typeof AuthenticatedQuizzesIndexRoute
   AuthenticatedTrainingIndexRoute: typeof AuthenticatedTrainingIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
+  AuthenticatedQuizzesIndexRoute: AuthenticatedQuizzesIndexRoute,
   AuthenticatedTrainingIndexRoute: AuthenticatedTrainingIndexRoute,
 }
 
