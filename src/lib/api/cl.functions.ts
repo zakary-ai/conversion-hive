@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 // ---------- Bootstrap (first admin) ----------
 export const bootstrapAdmin = createServerFn({ method: "POST" })
@@ -203,7 +204,7 @@ export const listMyLeads = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
-const LeadStatus = z.enum(["New","Contacted","No Answer","Interested","Booked","Not Interested","Follow Up"]);
+const LeadStatus = z.enum(["New","Contacted","No Answer","Interested","Booked","Not Interested","Follow Up","Call Again","Call Back"]);
 
 export const updateLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -212,18 +213,64 @@ export const updateLead = createServerFn({ method: "POST" })
     status: LeadStatus.optional(),
     notes: z.string().max(5000).optional().nullable(),
     contacted: z.boolean().optional(),
+    do_not_contact: z.boolean().optional(),
+    callback_at: z.string().datetime().nullable().optional(),
   }).parse)
   .handler(async ({ data, context }) => {
-    const patch: {
-      status?: typeof data.status;
-      notes?: string | null;
-      contacted_at?: string | null;
-    } = {};
+    const patch: Database["public"]["Tables"]["leads"]["Update"] = {};
     if (data.status !== undefined) patch.status = data.status;
     if (data.notes !== undefined) patch.notes = data.notes;
+    if (data.do_not_contact !== undefined) patch.do_not_contact = data.do_not_contact;
+    if (data.callback_at !== undefined) patch.callback_at = data.callback_at;
     if (data.contacted === true) patch.contacted_at = new Date().toISOString();
     if (data.contacted === false) patch.contacted_at = null;
     const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Appointments (calendar) ----------
+const AppointmentInput = z.object({
+  lead_id: z.string().uuid().nullable().optional(),
+  type: z.enum(["booking","callback"]),
+  scheduled_at: z.string().datetime(),
+  name: z.string().min(1).max(200),
+  phone: z.string().max(50).optional().nullable(),
+  email: z.string().max(200).optional().nullable(),
+  context: z.string().max(5000).optional().nullable(),
+});
+
+export const createAppointment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(AppointmentInput.parse)
+  .handler(async ({ data, context }) => {
+    const { error, data: row } = await context.supabase.from("appointments")
+      .insert({ ...data, user_id: context.userId }).select().single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const listMyAppointments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase.from("appointments")
+      .select("*").eq("user_id", context.userId).order("scheduled_at", { ascending: true });
+    return data ?? [];
+  });
+
+export const listAllAppointments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase.from("appointments")
+      .select("*").order("scheduled_at", { ascending: true });
+    return data ?? [];
+  });
+
+export const deleteAppointment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("appointments").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -1,24 +1,23 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
-  GraduationCap, Settings, Briefcase,
+  GraduationCap, Settings, Briefcase, Calendar as CalendarIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const clientItems = [
   { title: "Home", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Training", url: "/training", icon: GraduationCap },
   { title: "Leads", url: "/leads", icon: Briefcase },
-  { title: "Earn", url: "/commissions", icon: DollarSign },
+  { title: "Calendar", url: "/calendar", icon: CalendarIcon },
+  { title: "Training", url: "/training", icon: GraduationCap },
   { title: "Profile", url: "/profile", icon: UserCog },
 ] as const;
 
 const adminItems = [
   { title: "Home", url: "/admin", icon: LayoutDashboard },
-  { title: "Clients", url: "/admin/clients", icon: Users },
-  { title: "Modules", url: "/admin/modules", icon: BookOpen },
   { title: "Leads", url: "/admin/leads", icon: Briefcase },
-  { title: "Earn", url: "/admin/commissions", icon: DollarSign },
+  { title: "Calendar", url: "/calendar", icon: CalendarIcon },
+  { title: "Clients", url: "/admin/clients", icon: Users },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ] as const;
 
@@ -36,7 +35,8 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
       className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className={isAdmin ? "grid grid-cols-6" : "grid grid-cols-5"}>
+      <ul className="grid grid-cols-5">
+
         {items.map((item) => {
           const active = isActive(item.url);
           return (

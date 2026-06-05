@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          context: string | null
+          created_at: string
+          email: string | null
+          id: string
+          lead_id: string | null
+          name: string
+          phone: string | null
+          scheduled_at: string
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lead_id?: string | null
+          name: string
+          phone?: string | null
+          scheduled_at: string
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lead_id?: string | null
+          name?: string
+          phone?: string | null
+          scheduled_at?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commissions: {
         Row: {
           added_by: string | null
@@ -44,9 +97,11 @@ export type Database = {
       leads: {
         Row: {
           assigned_user_id: string | null
+          callback_at: string | null
           company: string | null
           contacted_at: string | null
           created_at: string
+          do_not_contact: boolean
           email: string | null
           id: string
           name: string
@@ -57,9 +112,11 @@ export type Database = {
         }
         Insert: {
           assigned_user_id?: string | null
+          callback_at?: string | null
           company?: string | null
           contacted_at?: string | null
           created_at?: string
+          do_not_contact?: boolean
           email?: string | null
           id?: string
           name: string
@@ -70,9 +127,11 @@ export type Database = {
         }
         Update: {
           assigned_user_id?: string | null
+          callback_at?: string | null
           company?: string | null
           contacted_at?: string | null
           created_at?: string
+          do_not_contact?: boolean
           email?: string | null
           id?: string
           name?: string
@@ -307,6 +366,8 @@ export type Database = {
         | "Booked"
         | "Not Interested"
         | "Follow Up"
+        | "Call Again"
+        | "Call Back"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -443,6 +504,8 @@ export const Constants = {
         "Booked",
         "Not Interested",
         "Follow Up",
+        "Call Again",
+        "Call Back",
       ],
     },
   },
