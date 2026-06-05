@@ -1,0 +1,66 @@
+import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
+import { getMe } from "@/lib/api/cl.functions";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { toast } from "sonner";
+
+export const meQueryOptions = queryOptions({
+  queryKey: ["me"],
+  queryFn: async () => getMe(),
+});
+
+export const Route = createFileRoute("/_authenticated")({
+  ssr: false,
+  beforeLoad: async ({ context }) => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) throw redirect({ to: "/auth" });
+    await context.queryClient.ensureQueryData(meQueryOptions);
+  },
+  component: AuthenticatedLayout,
+});
+
+function AuthenticatedLayout() {
+  const { data: me } = useSuspenseQuery(meQueryOptions);
+  const navigate = useNavigate();
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    toast.success("Signed out");
+    navigate({ to: "/auth", replace: true });
+  };
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar isAdmin={me.isAdmin} />
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="h-14 border-b border-border flex items-center justify-between px-4 bg-card/40 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger />
+              <div className="text-sm text-muted-foreground hidden sm:block">
+                {me.isAdmin ? "Admin workspace" : "Client workspace"}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <div className="text-sm font-medium">{me.profile?.full_name || me.profile?.email || "User"}</div>
+                <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : "Client"}</div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out">
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </header>
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
