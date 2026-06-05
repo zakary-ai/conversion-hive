@@ -96,3 +96,9 @@
 @utility glow-primary {
   box-shadow: 0 10px 40px -10px color-mix(in oklab, var(--color-primary) 45%, transparent);
 }
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar { display: none; }
+}
