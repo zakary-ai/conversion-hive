@@ -216,7 +216,7 @@ export const updateLead = createServerFn({ method: "POST" })
     callback_at: z.string().datetime().nullable().optional(),
   }).parse)
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = {};
+    const patch: Database["public"]["Tables"]["leads"]["Update"] = {};
     if (data.status !== undefined) patch.status = data.status;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.do_not_contact !== undefined) patch.do_not_contact = data.do_not_contact;
