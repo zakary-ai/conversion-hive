@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCommissionsRouteImport } from './routes/_authenticated/commissions'
@@ -33,6 +34,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/commissions': typeof AuthenticatedCommissionsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/quizzes/': typeof AuthenticatedQuizzesIndexRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/commissions': typeof AuthenticatedCommissionsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/quizzes': typeof AuthenticatedQuizzesIndexRoute
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/_authenticated/commissions': typeof AuthenticatedCommissionsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/quizzes/': typeof AuthenticatedQuizzesIndexRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/commissions'
     | '/dashboard'
     | '/leads'
+    | '/profile'
     | '/quizzes/$moduleId'
     | '/training/$moduleId'
     | '/quizzes/'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/commissions'
     | '/dashboard'
     | '/leads'
+    | '/profile'
     | '/quizzes/$moduleId'
     | '/training/$moduleId'
     | '/quizzes'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/_authenticated/commissions'
     | '/_authenticated/dashboard'
     | '/_authenticated/leads'
+    | '/_authenticated/profile'
     | '/_authenticated/quizzes/$moduleId'
     | '/_authenticated/training/$moduleId'
     | '/_authenticated/quizzes/'
@@ -175,6 +187,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads': {
       id: '/_authenticated/leads'
@@ -232,6 +251,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCommissionsRoute: typeof AuthenticatedCommissionsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedQuizzesModuleIdRoute: typeof AuthenticatedQuizzesModuleIdRoute
   AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
   AuthenticatedQuizzesIndexRoute: typeof AuthenticatedQuizzesIndexRoute
@@ -242,6 +262,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCommissionsRoute: AuthenticatedCommissionsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedQuizzesModuleIdRoute: AuthenticatedQuizzesModuleIdRoute,
   AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
   AuthenticatedQuizzesIndexRoute: AuthenticatedQuizzesIndexRoute,
