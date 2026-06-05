@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMe } from "@/lib/api/cl.functions";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { BottomNav } from "@/components/bottom-nav";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
@@ -37,11 +38,19 @@ function AuthenticatedLayout() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar isAdmin={me.isAdmin} />
+        <div className="hidden md:block">
+          <AppSidebar isAdmin={me.isAdmin} />
+        </div>
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 border-b border-border flex items-center justify-between px-4 bg-card/40 backdrop-blur">
-            <div className="flex items-center gap-3">
-              <SidebarTrigger />
+          <header
+            className="h-14 border-b border-border flex items-center justify-between px-4 bg-card/60 backdrop-blur sticky top-0 z-40"
+            style={{ paddingTop: "env(safe-area-inset-top)" }}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="hidden md:block"><SidebarTrigger /></div>
+              <div className="md:hidden font-display font-semibold tracking-tight truncate">
+                Conversion Lab
+              </div>
               <div className="text-sm text-muted-foreground hidden sm:block">
                 {me.isAdmin ? "Admin workspace" : "Client workspace"}
               </div>
@@ -56,10 +65,14 @@ function AuthenticatedLayout() {
               </Button>
             </div>
           </header>
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden">
+          <main
+            className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden pb-24 md:pb-8"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 6rem)" }}
+          >
             <Outlet />
           </main>
         </div>
+        <BottomNav isAdmin={me.isAdmin} />
       </div>
     </SidebarProvider>
   );
