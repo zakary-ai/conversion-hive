@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarClock, CheckCircle2, Phone, Mail, Trash2, User, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 
 const meOpts = queryOptions({ queryKey: ["me"], queryFn: () => getMe() });
 const myOpts = queryOptions({ queryKey: ["my-appointments"], queryFn: () => listMyAppointments() });
@@ -122,6 +123,7 @@ function ApptView({
 
 function ApptList({ items, canDelete, showOwner, empty }: { items: Appt[]; canDelete: boolean; showOwner?: boolean; empty: string }) {
   const qc = useQueryClient();
+  const [openAppt, setOpenAppt] = useState<Appt | null>(null);
   const del = useMutation({
     mutationFn: (id: string) => deleteAppointment({ data: { id } }),
     onSuccess: () => {
@@ -135,50 +137,63 @@ function ApptList({ items, canDelete, showOwner, empty }: { items: Appt[]; canDe
     return <Card className="p-6 text-sm text-muted-foreground text-center">{empty}</Card>;
   }
   return (
-    <div className="space-y-2">
-      {items.map((a) => {
-        const dt = new Date(a.scheduled_at);
-        const isBooking = a.type === "booking";
-        return (
-          <Card key={a.id} className="p-3 flex items-start gap-3">
-            <div className={cn(
-              "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-              isBooking ? "bg-success/15 text-success" : "bg-warning/15 text-warning"
-            )}>
-              {isBooking ? <CheckCircle2 className="h-5 w-5" /> : <CalendarClock className="h-5 w-5" />}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <div className="font-medium truncate">{a.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                </div>
+    <>
+      <div className="space-y-2">
+        {items.map((a) => {
+          const dt = new Date(a.scheduled_at);
+          const isBooking = a.type === "booking";
+          return (
+            <Card
+              key={a.id}
+              className="p-3 flex items-start gap-3 cursor-pointer hover:bg-muted/30 transition-colors"
+              onClick={() => setOpenAppt(a)}
+            >
+              <div className={cn(
+                "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
+                isBooking ? "bg-success/15 text-success" : "bg-warning/15 text-warning"
+              )}>
+                {isBooking ? <CheckCircle2 className="h-5 w-5" /> : <CalendarClock className="h-5 w-5" />}
               </div>
-              <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                {a.phone && (
-                  <a href={`tel:${a.phone}`} className="flex items-center gap-1 text-primary">
-                    <Phone className="h-3 w-3" />{a.phone}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <div className="font-medium truncate">{a.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                  {a.phone && (
+                    <a href={`tel:${a.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-primary">
+                      <Phone className="h-3 w-3" />{a.phone}
+                    </a>
+                  )}
+                  {a.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{a.email}</span>}
+                  {showOwner && <span className="flex items-center gap-1"><User className="h-3 w-3" />setter</span>}
+                  <span className="uppercase tracking-wider">{a.type}</span>
+                </div>
+                {a.context && <div className="text-xs mt-1">{a.context}</div>}
+                {a.meeting_url && (
+                  <a
+                    href={a.meeting_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-xs mt-1 inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" /> Join meeting
                   </a>
                 )}
-                {a.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{a.email}</span>}
-                {showOwner && <span className="flex items-center gap-1"><User className="h-3 w-3" />setter</span>}
-                <span className="uppercase tracking-wider">{a.type}</span>
               </div>
-              {a.context && <div className="text-xs mt-1">{a.context}</div>}
-              {a.meeting_url && (
-                <a href={a.meeting_url} target="_blank" rel="noreferrer" className="text-xs mt-1 inline-flex items-center gap-1 text-primary hover:underline">
-                  <ExternalLink className="h-3 w-3" /> Join meeting
-                </a>
+              {canDelete && (
+                <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); del.mutate(a.id); }}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               )}
-            </div>
-            {canDelete && (
-              <Button size="icon" variant="ghost" onClick={() => del.mutate(a.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </Card>
-        );
-      })}
-    </div>
+            </Card>
+          );
+        })}
+      </div>
+      <AppointmentDetailDialog appt={openAppt} onClose={() => setOpenAppt(null)} />
+    </>
   );
 }
