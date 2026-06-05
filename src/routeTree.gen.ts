@@ -19,6 +19,7 @@ import { Route as AuthenticatedCommissionsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authenticated/training.index'
 import { Route as AuthenticatedQuizzesIndexRouteImport } from './routes/_authenticated/quizzes.index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
 import { Route as AuthenticatedQuizzesModuleIdRouteImport } from './routes/_authenticated/quizzes.$moduleId'
 
@@ -74,6 +75,11 @@ const AuthenticatedQuizzesIndexRoute =
     path: '/quizzes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedTrainingModuleIdRoute =
   AuthenticatedTrainingModuleIdRouteImport.update({
     id: '/training/$moduleId',
@@ -90,26 +96,27 @@ const AuthenticatedQuizzesModuleIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/admin': typeof AuthenticatedAdminRouteRoute
+  '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/commissions': typeof AuthenticatedCommissionsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/quizzes/': typeof AuthenticatedQuizzesIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/admin': typeof AuthenticatedAdminRouteRoute
   '/commissions': typeof AuthenticatedCommissionsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/quizzes': typeof AuthenticatedQuizzesIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
 }
@@ -118,13 +125,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/commissions': typeof AuthenticatedCommissionsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/quizzes/$moduleId': typeof AuthenticatedQuizzesModuleIdRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/quizzes/': typeof AuthenticatedQuizzesIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
 }
@@ -140,19 +148,20 @@ export interface FileRouteTypes {
     | '/profile'
     | '/quizzes/$moduleId'
     | '/training/$moduleId'
+    | '/admin/'
     | '/quizzes/'
     | '/training/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
-    | '/admin'
     | '/commissions'
     | '/dashboard'
     | '/leads'
     | '/profile'
     | '/quizzes/$moduleId'
     | '/training/$moduleId'
+    | '/admin'
     | '/quizzes'
     | '/training'
   id:
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/quizzes/$moduleId'
     | '/_authenticated/training/$moduleId'
+    | '/_authenticated/admin/'
     | '/_authenticated/quizzes/'
     | '/_authenticated/training/'
   fileRoutesById: FileRoutesById
@@ -249,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQuizzesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/training/$moduleId': {
       id: '/_authenticated/training/$moduleId'
       path: '/training/$moduleId'
@@ -266,8 +283,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
+  {
+    AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  }
+
+const AuthenticatedAdminRouteRouteWithChildren =
+  AuthenticatedAdminRouteRoute._addFileChildren(
+    AuthenticatedAdminRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRoute
+  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
   AuthenticatedCommissionsRoute: typeof AuthenticatedCommissionsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
@@ -279,7 +310,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRoute,
+  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
   AuthenticatedCommissionsRoute: AuthenticatedCommissionsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
