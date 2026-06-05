@@ -15,10 +15,9 @@ const clientItems = [
 
 const adminItems = [
   { title: "Home", url: "/admin", icon: LayoutDashboard },
-  { title: "Clients", url: "/admin/clients", icon: Users },
-  { title: "Modules", url: "/admin/modules", icon: BookOpen },
   { title: "Leads", url: "/admin/leads", icon: Briefcase },
-  { title: "Earn", url: "/admin/commissions", icon: DollarSign },
+  { title: "Calendar", url: "/calendar", icon: CalendarIcon },
+  { title: "Clients", url: "/admin/clients", icon: Users },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ] as const;
 
