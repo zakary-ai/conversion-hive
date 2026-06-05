@@ -204,6 +204,15 @@ export const listMyLeads = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const getLead = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: lead, error } = await context.supabase.from("leads").select("*").eq("id", data.id).maybeSingle();
+    if (error) throw new Error(error.message);
+    return lead;
+  });
+
 const LeadStatus = z.enum(["New","Contacted","No Answer","Interested","Booked","Not Interested","Follow Up","Call Again","Call Back"]);
 
 export const updateLead = createServerFn({ method: "POST" })
