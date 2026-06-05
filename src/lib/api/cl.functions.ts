@@ -297,7 +297,9 @@ export const createAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(AppointmentInput.parse)
   .handler(async ({ data, context }) => {
-    const meeting_url = data.type === "booking" ? generateZoomLikeUrl() : null;
+    const meeting_url = data.type === "booking"
+      ? await createZoomMeeting({ topic: `Call with ${data.name}`, start_time: data.scheduled_at })
+      : null;
     const { error, data: row } = await context.supabase.from("appointments")
       .insert({ ...data, user_id: context.userId, meeting_url }).select().single();
     if (error) throw new Error(error.message);
