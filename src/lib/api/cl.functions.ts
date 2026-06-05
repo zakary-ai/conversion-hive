@@ -249,8 +249,45 @@ const AppointmentInput = z.object({
   context: z.string().max(5000).optional().nullable(),
 });
 
-function generateZoomLikeUrl() {
-  // Placeholder Zoom-style join URL. Swap for the real Zoom API when credentials are connected.
+async function getZoomAccessToken() {
+  const accountId = process.env.ZOOM_ACCOUNT_ID;
+  const clientId = process.env.ZOOM_CLIENT_ID;
+  const clientSecret = process.env.ZOOM_CLIENT_SECRET;
+  if (!accountId || !clientId || !clientSecret) return null;
+  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+  const res = await fetch(
+    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${accountId}`,
+    { method: "POST", headers: { Authorization: `Basic ${basic}` } },
+  );
+  if (!res.ok) return null;
+  const json = (await res.json()) as { access_token?: string };
+  return json.access_token ?? null;
+}
+
+async function createZoomMeeting(input: { topic: string; start_time: string }) {
+  try {
+    const token = await getZoomAccessToken();
+    if (!token) return fallbackZoomUrl();
+    const res = await fetch("https://api.zoom.us/v2/users/me/meetings", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        topic: input.topic,
+        type: 2,
+        start_time: input.start_time,
+        duration: 30,
+        settings: { join_before_host: true, waiting_room: false },
+      }),
+    });
+    if (!res.ok) return fallbackZoomUrl();
+    const json = (await res.json()) as { join_url?: string };
+    return json.join_url ?? fallbackZoomUrl();
+  } catch {
+    return fallbackZoomUrl();
+  }
+}
+
+function fallbackZoomUrl() {
   const id = Math.floor(1_000_000_000 + Math.random() * 9_000_000_000).toString();
   const pwd = Math.random().toString(36).slice(2, 12);
   return `https://zoom.us/j/${id}?pwd=${pwd}`;
@@ -260,7 +297,9 @@ export const createAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(AppointmentInput.parse)
   .handler(async ({ data, context }) => {
-    const meeting_url = data.type === "booking" ? generateZoomLikeUrl() : null;
+    const meeting_url = data.type === "booking"
+      ? await createZoomMeeting({ topic: `Call with ${data.name}`, start_time: data.scheduled_at })
+      : null;
     const { error, data: row } = await context.supabase.from("appointments")
       .insert({ ...data, user_id: context.userId, meeting_url }).select().single();
     if (error) throw new Error(error.message);
