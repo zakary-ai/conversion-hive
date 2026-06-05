@@ -1,17 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { listMyLeads, updateLead, createAppointment } from "@/lib/api/cl.functions";
+import { listMyLeads, updateLead, createAppointment, listMyAppointments } from "@/lib/api/cl.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff } from "lucide-react";
+import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff, Building2, Tag, Clock, Video, Ban } from "lucide-react";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { toast } from "sonner";
 
