@@ -252,14 +252,24 @@ export async function runScraperPipeline(opts: { triggeredBy: string }): Promise
     });
   }
 
-  // 7. Log run
+  // 7. Advance city rotation cursor if a city was picked and we actually attempted Apify.
+  if (cityUsed && needFromScrape > 0) {
+    await supabaseAdmin
+      .from("scraper_settings")
+      .update({ city_rotation_index: nextCityIndex })
+      .eq("id", (settings as { id: string }).id);
+  }
+
+  // 8. Log run
+  const runDetails = { ...result, city: cityUsed } as Record<string, unknown>;
   await supabaseAdmin.from("scraper_runs").insert({
     user_id: opts.triggeredBy,
     leads_added: result.inserted,
     status: errors.length === 0 ? "success" : (result.distributed > 0 ? "partial" : "failed"),
     phase: "full",
-    details: JSON.parse(JSON.stringify(result)),
+    details: JSON.parse(JSON.stringify(runDetails)),
   });
 
   return result;
+
 }
