@@ -25,7 +25,10 @@ const SettingsInput = z.object({
   batch_size: z.number().int().min(1).max(1000).optional(),
   field_map: z.record(z.string(), z.string().max(80)).optional(),
   recycle_days: z.number().int().min(1).max(60).optional(),
+  city_rotation: z.array(z.string().min(1).max(200)).max(1000).optional(),
+  city_rotation_index: z.number().int().min(0).optional(),
 });
+
 
 export const updateScraperSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -101,6 +104,23 @@ export const runScraperNow = createServerFn({ method: "POST" })
     const { runScraperPipeline } = await import("@/lib/scraper-pipeline.server");
     return runScraperPipeline({ triggeredBy: context.userId });
   });
+
+export const skipNextCity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin.from("scraper_settings").select("id, city_rotation, city_rotation_index").limit(1).maybeSingle();
+    if (!row) return { ok: true };
+    const list = ((row as { city_rotation?: string[] }).city_rotation ?? []).filter((c) => typeof c === "string" && c.trim().length > 0);
+    if (list.length === 0) return { ok: true };
+    const current = ((row as { city_rotation_index?: number }).city_rotation_index ?? 0) | 0;
+    const next = (((current + 1) % list.length) + list.length) % list.length;
+    const { error } = await supabaseAdmin.from("scraper_settings").update({ city_rotation_index: next }).eq("id", (row as { id: string }).id);
+    if (error) throw new Error(error.message);
+    return { ok: true, next_index: next, next_city: list[next] };
+  });
+
 
 export const listScraperRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

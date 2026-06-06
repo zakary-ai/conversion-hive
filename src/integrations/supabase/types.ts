@@ -413,6 +413,8 @@ export type Database = {
           apify_actor_id: string
           apify_input: Json
           batch_size: number
+          city_rotation: string[]
+          city_rotation_index: number
           enabled: boolean
           field_map: Json
           id: string
@@ -423,6 +425,8 @@ export type Database = {
           apify_actor_id?: string
           apify_input?: Json
           batch_size?: number
+          city_rotation?: string[]
+          city_rotation_index?: number
           enabled?: boolean
           field_map?: Json
           id?: string
@@ -433,6 +437,8 @@ export type Database = {
           apify_actor_id?: string
           apify_input?: Json
           batch_size?: number
+          city_rotation?: string[]
+          city_rotation_index?: number
           enabled?: boolean
           field_map?: Json
           id?: string

@@ -8,7 +8,9 @@ import {
   updateSetterScraperConfig,
   runScraperNow,
   listScraperRuns,
+  skipNextCity,
 } from "@/lib/api/scraper.functions";
+
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,12 +90,23 @@ function ScraperPage() {
     initialInput.searchStringsArray = [...DEFAULT_INPUT.searchStringsArray];
   }
 
+  const initialCities: string[] = Array.isArray((settings as { city_rotation?: string[] } | null)?.city_rotation)
+    ? ((settings as { city_rotation?: string[] }).city_rotation as string[])
+    : [];
+  const initialCityIndex: number = ((settings as { city_rotation_index?: number } | null)?.city_rotation_index ?? 0) | 0;
+
   const [enabled, setEnabled] = useState<boolean>(settings?.enabled ?? false);
   const [actorId, setActorId] = useState<string>(settings?.apify_actor_id || DEFAULT_ACTOR);
   const [batchSize, setBatchSize] = useState<number>(settings?.batch_size ?? 200);
   const [recycleDays, setRecycleDays] = useState<number>(settings?.recycle_days ?? 3);
   const [input, setInput] = useState<ApifyInput & Record<string, unknown>>(initialInput);
   const [fieldMapJson, setFieldMapJson] = useState<string>(JSON.stringify(settings?.field_map && Object.keys(settings.field_map).length ? settings.field_map : DEFAULT_FIELD_MAP, null, 2));
+  const [citiesText, setCitiesText] = useState<string>(initialCities.join("\n"));
+
+  const parsedCities = citiesText.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const nextCity = parsedCities.length > 0
+    ? parsedCities[(((initialCityIndex % parsedCities.length) + parsedCities.length) % parsedCities.length)]
+    : null;
 
   const updateInput = <K extends keyof ApifyInput>(key: K, value: ApifyInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
@@ -104,11 +117,34 @@ function ScraperPage() {
       try { field_map = JSON.parse(fieldMapJson || "{}"); } catch { throw new Error("Field map is not valid JSON"); }
       const cleanedSearches = (input.searchStringsArray ?? []).map((s) => s.trim()).filter(Boolean);
       const apify_input = { ...input, searchStringsArray: cleanedSearches.length ? cleanedSearches : [""] };
-      await updateScraperSettings({ data: { enabled, apify_actor_id: actorId, apify_input, batch_size: batchSize, field_map, recycle_days: recycleDays } });
+      const lengthChanged = parsedCities.length !== initialCities.length;
+      await updateScraperSettings({
+        data: {
+          enabled,
+          apify_actor_id: actorId,
+          apify_input,
+          batch_size: batchSize,
+          field_map,
+          recycle_days: recycleDays,
+          city_rotation: parsedCities,
+          ...(lengthChanged ? { city_rotation_index: 0 } : {}),
+        },
+      });
     },
     onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["scraper-settings"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const skipCity = useMutation({
+    mutationFn: () => skipNextCity(),
+    onSuccess: (r: { next_city?: string }) => {
+      toast.success(r?.next_city ? `Next city: ${r.next_city}` : "Skipped");
+      qc.invalidateQueries({ queryKey: ["scraper-settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
 
 
   const updateSetter = useMutation({
@@ -209,14 +245,17 @@ function ScraperPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="md:col-span-2">
-              <Label>Location</Label>
-              <Input
-                value={input.locationQuery}
-                placeholder="Tallahassee, USA"
-                onChange={(e) => updateInput("locationQuery", e.target.value)}
-              />
-            </div>
+            {parsedCities.length === 0 && (
+              <div className="md:col-span-2">
+                <Label>Location</Label>
+                <Input
+                  value={input.locationQuery}
+                  placeholder="Tallahassee, USA"
+                  onChange={(e) => updateInput("locationQuery", e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Used when the city rotation list below is empty.</p>
+              </div>
+            )}
             <div>
               <Label>Language</Label>
               <Input
@@ -236,6 +275,33 @@ function ScraperPage() {
               />
             </div>
           </div>
+
+          <div className="pt-3 border-t border-border space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold">City rotation</h4>
+                <p className="text-xs text-muted-foreground">
+                  Cycles one city per daily run. {nextCity ? <>Next up: <span className="font-medium text-foreground">{nextCity}</span></> : "Add cities below to start rotating."}
+                </p>
+              </div>
+              {parsedCities.length > 0 && (
+                <Button type="button" variant="outline" size="sm" onClick={() => skipCity.mutate()} disabled={skipCity.isPending}>
+                  Skip to next
+                </Button>
+              )}
+            </div>
+            <Textarea
+              rows={8}
+              value={citiesText}
+              onChange={(e) => setCitiesText(e.target.value)}
+              placeholder="One city per line, e.g.&#10;Austin, TX, USA&#10;Dallas, TX, USA"
+              className="font-mono text-xs"
+            />
+            <p className="text-xs text-muted-foreground">
+              {parsedCities.length} {parsedCities.length === 1 ? "city" : "cities"} · wraps back to the top after the last one.
+            </p>
+          </div>
+
 
           <div className="pt-2 border-t border-border">
             <h4 className="text-sm font-semibold">Scrape options</h4>

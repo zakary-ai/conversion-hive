@@ -1,35 +1,37 @@
-## Replace raw JSON textarea with a structured input form
+## Daily city rotation for the scraper
 
-On `/admin/scraper`, swap the "Apify input JSON" textarea for a clean form that maps 1:1 to the Google Maps Extractor input schema. Internally we still serialize back to the same `apify_input` JSON shape — only the UI changes.
+Make the scraper cycle through a list of ~200 cities — each daily run uses the next city as `locationQuery`, wrapping back to the start after the last one.
 
-### Fields shown (in this order)
-Grouped into a card with subtle section dividers:
+### Schema (migration)
+Add two columns to `scraper_settings`:
+- `city_rotation text[] not null default '{}'` — ordered list of locations (e.g. `"Austin, TX, USA"`).
+- `city_rotation_index int not null default 0` — pointer to the next city to use.
 
-**Search**
-- `searchStringsArray` — repeating text input list with "Add search term" / remove buttons (one search term per row, e.g. "apartment complex").
-- `locationQuery` — single-line text input (e.g. "Tallahassee, USA").
-- `language` — short text input (default `en`), 80px wide.
-- `maxCrawledPlacesPerSearch` — number input (1–1000, default 50).
+Seed the existing settings row with a default list of ~200 US cities (largest metros, "City, ST, USA" format).
 
-**Scrape options** (2-column grid of labeled switches)
-- `scrapePlaceDetailPage`
-- `scrapeContacts`
-- `scrapeDirectories`
-- `scrapeOrderOnline`
-- `scrapeTableReservationProvider`
-- `includeWebResults`
-- `skipClosedPlaces`
-- `verifyLeadsEnrichmentEmails`
+### Pipeline change (`src/lib/scraper-pipeline.server.ts`)
+Right before the Apify call:
+1. If `city_rotation` is non-empty, pick `city_rotation[index % length]` and override `apify_input.locationQuery` with it.
+2. After a successful run (success or partial), advance `city_rotation_index` by 1 (modulo length) via `supabaseAdmin.update`.
+3. Record the city used in `scraper_runs.details.city`.
 
-Each switch has a short helper line under its label so it's clear what it does.
+If the list is empty, fall back to the existing `locationQuery` from the input form (current behavior).
 
-### Save behavior
-On "Save settings", assemble the object from the form state and send it as `apify_input` (same field as today). Any keys the form doesn't know about that exist on the saved object are preserved (merge over original) so power users don't lose custom fields.
+### Admin UI (`/admin/scraper`)
+In the Search section:
+- Replace the single "Location" input with a **City rotation** card showing:
+  - Header line: "Cycles one city per daily run. Next up: **{cities[index]}**" plus a small "Skip to next" button.
+  - Textarea (one city per line) bound to `city_rotation`.
+  - Counter: "{n} cities · resets after the last".
+- Keep the per-input "Location" hidden when rotation has entries; only used as fallback.
+
+Saving the textarea splits on newlines, trims, drops blanks, and resets `city_rotation_index` to 0 only if the list shape changes meaningfully (length differs) — otherwise preserve the index.
+
+### Server fns (`scraper.functions.ts`)
+- Extend `updateScraperSettings` to accept `city_rotation` and `city_rotation_index`.
+- Add `skipNextCity()` admin fn that advances the index by 1.
 
 ### Out of scope
-- No raw JSON view/toggle.
-- Field map and the rest of the page stay as-is.
-- No backend / pipeline changes.
-
-### Files
-- `src/routes/_authenticated/admin/scraper.tsx` — replace `inputJson` state + textarea with typed form state and inputs.
+- Per-setter city lists.
+- Per-search-term city rotation (still one global cycle).
+- Timezone-aware "day" calculation — we rely on the daily 8am EST cron firing once per day.
