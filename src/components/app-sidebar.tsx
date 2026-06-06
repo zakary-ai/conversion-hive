@@ -19,7 +19,7 @@ const clientItems = [
 
 const adminItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Clients", url: "/admin/clients", icon: Users },
+  { title: "Setters", url: "/admin/clients", icon: Users },
   { title: "Leads", url: "/admin/leads", icon: Briefcase },
   { title: "Calendar", url: "/calendar", icon: CalendarIcon },
   { title: "Modules", url: "/admin/modules", icon: BookOpen },
