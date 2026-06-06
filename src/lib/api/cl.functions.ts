@@ -351,38 +351,87 @@ export const replaceAvailabilityRules = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Helpers for timezone math
+const EST_TZ = "America/New_York";
+function zonedDateKey(d: Date, tz: string) {
+  // en-CA gives yyyy-mm-dd
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
+  return fmt.format(d);
+}
+function zonedDayOfWeek(d: Date, tz: string) {
+  const name = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short" }).format(d);
+  return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(name);
+}
+// Convert a wall-clock date (year/month/day/hour/min) in `tz` to a UTC Date instant.
+function zonedWallToUTC(y: number, m: number, d: number, hh: number, mm: number, tz: string) {
+  const guess = new Date(Date.UTC(y, m - 1, d, hh, mm, 0));
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = fmt.formatToParts(guess);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+  const asUTC = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  const offset = asUTC - guess.getTime();
+  return new Date(guess.getTime() - offset);
+}
+
 export const listAvailableSlots = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse)
+  .inputValidator(z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    tz: z.string().max(60).optional(),
+  }).parse)
   .handler(async ({ data, context }) => {
-    // Parse date as local midnight (the date the user selected on their calendar)
-    const [y, m, d] = data.date.split("-").map(Number);
-    const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0);
-    const dayEnd = new Date(y, m - 1, d + 1, 0, 0, 0, 0);
-    const dow = dayStart.getDay();
+    const viewerTz = data.tz || EST_TZ;
+    const [vy, vm, vd] = data.date.split("-").map(Number);
+
+    // Determine the UTC window covering the viewer's selected date.
+    const viewerDayStart = zonedWallToUTC(vy, vm, vd, 0, 0, viewerTz);
+    const viewerDayEnd = zonedWallToUTC(vy, vm, vd + 1, 0, 0, viewerTz);
+
+    // The viewer's day can span up to 2 EST calendar days. Iterate both.
+    const estDates = new Set<string>();
+    estDates.add(zonedDateKey(viewerDayStart, EST_TZ));
+    estDates.add(zonedDateKey(new Date(viewerDayEnd.getTime() - 1), EST_TZ));
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rules } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => { eq: (col: string, v: number) => Promise<{ data: Array<{ start_minute: number; end_minute: number }> | null }> } } })
-      .from("availability_rules").select("start_minute, end_minute").eq("day_of_week", dow);
+
+    // Fetch all rules once (small table)
+    const { data: allRules } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => Promise<{ data: Array<{ day_of_week: number; start_minute: number; end_minute: number }> | null }> } })
+      .from("availability_rules").select("day_of_week, start_minute, end_minute");
+
     const { data: bookings } = await supabaseAdmin.from("appointments")
       .select("scheduled_at")
       .eq("type", "booking")
-      .gte("scheduled_at", dayStart.toISOString())
-      .lt("scheduled_at", dayEnd.toISOString());
+      .gte("scheduled_at", viewerDayStart.toISOString())
+      .lt("scheduled_at", viewerDayEnd.toISOString());
 
     const taken = new Set((bookings ?? []).map((b) => new Date(b.scheduled_at).getTime()));
     const now = Date.now();
     const slots: string[] = [];
-    for (const r of rules ?? []) {
-      for (let mm = r.start_minute; mm + 30 <= r.end_minute; mm += 30) {
-        const slot = new Date(y, m - 1, d, Math.floor(mm / 60), mm % 60, 0, 0);
-        const t = slot.getTime();
-        if (t < now) continue;
-        if (taken.has(t)) continue;
-        slots.push(slot.toISOString());
+
+    for (const estDateKey of estDates) {
+      const [ey, em, ed] = estDateKey.split("-").map(Number);
+      // day_of_week is interpreted in EST
+      const probe = zonedWallToUTC(ey, em, ed, 12, 0, EST_TZ);
+      const dow = zonedDayOfWeek(probe, EST_TZ);
+      const rules = (allRules ?? []).filter((r) => r.day_of_week === dow);
+
+      for (const r of rules) {
+        for (let mm = r.start_minute; mm + 30 <= r.end_minute; mm += 30) {
+          const slot = zonedWallToUTC(ey, em, ed, Math.floor(mm / 60), mm % 60, EST_TZ);
+          const t = slot.getTime();
+          if (t < now) continue;
+          if (t < viewerDayStart.getTime() || t >= viewerDayEnd.getTime()) continue;
+          if (taken.has(t)) continue;
+          slots.push(slot.toISOString());
+        }
       }
     }
-    return slots.sort();
+    slots.sort();
+    return Array.from(new Set(slots));
   });
 
 export const listMyAppointments = createServerFn({ method: "GET" })
