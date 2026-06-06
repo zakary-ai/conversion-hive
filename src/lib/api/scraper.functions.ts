@@ -33,12 +33,13 @@ export const updateScraperSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const payload = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
     const { data: row } = await supabaseAdmin.from("scraper_settings").select("id").limit(1).maybeSingle();
     if (!row) {
-      const { error } = await supabaseAdmin.from("scraper_settings").insert(data);
+      const { error } = await supabaseAdmin.from("scraper_settings").insert(payload);
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await supabaseAdmin.from("scraper_settings").update(data).eq("id", row.id);
+      const { error } = await supabaseAdmin.from("scraper_settings").update(payload).eq("id", row.id);
       if (error) throw new Error(error.message);
     }
     return { ok: true };
