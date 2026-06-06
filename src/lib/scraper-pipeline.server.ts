@@ -72,8 +72,21 @@ export async function runScraperPipeline(opts: { triggeredBy: string }): Promise
   const recycleDays = (settings.recycle_days as number) ?? 3;
   const batchSize = (settings.batch_size as number) ?? 200;
   const fieldMap = (settings.field_map as Record<string, string>) ?? {};
-  const apifyInput = (settings.apify_input as Record<string, unknown>) ?? {};
+  const apifyInput: Record<string, unknown> = { ...((settings.apify_input as Record<string, unknown>) ?? {}) };
   const actorId = (settings.apify_actor_id as string) ?? "";
+
+  // City rotation: pick the next city in the list, overriding locationQuery.
+  const cityRotation = ((settings as { city_rotation?: string[] }).city_rotation ?? []).filter((c) => typeof c === "string" && c.trim().length > 0);
+  const cityIndex = ((settings as { city_rotation_index?: number }).city_rotation_index ?? 0) | 0;
+  let cityUsed: string | null = null;
+  let nextCityIndex = cityIndex;
+  if (cityRotation.length > 0) {
+    const i = ((cityIndex % cityRotation.length) + cityRotation.length) % cityRotation.length;
+    cityUsed = cityRotation[i];
+    apifyInput.locationQuery = cityUsed;
+    nextCityIndex = (i + 1) % cityRotation.length;
+  }
+
 
   // 2. Enabled setters (clients with scraper_enabled = true)
   const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role").eq("role", "client");
