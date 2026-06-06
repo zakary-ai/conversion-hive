@@ -65,9 +65,9 @@ export async function runScraperPipeline(opts: { triggeredBy: string }): Promise
     .limit(1)
     .maybeSingle();
   if (sErr) throw new Error(sErr.message);
-  if (!settings || !settings.enabled) {
-    return result;
-  }
+  if (!settings) return result;
+  // `enabled` gates the daily cron only. Manual "Run now" always proceeds.
+  if (!settings.enabled && !opts.manual) return result;
   result.enabled = true;
   const recycleDays = (settings.recycle_days as number) ?? 3;
   const batchSize = (settings.batch_size as number) ?? 200;
