@@ -331,6 +331,92 @@ export const deleteAppointment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setAppointmentOutcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.discriminatedUnion("outcome", [
+      z.object({
+        id: z.string().uuid(),
+        outcome: z.literal("closed"),
+        deal_amount: z.number().nonnegative().max(100000000),
+        commission_amount: z.number().nonnegative().max(100000000),
+      }),
+      z.object({
+        id: z.string().uuid(),
+        outcome: z.literal("lost"),
+        lost_reason: z.string().trim().max(2000).optional().default(""),
+      }),
+      z.object({ id: z.string().uuid(), outcome: z.literal("clear") }),
+    ]).parse
+  )
+  .handler(async ({ data, context }) => {
+    // Admin only
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const { data: appt, error: aerr } = await context.supabase
+      .from("appointments").select("id, user_id, type, name").eq("id", data.id).single();
+    if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
+    if (appt.type !== "booking") throw new Error("Outcome only applies to bookings");
+
+    if (data.outcome === "clear") {
+      const { error } = await context.supabase.from("appointments").update({
+        outcome: null, deal_amount: null, commission_amount: null, lost_reason: null,
+        outcome_set_at: null, outcome_set_by: null,
+      }).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      await context.supabase.from("commissions").delete().eq("appointment_id", data.id);
+      return { ok: true };
+    }
+
+    if (data.outcome === "closed") {
+      const { error } = await context.supabase.from("appointments").update({
+        outcome: "closed",
+        deal_amount: data.deal_amount,
+        commission_amount: data.commission_amount,
+        lost_reason: null,
+        outcome_set_at: new Date().toISOString(),
+        outcome_set_by: context.userId,
+      }).eq("id", data.id);
+      if (error) throw new Error(error.message);
+
+      // Upsert commission tied to this appointment
+      const { data: existing } = await context.supabase
+        .from("commissions").select("id").eq("appointment_id", data.id).maybeSingle();
+      const note = `Closed deal: ${appt.name} ($${data.deal_amount.toFixed(2)})`;
+      if (existing) {
+        const { error: uerr } = await context.supabase.from("commissions")
+          .update({ amount: data.commission_amount, note, added_by: context.userId, user_id: appt.user_id })
+          .eq("id", existing.id);
+        if (uerr) throw new Error(uerr.message);
+      } else {
+        const { error: ierr } = await context.supabase.from("commissions").insert({
+          user_id: appt.user_id,
+          amount: data.commission_amount,
+          note,
+          added_by: context.userId,
+          appointment_id: data.id,
+        });
+        if (ierr) throw new Error(ierr.message);
+      }
+      return { ok: true };
+    }
+
+    // lost
+    const { error } = await context.supabase.from("appointments").update({
+      outcome: "lost",
+      deal_amount: null,
+      commission_amount: null,
+      lost_reason: data.lost_reason || null,
+      outcome_set_at: new Date().toISOString(),
+      outcome_set_by: context.userId,
+    }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await context.supabase.from("commissions").delete().eq("appointment_id", data.id);
+    return { ok: true };
+  });
+
 // Admin leads
 export const listAllLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
