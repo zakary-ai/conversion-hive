@@ -74,16 +74,25 @@ function CalendarPage() {
 }
 
 function ApptView({
-  queryOpts, filter, date, setDate, canDelete, showOwner,
+  queryOpts, filter, date, setDate, canDelete, showOwner, mode,
 }: {
   queryOpts: typeof myOpts; filter: "all"|"booking"|"callback";
   date: Date | undefined; setDate: (d: Date | undefined) => void;
   canDelete: boolean; showOwner?: boolean;
+  mode: "upcoming" | "past";
 }) {
   const { data: appts } = useSuspenseQuery(queryOpts);
+  const cutoff = Date.now() - 60 * 60 * 1000;
+  const scoped = useMemo(() => {
+    return appts.filter((a) => {
+      const t = new Date(a.scheduled_at).getTime();
+      return mode === "past" ? t < cutoff : t >= cutoff;
+    });
+  }, [appts, mode, cutoff]);
+
   const filtered = useMemo(
-    () => appts.filter((a) => filter === "all" || a.type === filter),
-    [appts, filter]
+    () => scoped.filter((a) => filter === "all" || a.type === filter),
+    [scoped, filter]
   );
 
   const daysWithAppts = useMemo(() => {
@@ -98,10 +107,12 @@ function ApptView({
     return filtered.filter((a) => new Date(a.scheduled_at).toDateString() === key);
   }, [filtered, date]);
 
-  const upcoming = useMemo(
-    () => filtered.filter((a) => new Date(a.scheduled_at) >= new Date(Date.now() - 60 * 60 * 1000)).slice(0, 50),
-    [filtered]
-  );
+  const secondary = useMemo(() => {
+    if (mode === "past") {
+      return [...filtered].sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()).slice(0, 50);
+    }
+    return filtered.slice(0, 50);
+  }, [filtered, mode]);
 
   return (
     <div className="grid lg:grid-cols-[auto,1fr] gap-6 justify-items-center lg:justify-items-stretch">
@@ -122,11 +133,11 @@ function ApptView({
             {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "All days"}
             <span className="ml-2 text-xs text-muted-foreground">({selectedDayAppts.length})</span>
           </h3>
-          <ApptList items={selectedDayAppts} canDelete={canDelete} showOwner={showOwner} empty="No appointments this day." />
+          <ApptList items={selectedDayAppts} canDelete={canDelete} showOwner={showOwner} empty={mode === "past" ? "No past appointments this day." : "No appointments this day."} />
         </div>
         <div>
-          <h3 className="text-sm font-medium mb-2 text-muted-foreground">Upcoming</h3>
-          <ApptList items={upcoming} canDelete={canDelete} showOwner={showOwner} empty="Nothing scheduled." />
+          <h3 className="text-sm font-medium mb-2 text-muted-foreground">{mode === "past" ? "Recent history" : "Upcoming"}</h3>
+          <ApptList items={secondary} canDelete={canDelete} showOwner={showOwner} empty={mode === "past" ? "No history yet." : "Nothing scheduled."} />
         </div>
       </div>
     </div>
