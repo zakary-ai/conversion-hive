@@ -22,6 +22,9 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(me.profile?.full_name ?? "");
   const [company, setCompany] = useState(me.profile?.company_name ?? "");
+  const [timezone, setTimezone] = useState(
+    (me.profile as unknown as { timezone?: string } | null)?.timezone ?? "America/New_York"
+  );
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -35,7 +38,7 @@ function ProfilePage() {
   });
 
   const save = useMutation({
-    mutationFn: () => updateProfile({ data: { full_name: fullName, company_name: company } }),
+    mutationFn: () => updateProfile({ data: { full_name: fullName, company_name: company, timezone } }),
     onSuccess: () => { toast.success("Profile saved"); qc.invalidateQueries({ queryKey: ["me"] }); },
   });
 
