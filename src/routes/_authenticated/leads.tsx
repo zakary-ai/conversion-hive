@@ -246,17 +246,17 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
   return (
     <>
       <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-w-lg h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-y-auto p-4 sm:p-6 gap-3 sm:gap-4">
+        <DialogContent className="flex max-h-[calc(100dvh-0.75rem)] w-[calc(100vw-0.75rem)] max-w-lg flex-col gap-2 overflow-y-auto overflow-x-hidden rounded-lg p-3 sm:max-h-[92vh] sm:w-full sm:gap-4 sm:p-6">
           {lead && (
             <>
-              <DialogHeader className="space-y-1">
-                <DialogTitle className="flex items-center gap-2 flex-wrap text-base sm:text-lg">
-                  <span>{lead.name}</span>
+              <DialogHeader className="space-y-1 pr-7 text-left">
+                <DialogTitle className="flex min-w-0 items-center gap-2 text-base sm:text-lg">
+                  <span className="min-w-0 truncate">{lead.name}</span>
                   <StatusPill status={lead.status} />
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-3 sm:space-y-5">
+              <div className="min-w-0 space-y-2 sm:space-y-5">
                 {/* Full details */}
                 <div className="rounded-lg border border-border divide-y divide-border text-sm">
                   <DetailRow icon={Building2} label="Company" value={lead.company || "—"} />
@@ -275,7 +275,7 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
                 {leadAppts.length > 0 && (
                   <div>
                     <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Appointments</div>
-                    <div className="space-y-2">
+                    <div className="max-h-24 space-y-2 overflow-y-auto sm:max-h-none">
                       {leadAppts.map((a) => (
                         <div key={a.id} className="rounded-lg border border-border p-2 text-sm">
                           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -297,17 +297,17 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
                 {/* Outcome actions */}
                 <div className="space-y-2">
                   <div className="text-xs uppercase tracking-widest text-muted-foreground">Set outcome</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button onClick={() => setBookOpen(true)} className="h-10 sm:h-12 bg-success text-success-foreground hover:bg-success/90">
+                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2 [&>button]:min-w-0">
+                    <Button onClick={() => setBookOpen(true)} className="h-9 px-2 text-xs bg-success text-success-foreground hover:bg-success/90 sm:h-12 sm:text-sm">
                       <CheckCircle2 className="h-4 w-4" /> Book
                     </Button>
-                    <Button onClick={handleNoPickup} variant="outline" className="h-10 sm:h-12">
+                    <Button onClick={handleNoPickup} variant="outline" className="h-9 px-2 text-xs sm:h-12 sm:text-sm">
                       <PhoneOff className="h-4 w-4" /> No Pickup
                     </Button>
-                    <Button onClick={handleNotInterested} variant="outline" className="h-10 sm:h-12 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive">
-                      <XCircle className="h-4 w-4" /> Not Interested
+                    <Button onClick={handleNotInterested} variant="outline" className="h-9 px-2 text-xs text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive sm:h-12 sm:text-sm">
+                      <XCircle className="h-4 w-4" /> <span className="sm:hidden">Not Int.</span><span className="hidden sm:inline">Not Interested</span>
                     </Button>
-                    <Button onClick={() => setCallbackOpen(true)} variant="outline" className="h-10 sm:h-12">
+                    <Button onClick={() => setCallbackOpen(true)} variant="outline" className="h-9 px-2 text-xs sm:h-12 sm:text-sm">
                       <CalendarClock className="h-4 w-4" /> Call Back
                     </Button>
                   </div>
