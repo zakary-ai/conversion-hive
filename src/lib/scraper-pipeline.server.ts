@@ -143,7 +143,11 @@ export async function runScraperPipeline(opts: { triggeredBy: string }): Promise
     } else {
       try {
         const wantedBatch = Math.min(Math.max(batchSize, needFromScrape), 1000);
-        const raw = await callApify(actorId, { ...apifyInput, maxItems: wantedBatch }, apifyToken);
+        const raw = await callApify(
+          actorId,
+          { ...apifyInput, maxItems: wantedBatch, maxCrawledPlacesPerSearch: wantedBatch },
+          apifyToken,
+        );
         result.fetched = raw.length;
 
         // Dedupe within batch and against DB by phone + email
@@ -153,16 +157,21 @@ export async function runScraperPipeline(opts: { triggeredBy: string }): Promise
         for (const r of raw) {
           const name = String(pickField(r, fieldMap.name, "name") ?? "").trim();
           if (!name) continue;
-          const phone = (pickField(r, fieldMap.phone, "phone") as string | null | undefined) || null;
-          const email = (pickField(r, fieldMap.email, "email") as string | null | undefined) || null;
-          const company = (pickField(r, fieldMap.company, "company") as string | null | undefined) || null;
-          const source = (pickField(r, fieldMap.source, "source") as string | null | undefined) || "apify";
+          let phoneRaw = pickField(r, fieldMap.phone, "phoneUnformatted");
+          if (!phoneRaw) phoneRaw = (r as RawLead).phone ?? null;
+          let emailRaw = pickField(r, fieldMap.email, "emails");
+          if (Array.isArray(emailRaw)) emailRaw = emailRaw[0] ?? null;
+          const company = (pickField(r, fieldMap.company, "categoryName") as string | null | undefined) || null;
+          const source = (pickField(r, fieldMap.source, "url") as string | null | undefined) || "apify";
+          const phone = phoneRaw ? String(phoneRaw).replace(/[^\d+]/g, "") || null : null;
+          const email = emailRaw ? String(emailRaw).trim().toLowerCase() || null : null;
           if (phone && phones.has(phone)) continue;
           if (email && emails.has(email)) continue;
           if (phone) phones.add(phone);
           if (email) emails.add(email);
           candidates.push({ name: name.slice(0, 200), phone: phone?.slice(0, 50) ?? null, email: email?.slice(0, 200) ?? null, company: company?.slice(0, 200) ?? null, source: source?.slice(0, 120) ?? null });
         }
+
 
         // Check existing DB phones/emails
         const phoneList = [...phones];
