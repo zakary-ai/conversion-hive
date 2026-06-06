@@ -38,6 +38,7 @@ function AdminLeads() {
   const [clientFilter, setClientFilter] = useState("all");
   const [editing, setEditing] = useState<Lead | null>(null);
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const clientName = (uid: string | null) => uid ? (clients.find((c) => c.user_id === uid)?.full_name ?? clients.find((c) => c.user_id === uid)?.email ?? "—") : "Unassigned";
 
@@ -54,6 +55,27 @@ function AdminLeads() {
   const del = useMutation({
     mutationFn: (id: string) => deleteLead({ data: { id } }),
     onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["all-leads"] }); },
+  });
+
+  const bulkDel = useMutation({
+    mutationFn: (ids: string[]) => bulkDeleteLeads({ data: { ids } }),
+    onSuccess: (r) => {
+      toast.success(`Deleted ${r.count} lead${r.count === 1 ? "" : "s"}`);
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["all-leads"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggleOne = (id: string) => setSelected((s) => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
+  const toggleAll = () => setSelected((s) => {
+    const n = new Set(s);
+    if (allFilteredSelected) filtered.forEach((l) => n.delete(l.id));
+    else filtered.forEach((l) => n.add(l.id));
+    return n;
   });
 
   return (
