@@ -105,6 +105,23 @@ export const runScraperNow = createServerFn({ method: "POST" })
     return runScraperPipeline({ triggeredBy: context.userId });
   });
 
+export const skipNextCity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin.from("scraper_settings").select("id, city_rotation, city_rotation_index").limit(1).maybeSingle();
+    if (!row) return { ok: true };
+    const list = ((row as { city_rotation?: string[] }).city_rotation ?? []).filter((c) => typeof c === "string" && c.trim().length > 0);
+    if (list.length === 0) return { ok: true };
+    const current = ((row as { city_rotation_index?: number }).city_rotation_index ?? 0) | 0;
+    const next = (((current + 1) % list.length) + list.length) % list.length;
+    const { error } = await supabaseAdmin.from("scraper_settings").update({ city_rotation_index: next }).eq("id", (row as { id: string }).id);
+    if (error) throw new Error(error.message);
+    return { ok: true, next_index: next, next_city: list[next] };
+  });
+
+
 export const listScraperRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
