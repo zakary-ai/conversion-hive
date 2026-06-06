@@ -66,34 +66,50 @@ function ScraperPage() {
   const qc = useQueryClient();
 
   const DEFAULT_ACTOR = "compass/google-maps-extractor";
-  const DEFAULT_INPUT = {
-    searchStringsArray: ["roofing contractor"],
-    locationQuery: "Austin, Texas, United States",
-    maxCrawledPlacesPerSearch: 200,
+  const DEFAULT_INPUT: ApifyInput = {
+    searchStringsArray: ["apartment complex"],
+    locationQuery: "Tallahassee, USA",
     language: "en",
-    skipClosedPlaces: true,
+    maxCrawledPlacesPerSearch: 50,
+    includeWebResults: false,
+    scrapeContacts: false,
+    scrapeDirectories: false,
+    scrapeOrderOnline: false,
+    scrapePlaceDetailPage: false,
+    scrapeTableReservationProvider: false,
+    skipClosedPlaces: false,
+    verifyLeadsEnrichmentEmails: false,
   };
   const DEFAULT_FIELD_MAP = { name: "title", phone: "phoneUnformatted", email: "emails", company: "categoryName", source: "url" };
+
+  const savedInput = (settings?.apify_input as Record<string, unknown> | null) ?? {};
+  const initialInput: ApifyInput & Record<string, unknown> = { ...DEFAULT_INPUT, ...savedInput } as ApifyInput & Record<string, unknown>;
+  if (!Array.isArray(initialInput.searchStringsArray) || initialInput.searchStringsArray.length === 0) {
+    initialInput.searchStringsArray = [...DEFAULT_INPUT.searchStringsArray];
+  }
 
   const [enabled, setEnabled] = useState<boolean>(settings?.enabled ?? false);
   const [actorId, setActorId] = useState<string>(settings?.apify_actor_id || DEFAULT_ACTOR);
   const [batchSize, setBatchSize] = useState<number>(settings?.batch_size ?? 200);
   const [recycleDays, setRecycleDays] = useState<number>(settings?.recycle_days ?? 3);
-  const [inputJson, setInputJson] = useState<string>(JSON.stringify(settings?.apify_input && Object.keys(settings.apify_input).length ? settings.apify_input : DEFAULT_INPUT, null, 2));
+  const [input, setInput] = useState<ApifyInput & Record<string, unknown>>(initialInput);
   const [fieldMapJson, setFieldMapJson] = useState<string>(JSON.stringify(settings?.field_map && Object.keys(settings.field_map).length ? settings.field_map : DEFAULT_FIELD_MAP, null, 2));
 
+  const updateInput = <K extends keyof ApifyInput>(key: K, value: ApifyInput[K]) =>
+    setInput((prev) => ({ ...prev, [key]: value }));
 
   const saveSettings = useMutation({
     mutationFn: async () => {
-      let apify_input: Record<string, unknown> = {};
       let field_map: Record<string, string> = {};
-      try { apify_input = JSON.parse(inputJson || "{}"); } catch { throw new Error("Apify input is not valid JSON"); }
       try { field_map = JSON.parse(fieldMapJson || "{}"); } catch { throw new Error("Field map is not valid JSON"); }
+      const cleanedSearches = (input.searchStringsArray ?? []).map((s) => s.trim()).filter(Boolean);
+      const apify_input = { ...input, searchStringsArray: cleanedSearches.length ? cleanedSearches : [""] };
       await updateScraperSettings({ data: { enabled, apify_actor_id: actorId, apify_input, batch_size: batchSize, field_map, recycle_days: recycleDays } });
     },
     onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["scraper-settings"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const updateSetter = useMutation({
     mutationFn: (v: { user_id: string; scraper_enabled?: boolean; daily_lead_quota?: number }) => updateSetterScraperConfig({ data: v }),
