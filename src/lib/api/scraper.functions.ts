@@ -25,7 +25,10 @@ const SettingsInput = z.object({
   batch_size: z.number().int().min(1).max(1000).optional(),
   field_map: z.record(z.string(), z.string().max(80)).optional(),
   recycle_days: z.number().int().min(1).max(60).optional(),
+  city_rotation: z.array(z.string().min(1).max(200)).max(1000).optional(),
+  city_rotation_index: z.number().int().min(0).optional(),
 });
+
 
 export const updateScraperSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
