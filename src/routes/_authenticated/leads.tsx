@@ -362,17 +362,18 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
   const [phone, setPhone] = useState(lead.phone ?? "");
   const [email, setEmail] = useState(lead.email ?? "");
   const [context, setContext] = useState("");
-  const [when, setWhen] = useState<Date>(defaultDateTime());
+  const [when, setWhen] = useState<Date | null>(null);
 
   useEffect(() => {
     if (open) {
       setName(lead.name ?? ""); setPhone(lead.phone ?? ""); setEmail(lead.email ?? "");
-      setContext(""); setWhen(defaultDateTime());
+      setContext(""); setWhen(null);
     }
   }, [open, lead.id]);
 
   const submit = useMutation({
     mutationFn: async () => {
+      if (!when) throw new Error("Pick a time slot");
       await createAppointment({ data: {
         lead_id: lead.id, type: "booking",
         scheduled_at: when.toISOString(),
@@ -392,12 +393,12 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
           <Field label="Name"><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
           <Field label="Phone"><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
           <Field label="Email"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-          <Field label="When"><DateTimePicker value={when} onChange={setWhen} /></Field>
+          <Field label="Pick a time"><SlotPicker value={when} onChange={setWhen} /></Field>
           <Field label="Context"><Textarea rows={3} value={context} onChange={(e) => setContext(e.target.value)} placeholder="What does the lead need?" /></Field>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => submit.mutate()} disabled={!name || submit.isPending}>Book</Button>
+          <Button onClick={() => submit.mutate()} disabled={!name || !when || submit.isPending}>Book</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
