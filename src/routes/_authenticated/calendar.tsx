@@ -31,8 +31,11 @@ function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-7xl">
-      <PageHeader title="Calendar" description="Booked appointments and scheduled callbacks." />
+    <div className="max-w-7xl space-y-3 md:space-y-6">
+      <h1 className="sr-only md:hidden">Calendar</h1>
+      <div className="hidden md:block">
+        <PageHeader title="Calendar" description="Booked appointments and scheduled callbacks." />
+      </div>
 
 
       <Tabs value={tab} onValueChange={setTab}>
@@ -126,15 +129,15 @@ function ApptView({
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[auto,1fr] lg:gap-6">
-      <Card className="w-full overflow-hidden p-1.5 sm:p-3 lg:w-fit">
+      <Card className="flex w-full justify-center overflow-hidden p-1.5 sm:p-3 lg:w-fit">
         <Calendar
           mode="single"
           selected={date}
           onSelect={setDate}
           modifiers={{ hasAppt: (d) => daysWithAppts.has(d.toDateString()) }}
           modifiersClassNames={{ hasAppt: "relative after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:rounded-full after:bg-primary" }}
-          className="pointer-events-auto mx-auto w-full p-1 [--cell-size:1.7rem] min-[375px]:[--cell-size:1.85rem] sm:p-3 sm:[--cell-size:2rem]"
-          classNames={{ root: "w-full max-w-full" }}
+          className="pointer-events-auto mx-auto w-full max-w-[304px] p-1 [--cell-size:1.7rem] min-[375px]:max-w-[316px] sm:max-w-none sm:p-3 sm:[--cell-size:2rem]"
+          classNames={{ root: "w-full max-w-full", month: "flex w-full flex-col gap-2 sm:gap-4", week: "mt-1 flex w-full sm:mt-2" }}
         />
       </Card>
 
@@ -144,7 +147,7 @@ function ApptView({
             {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "All days"}
             <span className="ml-2 text-xs text-muted-foreground">({selectedDayAppts.length})</span>
           </h3>
-          <ApptList items={selectedDayAppts} canDelete={canDelete} showOwner={showOwner} empty={mode === "past" ? "No past appointments this day." : "No appointments this day."} />
+          <ApptList items={selectedDayAppts} canDelete={canDelete} showOwner={showOwner} empty={mode === "past" ? "No past appointments this day." : "No appointments this day."} compactScroll />
         </div>
         <div className="hidden lg:block">
           <h3 className="text-sm font-medium mb-2 text-muted-foreground">{mode === "past" ? "Recent history" : "Upcoming"}</h3>
@@ -155,7 +158,7 @@ function ApptView({
   );
 }
 
-function ApptList({ items, canDelete, showOwner, empty }: { items: Appt[]; canDelete: boolean; showOwner?: boolean; empty: string }) {
+function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items: Appt[]; canDelete: boolean; showOwner?: boolean; empty: string; compactScroll?: boolean }) {
   const qc = useQueryClient();
   const [openAppt, setOpenAppt] = useState<Appt | null>(null);
   const del = useMutation({
@@ -172,14 +175,14 @@ function ApptList({ items, canDelete, showOwner, empty }: { items: Appt[]; canDe
   }
   return (
     <>
-      <div className="min-w-0 space-y-2 overflow-hidden">
+      <div className={cn("min-w-0 space-y-2 overflow-hidden", compactScroll && "max-h-40 overflow-y-auto pr-1 md:max-h-none md:overflow-hidden md:pr-0")}>
         {items.map((a) => {
           const dt = new Date(a.scheduled_at);
           const isBooking = a.type === "booking";
           return (
             <Card
               key={a.id}
-              className="flex min-w-0 cursor-pointer items-start gap-2 overflow-hidden p-3 transition-colors hover:bg-muted/30 sm:gap-3"
+              className="flex min-w-0 cursor-pointer items-start gap-2 overflow-hidden p-2.5 transition-colors hover:bg-muted/30 sm:gap-3 sm:p-3"
               onClick={() => setOpenAppt(a)}
             >
               <div className={cn(
