@@ -12,6 +12,25 @@ import { Button } from "@/components/ui/button";
 import { Shield, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: "America/New_York", label: "Eastern (New York)" },
+  { value: "America/Chicago", label: "Central (Chicago)" },
+  { value: "America/Denver", label: "Mountain (Denver)" },
+  { value: "America/Phoenix", label: "Mountain – no DST (Phoenix)" },
+  { value: "America/Los_Angeles", label: "Pacific (Los Angeles)" },
+  { value: "America/Anchorage", label: "Alaska (Anchorage)" },
+  { value: "Pacific/Honolulu", label: "Hawaii (Honolulu)" },
+  { value: "America/Toronto", label: "Eastern (Toronto)" },
+  { value: "America/Mexico_City", label: "Central (Mexico City)" },
+  { value: "Europe/London", label: "London" },
+  { value: "Europe/Paris", label: "Paris / Berlin" },
+  { value: "Asia/Dubai", label: "Dubai" },
+  { value: "Asia/Kolkata", label: "India (Kolkata)" },
+  { value: "Asia/Singapore", label: "Singapore" },
+  { value: "Asia/Tokyo", label: "Tokyo" },
+  { value: "Australia/Sydney", label: "Sydney" },
+];
+
 export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
@@ -22,6 +41,9 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(me.profile?.full_name ?? "");
   const [company, setCompany] = useState(me.profile?.company_name ?? "");
+  const [timezone, setTimezone] = useState(
+    (me.profile as unknown as { timezone?: string } | null)?.timezone ?? "America/New_York"
+  );
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -35,7 +57,7 @@ function ProfilePage() {
   });
 
   const save = useMutation({
-    mutationFn: () => updateProfile({ data: { full_name: fullName, company_name: company } }),
+    mutationFn: () => updateProfile({ data: { full_name: fullName, company_name: company, timezone } }),
     onSuccess: () => { toast.success("Profile saved"); qc.invalidateQueries({ queryKey: ["me"] }); },
   });
 
@@ -66,6 +88,19 @@ function ProfilePage() {
         <div><Label>Email</Label><Input value={me.profile?.email ?? ""} disabled className="mt-1" /></div>
         <div><Label>Full name</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1" /></div>
         <div><Label>Company</Label><Input value={company} onChange={(e) => setCompany(e.target.value)} className="mt-1" /></div>
+        <div>
+          <Label>Time zone</Label>
+          <select
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            {TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>{tz.label}</option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground mt-1">Booking slots will be shown in this time zone.</p>
+        </div>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>Save changes</Button>
       </Card>
 

@@ -89,8 +89,8 @@ export function AvailabilityEditor() {
     <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-display font-semibold">Booking availability</h3>
-          <p className="text-xs text-muted-foreground">Setters can only book leads into 30-minute slots in these windows.</p>
+          <h3 className="font-display font-semibold">Booking availability <span className="text-xs font-normal text-muted-foreground">(Eastern Time)</span></h3>
+          <p className="text-xs text-muted-foreground">Setters can only book leads into 30-minute slots in these windows. Times are EST and shown to setters in their own time zone.</p>
         </div>
         <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
           <Save className="h-4 w-4 mr-1" /> Save
