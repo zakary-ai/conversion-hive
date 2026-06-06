@@ -82,7 +82,7 @@ function ClientsList() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{created ? "Account created" : "Invite a new client"}</DialogTitle>
+            <DialogTitle>{created ? "Account created" : "Invite a new setter"}</DialogTitle>
           </DialogHeader>
           {!created ? (
             <div className="space-y-4">
@@ -92,7 +92,7 @@ function ClientsList() {
               <p className="text-xs text-muted-foreground">
                 A new account will be created with the default password{" "}
                 <code className="px-1.5 py-0.5 rounded bg-muted text-foreground">{DEFAULT_CLIENT_PASSWORD}</code>.
-                Share these credentials with the client — they can change the password from their Profile after signing in.
+                Share these credentials with the setter — they can change the password from their Profile after signing in.
               </p>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
