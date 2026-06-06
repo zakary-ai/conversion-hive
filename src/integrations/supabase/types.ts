@@ -16,13 +16,19 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          commission_amount: number | null
           context: string | null
           created_at: string
+          deal_amount: number | null
           email: string | null
           id: string
           lead_id: string | null
+          lost_reason: string | null
           meeting_url: string | null
           name: string
+          outcome: string | null
+          outcome_set_at: string | null
+          outcome_set_by: string | null
           phone: string | null
           scheduled_at: string
           status: string
@@ -31,13 +37,19 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          commission_amount?: number | null
           context?: string | null
           created_at?: string
+          deal_amount?: number | null
           email?: string | null
           id?: string
           lead_id?: string | null
+          lost_reason?: string | null
           meeting_url?: string | null
           name: string
+          outcome?: string | null
+          outcome_set_at?: string | null
+          outcome_set_by?: string | null
           phone?: string | null
           scheduled_at: string
           status?: string
@@ -46,13 +58,19 @@ export type Database = {
           user_id: string
         }
         Update: {
+          commission_amount?: number | null
           context?: string | null
           created_at?: string
+          deal_amount?: number | null
           email?: string | null
           id?: string
           lead_id?: string | null
+          lost_reason?: string | null
           meeting_url?: string | null
           name?: string
+          outcome?: string | null
+          outcome_set_at?: string | null
+          outcome_set_by?: string | null
           phone?: string | null
           scheduled_at?: string
           status?: string
@@ -74,6 +92,7 @@ export type Database = {
         Row: {
           added_by: string | null
           amount: number
+          appointment_id: string | null
           created_at: string
           id: string
           note: string | null
@@ -82,6 +101,7 @@ export type Database = {
         Insert: {
           added_by?: string | null
           amount: number
+          appointment_id?: string | null
           created_at?: string
           id?: string
           note?: string | null
@@ -90,12 +110,21 @@ export type Database = {
         Update: {
           added_by?: string | null
           amount?: number
+          appointment_id?: string | null
           created_at?: string
           id?: string
           note?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "commissions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {

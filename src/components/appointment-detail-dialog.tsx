@@ -1,9 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatusPill } from "@/components/ui-bits";
-import { getLead } from "@/lib/api/cl.functions";
-import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { getLead, getMe, setAppointmentOutcome } from "@/lib/api/cl.functions";
+import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, DollarSign, XCircle, RotateCcw } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type Appt = {
   id: string;
@@ -15,17 +22,61 @@ type Appt = {
   email: string | null;
   context: string | null;
   meeting_url: string | null;
+  outcome?: string | null;
+  deal_amount?: number | string | null;
+  commission_amount?: number | string | null;
+  lost_reason?: string | null;
 };
 
 export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; onClose: () => void }) {
+  const qc = useQueryClient();
   const { data: lead } = useQuery({
     queryKey: ["lead", appt?.lead_id],
     queryFn: () => getLead({ data: { id: appt!.lead_id! } }),
     enabled: !!appt?.lead_id,
   });
+  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMe() });
 
   const fmt = (s?: string | null) =>
     s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
+
+  const showOutcome = !!me?.isAdmin && appt?.type === "booking";
+  const [mode, setMode] = useState<"none" | "closed" | "lost">("none");
+  const [deal, setDeal] = useState("");
+  const [commission, setCommission] = useState("");
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (!appt) return;
+    setMode("none");
+    setDeal(appt.deal_amount != null ? String(appt.deal_amount) : "");
+    setCommission(appt.commission_amount != null ? String(appt.commission_amount) : "");
+    setReason(appt.lost_reason ?? "");
+  }, [appt?.id]);
+
+  const mutation = useMutation({
+    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "clear" }) =>
+      setAppointmentOutcome({ data: input }),
+    onSuccess: () => {
+      toast.success("Updated");
+      qc.invalidateQueries({ queryKey: ["my-appointments"] });
+      qc.invalidateQueries({ queryKey: ["all-appointments"] });
+      qc.invalidateQueries({ queryKey: ["commissions"] });
+      setMode("none");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const submitClosed = () => {
+    const d = parseFloat(deal);
+    const c = parseFloat(commission);
+    if (!isFinite(d) || d < 0) return toast.error("Enter a valid deal amount");
+    if (!isFinite(c) || c < 0) return toast.error("Enter a valid commission");
+    mutation.mutate({ id: appt!.id, outcome: "closed", deal_amount: d, commission_amount: c });
+  };
+  const submitLost = () => {
+    mutation.mutate({ id: appt!.id, outcome: "lost", lost_reason: reason.trim() });
+  };
 
   return (
     <Dialog open={!!appt} onOpenChange={(o) => !o && onClose()}>
@@ -37,6 +88,12 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 <span>{appt.name}</span>
                 {lead && <StatusPill status={lead.status} />}
                 <span className="text-xs uppercase tracking-wider text-muted-foreground">{appt.type}</span>
+                {appt.outcome === "closed" && (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/15 text-success uppercase tracking-wider">Closed</span>
+                )}
+                {appt.outcome === "lost" && (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-destructive/15 text-destructive uppercase tracking-wider">Lost</span>
+                )}
               </DialogTitle>
             </DialogHeader>
 
@@ -51,7 +108,78 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 <Row icon={Phone} label="Phone" value={appt.phone ? <a href={`tel:${appt.phone}`} className="text-primary font-medium">{appt.phone}</a> : "—"} />
                 <Row icon={Mail} label="Email" value={appt.email || "—"} />
                 {appt.context && <Row icon={User} label="Context" value={<span className="whitespace-pre-wrap text-right">{appt.context}</span>} />}
+                {appt.outcome === "closed" && (
+                  <>
+                    <Row icon={DollarSign} label="Deal" value={`$${Number(appt.deal_amount ?? 0).toFixed(2)}`} />
+                    <Row icon={DollarSign} label="Commission" value={`$${Number(appt.commission_amount ?? 0).toFixed(2)}`} />
+                  </>
+                )}
+                {appt.outcome === "lost" && appt.lost_reason && (
+                  <Row icon={XCircle} label="Lost reason" value={<span className="whitespace-pre-wrap text-right">{appt.lost_reason}</span>} />
+                )}
               </div>
+
+              {showOutcome && (
+                <div className="rounded-lg border border-border p-3 space-y-3">
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground">Outcome</div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant={mode === "closed" ? "default" : "outline"}
+                      onClick={() => setMode("closed")}
+                      className={cn(mode === "closed" && "bg-success hover:bg-success/90")}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" /> Closed
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={mode === "lost" ? "default" : "outline"}
+                      onClick={() => setMode("lost")}
+                      className={cn(mode === "lost" && "bg-destructive hover:bg-destructive/90")}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" /> Lost
+                    </Button>
+                    {appt.outcome && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => mutation.mutate({ id: appt.id, outcome: "clear" })}
+                        disabled={mutation.isPending}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" /> Clear
+                      </Button>
+                    )}
+                  </div>
+
+                  {mode === "closed" && (
+                    <div className="space-y-2">
+                      <div>
+                        <Label htmlFor="deal" className="text-xs">Deal amount ($)</Label>
+                        <Input id="deal" type="number" min="0" step="0.01" value={deal} onChange={(e) => setDeal(e.target.value)} placeholder="0.00" />
+                      </div>
+                      <div>
+                        <Label htmlFor="commission" className="text-xs">Setter commission ($)</Label>
+                        <Input id="commission" type="number" min="0" step="0.01" value={commission} onChange={(e) => setCommission(e.target.value)} placeholder="0.00" />
+                      </div>
+                      <Button onClick={submitClosed} disabled={mutation.isPending} className="w-full">
+                        Save closed deal
+                      </Button>
+                    </div>
+                  )}
+
+                  {mode === "lost" && (
+                    <div className="space-y-2">
+                      <div>
+                        <Label htmlFor="reason" className="text-xs">Why lost?</Label>
+                        <Textarea id="reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason..." maxLength={2000} />
+                      </div>
+                      <Button onClick={submitLost} disabled={mutation.isPending} variant="destructive" className="w-full">
+                        Mark as lost
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {lead ? (
                 <div>
