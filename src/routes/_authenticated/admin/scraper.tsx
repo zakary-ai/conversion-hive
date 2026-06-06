@@ -102,10 +102,14 @@ function ScraperPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
+          <div className="md:col-span-2">
             <Label>Apify actor ID</Label>
-            <Input value={actorId} onChange={(e) => setActorId(e.target.value)} placeholder="username~actor-name" />
+            <Input value={actorId} onChange={(e) => setActorId(e.target.value)} placeholder="compass/google-maps-extractor" />
+            <p className="text-xs text-muted-foreground mt-1">
+              Default actor: <code>compass/google-maps-extractor</code>. Edit <code>searchStringsArray</code> and <code>locationQuery</code> below to target your market. The <code>emails</code> field is usually empty unless you enable contact enrichment in the input.
+            </p>
           </div>
+
           <div>
             <Label>Batch size</Label>
             <Input type="number" min={1} max={1000} value={batchSize} onChange={(e) => setBatchSize(Number(e.target.value) || 200)} />
