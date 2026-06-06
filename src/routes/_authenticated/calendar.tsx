@@ -1,17 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { listMyAppointments, listAllAppointments, deleteAppointment, getMe } from "@/lib/api/cl.functions";
+import { listMyAppointments, listAllAppointments, cancelAppointment, getMe } from "@/lib/api/cl.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarClock, CheckCircle2, Phone, Mail, Trash2, User, ExternalLink } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { CalendarClock, CheckCircle2, Phone, Mail, MoreVertical, CalendarDays, XCircle, User, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 import { AvailabilityEditor } from "@/components/availability-editor";
+import { RescheduleDialog } from "@/components/reschedule-dialog";
 
 const meOpts = queryOptions({ queryKey: ["me"], queryFn: () => getMe() });
 const myOpts = queryOptions({ queryKey: ["my-appointments"], queryFn: () => listMyAppointments() });
