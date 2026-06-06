@@ -614,23 +614,38 @@ export const getClientDetail = createServerFn({ method: "GET" })
   .inputValidator(z.object({ user_id: z.string().uuid() }).parse)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const [profile, leads, completions, attempts, commissions, totalModules] = await Promise.all([
+    const [profile, leads, completions, attempts, commissions, totalModules, appointments] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", data.user_id).maybeSingle(),
       supabase.from("leads").select("*").eq("assigned_user_id", data.user_id).order("created_at", { ascending: false }),
       supabase.from("module_completions").select("*").eq("user_id", data.user_id),
       supabase.from("quiz_attempts").select("*, modules(title)").eq("user_id", data.user_id).order("completed_at", { ascending: false }),
       supabase.from("commissions").select("*").eq("user_id", data.user_id).order("created_at", { ascending: false }),
       supabase.from("modules").select("id", { count: "exact", head: true }).eq("is_active", true),
+      supabase.from("appointments").select("*").eq("user_id", data.user_id).order("scheduled_at", { ascending: false }),
     ]);
-    const balance = (commissions.data ?? []).reduce((s, c) => s + Number(c.amount), 0);
+    const commRows = commissions.data ?? [];
+    const balance = commRows.reduce((s, c) => s + Number(c.amount), 0);
+    const paid = commRows.filter((c) => c.paid_at).reduce((s, c) => s + Number(c.amount), 0);
+    const unpaid = balance - paid;
+    const appts = appointments.data ?? [];
+    const bookings = appts.filter((a) => a.type === "booking");
     return {
       profile: profile.data,
       leads: leads.data ?? [],
       completions: completions.data ?? [],
       attempts: attempts.data ?? [],
-      commissions: commissions.data ?? [],
+      commissions: commRows,
       totalModules: totalModules.count ?? 0,
       balance,
+      paid,
+      unpaid,
+      appointments: appts,
+      stats: {
+        bookings: bookings.length,
+        closed: bookings.filter((a) => a.outcome === "closed").length,
+        lost: bookings.filter((a) => a.outcome === "lost").length,
+        pending: bookings.filter((a) => !a.outcome).length,
+      },
     };
   });
 
