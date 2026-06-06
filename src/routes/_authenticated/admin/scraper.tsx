@@ -163,10 +163,100 @@ function ScraperPage() {
           </div>
         </div>
 
-        <div>
-          <Label>Apify input JSON</Label>
-          <Textarea rows={6} value={inputJson} onChange={(e) => setInputJson(e.target.value)} className="font-mono text-xs" />
+        <div className="space-y-5 rounded-lg border border-border bg-muted/20 p-4">
+          <div>
+            <h4 className="text-sm font-semibold">Search</h4>
+            <p className="text-xs text-muted-foreground">What to look for and where.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Search terms</Label>
+            <div className="space-y-2">
+              {input.searchStringsArray.map((term, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input
+                    value={term}
+                    placeholder="e.g. apartment complex"
+                    onChange={(e) => {
+                      const next = [...input.searchStringsArray];
+                      next[i] = e.target.value;
+                      updateInput("searchStringsArray", next);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      const next = input.searchStringsArray.filter((_, idx) => idx !== i);
+                      updateInput("searchStringsArray", next.length ? next : [""]);
+                    }}
+                    aria-label="Remove search term"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => updateInput("searchStringsArray", [...input.searchStringsArray, ""])}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add search term
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="md:col-span-2">
+              <Label>Location</Label>
+              <Input
+                value={input.locationQuery}
+                placeholder="Tallahassee, USA"
+                onChange={(e) => updateInput("locationQuery", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Language</Label>
+              <Input
+                value={input.language}
+                maxLength={5}
+                onChange={(e) => updateInput("language", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Max results per search</Label>
+              <Input
+                type="number"
+                min={1}
+                max={1000}
+                value={input.maxCrawledPlacesPerSearch}
+                onChange={(e) => updateInput("maxCrawledPlacesPerSearch", Number(e.target.value) || 50)}
+              />
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-border">
+            <h4 className="text-sm font-semibold">Scrape options</h4>
+            <p className="text-xs text-muted-foreground mb-3">Toggle extras. More options = slower, more credits.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+              {SCRAPE_TOGGLES.map((t) => (
+                <div key={t.key} className="flex items-start justify-between gap-3 rounded-md border border-border bg-background p-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium leading-tight">{t.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{t.hint}</div>
+                  </div>
+                  <Switch
+                    checked={Boolean(input[t.key])}
+                    onCheckedChange={(v) => updateInput(t.key, v as never)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
 
         <div>
           <Label>Field mapping (Apify field → lead field)</Label>
