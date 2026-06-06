@@ -493,6 +493,38 @@ export const deleteCommission = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setCommissionPaid = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.union([
+      z.object({
+        id: z.string().uuid(),
+        paid: z.literal(true),
+        paid_at: z.string().min(1),
+        paid_method: z.string().trim().min(1).max(100),
+      }),
+      z.object({ id: z.string().uuid(), paid: z.literal(false) }),
+    ]).parse
+  )
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+
+    if (data.paid) {
+      const iso = new Date(data.paid_at).toISOString();
+      const { error } = await context.supabase.from("commissions").update({
+        paid_at: iso, paid_method: data.paid_method, paid_by: context.userId,
+      }).eq("id", data.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await context.supabase.from("commissions").update({
+        paid_at: null, paid_method: null, paid_by: null,
+      }).eq("id", data.id);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
 // ---------- Client dashboard ----------
 export const getClientDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
