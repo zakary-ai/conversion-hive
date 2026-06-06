@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff, Building2, Tag, Clock, Video, Ban, TrendingUp, DollarSign } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DateTimePicker } from "@/components/date-time-picker";
+import { SlotPicker } from "@/components/slot-picker";
 import { toast } from "sonner";
 
 const opts = queryOptions({ queryKey: ["my-leads"], queryFn: () => listMyLeads() });
