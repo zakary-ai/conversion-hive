@@ -90,12 +90,23 @@ function ScraperPage() {
     initialInput.searchStringsArray = [...DEFAULT_INPUT.searchStringsArray];
   }
 
+  const initialCities: string[] = Array.isArray((settings as { city_rotation?: string[] } | null)?.city_rotation)
+    ? ((settings as { city_rotation?: string[] }).city_rotation as string[])
+    : [];
+  const initialCityIndex: number = ((settings as { city_rotation_index?: number } | null)?.city_rotation_index ?? 0) | 0;
+
   const [enabled, setEnabled] = useState<boolean>(settings?.enabled ?? false);
   const [actorId, setActorId] = useState<string>(settings?.apify_actor_id || DEFAULT_ACTOR);
   const [batchSize, setBatchSize] = useState<number>(settings?.batch_size ?? 200);
   const [recycleDays, setRecycleDays] = useState<number>(settings?.recycle_days ?? 3);
   const [input, setInput] = useState<ApifyInput & Record<string, unknown>>(initialInput);
   const [fieldMapJson, setFieldMapJson] = useState<string>(JSON.stringify(settings?.field_map && Object.keys(settings.field_map).length ? settings.field_map : DEFAULT_FIELD_MAP, null, 2));
+  const [citiesText, setCitiesText] = useState<string>(initialCities.join("\n"));
+
+  const parsedCities = citiesText.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const nextCity = parsedCities.length > 0
+    ? parsedCities[(((initialCityIndex % parsedCities.length) + parsedCities.length) % parsedCities.length)]
+    : null;
 
   const updateInput = <K extends keyof ApifyInput>(key: K, value: ApifyInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
@@ -106,11 +117,34 @@ function ScraperPage() {
       try { field_map = JSON.parse(fieldMapJson || "{}"); } catch { throw new Error("Field map is not valid JSON"); }
       const cleanedSearches = (input.searchStringsArray ?? []).map((s) => s.trim()).filter(Boolean);
       const apify_input = { ...input, searchStringsArray: cleanedSearches.length ? cleanedSearches : [""] };
-      await updateScraperSettings({ data: { enabled, apify_actor_id: actorId, apify_input, batch_size: batchSize, field_map, recycle_days: recycleDays } });
+      const lengthChanged = parsedCities.length !== initialCities.length;
+      await updateScraperSettings({
+        data: {
+          enabled,
+          apify_actor_id: actorId,
+          apify_input,
+          batch_size: batchSize,
+          field_map,
+          recycle_days: recycleDays,
+          city_rotation: parsedCities,
+          ...(lengthChanged ? { city_rotation_index: 0 } : {}),
+        },
+      });
     },
     onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["scraper-settings"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const skipCity = useMutation({
+    mutationFn: () => skipNextCity(),
+    onSuccess: (r: { next_city?: string }) => {
+      toast.success(r?.next_city ? `Next city: ${r.next_city}` : "Skipped");
+      qc.invalidateQueries({ queryKey: ["scraper-settings"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
 
 
   const updateSetter = useMutation({
