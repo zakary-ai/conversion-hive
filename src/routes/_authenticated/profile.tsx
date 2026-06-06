@@ -69,6 +69,19 @@ function ProfilePage() {
         <div><Label>Email</Label><Input value={me.profile?.email ?? ""} disabled className="mt-1" /></div>
         <div><Label>Full name</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1" /></div>
         <div><Label>Company</Label><Input value={company} onChange={(e) => setCompany(e.target.value)} className="mt-1" /></div>
+        <div>
+          <Label>Time zone</Label>
+          <select
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            {TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>{tz.label}</option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground mt-1">Booking slots will be shown in this time zone.</p>
+        </div>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>Save changes</Button>
       </Card>
 
