@@ -41,6 +41,7 @@ export const updateProfile = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     full_name: z.string().max(120).optional(),
     company_name: z.string().max(120).optional(),
+    timezone: z.string().max(60).optional(),
   }).parse)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
