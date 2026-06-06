@@ -22,11 +22,13 @@ import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
+import { Route as AuthenticatedAdminScraperRouteImport } from './routes/_authenticated/admin/scraper'
 import { Route as AuthenticatedAdminQuizzesRouteImport } from './routes/_authenticated/admin/quizzes'
 import { Route as AuthenticatedAdminModulesRouteImport } from './routes/_authenticated/admin/modules'
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin/leads'
 import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_authenticated/admin/commissions'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
+import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as AuthenticatedAdminClientsUserIdRouteImport } from './routes/_authenticated/admin/clients.$userId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -97,6 +99,12 @@ const AuthenticatedAdminSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminScraperRoute =
+  AuthenticatedAdminScraperRouteImport.update({
+    id: '/scraper',
+    path: '/scraper',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminQuizzesRoute =
   AuthenticatedAdminQuizzesRouteImport.update({
     id: '/quizzes',
@@ -126,6 +134,12 @@ const AuthenticatedAdminClientsIndexRoute =
     path: '/clients/',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const ApiPublicHooksRunScraperRoute =
+  ApiPublicHooksRunScraperRouteImport.update({
+    id: '/api/public/hooks/run-scraper',
+    path: '/api/public/hooks/run-scraper',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAdminClientsUserIdRoute =
   AuthenticatedAdminClientsUserIdRouteImport.update({
     id: '/clients/$userId',
@@ -146,11 +160,13 @@ export interface FileRoutesByFullPath {
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
   '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
+  '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
+  '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -165,11 +181,13 @@ export interface FileRoutesByTo {
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
   '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
+  '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
+  '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/admin/clients': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesById {
@@ -187,11 +205,13 @@ export interface FileRoutesById {
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/_authenticated/admin/modules': typeof AuthenticatedAdminModulesRoute
   '/_authenticated/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
+  '/_authenticated/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
   '/_authenticated/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
+  '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRouteTypes {
@@ -209,11 +229,13 @@ export interface FileRouteTypes {
     | '/admin/leads'
     | '/admin/modules'
     | '/admin/quizzes'
+    | '/admin/scraper'
     | '/admin/settings'
     | '/training/$moduleId'
     | '/admin/'
     | '/training/'
     | '/admin/clients/$userId'
+    | '/api/public/hooks/run-scraper'
     | '/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -228,11 +250,13 @@ export interface FileRouteTypes {
     | '/admin/leads'
     | '/admin/modules'
     | '/admin/quizzes'
+    | '/admin/scraper'
     | '/admin/settings'
     | '/training/$moduleId'
     | '/admin'
     | '/training'
     | '/admin/clients/$userId'
+    | '/api/public/hooks/run-scraper'
     | '/admin/clients'
   id:
     | '__root__'
@@ -249,11 +273,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/leads'
     | '/_authenticated/admin/modules'
     | '/_authenticated/admin/quizzes'
+    | '/_authenticated/admin/scraper'
     | '/_authenticated/admin/settings'
     | '/_authenticated/training/$moduleId'
     | '/_authenticated/admin/'
     | '/_authenticated/training/'
     | '/_authenticated/admin/clients/$userId'
+    | '/api/public/hooks/run-scraper'
     | '/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
 }
@@ -261,6 +287,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -356,6 +383,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/scraper': {
+      id: '/_authenticated/admin/scraper'
+      path: '/scraper'
+      fullPath: '/admin/scraper'
+      preLoaderRoute: typeof AuthenticatedAdminScraperRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/quizzes': {
       id: '/_authenticated/admin/quizzes'
       path: '/quizzes'
@@ -391,6 +425,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminClientsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/api/public/hooks/run-scraper': {
+      id: '/api/public/hooks/run-scraper'
+      path: '/api/public/hooks/run-scraper'
+      fullPath: '/api/public/hooks/run-scraper'
+      preLoaderRoute: typeof ApiPublicHooksRunScraperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/clients/$userId': {
       id: '/_authenticated/admin/clients/$userId'
       path: '/clients/$userId'
@@ -406,6 +447,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
   AuthenticatedAdminModulesRoute: typeof AuthenticatedAdminModulesRoute
   AuthenticatedAdminQuizzesRoute: typeof AuthenticatedAdminQuizzesRoute
+  AuthenticatedAdminScraperRoute: typeof AuthenticatedAdminScraperRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminClientsUserIdRoute: typeof AuthenticatedAdminClientsUserIdRoute
@@ -418,6 +460,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
     AuthenticatedAdminModulesRoute: AuthenticatedAdminModulesRoute,
     AuthenticatedAdminQuizzesRoute: AuthenticatedAdminQuizzesRoute,
+    AuthenticatedAdminScraperRoute: AuthenticatedAdminScraperRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
     AuthenticatedAdminClientsUserIdRoute: AuthenticatedAdminClientsUserIdRoute,
@@ -458,6 +501,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
