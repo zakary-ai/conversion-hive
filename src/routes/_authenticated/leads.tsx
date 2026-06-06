@@ -262,7 +262,12 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
                 <div className="rounded-lg border border-border divide-y divide-border text-sm">
                   <DetailRow icon={Building2} label="Company" value={lead.company || "—"} />
                   <DetailRow icon={Phone} label="Phone" value={lead.phone ? <a href={`tel:${lead.phone}`} className="text-primary font-medium">{lead.phone}</a> : "—"} />
-                  <DetailRow icon={Mail} label="Email" value={lead.email || "—"} />
+                  <DetailRow icon={Mail} label="Email" value={
+                    lead.email
+                      ? lead.email
+                      : <EmailInlineEdit leadId={lead.id} onSaved={invalidate} />
+                  } />
+
                   <DetailRow icon={Tag} label="Source" value={lead.source || "—"} />
                   <DetailRow icon={Clock} label="Added" value={fmt(lead.created_at)} />
                   <DetailRow icon={CheckCircle2} label="Last contacted" value={fmt(lead.contacted_at)} />
