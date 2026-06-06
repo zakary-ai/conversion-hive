@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
-  GraduationCap, Sparkles, Settings, Briefcase, Calendar as CalendarIcon,
+  GraduationCap, Sparkles, Settings, Briefcase, Calendar as CalendarIcon, Bot,
 } from "lucide-react";
 
 const clientItems = [
