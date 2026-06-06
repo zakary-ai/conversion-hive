@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
+import { AdminLeadsTabs } from "@/components/admin-leads-tabs";
 
 const leadsOpts = queryOptions({ queryKey: ["all-leads"], queryFn: () => listAllLeads() });
 const clientsOpts = queryOptions({ queryKey: ["clients"], queryFn: () => listClients() });
