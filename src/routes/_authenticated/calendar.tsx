@@ -40,6 +40,7 @@ function CalendarPage() {
             <TabsTrigger value="mine">My calendar</TabsTrigger>
             {me.isAdmin && <TabsTrigger value="all">All setters</TabsTrigger>}
             <TabsTrigger value="history">History</TabsTrigger>
+            {me.isAdmin && <TabsTrigger value="availability">Availability</TabsTrigger>}
           </TabsList>
           <div className="flex gap-1">
             {(["all","booking","callback"] as const).map((f) => (
