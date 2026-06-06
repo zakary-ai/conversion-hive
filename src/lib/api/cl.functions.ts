@@ -225,6 +225,7 @@ export const updateLead = createServerFn({ method: "POST" })
     contacted: z.boolean().optional(),
     do_not_contact: z.boolean().optional(),
     callback_at: z.string().datetime().nullable().optional(),
+    email: z.string().trim().email().max(200).nullable().optional().or(z.literal("").transform(() => null)),
   }).parse)
   .handler(async ({ data, context }) => {
     const patch: Database["public"]["Tables"]["leads"]["Update"] = {};
@@ -232,6 +233,7 @@ export const updateLead = createServerFn({ method: "POST" })
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.do_not_contact !== undefined) patch.do_not_contact = data.do_not_contact;
     if (data.callback_at !== undefined) patch.callback_at = data.callback_at;
+    if (data.email !== undefined) patch.email = data.email;
     if (data.contacted === true) patch.contacted_at = new Date().toISOString();
     if (data.contacted === false) patch.contacted_at = null;
     const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);

@@ -262,7 +262,12 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
                 <div className="rounded-lg border border-border divide-y divide-border text-sm">
                   <DetailRow icon={Building2} label="Company" value={lead.company || "—"} />
                   <DetailRow icon={Phone} label="Phone" value={lead.phone ? <a href={`tel:${lead.phone}`} className="text-primary font-medium">{lead.phone}</a> : "—"} />
-                  <DetailRow icon={Mail} label="Email" value={lead.email || "—"} />
+                  <DetailRow icon={Mail} label="Email" value={
+                    lead.email
+                      ? lead.email
+                      : <EmailInlineEdit leadId={lead.id} onSaved={invalidate} />
+                  } />
+
                   <DetailRow icon={Tag} label="Source" value={lead.source || "—"} />
                   <DetailRow icon={Clock} label="Added" value={fmt(lead.created_at)} />
                   <DetailRow icon={CheckCircle2} label="Last contacted" value={fmt(lead.contacted_at)} />
@@ -354,6 +359,34 @@ function DetailRow({ icon: Icon, label, value }: { icon: typeof Phone; label: st
       <div className="text-xs uppercase tracking-wider text-muted-foreground w-28 shrink-0">{label}</div>
       <div className="text-sm flex-1 min-w-0 truncate text-right">{value}</div>
     </div>
+  );
+}
+
+function EmailInlineEdit({ leadId, onSaved }: { leadId: string; onSaved: () => void }) {
+  const [value, setValue] = useState("");
+  const save = useMutation({
+    mutationFn: async () => {
+      await updateLead({ data: { id: leadId, email: value.trim() } });
+    },
+    onSuccess: () => { toast.success("Email saved"); onSaved(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); if (value.trim()) save.mutate(); }}
+      className="flex items-center gap-1.5 justify-end"
+    >
+      <Input
+        type="email"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Add email…"
+        className="h-7 text-xs flex-1 min-w-0"
+      />
+      <Button type="submit" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={!value.trim() || save.isPending}>
+        Save
+      </Button>
+    </form>
   );
 }
 
