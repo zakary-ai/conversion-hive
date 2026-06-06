@@ -38,12 +38,23 @@ function ScraperPage() {
   const { data: runs } = useSuspenseQuery(runsOpts);
   const qc = useQueryClient();
 
+  const DEFAULT_ACTOR = "compass/google-maps-extractor";
+  const DEFAULT_INPUT = {
+    searchStringsArray: ["roofing contractor"],
+    locationQuery: "Austin, Texas, United States",
+    maxCrawledPlacesPerSearch: 200,
+    language: "en",
+    skipClosedPlaces: true,
+  };
+  const DEFAULT_FIELD_MAP = { name: "title", phone: "phoneUnformatted", email: "emails", company: "categoryName", source: "url" };
+
   const [enabled, setEnabled] = useState<boolean>(settings?.enabled ?? false);
-  const [actorId, setActorId] = useState<string>(settings?.apify_actor_id ?? "");
+  const [actorId, setActorId] = useState<string>(settings?.apify_actor_id || DEFAULT_ACTOR);
   const [batchSize, setBatchSize] = useState<number>(settings?.batch_size ?? 200);
   const [recycleDays, setRecycleDays] = useState<number>(settings?.recycle_days ?? 3);
-  const [inputJson, setInputJson] = useState<string>(JSON.stringify(settings?.apify_input ?? {}, null, 2));
-  const [fieldMapJson, setFieldMapJson] = useState<string>(JSON.stringify(settings?.field_map ?? { name: "name", phone: "phone", email: "email", company: "company" }, null, 2));
+  const [inputJson, setInputJson] = useState<string>(JSON.stringify(settings?.apify_input && Object.keys(settings.apify_input).length ? settings.apify_input : DEFAULT_INPUT, null, 2));
+  const [fieldMapJson, setFieldMapJson] = useState<string>(JSON.stringify(settings?.field_map && Object.keys(settings.field_map).length ? settings.field_map : DEFAULT_FIELD_MAP, null, 2));
+
 
   const saveSettings = useMutation({
     mutationFn: async () => {
