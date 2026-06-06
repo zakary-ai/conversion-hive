@@ -362,6 +362,34 @@ function DetailRow({ icon: Icon, label, value }: { icon: typeof Phone; label: st
   );
 }
 
+function EmailInlineEdit({ leadId, onSaved }: { leadId: string; onSaved: () => void }) {
+  const [value, setValue] = useState("");
+  const save = useMutation({
+    mutationFn: async () => {
+      await updateLead({ data: { id: leadId, email: value.trim() } });
+    },
+    onSuccess: () => { toast.success("Email saved"); onSaved(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); if (value.trim()) save.mutate(); }}
+      className="flex items-center gap-1.5 justify-end"
+    >
+      <Input
+        type="email"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Add email…"
+        className="h-7 text-xs flex-1 min-w-0"
+      />
+      <Button type="submit" size="sm" variant="outline" className="h-7 px-2 text-xs" disabled={!value.trim() || save.isPending}>
+        Save
+      </Button>
+    </form>
+  );
+}
+
 function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boolean; onClose: () => void; onDone: () => void }) {
   const [name, setName] = useState(lead.name ?? "");
   const [phone, setPhone] = useState(lead.phone ?? "");
