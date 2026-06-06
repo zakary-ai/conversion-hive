@@ -36,12 +36,14 @@ function CalendarPage() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <TabsList>
-            <TabsTrigger value="mine">My calendar</TabsTrigger>
-            {me.isAdmin && <TabsTrigger value="all">All setters</TabsTrigger>}
-            <TabsTrigger value="history">History</TabsTrigger>
-            {me.isAdmin && <TabsTrigger value="availability">Availability</TabsTrigger>}
-          </TabsList>
+          <div className="-mx-1 max-w-full overflow-x-auto">
+            <TabsList className="w-max">
+              <TabsTrigger value="mine">My calendar</TabsTrigger>
+              {me.isAdmin && <TabsTrigger value="all">All setters</TabsTrigger>}
+              <TabsTrigger value="history">History</TabsTrigger>
+              {me.isAdmin && <TabsTrigger value="availability">Availability</TabsTrigger>}
+            </TabsList>
+          </div>
           <div className="flex gap-1">
             {(["all","booking","callback"] as const).map((f) => (
               <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>
