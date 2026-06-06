@@ -300,19 +300,14 @@ export const createAppointment = createServerFn({ method: "POST" })
     // Prevent double-booking for booking-type appointments (any setter, any client)
     if (data.type === "booking") {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const start = new Date(data.scheduled_at).getTime();
-      const end = start + 30 * 60 * 1000;
       const { data: clash } = await supabaseAdmin.from("appointments")
         .select("id")
         .eq("type", "booking")
-        .gte("scheduled_at", new Date(start - 30 * 60 * 1000).toISOString())
-        .lt("scheduled_at", new Date(end).toISOString())
-        .limit(5);
-      const conflict = (clash ?? []).some((a) => {
-        // Treat anything within the 30-minute window as a conflict
-        return true;
-      });
-      if (conflict) throw new Error("That time slot was just taken. Please pick another.");
+        .eq("scheduled_at", data.scheduled_at)
+        .limit(1);
+      if ((clash ?? []).length > 0) {
+        throw new Error("That time slot was just taken. Please pick another.");
+      }
     }
     const meeting_url = data.type === "booking"
       ? await createZoomMeeting({ topic: `Call with ${data.name}`, start_time: data.scheduled_at })
