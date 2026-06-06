@@ -312,9 +312,9 @@ export const createAppointment = createServerFn({ method: "POST" })
         throw new Error("That time slot was just taken. Please pick another.");
       }
     }
-    const meeting_url = data.type === "booking"
-      ? await createZoomMeeting({ topic: `Call with ${data.name}`, start_time: data.scheduled_at })
-      : null;
+    // Zoom link generation paused
+    const meeting_url = null;
+    void createZoomMeeting;
     const { error, data: row } = await context.supabase.from("appointments")
       .insert({ ...data, user_id: context.userId, meeting_url }).select().single();
     if (error) throw new Error(error.message);
