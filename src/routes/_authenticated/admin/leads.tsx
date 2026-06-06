@@ -106,16 +106,49 @@ function AdminLeads() {
         </Select>
       </Card>
 
+      {selected.size > 0 && (
+        <Card className="p-3 flex items-center justify-between gap-3 border-primary/40 bg-primary/5">
+          <div className="text-sm">{selected.size} selected</div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={bulkDel.isPending}
+              onClick={() => {
+                if (confirm(`Delete ${selected.size} lead${selected.size === 1 ? "" : "s"}?`)) {
+                  bulkDel.mutate(Array.from(selected));
+                }
+              }}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />Delete selected
+            </Button>
+          </div>
+        </Card>
+      )}
+
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr><th className="text-left p-3">Name</th><th className="text-left p-3 hidden md:table-cell">Client</th><th className="text-left p-3 hidden lg:table-cell">Company</th><th className="text-left p-3">Status</th><th className="p-3"></th></tr>
+              <tr>
+                <th className="p-3 w-10">
+                  <Checkbox checked={allFilteredSelected} onCheckedChange={toggleAll} aria-label="Select all" />
+                </th>
+                <th className="text-left p-3">Name</th>
+                <th className="text-left p-3 hidden md:table-cell">Client</th>
+                <th className="text-left p-3 hidden lg:table-cell">Company</th>
+                <th className="text-left p-3">Status</th>
+                <th className="p-3"></th>
+              </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No leads.</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No leads.</td></tr>}
               {filtered.map((l) => (
                 <tr key={l.id} className="border-t border-border hover:bg-muted/30">
+                  <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggleOne(l.id)} aria-label={`Select ${l.name}`} />
+                  </td>
                   <td className="p-3 font-medium">{l.name}</td>
                   <td className="p-3 hidden md:table-cell text-muted-foreground">{clientName(l.assigned_user_id)}</td>
                   <td className="p-3 hidden lg:table-cell text-muted-foreground">{l.company}</td>
