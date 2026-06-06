@@ -297,6 +297,18 @@ export const createAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(AppointmentInput.parse)
   .handler(async ({ data, context }) => {
+    // Prevent double-booking for booking-type appointments (any setter, any client)
+    if (data.type === "booking") {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: clash } = await supabaseAdmin.from("appointments")
+        .select("id")
+        .eq("type", "booking")
+        .eq("scheduled_at", data.scheduled_at)
+        .limit(1);
+      if ((clash ?? []).length > 0) {
+        throw new Error("That time slot was just taken. Please pick another.");
+      }
+    }
     const meeting_url = data.type === "booking"
       ? await createZoomMeeting({ topic: `Call with ${data.name}`, start_time: data.scheduled_at })
       : null;
@@ -304,6 +316,72 @@ export const createAppointment = createServerFn({ method: "POST" })
       .insert({ ...data, user_id: context.userId, meeting_url }).select().single();
     if (error) throw new Error(error.message);
     return row;
+  });
+
+// ---------- Availability (admin Calendly-style) ----------
+const AvailabilityRule = z.object({
+  day_of_week: z.number().int().min(0).max(6),
+  start_minute: z.number().int().min(0).max(1439),
+  end_minute: z.number().int().min(1).max(1440),
+});
+
+export const listAvailabilityRules = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await (context.supabase as never as { from: (t: string) => { select: (c: string) => { order: (col: string) => Promise<{ data: Array<{ id: string; day_of_week: number; start_minute: number; end_minute: number }> | null; error: { message: string } | null }> } } }).from("availability_rules").select("id, day_of_week, start_minute, end_minute").order("day_of_week");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const replaceAvailabilityRules = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ rules: z.array(AvailabilityRule).max(100) }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const table = (supabaseAdmin as never as { from: (t: string) => { delete: () => { neq: (c: string, v: string) => Promise<{ error: { message: string } | null }> }; insert: (rows: unknown[]) => Promise<{ error: { message: string } | null }> } }).from("availability_rules");
+    const del = await table.delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (del.error) throw new Error(del.error.message);
+    if (data.rules.length > 0) {
+      const ins = await table.insert(data.rules);
+      if (ins.error) throw new Error(ins.error.message);
+    }
+    return { ok: true };
+  });
+
+export const listAvailableSlots = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse)
+  .handler(async ({ data, context }) => {
+    // Parse date as local midnight (the date the user selected on their calendar)
+    const [y, m, d] = data.date.split("-").map(Number);
+    const dayStart = new Date(y, m - 1, d, 0, 0, 0, 0);
+    const dayEnd = new Date(y, m - 1, d + 1, 0, 0, 0, 0);
+    const dow = dayStart.getDay();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rules } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => { eq: (col: string, v: number) => Promise<{ data: Array<{ start_minute: number; end_minute: number }> | null }> } } })
+      .from("availability_rules").select("start_minute, end_minute").eq("day_of_week", dow);
+    const { data: bookings } = await supabaseAdmin.from("appointments")
+      .select("scheduled_at")
+      .eq("type", "booking")
+      .gte("scheduled_at", dayStart.toISOString())
+      .lt("scheduled_at", dayEnd.toISOString());
+
+    const taken = new Set((bookings ?? []).map((b) => new Date(b.scheduled_at).getTime()));
+    const now = Date.now();
+    const slots: string[] = [];
+    for (const r of rules ?? []) {
+      for (let mm = r.start_minute; mm + 30 <= r.end_minute; mm += 30) {
+        const slot = new Date(y, m - 1, d, Math.floor(mm / 60), mm % 60, 0, 0);
+        const t = slot.getTime();
+        if (t < now) continue;
+        if (taken.has(t)) continue;
+        slots.push(slot.toISOString());
+      }
+    }
+    return slots.sort();
   });
 
 export const listMyAppointments = createServerFn({ method: "GET" })

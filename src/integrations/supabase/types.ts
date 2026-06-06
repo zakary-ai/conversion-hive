@@ -88,6 +88,30 @@ export type Database = {
           },
         ]
       }
+      availability_rules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_minute: number
+          id: string
+          start_minute: number
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_minute: number
+          id?: string
+          start_minute: number
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_minute?: number
+          id?: string
+          start_minute?: number
+        }
+        Relationships: []
+      }
       commissions: {
         Row: {
           added_by: string | null
