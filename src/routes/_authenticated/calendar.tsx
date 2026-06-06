@@ -70,6 +70,11 @@ function CalendarPage() {
             mode="past"
           />
         </TabsContent>
+        {me.isAdmin && (
+          <TabsContent value="availability" className="mt-4">
+            <AvailabilityEditor />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
