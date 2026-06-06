@@ -55,7 +55,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   }, [appt?.id]);
 
   const mutation = useMutation({
-    mutationFn: (input: Parameters<typeof setAppointmentOutcome>[0]["data"]) =>
+    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "clear" }) =>
       setAppointmentOutcome({ data: input }),
     onSuccess: () => {
       toast.success("Updated");
