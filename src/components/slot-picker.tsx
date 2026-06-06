@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { listAvailableSlots } from "@/lib/api/cl.functions";
+import { meQueryOptions } from "@/routes/_authenticated/route";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,14 +12,16 @@ type Props = {
   onChange: (d: Date) => void;
 };
 
-function toDateKey(d: Date) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+function toDateKey(d: Date, tz: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(d);
 }
 
 export function SlotPicker({ value, onChange }: Props) {
+  const { data: me } = useSuspenseQuery(meQueryOptions);
+  const tz = (me.profile as unknown as { timezone?: string } | null)?.timezone || "America/New_York";
+
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -26,12 +29,14 @@ export function SlotPicker({ value, onChange }: Props) {
   }, []);
   const [date, setDate] = useState<Date | undefined>(value ?? undefined);
 
-  const dateKey = date ? toDateKey(date) : null;
+  const dateKey = date ? toDateKey(date, tz) : null;
   const { data: slots = [], isLoading } = useQuery({
-    queryKey: ["available-slots", dateKey],
-    queryFn: () => listAvailableSlots({ data: { date: dateKey! } }),
+    queryKey: ["available-slots", dateKey, tz],
+    queryFn: () => listAvailableSlots({ data: { date: dateKey!, tz } }),
     enabled: !!dateKey,
   });
+
+  const tzLabel = tz.split("/").pop()?.replace(/_/g, " ") ?? tz;
 
   return (
     <div className="space-y-3">
@@ -45,9 +50,14 @@ export function SlotPicker({ value, onChange }: Props) {
         />
       </div>
       <div className="rounded-xl border border-border bg-card p-3">
-        <div className="flex items-center gap-2 mb-2 text-sm font-medium">
-          <CalendarClock className="h-4 w-4 text-muted-foreground" />
-          {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "Pick a date"}
+        <div className="flex items-center justify-between mb-2 gap-2">
+          <div className="flex items-center gap-2 text-sm font-medium min-w-0">
+            <CalendarClock className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="truncate">
+              {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "Pick a date"}
+            </span>
+          </div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground whitespace-nowrap">{tzLabel}</div>
         </div>
         {!date && <div className="text-sm text-muted-foreground">Select a date to see open times.</div>}
         {date && isLoading && <div className="text-sm text-muted-foreground">Loading times…</div>}
@@ -59,6 +69,9 @@ export function SlotPicker({ value, onChange }: Props) {
             {slots.map((iso) => {
               const d = new Date(iso);
               const selected = value && d.getTime() === value.getTime();
+              const label = new Intl.DateTimeFormat(undefined, {
+                timeZone: tz, hour: "numeric", minute: "2-digit",
+              }).format(d);
               return (
                 <Button
                   key={iso}
@@ -68,7 +81,7 @@ export function SlotPicker({ value, onChange }: Props) {
                   onClick={() => onChange(d)}
                   className={cn("text-xs", selected && "ring-2 ring-primary")}
                 >
-                  {d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                  {label}
                 </Button>
               );
             })}
