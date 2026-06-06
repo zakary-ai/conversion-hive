@@ -38,6 +38,7 @@ function CalendarPage() {
           <TabsList>
             <TabsTrigger value="mine">My calendar</TabsTrigger>
             {me.isAdmin && <TabsTrigger value="all">All setters</TabsTrigger>}
+            <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
           <div className="flex gap-1">
             {(["all","booking","callback"] as const).map((f) => (
@@ -49,13 +50,24 @@ function CalendarPage() {
         </div>
 
         <TabsContent value="mine" className="mt-4">
-          <ApptView queryOpts={myOpts} filter={filter} date={date} setDate={setDate} canDelete />
+          <ApptView queryOpts={myOpts} filter={filter} date={date} setDate={setDate} canDelete mode="upcoming" />
         </TabsContent>
         {me.isAdmin && (
           <TabsContent value="all" className="mt-4">
-            <ApptView queryOpts={allOpts} filter={filter} date={date} setDate={setDate} canDelete={false} showOwner />
+            <ApptView queryOpts={allOpts} filter={filter} date={date} setDate={setDate} canDelete={false} showOwner mode="upcoming" />
           </TabsContent>
         )}
+        <TabsContent value="history" className="mt-4">
+          <ApptView
+            queryOpts={me.isAdmin ? allOpts : myOpts}
+            filter={filter}
+            date={date}
+            setDate={setDate}
+            canDelete={!me.isAdmin}
+            showOwner={me.isAdmin}
+            mode="past"
+          />
+        </TabsContent>
       </Tabs>
     </div>
   );
