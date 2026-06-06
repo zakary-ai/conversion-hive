@@ -46,7 +46,7 @@ async function callApify(actorId: string, input: Record<string, unknown>, token:
   return data as RawLead[];
 }
 
-export async function runScraperPipeline(opts: { triggeredBy: string }): Promise<PipelineResult> {
+export async function runScraperPipeline(opts: { triggeredBy: string; manual?: boolean }): Promise<PipelineResult> {
   const errors: string[] = [];
   const result: PipelineResult = {
     enabled: false,
