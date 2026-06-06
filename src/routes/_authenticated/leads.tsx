@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/leads")({
 function LeadsPage() {
   const { data: leads } = useSuspenseQuery(opts);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("New");
   const [open, setOpen] = useState<Lead | null>(null);
 
   // hide do-not-contact leads from the working list
