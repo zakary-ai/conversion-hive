@@ -461,6 +461,40 @@ export const deleteAppointment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const rescheduleAppointment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid(), scheduled_at: z.string().datetime() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: appt, error: aerr } = await context.supabase
+      .from("appointments").select("id, type").eq("id", data.id).single();
+    if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
+    if (appt.type === "booking") {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: clash } = await supabaseAdmin.from("appointments")
+        .select("id").eq("type", "booking").eq("scheduled_at", data.scheduled_at).neq("id", data.id).limit(1);
+      if ((clash ?? []).length > 0) throw new Error("That time slot was just taken. Please pick another.");
+    }
+    const { error } = await context.supabase.from("appointments")
+      .update({ scheduled_at: data.scheduled_at, status: "scheduled" }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const cancelAppointment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: appt } = await context.supabase
+      .from("appointments").select("id, lead_id").eq("id", data.id).single();
+    if (appt?.lead_id) {
+      await context.supabase.from("leads")
+        .update({ status: "Not Interested" }).eq("id", appt.lead_id);
+    }
+    const { error } = await context.supabase.from("appointments").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const setAppointmentOutcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
