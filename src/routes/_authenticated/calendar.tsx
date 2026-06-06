@@ -125,19 +125,20 @@ function ApptView({
   }, [filtered, mode]);
 
   return (
-    <div className="grid lg:grid-cols-[auto,1fr] gap-4 lg:gap-6">
-      <Card className="p-2 sm:p-3 w-full lg:w-fit overflow-hidden">
+    <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[auto,1fr] lg:gap-6">
+      <Card className="w-full overflow-hidden p-1.5 sm:p-3 lg:w-fit">
         <Calendar
           mode="single"
           selected={date}
           onSelect={setDate}
           modifiers={{ hasAppt: (d) => daysWithAppts.has(d.toDateString()) }}
           modifiersClassNames={{ hasAppt: "relative after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:rounded-full after:bg-primary" }}
-          className="pointer-events-auto w-full mx-auto"
+          className="pointer-events-auto mx-auto w-full p-1 [--cell-size:1.7rem] min-[375px]:[--cell-size:1.85rem] sm:p-3 sm:[--cell-size:2rem]"
+          classNames={{ root: "w-full max-w-full" }}
         />
       </Card>
 
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-3 lg:space-y-4">
         <div>
           <h3 className="text-sm font-medium mb-2">
             {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "All days"}
@@ -171,40 +172,40 @@ function ApptList({ items, canDelete, showOwner, empty }: { items: Appt[]; canDe
   }
   return (
     <>
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2 overflow-hidden">
         {items.map((a) => {
           const dt = new Date(a.scheduled_at);
           const isBooking = a.type === "booking";
           return (
             <Card
               key={a.id}
-              className="p-3 flex items-start gap-3 cursor-pointer hover:bg-muted/30 transition-colors"
+              className="flex min-w-0 cursor-pointer items-start gap-2 overflow-hidden p-3 transition-colors hover:bg-muted/30 sm:gap-3"
               onClick={() => setOpenAppt(a)}
             >
               <div className={cn(
-                "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10",
                 isBooking ? "bg-success/15 text-success" : "bg-warning/15 text-warning"
               )}>
                 {isBooking ? <CheckCircle2 className="h-5 w-5" /> : <CalendarClock className="h-5 w-5" />}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2 flex-wrap">
-                  <div className="font-medium truncate">{a.name}</div>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <div className="min-w-0 space-y-0.5">
+                  <div className="max-w-full truncate font-medium leading-tight">{a.name}</div>
                   <div className="text-xs text-muted-foreground">
                     {dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </div>
                 </div>
-                <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                <div className="mt-1 flex min-w-0 flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                   {a.phone && (
-                    <a href={`tel:${a.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-primary">
-                      <Phone className="h-3 w-3" />{a.phone}
+                    <a href={`tel:${a.phone}`} onClick={(e) => e.stopPropagation()} className="flex max-w-full min-w-0 items-center gap-1 text-primary">
+                      <Phone className="h-3 w-3 shrink-0" /><span className="truncate">{a.phone}</span>
                     </a>
                   )}
-                  {a.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{a.email}</span>}
-                  {showOwner && <span className="flex items-center gap-1"><User className="h-3 w-3" />setter</span>}
+                  {a.email && <span className="flex max-w-full min-w-0 items-center gap-1"><Mail className="h-3 w-3 shrink-0" /><span className="truncate">{a.email}</span></span>}
+                  {showOwner && <span className="flex items-center gap-1"><User className="h-3 w-3 shrink-0" />setter</span>}
                   <span className="uppercase tracking-wider">{a.type}</span>
                 </div>
-                {a.context && <div className="text-xs mt-1">{a.context}</div>}
+                {a.context && <div className="mt-1 break-words text-xs">{a.context}</div>}
                 {a.meeting_url && (
                   <a
                     href={a.meeting_url}
