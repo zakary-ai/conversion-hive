@@ -51,9 +51,9 @@ function ClientsList() {
   return (
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <PageHeader title="Clients" description={`${clients.length} active`} />
+        <PageHeader title="Setters" description={`${clients.length} active`} />
         <Button onClick={() => { setCreated(null); setOpen(true); }}>
-          <UserPlus className="h-4 w-4 mr-2" /> Invite client
+          <UserPlus className="h-4 w-4 mr-2" /> Invite setter
         </Button>
       </div>
       <Card className="overflow-hidden">
