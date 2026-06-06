@@ -17,7 +17,34 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Play, Loader2 } from "lucide-react";
+import { Play, Loader2, Plus, X } from "lucide-react";
+
+type ApifyInput = {
+  searchStringsArray: string[];
+  locationQuery: string;
+  language: string;
+  maxCrawledPlacesPerSearch: number;
+  includeWebResults: boolean;
+  scrapeContacts: boolean;
+  scrapeDirectories: boolean;
+  scrapeOrderOnline: boolean;
+  scrapePlaceDetailPage: boolean;
+  scrapeTableReservationProvider: boolean;
+  skipClosedPlaces: boolean;
+  verifyLeadsEnrichmentEmails: boolean;
+};
+
+const SCRAPE_TOGGLES: Array<{ key: keyof ApifyInput; label: string; hint: string }> = [
+  { key: "scrapePlaceDetailPage", label: "Place detail page", hint: "Open each listing for full details (slower)." },
+  { key: "scrapeContacts", label: "Contact enrichment", hint: "Pulls emails / social links when available." },
+  { key: "scrapeDirectories", label: "Directories", hint: "Crawl directory pages linking to places." },
+  { key: "scrapeOrderOnline", label: "Order online links", hint: "Capture delivery / order-online URLs." },
+  { key: "scrapeTableReservationProvider", label: "Reservation provider", hint: "Capture OpenTable / Resy etc." },
+  { key: "includeWebResults", label: "Include web results", hint: "Mix in non-Maps web results." },
+  { key: "skipClosedPlaces", label: "Skip closed places", hint: "Filter out permanently closed listings." },
+  { key: "verifyLeadsEnrichmentEmails", label: "Verify enriched emails", hint: "Validate emails before saving (paid)." },
+];
+
 
 const settingsOpts = queryOptions({ queryKey: ["scraper-settings"], queryFn: () => getScraperSettings() });
 const settersOpts = queryOptions({ queryKey: ["scraper-setters"], queryFn: () => listScraperSetters() });
