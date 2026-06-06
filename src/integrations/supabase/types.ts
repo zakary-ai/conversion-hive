@@ -169,9 +169,11 @@ export type Database = {
           do_not_contact: boolean
           email: string | null
           id: string
+          last_status_change_at: string
           name: string
           notes: string | null
           phone: string | null
+          retired: boolean
           source: string | null
           status: Database["public"]["Enums"]["lead_status"]
         }
@@ -184,9 +186,11 @@ export type Database = {
           do_not_contact?: boolean
           email?: string | null
           id?: string
+          last_status_change_at?: string
           name: string
           notes?: string | null
           phone?: string | null
+          retired?: boolean
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
         }
@@ -199,9 +203,11 @@ export type Database = {
           do_not_contact?: boolean
           email?: string | null
           id?: string
+          last_status_change_at?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          retired?: boolean
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
         }
@@ -270,27 +276,33 @@ export type Database = {
         Row: {
           company_name: string | null
           created_at: string
+          daily_lead_quota: number
           email: string | null
           full_name: string | null
           id: string
+          scraper_enabled: boolean
           timezone: string
           user_id: string
         }
         Insert: {
           company_name?: string | null
           created_at?: string
+          daily_lead_quota?: number
           email?: string | null
           full_name?: string | null
           id?: string
+          scraper_enabled?: boolean
           timezone?: string
           user_id: string
         }
         Update: {
           company_name?: string | null
           created_at?: string
+          daily_lead_quota?: number
           email?: string | null
           full_name?: string | null
           id?: string
+          scraper_enabled?: boolean
           timezone?: string
           user_id?: string
         }
@@ -368,25 +380,64 @@ export type Database = {
       }
       scraper_runs: {
         Row: {
+          details: Json | null
           id: string
           leads_added: number
+          phase: string | null
           ran_at: string
           status: string
           user_id: string
         }
         Insert: {
+          details?: Json | null
           id?: string
           leads_added?: number
+          phase?: string | null
           ran_at?: string
           status?: string
           user_id: string
         }
         Update: {
+          details?: Json | null
           id?: string
           leads_added?: number
+          phase?: string | null
           ran_at?: string
           status?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      scraper_settings: {
+        Row: {
+          apify_actor_id: string
+          apify_input: Json
+          batch_size: number
+          enabled: boolean
+          field_map: Json
+          id: string
+          recycle_days: number
+          updated_at: string
+        }
+        Insert: {
+          apify_actor_id?: string
+          apify_input?: Json
+          batch_size?: number
+          enabled?: boolean
+          field_map?: Json
+          id?: string
+          recycle_days?: number
+          updated_at?: string
+        }
+        Update: {
+          apify_actor_id?: string
+          apify_input?: Json
+          batch_size?: number
+          enabled?: boolean
+          field_map?: Json
+          id?: string
+          recycle_days?: number
+          updated_at?: string
         }
         Relationships: []
       }
