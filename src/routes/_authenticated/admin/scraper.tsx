@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/scraper.functions";
 
 import { PageHeader } from "@/components/ui-bits";
+import { AdminLeadsTabs } from "@/components/admin-leads-tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -164,6 +165,7 @@ function ScraperPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+      <AdminLeadsTabs />
       <PageHeader title="Lead scraper" description="Daily Apify-powered lead pipeline" action={
         <Button onClick={() => runNow.mutate()} disabled={runNow.isPending}>
           {runNow.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Play className="h-4 w-4 mr-1" />}

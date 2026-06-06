@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
+import { AdminLeadsTabs } from "@/components/admin-leads-tabs";
 
 const leadsOpts = queryOptions({ queryKey: ["all-leads"], queryFn: () => listAllLeads() });
 const clientsOpts = queryOptions({ queryKey: ["clients"], queryFn: () => listClients() });
@@ -56,6 +57,7 @@ function AdminLeads() {
 
   return (
     <div className="space-y-6 max-w-7xl">
+      <AdminLeadsTabs />
       <PageHeader title="All leads" description={`${leads.length} total`} action={
         <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add lead</Button>
       } />
