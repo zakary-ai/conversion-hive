@@ -36,14 +36,12 @@ function CalendarPage() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="-mx-1 max-w-full overflow-x-auto">
-            <TabsList className="w-max">
-              <TabsTrigger value="mine">My calendar</TabsTrigger>
-              {me.isAdmin && <TabsTrigger value="all">All setters</TabsTrigger>}
-              <TabsTrigger value="history">History</TabsTrigger>
-              {me.isAdmin && <TabsTrigger value="availability">Availability</TabsTrigger>}
-            </TabsList>
-          </div>
+          <TabsList>
+            {!me.isAdmin && <TabsTrigger value="mine">My calendar</TabsTrigger>}
+            {me.isAdmin && <TabsTrigger value="all">All setters</TabsTrigger>}
+            <TabsTrigger value="history">History</TabsTrigger>
+            {me.isAdmin && <TabsTrigger value="availability">Availability</TabsTrigger>}
+          </TabsList>
           <div className="flex gap-1">
             {(["all","booking","callback"] as const).map((f) => (
               <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>
@@ -53,9 +51,11 @@ function CalendarPage() {
           </div>
         </div>
 
-        <TabsContent value="mine" className="mt-4">
-          <ApptView queryOpts={myOpts} filter={filter} date={date} setDate={setDate} canDelete mode="upcoming" />
-        </TabsContent>
+        {!me.isAdmin && (
+          <TabsContent value="mine" className="mt-4">
+            <ApptView queryOpts={myOpts} filter={filter} date={date} setDate={setDate} canDelete mode="upcoming" />
+          </TabsContent>
+        )}
         {me.isAdmin && (
           <TabsContent value="all" className="mt-4">
             <ApptView queryOpts={allOpts} filter={filter} date={date} setDate={setDate} canDelete={false} showOwner mode="upcoming" />
