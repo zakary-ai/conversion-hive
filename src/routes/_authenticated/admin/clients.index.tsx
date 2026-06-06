@@ -62,7 +62,7 @@ function ClientsList() {
             <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Email</th><th className="text-left p-3 hidden md:table-cell">Company</th><th className="text-left p-3">Joined</th></tr>
           </thead>
           <tbody>
-            {clients.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No clients yet. Invite one to get started.</td></tr>}
+            {clients.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No setters yet. Invite one to get started.</td></tr>}
             {clients.map((c) => (
               <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                 <td className="p-3 font-medium">
