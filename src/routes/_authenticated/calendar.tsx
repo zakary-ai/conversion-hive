@@ -31,8 +31,9 @@ function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-4 md:space-y-6 max-w-7xl">
       <PageHeader title="Calendar" description="Booked appointments and scheduled callbacks." />
+
 
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
