@@ -11,6 +11,7 @@ import { CalendarClock, CheckCircle2, Phone, Mail, Trash2, User, ExternalLink } 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
+import { AvailabilityEditor } from "@/components/availability-editor";
 
 const meOpts = queryOptions({ queryKey: ["me"], queryFn: () => getMe() });
 const myOpts = queryOptions({ queryKey: ["my-appointments"], queryFn: () => listMyAppointments() });
