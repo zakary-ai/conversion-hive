@@ -236,7 +236,7 @@ export async function runScraperPipeline(opts: { triggeredBy: string }): Promise
     leads_added: result.inserted,
     status: errors.length === 0 ? "success" : (result.distributed > 0 ? "partial" : "failed"),
     phase: "full",
-    details: result as unknown as Record<string, unknown>,
+    details: JSON.parse(JSON.stringify(result)),
   });
 
   return result;
