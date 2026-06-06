@@ -17,7 +17,7 @@ const adminItems = [
   { title: "Home", url: "/admin", icon: LayoutDashboard },
   { title: "Leads", url: "/admin/leads", icon: Briefcase },
   { title: "Calendar", url: "/calendar", icon: CalendarIcon },
-  { title: "Clients", url: "/admin/clients", icon: Users },
+  { title: "Setters", url: "/admin/clients", icon: Users },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ] as const;
 

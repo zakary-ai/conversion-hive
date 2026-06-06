@@ -51,9 +51,9 @@ function ClientsList() {
   return (
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <PageHeader title="Clients" description={`${clients.length} active`} />
+        <PageHeader title="Setters" description={`${clients.length} active`} />
         <Button onClick={() => { setCreated(null); setOpen(true); }}>
-          <UserPlus className="h-4 w-4 mr-2" /> Invite client
+          <UserPlus className="h-4 w-4 mr-2" /> Invite setter
         </Button>
       </div>
       <Card className="overflow-hidden">
@@ -62,7 +62,7 @@ function ClientsList() {
             <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Email</th><th className="text-left p-3 hidden md:table-cell">Company</th><th className="text-left p-3">Joined</th></tr>
           </thead>
           <tbody>
-            {clients.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No clients yet. Invite one to get started.</td></tr>}
+            {clients.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No setters yet. Invite one to get started.</td></tr>}
             {clients.map((c) => (
               <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                 <td className="p-3 font-medium">
@@ -82,7 +82,7 @@ function ClientsList() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{created ? "Account created" : "Invite a new client"}</DialogTitle>
+            <DialogTitle>{created ? "Account created" : "Invite a new setter"}</DialogTitle>
           </DialogHeader>
           {!created ? (
             <div className="space-y-4">
@@ -92,7 +92,7 @@ function ClientsList() {
               <p className="text-xs text-muted-foreground">
                 A new account will be created with the default password{" "}
                 <code className="px-1.5 py-0.5 rounded bg-muted text-foreground">{DEFAULT_CLIENT_PASSWORD}</code>.
-                Share these credentials with the client — they can change the password from their Profile after signing in.
+                Share these credentials with the setter — they can change the password from their Profile after signing in.
               </p>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -107,7 +107,7 @@ function ClientsList() {
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Share these sign-in details with the client. They can change the password from Profile.
+                Share these sign-in details with the setter. They can change the password from Profile.
               </p>
               <Card className="p-4 space-y-2 font-mono text-sm">
                 <div><span className="text-muted-foreground">Email:</span> {created.email}</div>
