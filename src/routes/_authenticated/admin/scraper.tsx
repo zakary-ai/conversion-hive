@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/scraper.functions";
 
 import { PageHeader } from "@/components/ui-bits";
+import { AdminLeadsTabs } from "@/components/admin-leads-tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
