@@ -107,7 +107,7 @@ function ClientsList() {
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Share these sign-in details with the client. They can change the password from Profile.
+                Share these sign-in details with the setter. They can change the password from Profile.
               </p>
               <Card className="p-4 space-y-2 font-mono text-sm">
                 <div><span className="text-muted-foreground">Email:</span> {created.email}</div>
