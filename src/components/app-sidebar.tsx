@@ -21,6 +21,7 @@ const adminItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Setters", url: "/admin/clients", icon: Users },
   { title: "Leads", url: "/admin/leads", icon: Briefcase },
+  { title: "Scraper", url: "/admin/scraper", icon: Bot },
   { title: "Calendar", url: "/calendar", icon: CalendarIcon },
   { title: "Modules", url: "/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/admin/quizzes", icon: ListChecks },
