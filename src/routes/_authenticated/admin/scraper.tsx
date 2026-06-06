@@ -165,6 +165,7 @@ function ScraperPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+      <AdminLeadsTabs />
       <PageHeader title="Lead scraper" description="Daily Apify-powered lead pipeline" action={
         <Button onClick={() => runNow.mutate()} disabled={runNow.isPending}>
           {runNow.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Play className="h-4 w-4 mr-1" />}
