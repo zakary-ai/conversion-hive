@@ -102,7 +102,7 @@ export const runScraperNow = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
     const { runScraperPipeline } = await import("@/lib/scraper-pipeline.server");
-    return runScraperPipeline({ triggeredBy: context.userId });
+    return runScraperPipeline({ triggeredBy: context.userId, manual: true });
   });
 
 export const skipNextCity = createServerFn({ method: "POST" })
