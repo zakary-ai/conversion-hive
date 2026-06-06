@@ -163,13 +163,16 @@ function ApptView({
 function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items: Appt[]; canDelete: boolean; showOwner?: boolean; empty: string; compactScroll?: boolean }) {
   const qc = useQueryClient();
   const [openAppt, setOpenAppt] = useState<Appt | null>(null);
-  const del = useMutation({
-    mutationFn: (id: string) => deleteAppointment({ data: { id } }),
+  const [rescheduleAppt, setRescheduleAppt] = useState<Appt | null>(null);
+  const cancel = useMutation({
+    mutationFn: (id: string) => cancelAppointment({ data: { id } }),
     onSuccess: () => {
-      toast.success("Removed");
+      toast.success("Cancelled — lead marked Not Interested");
       qc.invalidateQueries({ queryKey: ["my-appointments"] });
       qc.invalidateQueries({ queryKey: ["all-appointments"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   if (items.length === 0) {
@@ -224,15 +227,39 @@ function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items
                 )}
               </div>
               {canDelete && (
-                <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); del.mutate(a.id); }}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" onClick={(e) => e.stopPropagation()}>
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={() => setRescheduleAppt(a)}>
+                      <CalendarDays className="mr-2 h-4 w-4" /> Reschedule
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => {
+                        if (confirm("Cancel this appointment? The lead will be moved to Not Interested.")) {
+                          cancel.mutate(a.id);
+                        }
+                      }}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" /> Cancel
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </Card>
           );
         })}
       </div>
       <AppointmentDetailDialog appt={openAppt} onClose={() => setOpenAppt(null)} />
+      <RescheduleDialog
+        apptId={rescheduleAppt?.id ?? null}
+        currentScheduledAt={rescheduleAppt?.scheduled_at}
+        onClose={() => setRescheduleAppt(null)}
+      />
     </>
   );
 }
