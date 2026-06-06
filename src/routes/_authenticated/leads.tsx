@@ -46,80 +46,158 @@ function LeadsPage() {
     <div className="space-y-6 max-w-7xl">
       <PageHeader title="My leads" description={`${visibleLeads.length} active · up to 75 per day`} />
 
-      <Card className="p-4">
-        <div className="flex gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-      </Card>
+      <Tabs defaultValue="leads" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="leads">Leads</TabsTrigger>
+          <TabsTrigger value="pipeline"><TrendingUp className="h-4 w-4 mr-1" /> Lead Pipeline</TabsTrigger>
+        </TabsList>
 
-      {/* Mobile cards */}
-      <div className="md:hidden space-y-2">
-        {filtered.length === 0 && (
-          <Card className="p-8 text-center text-sm text-muted-foreground">No leads match.</Card>
-        )}
-        {filtered.map((l) => (
-          <Card key={l.id} className="p-3 flex items-center justify-between gap-3" onClick={() => setOpen(l)}>
-            <div className="min-w-0 flex-1">
-              <div className="font-medium truncate">{l.name}</div>
-              <div className="text-xs text-muted-foreground truncate">{l.company || l.phone || l.email}</div>
-              <div className="mt-1"><StatusPill status={l.status} /></div>
+        <TabsContent value="leads" className="space-y-4">
+          <Card className="p-4">
+            <div className="flex gap-3 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            {l.phone && (
-              <a
-                href={`tel:${l.phone}`}
-                onClick={(e) => e.stopPropagation()}
-                className="h-11 w-11 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow"
-                aria-label={`Call ${l.name}`}
-              >
-                <Phone className="h-5 w-5" />
-              </a>
-            )}
           </Card>
-        ))}
-      </div>
 
-      {/* Desktop table */}
-      <Card className="overflow-hidden hidden md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="text-left p-3">Name</th>
-                <th className="text-left p-3">Company</th>
-                <th className="text-left p-3">Contact</th>
-                <th className="text-left p-3">Status</th>
-                <th className="text-left p-3">Contacted</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No leads match.</td></tr>
-              )}
-              {filtered.map((l) => (
-                <tr key={l.id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => setOpen(l)}>
-                  <td className="p-3 font-medium">{l.name}</td>
-                  <td className="p-3 text-muted-foreground">{l.company}</td>
-                  <td className="p-3 text-muted-foreground">{l.phone || l.email}</td>
-                  <td className="p-3"><StatusPill status={l.status} /></td>
-                  <td className="p-3 text-muted-foreground">{l.contacted_at ? new Date(l.contacted_at).toLocaleDateString() : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-2">
+            {filtered.length === 0 && (
+              <Card className="p-8 text-center text-sm text-muted-foreground">No leads match.</Card>
+            )}
+            {filtered.map((l) => (
+              <Card key={l.id} className="p-3 flex items-center justify-between gap-3" onClick={() => setOpen(l)}>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate">{l.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{l.company || l.phone || l.email}</div>
+                  <div className="mt-1"><StatusPill status={l.status} /></div>
+                </div>
+                {l.phone && (
+                  <a
+                    href={`tel:${l.phone}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-11 w-11 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow"
+                    aria-label={`Call ${l.name}`}
+                  >
+                    <Phone className="h-5 w-5" />
+                  </a>
+                )}
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <Card className="overflow-hidden hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="text-left p-3">Name</th>
+                    <th className="text-left p-3">Company</th>
+                    <th className="text-left p-3">Contact</th>
+                    <th className="text-left p-3">Status</th>
+                    <th className="text-left p-3">Contacted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 && (
+                    <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No leads match.</td></tr>
+                  )}
+                  {filtered.map((l) => (
+                    <tr key={l.id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => setOpen(l)}>
+                      <td className="p-3 font-medium">{l.name}</td>
+                      <td className="p-3 text-muted-foreground">{l.company}</td>
+                      <td className="p-3 text-muted-foreground">{l.phone || l.email}</td>
+                      <td className="p-3"><StatusPill status={l.status} /></td>
+                      <td className="p-3 text-muted-foreground">{l.contacted_at ? new Date(l.contacted_at).toLocaleDateString() : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pipeline">
+          <LeadPipeline leads={visibleLeads} onOpenLead={setOpen} />
+        </TabsContent>
+      </Tabs>
 
       <LeadDrawer lead={open} onClose={() => setOpen(null)} />
+    </div>
+  );
+}
+
+function LeadPipeline({ leads, onOpenLead }: { leads: Lead[]; onOpenLead: (l: Lead) => void }) {
+  const { data: appts = [] } = useQuery({
+    queryKey: ["my-appointments"],
+    queryFn: () => listMyAppointments(),
+  });
+  const leadById = new Map(leads.map((l) => [l.id, l]));
+  const bookings = appts.filter((a) => a.type === "booking");
+
+  const booked = bookings.filter((a) => !a.outcome);
+  const closed = bookings.filter((a) => a.outcome === "closed");
+  const lost = bookings.filter((a) => a.outcome === "lost");
+
+  const fmt = (s?: string | null) => s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
+
+  type Appt = typeof bookings[number];
+  const Column = ({ title, items, tone, empty }: { title: string; items: Appt[]; tone: string; empty: string }) => (
+    <div className="space-y-2">
+      <div className={`flex items-center justify-between px-1`}>
+        <div className="text-xs uppercase tracking-widest font-semibold">{title}</div>
+        <div className={`text-xs rounded-full px-2 py-0.5 ${tone}`}>{items.length}</div>
+      </div>
+      {items.length === 0 ? (
+        <Card className="p-4 text-center text-xs text-muted-foreground">{empty}</Card>
+      ) : items.map((a) => {
+        const lead = a.lead_id ? leadById.get(a.lead_id) : undefined;
+        return (
+          <Card
+            key={a.id}
+            className={`p-3 space-y-1.5 ${lead ? "cursor-pointer hover:bg-muted/30" : ""}`}
+            onClick={() => lead && onOpenLead(lead)}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-medium text-sm truncate">{a.name}</div>
+              <div className="text-[10px] text-muted-foreground whitespace-nowrap">{fmt(a.scheduled_at)}</div>
+            </div>
+            {lead?.company && <div className="text-xs text-muted-foreground truncate">{lead.company}</div>}
+            {a.outcome === "closed" && (
+              <div className="flex items-center gap-1 text-xs text-success font-medium">
+                <DollarSign className="h-3 w-3" />
+                {a.deal_amount != null ? Number(a.deal_amount).toLocaleString(undefined, { style: "currency", currency: "USD" }) : "Closed"}
+              </div>
+            )}
+            {a.outcome === "lost" && a.lost_reason && (
+              <div className="text-xs text-muted-foreground whitespace-pre-wrap break-words rounded bg-muted/40 p-2">
+                <span className="font-medium text-foreground">Reason: </span>{a.lost_reason}
+              </div>
+            )}
+            {a.outcome === "lost" && !a.lost_reason && (
+              <div className="text-xs text-muted-foreground italic">No reason provided</div>
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Column title="Booked" items={booked} tone="bg-primary/15 text-primary" empty="No upcoming bookings" />
+      <Column title="Closed" items={closed} tone="bg-success/15 text-success" empty="No closed deals yet" />
+      <Column title="Lost" items={lost} tone="bg-destructive/15 text-destructive" empty="No lost deals" />
     </div>
   );
 }
