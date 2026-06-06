@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { listAllLeads, listClients, createLead, adminUpdateLead, deleteLead } from "@/lib/api/cl.functions";
+import { listAllLeads, listClients, createLead, adminUpdateLead, deleteLead, bulkDeleteLeads } from "@/lib/api/cl.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
@@ -37,6 +38,7 @@ function AdminLeads() {
   const [clientFilter, setClientFilter] = useState("all");
   const [editing, setEditing] = useState<Lead | null>(null);
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const clientName = (uid: string | null) => uid ? (clients.find((c) => c.user_id === uid)?.full_name ?? clients.find((c) => c.user_id === uid)?.email ?? "—") : "Unassigned";
 
@@ -53,6 +55,27 @@ function AdminLeads() {
   const del = useMutation({
     mutationFn: (id: string) => deleteLead({ data: { id } }),
     onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["all-leads"] }); },
+  });
+
+  const bulkDel = useMutation({
+    mutationFn: (ids: string[]) => bulkDeleteLeads({ data: { ids } }),
+    onSuccess: (r) => {
+      toast.success(`Deleted ${r.count} lead${r.count === 1 ? "" : "s"}`);
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["all-leads"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggleOne = (id: string) => setSelected((s) => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
+  const toggleAll = () => setSelected((s) => {
+    const n = new Set(s);
+    if (allFilteredSelected) filtered.forEach((l) => n.delete(l.id));
+    else filtered.forEach((l) => n.add(l.id));
+    return n;
   });
 
   return (
@@ -83,16 +106,49 @@ function AdminLeads() {
         </Select>
       </Card>
 
+      {selected.size > 0 && (
+        <Card className="p-3 flex items-center justify-between gap-3 border-primary/40 bg-primary/5">
+          <div className="text-sm">{selected.size} selected</div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={bulkDel.isPending}
+              onClick={() => {
+                if (confirm(`Delete ${selected.size} lead${selected.size === 1 ? "" : "s"}?`)) {
+                  bulkDel.mutate(Array.from(selected));
+                }
+              }}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />Delete selected
+            </Button>
+          </div>
+        </Card>
+      )}
+
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr><th className="text-left p-3">Name</th><th className="text-left p-3 hidden md:table-cell">Client</th><th className="text-left p-3 hidden lg:table-cell">Company</th><th className="text-left p-3">Status</th><th className="p-3"></th></tr>
+              <tr>
+                <th className="p-3 w-10">
+                  <Checkbox checked={allFilteredSelected} onCheckedChange={toggleAll} aria-label="Select all" />
+                </th>
+                <th className="text-left p-3">Name</th>
+                <th className="text-left p-3 hidden md:table-cell">Client</th>
+                <th className="text-left p-3 hidden lg:table-cell">Company</th>
+                <th className="text-left p-3">Status</th>
+                <th className="p-3"></th>
+              </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No leads.</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No leads.</td></tr>}
               {filtered.map((l) => (
                 <tr key={l.id} className="border-t border-border hover:bg-muted/30">
+                  <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggleOne(l.id)} aria-label={`Select ${l.name}`} />
+                  </td>
                   <td className="p-3 font-medium">{l.name}</td>
                   <td className="p-3 hidden md:table-cell text-muted-foreground">{clientName(l.assigned_user_id)}</td>
                   <td className="p-3 hidden lg:table-cell text-muted-foreground">{l.company}</td>

@@ -591,6 +591,16 @@ export const deleteLead = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const bulkDeleteLeads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ ids: z.array(z.string().uuid()).min(1).max(500) }).parse)
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("leads").delete().in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
+  });
+
+
 // ---------- Commissions ----------
 export const listMyCommissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
