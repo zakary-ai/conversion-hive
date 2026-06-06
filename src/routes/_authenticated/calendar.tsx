@@ -31,8 +31,9 @@ function CalendarPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-4 md:space-y-6 max-w-7xl">
       <PageHeader title="Calendar" description="Booked appointments and scheduled callbacks." />
+
 
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -124,15 +125,15 @@ function ApptView({
   }, [filtered, mode]);
 
   return (
-    <div className="grid lg:grid-cols-[auto,1fr] gap-6 justify-items-center lg:justify-items-stretch">
-      <Card className="p-3 w-fit mx-auto lg:mx-0">
+    <div className="grid lg:grid-cols-[auto,1fr] gap-4 lg:gap-6">
+      <Card className="p-2 sm:p-3 w-full lg:w-fit overflow-hidden">
         <Calendar
           mode="single"
           selected={date}
           onSelect={setDate}
           modifiers={{ hasAppt: (d) => daysWithAppts.has(d.toDateString()) }}
           modifiersClassNames={{ hasAppt: "relative after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:rounded-full after:bg-primary" }}
-          className="pointer-events-auto"
+          className="pointer-events-auto w-full mx-auto"
         />
       </Card>
 
@@ -144,7 +145,7 @@ function ApptView({
           </h3>
           <ApptList items={selectedDayAppts} canDelete={canDelete} showOwner={showOwner} empty={mode === "past" ? "No past appointments this day." : "No appointments this day."} />
         </div>
-        <div>
+        <div className="hidden lg:block">
           <h3 className="text-sm font-medium mb-2 text-muted-foreground">{mode === "past" ? "Recent history" : "Upcoming"}</h3>
           <ApptList items={secondary} canDelete={canDelete} showOwner={showOwner} empty={mode === "past" ? "No history yet." : "Nothing scheduled."} />
         </div>
