@@ -27,6 +27,7 @@ import { Route as AuthenticatedAdminModulesRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin/leads'
 import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_authenticated/admin/commissions'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
+import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as AuthenticatedAdminClientsUserIdRouteImport } from './routes/_authenticated/admin/clients.$userId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -126,6 +127,12 @@ const AuthenticatedAdminClientsIndexRoute =
     path: '/clients/',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const ApiPublicHooksRunScraperRoute =
+  ApiPublicHooksRunScraperRouteImport.update({
+    id: '/api/public/hooks/run-scraper',
+    path: '/api/public/hooks/run-scraper',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAdminClientsUserIdRoute =
   AuthenticatedAdminClientsUserIdRouteImport.update({
     id: '/clients/$userId',
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
+  '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -170,6 +178,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
+  '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/admin/clients': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesById {
@@ -192,6 +201,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
   '/_authenticated/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
+  '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRouteTypes {
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/training/'
     | '/admin/clients/$userId'
+    | '/api/public/hooks/run-scraper'
     | '/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/training'
     | '/admin/clients/$userId'
+    | '/api/public/hooks/run-scraper'
     | '/admin/clients'
   id:
     | '__root__'
@@ -254,6 +266,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/training/'
     | '/_authenticated/admin/clients/$userId'
+    | '/api/public/hooks/run-scraper'
     | '/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
 }
@@ -261,6 +274,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -391,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminClientsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/api/public/hooks/run-scraper': {
+      id: '/api/public/hooks/run-scraper'
+      path: '/api/public/hooks/run-scraper'
+      fullPath: '/api/public/hooks/run-scraper'
+      preLoaderRoute: typeof ApiPublicHooksRunScraperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/clients/$userId': {
       id: '/_authenticated/admin/clients/$userId'
       path: '/clients/$userId'
@@ -458,7 +479,18 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
