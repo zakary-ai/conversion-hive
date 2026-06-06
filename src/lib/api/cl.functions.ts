@@ -383,7 +383,7 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     tz: z.string().max(60).optional(),
   }).parse)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const viewerTz = data.tz || EST_TZ;
     const [vy, vm, vd] = data.date.split("-").map(Number);
 
