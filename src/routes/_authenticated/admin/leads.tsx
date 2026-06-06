@@ -57,6 +57,7 @@ function AdminLeads() {
 
   return (
     <div className="space-y-6 max-w-7xl">
+      <AdminLeadsTabs />
       <PageHeader title="All leads" description={`${leads.length} total`} action={
         <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add lead</Button>
       } />
