@@ -32,14 +32,76 @@ const mOpts = (id: string) => queryOptions({ queryKey: ["module", id], queryFn: 
 const qOpts = (id: string) => queryOptions({ queryKey: ["questions", id], queryFn: () => listQuizQuestions({ data: { module_id: id } }) });
 const aOpts = (id: string) => queryOptions({ queryKey: ["attempts", id], queryFn: () => listMyAttempts({ data: { module_id: id } }) });
 
-function getEmbedUrl(url: string | null): string | null {
-  if (!url) return null;
+function getEmbedUrl(url: string): string | null {
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
   const vimeo = url.match(/vimeo\.com\/(\d+)/);
   if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}`;
-  return url;
+  return null;
 }
+
+function VideoPlayer({ url, title }: { url: string | null; title: string }) {
+  const isStorage = !!url && url.startsWith("storage:");
+  const storagePath = isStorage ? url!.slice(8) : null;
+
+  const { data: signedUrl } = useQuery({
+    queryKey: ["module-video-signed", storagePath],
+    queryFn: async () => {
+      const { data, error } = await supabase.storage
+        .from("module-videos")
+        .createSignedUrl(storagePath!, 3600);
+      if (error) throw error;
+      return data.signedUrl;
+    },
+    enabled: !!storagePath,
+    staleTime: 50 * 60 * 1000,
+  });
+
+  if (!url) return null;
+
+  if (isStorage) {
+    if (!signedUrl) {
+      return (
+        <Card className="overflow-hidden">
+          <div className="aspect-video bg-black flex items-center justify-center text-muted-foreground text-sm">
+            Loading video…
+          </div>
+        </Card>
+      );
+    }
+    return (
+      <Card className="overflow-hidden">
+        <video src={signedUrl} controls className="w-full aspect-video bg-black" />
+      </Card>
+    );
+  }
+
+  const embed = getEmbedUrl(url);
+  if (embed) {
+    return (
+      <Card className="overflow-hidden">
+        <div className="aspect-video bg-black">
+          <iframe
+            src={embed}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            title={title}
+          />
+        </div>
+      </Card>
+    );
+  }
+
+  // Direct video file URL
+  return (
+    <Card className="overflow-hidden">
+      <video src={url} controls className="w-full aspect-video bg-black" />
+    </Card>
+  );
+}
+
+
 
 function ModulePage() {
   const { moduleId } = Route.useParams();
