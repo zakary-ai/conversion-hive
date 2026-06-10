@@ -378,16 +378,38 @@ function ScraperPage() {
         <h3 className="font-semibold">Recent runs</h3>
         <div className="space-y-2">
           {runs.length === 0 && <p className="text-sm text-muted-foreground">No runs yet.</p>}
-          {runs.map((r) => (
-            <div key={r.id} className="text-xs border border-border rounded p-2">
-              <div className="flex justify-between">
-                <span>{new Date(r.ran_at).toLocaleString()}</span>
-                <span className="font-mono">{r.status}</span>
-              </div>
-              <div className="text-muted-foreground">Leads added: {r.leads_added}</div>
-              {r.details ? <pre className="mt-1 overflow-x-auto bg-muted/40 p-2 rounded">{JSON.stringify(r.details, null, 2)}</pre> : null}
-            </div>
-          ))}
+          {runs.map((r) => {
+            const d = (r.details ?? {}) as Record<string, unknown>;
+            const city = (d.city as string | null) ?? (d.city_skipped as string | null) ?? null;
+            const fetched = (d.fetched as number | undefined) ?? 0;
+            const distributed = (d.distributed as number | undefined) ?? 0;
+            const reason = (d.reason as string | null | undefined) ?? null;
+            const statusStyles: Record<string, string> = {
+              success: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+              partial: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+              failed: "bg-destructive/15 text-destructive",
+              skipped: "bg-muted text-muted-foreground",
+            };
+            const badge = statusStyles[r.status as string] ?? "bg-muted text-muted-foreground";
+            return (
+              <details key={r.id} className="text-xs border border-border rounded">
+                <summary className="cursor-pointer p-2 flex flex-wrap items-center gap-2 list-none">
+                  <span className="text-muted-foreground">{new Date(r.ran_at).toLocaleString()}</span>
+                  <span className={`font-mono px-1.5 py-0.5 rounded ${badge}`}>{r.status}</span>
+                  {city && <span className="text-muted-foreground">· {city}</span>}
+                  <span className="ml-auto flex gap-3 text-muted-foreground">
+                    <span>fetched {fetched}</span>
+                    <span>inserted {r.leads_added}</span>
+                    <span>distributed {distributed}</span>
+                  </span>
+                </summary>
+                <div className="p-2 border-t border-border space-y-2">
+                  {reason && <div className="text-muted-foreground">Reason: <span className="font-mono">{reason}</span></div>}
+                  <pre className="overflow-x-auto bg-muted/40 p-2 rounded">{JSON.stringify(r.details, null, 2)}</pre>
+                </div>
+              </details>
+            );
+          })}
         </div>
       </Card>
     </div>
