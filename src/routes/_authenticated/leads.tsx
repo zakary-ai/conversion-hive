@@ -321,6 +321,10 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
                   </div>
                 </div>
 
+                <ScriptsPanel lead={lead} />
+
+                <SmsPanel lead={lead} />
+
                 <details className="group">
                   <summary className="cursor-pointer text-xs uppercase tracking-widest text-muted-foreground">Notes</summary>
                   <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="mt-2" />
