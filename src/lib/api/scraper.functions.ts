@@ -131,6 +131,6 @@ export const listScraperRuns = createServerFn({ method: "GET" })
       .from("scraper_runs")
       .select("*")
       .order("ran_at", { ascending: false })
-      .limit(20);
+      .limit(50);
     return data ?? [];
   });
