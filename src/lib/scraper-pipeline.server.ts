@@ -16,6 +16,8 @@ type Setter = { user_id: string; full_name: string | null; daily_lead_quota: num
 
 export type PipelineResult = {
   enabled: boolean;
+  skipped: boolean;
+  reason: string | null;
   recycled: number;
   fetched: number;
   inserted: number;
@@ -46,10 +48,57 @@ async function callApify(actorId: string, input: Record<string, unknown>, token:
   return data as RawLead[];
 }
 
+// Pull current unassigned-New pool ids (oldest first), then assign to setters
+// up to each setter's remaining shortfall. Returns total assigned across all setters
+// plus the updated assigned-count map.
+async function distributePool(
+  setters: Setter[],
+  haveByUser: Map<string, number>,
+  errors: string[],
+): Promise<{ assignedTotal: number; assignedByUser: Map<string, number> }> {
+  const { data: pool } = await supabaseAdmin
+    .from("leads")
+    .select("id")
+    .eq("status", "New")
+    .eq("retired", false)
+    .eq("do_not_contact", false)
+    .is("assigned_user_id", null)
+    .order("created_at", { ascending: true });
+
+  const poolIds = (pool ?? []).map((r) => r.id as string);
+  let poolIdx = 0;
+  let assignedTotal = 0;
+  const assignedByUser = new Map<string, number>();
+
+  for (const s of setters) {
+    const have = haveByUser.get(s.user_id) ?? 0;
+    const need = Math.max(0, s.daily_lead_quota - have);
+    if (need === 0) continue;
+    const take = poolIds.slice(poolIdx, poolIdx + need);
+    poolIdx += take.length;
+    if (take.length === 0) continue;
+    const { error: aErr } = await supabaseAdmin
+      .from("leads")
+      .update({ assigned_user_id: s.user_id })
+      .in("id", take);
+    if (aErr) {
+      errors.push(`assign(${s.user_id}): ${aErr.message}`);
+      continue;
+    }
+    assignedTotal += take.length;
+    assignedByUser.set(s.user_id, take.length);
+    haveByUser.set(s.user_id, have + take.length);
+  }
+
+  return { assignedTotal, assignedByUser };
+}
+
 export async function runScraperPipeline(opts: { triggeredBy: string; manual?: boolean }): Promise<PipelineResult> {
   const errors: string[] = [];
   const result: PipelineResult = {
     enabled: false,
+    skipped: false,
+    reason: null,
     recycled: 0,
     fetched: 0,
     inserted: 0,
@@ -76,6 +125,7 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
   const actorId = (settings.apify_actor_id as string) ?? "";
 
   // City rotation: pick the next city in the list, overriding locationQuery.
+  // The cursor only advances after a real Apify call (skip days don't burn a city).
   const cityRotation = ((settings as { city_rotation?: string[] }).city_rotation ?? []).filter((c) => typeof c === "string" && c.trim().length > 0);
   const cityIndex = ((settings as { city_rotation_index?: number }).city_rotation_index ?? 0) | 0;
   let cityUsed: string | null = null;
@@ -87,8 +137,7 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
     nextCityIndex = (i + 1) % cityRotation.length;
   }
 
-
-  // 2. Enabled setters (clients with scraper_enabled = true)
+  // 2. Enabled setters
   const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role").eq("role", "client");
   const clientIds = (roles ?? []).map((r) => r.user_id as string);
   if (clientIds.length === 0) return result;
@@ -108,7 +157,7 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
 
   if (setters.length === 0) return result;
 
-  // 3. Recycle: No Answer leads older than N days → unassign and reset to New
+  // 3. Recycle stale No-Answer leads
   const cutoff = new Date(Date.now() - recycleDays * 24 * 60 * 60 * 1000).toISOString();
   const { data: recyclable } = await supabaseAdmin
     .from("leads")
@@ -128,34 +177,65 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
     else result.recycled = recycleIds.length;
   }
 
-  // 4. Compute total demand
+  // 4. Initial per-setter "New" counts
   const { data: newLeads } = await supabaseAdmin
     .from("leads")
     .select("id, assigned_user_id")
     .eq("status", "New");
-  const newByUser = new Map<string, number>();
+  const haveByUser = new Map<string, number>();
   for (const l of newLeads ?? []) {
     const u = (l.assigned_user_id as string | null) ?? null;
-    if (u) newByUser.set(u, (newByUser.get(u) ?? 0) + 1);
+    if (u) haveByUser.set(u, (haveByUser.get(u) ?? 0) + 1);
   }
 
-  let totalDemand = 0;
+  // Snapshot original need per setter (for reporting)
+  const originalNeed = new Map<string, number>();
   for (const s of setters) {
-    const need = Math.max(0, s.daily_lead_quota - (newByUser.get(s.user_id) ?? 0));
-    totalDemand += need;
+    originalNeed.set(s.user_id, Math.max(0, s.daily_lead_quota - (haveByUser.get(s.user_id) ?? 0)));
   }
 
-  // 5. Scrape (only if we need more than the unassigned pool already covers)
-  const unassignedCount = (newLeads ?? []).filter((l) => !l.assigned_user_id).length;
-  const needFromScrape = Math.max(0, totalDemand - unassignedCount);
+  // 5. Distribute the existing pool FIRST
+  const pass1 = await distributePool(setters, haveByUser, errors);
+  result.distributed += pass1.assignedTotal;
 
-  if (needFromScrape > 0 && actorId) {
+  // 6. Recompute remaining shortfall
+  let remainingShortfall = 0;
+  for (const s of setters) {
+    remainingShortfall += Math.max(0, s.daily_lead_quota - (haveByUser.get(s.user_id) ?? 0));
+  }
+
+  // 7. If the pool covered demand, skip scraping entirely.
+  if (remainingShortfall === 0) {
+    result.skipped = true;
+    result.reason = "pool_covered_demand";
+    result.perSetter = setters.map((s) => ({
+      user_id: s.user_id,
+      name: s.full_name,
+      needed: originalNeed.get(s.user_id) ?? 0,
+      assigned: pass1.assignedByUser.get(s.user_id) ?? 0,
+      shortfall: 0,
+    }));
+
+    const runDetails = { ...result, city: null, city_skipped: cityUsed } as Record<string, unknown>;
+    await supabaseAdmin.from("scraper_runs").insert({
+      user_id: opts.triggeredBy,
+      leads_added: 0,
+      status: "skipped",
+      phase: "skipped",
+      details: JSON.parse(JSON.stringify(runDetails)),
+    });
+    return result;
+  }
+
+  // 8. Scrape to cover the remaining shortfall
+  const assignedByUser = new Map(pass1.assignedByUser);
+  if (actorId) {
     const apifyToken = process.env.APIFY_TOKEN;
     if (!apifyToken) {
       errors.push("APIFY_TOKEN not configured");
     } else {
       try {
-        const wantedBatch = Math.min(Math.max(batchSize, needFromScrape), 1000);
+        const wantedBatch = Math.min(Math.max(batchSize, remainingShortfall), 1000);
         const raw = await callApify(
           actorId,
           { ...apifyInput, maxItems: wantedBatch, maxCrawledPlacesPerSearch: wantedBatch },
@@ -185,8 +265,6 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
           candidates.push({ name: name.slice(0, 200), phone: phone?.slice(0, 50) ?? null, email: email?.slice(0, 200) ?? null, company: company?.slice(0, 200) ?? null, source: source?.slice(0, 120) ?? null });
         }
 
-
-        // Check existing DB phones/emails
         const phoneList = [...phones];
         const emailList = [...emails];
         const existing = new Set<string>();
@@ -215,52 +293,37 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
     }
   }
 
-  // 6. Distribute: fetch all unassigned New leads, assign per-setter up to quota
-  const { data: pool } = await supabaseAdmin
-    .from("leads")
-    .select("id")
-    .eq("status", "New")
-    .eq("retired", false)
-    .eq("do_not_contact", false)
-    .is("assigned_user_id", null)
-    .order("created_at", { ascending: true });
-
-  const poolIds = (pool ?? []).map((r) => r.id as string);
-  let poolIdx = 0;
-
-  for (const s of setters) {
-    const have = newByUser.get(s.user_id) ?? 0;
-    const need = Math.max(0, s.daily_lead_quota - have);
-    const take = poolIds.slice(poolIdx, poolIdx + need);
-    poolIdx += take.length;
-    let assigned = 0;
-    if (take.length > 0) {
-      const { error: aErr } = await supabaseAdmin
-        .from("leads")
-        .update({ assigned_user_id: s.user_id })
-        .in("id", take);
-      if (aErr) errors.push(`assign(${s.user_id}): ${aErr.message}`);
-      else assigned = take.length;
+  // 9. Second distribution pass for the freshly inserted leads
+  if (result.inserted > 0) {
+    const pass2 = await distributePool(setters, haveByUser, errors);
+    result.distributed += pass2.assignedTotal;
+    for (const [uid, n] of pass2.assignedByUser) {
+      assignedByUser.set(uid, (assignedByUser.get(uid) ?? 0) + n);
     }
-    result.distributed += assigned;
-    result.perSetter.push({
+  }
+
+  // 10. Build per-setter report
+  result.perSetter = setters.map((s) => {
+    const need = originalNeed.get(s.user_id) ?? 0;
+    const assigned = assignedByUser.get(s.user_id) ?? 0;
+    return {
       user_id: s.user_id,
       name: s.full_name,
       needed: need,
       assigned,
       shortfall: Math.max(0, need - assigned),
-    });
-  }
+    };
+  });
 
-  // 7. Advance city rotation cursor if a city was picked and we actually attempted Apify.
-  if (cityUsed && needFromScrape > 0) {
+  // 11. Advance city rotation cursor only if we actually attempted Apify.
+  if (cityUsed && actorId) {
     await supabaseAdmin
       .from("scraper_settings")
       .update({ city_rotation_index: nextCityIndex })
       .eq("id", (settings as { id: string }).id);
   }
 
-  // 8. Log run
+  // 12. Log run
   const runDetails = { ...result, city: cityUsed } as Record<string, unknown>;
   await supabaseAdmin.from("scraper_runs").insert({
     user_id: opts.triggeredBy,
@@ -271,5 +334,4 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
   });
 
   return result;
-
 }
