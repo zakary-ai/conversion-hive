@@ -1,37 +1,35 @@
-## Daily city rotation for the scraper
+## Scraper pipeline: scrape only when the pool can't cover demand
 
-Make the scraper cycle through a list of ~200 cities — each daily run uses the next city as `locationQuery`, wrapping back to the start after the last one.
+Tighten the pipeline so the scraper does nothing on days the existing lead pool already covers everyone's quota, and surface those skipped days in the admin UI.
 
-### Schema (migration)
-Add two columns to `scraper_settings`:
-- `city_rotation text[] not null default '{}'` — ordered list of locations (e.g. `"Austin, TX, USA"`).
-- `city_rotation_index int not null default 0` — pointer to the next city to use.
+### Pipeline behavior (`src/lib/scraper-pipeline.server.ts`)
 
-Seed the existing settings row with a default list of ~200 US cities (largest metros, "City, ST, USA" format).
+Reorder so distribution happens before any decision to scrape:
 
-### Pipeline change (`src/lib/scraper-pipeline.server.ts`)
-Right before the Apify call:
-1. If `city_rotation` is non-empty, pick `city_rotation[index % length]` and override `apify_input.locationQuery` with it.
-2. After a successful run (success or partial), advance `city_rotation_index` by 1 (modulo length) via `supabaseAdmin.update`.
-3. Record the city used in `scraper_runs.details.city`.
+1. Recycle stale "No Answer" leads (unchanged).
+2. Compute per-setter shortfall = `quota − current New count`.
+3. **Distribute first**: pull unassigned New leads from the pool and assign them to setters with shortfall, in order. Update each setter's remaining shortfall as we go.
+4. Recompute total remaining shortfall across all setters.
+5. **If remaining shortfall is 0 → skip scraping.** Log a `scraper_runs` row with `status: "skipped"`, `phase: "skipped"`, `leads_added: 0`, and details `{ reason: "pool_covered_demand", distributed, perSetter }`. Do not advance the city rotation cursor. Return.
+6. Otherwise, call Apify for the remaining shortfall, dedupe + insert, then run a second distribution pass for the freshly inserted leads. Advance the city rotation cursor only after a real Apify call (current behavior — confirmed: don't burn a city on skip days).
+7. Log the run with the city used as today.
 
-If the list is empty, fall back to the existing `locationQuery` from the input form (current behavior).
+### Admin UI (`src/routes/_authenticated/admin/scraper.tsx`)
 
-### Admin UI (`/admin/scraper`)
-In the Search section:
-- Replace the single "Location" input with a **City rotation** card showing:
-  - Header line: "Cycles one city per daily run. Next up: **{cities[index]}**" plus a small "Skip to next" button.
-  - Textarea (one city per line) bound to `city_rotation`.
-  - Counter: "{n} cities · resets after the last".
-- Keep the per-input "Location" hidden when rotation has entries; only used as fallback.
+A "Recent runs" card already exists (shows last 20 with status + raw details JSON). Improvements:
 
-Saving the textarea splits on newlines, trims, drops blanks, and resets `city_rotation_index` to 0 only if the list shape changes meaningfully (length differs) — otherwise preserve the index.
-
-### Server fns (`scraper.functions.ts`)
-- Extend `updateScraperSettings` to accept `city_rotation` and `city_rotation_index`.
-- Add `skipNextCity()` admin fn that advances the index by 1.
+- Bump the list from 20 → 50 entries (in `listScraperRuns`).
+- Render each run as a compact row: timestamp, status badge (`success` / `partial` / `failed` / `skipped`), city used, leads fetched, leads inserted, leads distributed. Keep the raw JSON behind a collapsible "Details" toggle instead of always-on `<pre>`.
+- Add a `skipped` badge variant (muted) so skip days are obvious at a glance.
 
 ### Out of scope
-- Per-setter city lists.
-- Per-search-term city rotation (still one global cycle).
-- Timezone-aware "day" calculation — we rely on the daily 8am EST cron firing once per day.
+
+- Changing the daily cron schedule.
+- Changing recycle logic, dedupe rules, or quota math.
+- Per-setter run history.
+
+### Technical notes
+
+- `scraper_runs.status` is a free text column today (values used: `success`, `partial`, `failed`); adding `"skipped"` requires no migration.
+- `scraper_runs.phase` is also free text; using `"skipped"` keeps it filterable.
+- City rotation cursor advances only inside the existing `if (cityUsed && needFromScrape > 0)` block — already correct for the "don't burn the city" rule once we route skip days around the Apify call.
