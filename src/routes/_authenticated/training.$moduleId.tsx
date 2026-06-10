@@ -70,7 +70,7 @@ function ModulePage() {
   });
 
   const reset = () => { setAnswers({}); setResult(null); };
-  const embed = getEmbedUrl(m.video_url);
+
 
   return (
     <div className="space-y-6 max-w-5xl">
