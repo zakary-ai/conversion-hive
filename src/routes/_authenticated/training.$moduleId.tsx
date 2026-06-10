@@ -78,19 +78,8 @@ function ModulePage() {
         <Button variant="ghost" asChild><Link to="/training">← All modules</Link></Button>
       } />
 
-      {embed && (
-        <Card className="overflow-hidden">
-          <div className="aspect-video bg-black">
-            <iframe
-              src={embed}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title={m.title}
-            />
-          </div>
-        </Card>
-      )}
+      <VideoPlayer url={m.video_url} title={m.title} />
+
 
       <Card className="p-6">
         <h2 className="font-display font-semibold text-lg mb-3">Module notes</h2>
