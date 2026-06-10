@@ -102,6 +102,28 @@ function ModuleDialog({ open, onOpenChange, module: m }: { open: boolean; onOpen
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [uploading, setUploading] = useState(false);
+
+  async function handleUpload(file: File) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "mp4";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("module-videos").upload(path, file, {
+        contentType: file.type || "video/mp4",
+        upsert: false,
+      });
+      if (error) throw error;
+      setVideoUrl(`storage:${path}`);
+      toast.success("Video uploaded");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -109,12 +131,38 @@ function ModuleDialog({ open, onOpenChange, module: m }: { open: boolean; onOpen
         <div className="space-y-3">
           <div><Label>Title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
           <div><Label>Description</Label><Textarea rows={4} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} /></div>
-          <div><Label>Video URL (YouTube/Vimeo)</Label><Input value={videoUrl ?? ""} onChange={(e) => setVideoUrl(e.target.value)} /></div>
+          <div>
+            <Label>Video</Label>
+            <div className="space-y-2">
+              <Input
+                placeholder="YouTube/Vimeo URL or upload below"
+                value={videoUrl ?? ""}
+                onChange={(e) => setVideoUrl(e.target.value)}
+              />
+              <div className="flex items-center gap-2">
+                <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-input cursor-pointer hover:bg-accent">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {uploading ? "Uploading…" : "Upload video file"}
+                  <input
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
+                  />
+                </label>
+                {videoUrl?.startsWith("storage:") && (
+                  <span className="text-xs text-muted-foreground truncate">Uploaded: {videoUrl.slice(8)}</span>
+                )}
+              </div>
+            </div>
+          </div>
           <div><Label>Order</Label><Input type="number" value={orderIndex} onChange={(e) => setOrderIndex(parseInt(e.target.value) || 0)} /></div>
           <div className="flex items-center gap-2"><Switch checked={isActive} onCheckedChange={setIsActive} /><Label>Active</Label></div>
-          <Button onClick={() => save.mutate()} disabled={!title || save.isPending} className="w-full">Save</Button>
+          <Button onClick={() => save.mutate()} disabled={!title || save.isPending || uploading} className="w-full">Save</Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
