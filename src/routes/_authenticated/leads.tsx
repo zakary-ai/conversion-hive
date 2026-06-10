@@ -10,10 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff, Building2, Tag, Clock, Video, Ban, TrendingUp, DollarSign } from "lucide-react";
+import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff, Building2, Tag, Clock, Video, Ban, TrendingUp, DollarSign, MessageSquare, BookOpen, Copy, Check } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { SlotPicker } from "@/components/slot-picker";
+import { CALL_SCRIPTS, OBJECTIONS, SMS_TEMPLATES, fillTemplate } from "@/lib/script-templates";
+import { meQueryOptions } from "@/routes/_authenticated/route";
 import { toast } from "sonner";
 
 const opts = queryOptions({ queryKey: ["my-leads"], queryFn: () => listMyLeads() });
@@ -319,6 +321,10 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
                   </div>
                 </div>
 
+                <ScriptsPanel lead={lead} />
+
+                <SmsPanel lead={lead} />
+
                 <details className="group">
                   <summary className="cursor-pointer text-xs uppercase tracking-widest text-muted-foreground">Notes</summary>
                   <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="mt-2" />
@@ -488,4 +494,132 @@ function defaultDateTime() {
   d.setMinutes(0, 0, 0);
   return d;
 }
+
+function CopyButton({ text, size = "sm" }: { text: string; size?: "sm" | "xs" }) {
+  const [copied, setCopied] = useState(false);
+  const cls = size === "xs" ? "h-6 px-2 text-[11px]" : "h-7 px-2 text-xs";
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className={cls}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          toast.success("Copied");
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          toast.error("Copy failed");
+        }
+      }}
+    >
+      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+      {copied ? "Copied" : "Copy"}
+    </Button>
+  );
+}
+
+function ScriptsPanel({ lead }: { lead: Lead }) {
+  const { data: me } = useQuery({ ...meQueryOptions });
+  const setter = me?.profile?.full_name?.split(/\s+/)[0] ?? "";
+  const vars = { name: lead.name, company: lead.company, setter };
+  return (
+    <details className="group rounded-lg border border-border">
+      <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">
+        <BookOpen className="h-3.5 w-3.5" /> Scripts & objections
+      </summary>
+      <div className="border-t border-border p-3">
+        <Tabs defaultValue="scripts">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="scripts" className="text-xs">Call scripts</TabsTrigger>
+            <TabsTrigger value="objections" className="text-xs">Objections</TabsTrigger>
+          </TabsList>
+          <TabsContent value="scripts" className="mt-3 space-y-2">
+            {CALL_SCRIPTS.map((s) => {
+              const filled = fillTemplate(s.body, vars);
+              return (
+                <div key={s.id} className="rounded-md border border-border bg-muted/20 p-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs font-semibold">{s.title}</div>
+                    <CopyButton text={filled} size="xs" />
+                  </div>
+                  <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed">{filled}</p>
+                </div>
+              );
+            })}
+          </TabsContent>
+          <TabsContent value="objections" className="mt-3 space-y-2">
+            {OBJECTIONS.map((o) => {
+              const filled = fillTemplate(o.response, vars);
+              return (
+                <div key={o.id} className="rounded-md border border-border bg-muted/20 p-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs font-semibold text-muted-foreground">"{o.objection}"</div>
+                    <CopyButton text={filled} size="xs" />
+                  </div>
+                  <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed">{filled}</p>
+                </div>
+              );
+            })}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </details>
+  );
+}
+
+function SmsPanel({ lead }: { lead: Lead }) {
+  const { data: me } = useQuery({ ...meQueryOptions });
+  const setter = me?.profile?.full_name?.split(/\s+/)[0] ?? "";
+  const [templateId, setTemplateId] = useState<string>(SMS_TEMPLATES[0].id);
+  const tpl = SMS_TEMPLATES.find((t) => t.id === templateId) ?? SMS_TEMPLATES[0];
+  const filled = fillTemplate(tpl.body, { name: lead.name, company: lead.company, setter });
+  const [draft, setDraft] = useState(filled);
+  // Reset draft whenever the template or lead changes
+  useEffect(() => { setDraft(filled); }, [templateId, lead.id]);
+  const smsHref = lead.phone
+    ? `sms:${lead.phone.replace(/[^\d+]/g, "")}?&body=${encodeURIComponent(draft)}`
+    : null;
+  return (
+    <details className="group rounded-lg border border-border">
+      <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-xs uppercase tracking-widest text-muted-foreground">
+        <MessageSquare className="h-3.5 w-3.5" /> SMS follow-up
+      </summary>
+      <div className="space-y-2 border-t border-border p-3">
+        <Select value={templateId} onValueChange={setTemplateId}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {SMS_TEMPLATES.map((t) => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={3}
+          className="text-xs"
+        />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-[11px] text-muted-foreground">
+            {lead.phone ? `To ${lead.phone}` : "No phone on file"}
+          </span>
+          <div className="flex gap-1.5">
+            <CopyButton text={draft} size="xs" />
+            {smsHref ? (
+              <Button asChild size="sm" className="h-6 px-2 text-[11px]">
+                <a href={smsHref}><MessageSquare className="h-3 w-3" /> Open SMS</a>
+              </Button>
+            ) : (
+              <Button size="sm" disabled className="h-6 px-2 text-[11px]">
+                <MessageSquare className="h-3 w-3" /> Open SMS
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </details>
+  );
+}
+
 
