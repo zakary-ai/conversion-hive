@@ -1,15 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { meQueryOptions } from "./route";
-import { updateProfile, bootstrapAdmin, changeMyPassword } from "@/lib/api/cl.functions";
+import { updateProfile, changeMyPassword } from "@/lib/api/cl.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Shield, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 const TIMEZONES: { value: string; label: string }[] = [
@@ -40,7 +40,6 @@ function ProfilePage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(me.profile?.full_name ?? "");
-  const [company, setCompany] = useState(me.profile?.company_name ?? "");
   const [timezone, setTimezone] = useState(
     (me.profile as unknown as { timezone?: string } | null)?.timezone ?? "America/New_York"
   );
@@ -57,28 +56,8 @@ function ProfilePage() {
   });
 
   const save = useMutation({
-    mutationFn: () => updateProfile({ data: { full_name: fullName, company_name: company, timezone } }),
+    mutationFn: () => updateProfile({ data: { full_name: fullName, timezone } }),
     onSuccess: () => { toast.success("Profile saved"); qc.invalidateQueries({ queryKey: ["me"] }); },
-  });
-
-  // Check if any admin exists (client-side, RLS allows admins/own to see roles)
-  const adminCheck = useQuery({
-    queryKey: ["admin-exists"],
-    queryFn: async () => {
-      const { count } = await supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
-      return (count ?? 0) > 0;
-    },
-    enabled: !me.isAdmin,
-  });
-
-  const promote = useMutation({
-    mutationFn: () => bootstrapAdmin(),
-    onSuccess: async () => {
-      toast.success("You are now an admin");
-      await qc.invalidateQueries();
-      navigate({ to: "/admin" });
-    },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   return (
@@ -87,7 +66,6 @@ function ProfilePage() {
       <Card className="p-6 space-y-4">
         <div><Label>Email</Label><Input value={me.profile?.email ?? ""} disabled className="mt-1" /></div>
         <div><Label>Full name</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1" /></div>
-        <div><Label>Company</Label><Input value={company} onChange={(e) => setCompany(e.target.value)} className="mt-1" /></div>
         <div>
           <Label>Time zone</Label>
           <select
@@ -103,24 +81,6 @@ function ProfilePage() {
         </div>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>Save changes</Button>
       </Card>
-
-      {!me.isAdmin && adminCheck.data === false && (
-        <Card className="p-6 border-primary/40">
-          <div className="flex items-start gap-3">
-            <Shield className="h-5 w-5 text-primary mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-display font-semibold">First-time setup</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                No admin exists yet. Promote yourself to admin to access the admin dashboard
-                and start managing modules, leads, and commissions.
-              </p>
-              <Button className="mt-3" onClick={() => promote.mutate()} disabled={promote.isPending}>
-                Make me admin
-              </Button>
-            </div>
-          </div>
-        </Card>
-      )}
 
       <Card className="p-6 space-y-4">
         <div>
