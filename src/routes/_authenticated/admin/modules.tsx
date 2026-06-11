@@ -37,9 +37,12 @@ function AdminModules() {
   return (
     <div className="space-y-6 max-w-6xl">
       <PageHeader title="Training modules" action={
-        <Button onClick={() => { setEditing(null); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-1" />New module
-        </Button>
+        <div className="flex gap-2">
+          <BulkUpload nextOrder={(modules[modules.length - 1]?.order_index ?? -1) + 1} />
+          <Button onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" />New module
+          </Button>
+        </div>
       } />
 
       <Card className="overflow-hidden">
