@@ -44,12 +44,20 @@ function AdminModules() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  function move(index: number, dir: -1 | 1) {
-    const target = index + dir;
-    if (target < 0 || target >= modules.length) return;
-    const next = modules.slice();
-    [next[index], next[target]] = [next[target], next[index]];
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = modules.findIndex((m) => m.id === active.id);
+    const newIndex = modules.findIndex((m) => m.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = arrayMove(modules, oldIndex, newIndex);
     const order = next.map((m, i) => ({ id: m.id, order_index: i }));
+    qc.setQueryData(["modules"], next.map((m, i) => ({ ...m, order_index: i })));
     reorder.mutate(order);
   }
 
@@ -65,36 +73,47 @@ function AdminModules() {
       } />
 
       <Card className="overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-            <tr><th className="text-left p-3 w-24">Order</th><th className="text-left p-3">Title</th><th className="text-left p-3">Active</th><th className="p-3"></th></tr>
-          </thead>
-          <tbody>
-            {modules.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No modules.</td></tr>}
-            {modules.map((m, i) => (
-              <tr key={m.id} className="border-t border-border">
-                <td className="p-3">
-                  <div className="flex items-center gap-1">
-                    <Button size="sm" variant="ghost" disabled={i === 0 || reorder.isPending} onClick={() => move(i, -1)}><ArrowUp className="h-3 w-3" /></Button>
-                    <Button size="sm" variant="ghost" disabled={i === modules.length - 1 || reorder.isPending} onClick={() => move(i, 1)}><ArrowDown className="h-3 w-3" /></Button>
-                    <span className="font-mono text-muted-foreground ml-1">{m.order_index}</span>
-                  </div>
-                </td>
-                <td className="p-3 font-medium">{m.title}</td>
-                <td className="p-3 text-muted-foreground">{m.is_active ? "Yes" : "No"}</td>
-                <td className="p-3 text-right whitespace-nowrap">
-                  <Button size="sm" variant="ghost" title="Generate quiz from transcript" onClick={() => setQuizFor(m)}><Sparkles className="h-3 w-3" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => { setEditing(m); setOpen(true); }}><Pencil className="h-3 w-3" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => confirm("Delete module?") && del.mutate(m.id)}><Trash2 className="h-3 w-3" /></Button>
-                </td>
-              </tr>
+        <div className="grid grid-cols-[40px_80px_1fr_80px_140px] gap-2 px-3 py-2 bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+          <div></div><div>Order</div><div>Title</div><div>Active</div><div></div>
+        </div>
+        {modules.length === 0 && <div className="p-8 text-center text-muted-foreground text-sm">No modules.</div>}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+            {modules.map((m) => (
+              <SortableRow
+                key={m.id}
+                module={m}
+                onEdit={() => { setEditing(m); setOpen(true); }}
+                onDelete={() => confirm("Delete module?") && del.mutate(m.id)}
+                onQuiz={() => setQuizFor(m)}
+              />
             ))}
-          </tbody>
-        </table>
+          </SortableContext>
+        </DndContext>
       </Card>
 
       <ModuleDialog open={open} onOpenChange={setOpen} module={editing} />
       <TranscriptQuizDialog module={quizFor} onOpenChange={(o) => !o && setQuizFor(null)} />
+    </div>
+  );
+}
+
+function SortableRow({ module: m, onEdit, onDelete, onQuiz }: { module: Module; onEdit: () => void; onDelete: () => void; onQuiz: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: m.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="grid grid-cols-[40px_80px_1fr_80px_140px] gap-2 px-3 py-3 items-center border-t border-border text-sm bg-background">
+      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none" aria-label="Drag to reorder">
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <div className="font-mono text-muted-foreground">{m.order_index}</div>
+      <div className="font-medium truncate">{m.title}</div>
+      <div className="text-muted-foreground">{m.is_active ? "Yes" : "No"}</div>
+      <div className="text-right whitespace-nowrap">
+        <Button size="sm" variant="ghost" title="Generate quiz from transcript" onClick={onQuiz}><Sparkles className="h-3 w-3" /></Button>
+        <Button size="sm" variant="ghost" onClick={onEdit}><Pencil className="h-3 w-3" /></Button>
+        <Button size="sm" variant="ghost" onClick={onDelete}><Trash2 className="h-3 w-3" /></Button>
+      </div>
     </div>
   );
 }
