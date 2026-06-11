@@ -80,8 +80,34 @@ export const markModuleComplete = createServerFn({ method: "POST" })
   .inputValidator(z.object({ module_id: z.string().uuid() }).parse)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { data: note } = await supabase.from("module_notes")
+      .select("content").eq("user_id", userId).eq("module_id", data.module_id).maybeSingle();
+    if (!note || (note.content ?? "").trim().length < 100) {
+      throw new Error("Please write at least 100 characters of notes before marking complete.");
+    }
     const { error } = await supabase.from("module_completions")
       .upsert({ user_id: userId, module_id: data.module_id }, { onConflict: "user_id,module_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getMyModuleNote = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ module_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: note } = await supabase.from("module_notes")
+      .select("content").eq("user_id", userId).eq("module_id", data.module_id).maybeSingle();
+    return { content: note?.content ?? "" };
+  });
+
+export const upsertMyModuleNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ module_id: z.string().uuid(), content: z.string().max(20000) }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase.from("module_notes")
+      .upsert({ user_id: userId, module_id: data.module_id, content: data.content }, { onConflict: "user_id,module_id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
