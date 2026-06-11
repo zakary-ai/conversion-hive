@@ -160,7 +160,8 @@ export const listQuizQuestions = createServerFn({ method: "GET" })
       .from("quiz_questions").select("*").eq("module_id", data.module_id).order("created_at");
     const rows = qs ?? [];
     if (isAdmin) return rows;
-    return rows.map(({ correct_answer: _ca, ...rest }) => rest);
+    // Null out correct_answer for non-admins; type shape preserved for callers.
+    return rows.map((r) => ({ ...r, correct_answer: null as unknown as number }));
   });
 
 export const submitQuiz = createServerFn({ method: "POST" })
