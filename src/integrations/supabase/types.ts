@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      applications: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          credit_score_range: Database["public"]["Enums"]["application_credit"]
+          current_monthly_income: string
+          desired_monthly_income: string
+          full_name: string
+          id: string
+          open_to_invest: Database["public"]["Enums"]["application_invest"]
+          phone: string
+          status: Database["public"]["Enums"]["application_status"]
+          updated_at: string
+          why_remote_sales: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          credit_score_range: Database["public"]["Enums"]["application_credit"]
+          current_monthly_income: string
+          desired_monthly_income: string
+          full_name: string
+          id?: string
+          open_to_invest: Database["public"]["Enums"]["application_invest"]
+          phone: string
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+          why_remote_sales: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          credit_score_range?: Database["public"]["Enums"]["application_credit"]
+          current_monthly_income?: string
+          desired_monthly_income?: string
+          full_name?: string
+          id?: string
+          open_to_invest?: Database["public"]["Enums"]["application_invest"]
+          phone?: string
+          status?: Database["public"]["Enums"]["application_status"]
+          updated_at?: string
+          why_remote_sales?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           commission_amount: number | null
@@ -518,6 +563,19 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "client"
+      application_credit:
+        | "600-650"
+        | "650-700"
+        | "700-750"
+        | "750-800"
+        | "800-850"
+      application_invest: "Yes" | "No" | "Maybe"
+      application_status:
+        | "New"
+        | "No Answer"
+        | "Follow Up"
+        | "Booked"
+        | "Not Interested"
       lead_status:
         | "New"
         | "Contacted"
@@ -656,6 +714,21 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "client"],
+      application_credit: [
+        "600-650",
+        "650-700",
+        "700-750",
+        "750-800",
+        "800-850",
+      ],
+      application_invest: ["Yes", "No", "Maybe"],
+      application_status: [
+        "New",
+        "No Answer",
+        "Follow Up",
+        "Booked",
+        "Not Interested",
+      ],
       lead_status: [
         "New",
         "Contacted",

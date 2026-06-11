@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
-  GraduationCap, Sparkles, Settings, Briefcase, Calendar as CalendarIcon,
+  GraduationCap, Sparkles, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
 } from "lucide-react";
 
 const clientItems = [
@@ -21,6 +21,7 @@ const adminItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Setters", url: "/admin/clients", icon: Users },
   { title: "Leads", url: "/admin/leads", icon: Briefcase },
+  { title: "Applications", url: "/admin/applications", icon: Inbox },
   { title: "Calendar", url: "/calendar", icon: CalendarIcon },
   { title: "Modules", url: "/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/admin/quizzes", icon: ListChecks },
