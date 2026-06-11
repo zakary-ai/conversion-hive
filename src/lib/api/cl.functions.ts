@@ -151,17 +151,16 @@ export const listQuizQuestions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ module_id: z.string().uuid() }).parse)
   .handler(async ({ data, context }) => {
-    // Use admin client and strip correct_answer so users can't see it.
+    // Use admin client; strip correct_answer for non-admins so it never reaches the browser.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId, _role: "admin",
     });
-    const cols = isAdmin
-      ? "*"
-      : "id, module_id, question_text, options, created_at";
     const { data: qs } = await supabaseAdmin
-      .from("quiz_questions").select(cols).eq("module_id", data.module_id).order("created_at");
-    return qs ?? [];
+      .from("quiz_questions").select("*").eq("module_id", data.module_id).order("created_at");
+    const rows = qs ?? [];
+    if (isAdmin) return rows;
+    return rows.map(({ correct_answer: _ca, ...rest }) => rest);
   });
 
 export const submitQuiz = createServerFn({ method: "POST" })
