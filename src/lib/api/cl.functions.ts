@@ -151,9 +151,17 @@ export const listQuizQuestions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ module_id: z.string().uuid() }).parse)
   .handler(async ({ data, context }) => {
-    const { data: qs } = await context.supabase
+    // Use admin client; strip correct_answer for non-admins so it never reaches the browser.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId, _role: "admin",
+    });
+    const { data: qs } = await supabaseAdmin
       .from("quiz_questions").select("*").eq("module_id", data.module_id).order("created_at");
-    return qs ?? [];
+    const rows = qs ?? [];
+    if (isAdmin) return rows;
+    // Null out correct_answer for non-admins; type shape preserved for callers.
+    return rows.map((r) => ({ ...r, correct_answer: null as unknown as number }));
   });
 
 export const submitQuiz = createServerFn({ method: "POST" })
@@ -164,7 +172,8 @@ export const submitQuiz = createServerFn({ method: "POST" })
   }).parse)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: qs } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: qs } = await supabaseAdmin
       .from("quiz_questions").select("id, correct_answer").eq("module_id", data.module_id).order("created_at");
     const questions = qs ?? [];
     let correct = 0;
