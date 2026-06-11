@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { listModules, createModule, updateModule, deleteModule } from "@/lib/api/cl.functions";
+import { listModules, createModule, updateModule, deleteModule, reorderModules, generateQuizFromTranscript } from "@/lib/api/cl.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Upload, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Loader2, ArrowUp, ArrowDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,11 +28,27 @@ function AdminModules() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Module | null>(null);
   const [open, setOpen] = useState(false);
+  const [quizFor, setQuizFor] = useState<Module | null>(null);
 
   const del = useMutation({
     mutationFn: (id: string) => deleteModule({ data: { id } }),
     onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["modules"] }); },
   });
+
+  const reorder = useMutation({
+    mutationFn: (order: { id: string; order_index: number }[]) => reorderModules({ data: { order } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["modules"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function move(index: number, dir: -1 | 1) {
+    const target = index + dir;
+    if (target < 0 || target >= modules.length) return;
+    const next = modules.slice();
+    [next[index], next[target]] = [next[target], next[index]];
+    const order = next.map((m, i) => ({ id: m.id, order_index: i }));
+    reorder.mutate(order);
+  }
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -48,16 +64,23 @@ function AdminModules() {
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-            <tr><th className="text-left p-3">#</th><th className="text-left p-3">Title</th><th className="text-left p-3">Active</th><th className="p-3"></th></tr>
+            <tr><th className="text-left p-3 w-24">Order</th><th className="text-left p-3">Title</th><th className="text-left p-3">Active</th><th className="p-3"></th></tr>
           </thead>
           <tbody>
             {modules.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No modules.</td></tr>}
-            {modules.map((m) => (
+            {modules.map((m, i) => (
               <tr key={m.id} className="border-t border-border">
-                <td className="p-3 font-mono text-muted-foreground">{m.order_index}</td>
+                <td className="p-3">
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="ghost" disabled={i === 0 || reorder.isPending} onClick={() => move(i, -1)}><ArrowUp className="h-3 w-3" /></Button>
+                    <Button size="sm" variant="ghost" disabled={i === modules.length - 1 || reorder.isPending} onClick={() => move(i, 1)}><ArrowDown className="h-3 w-3" /></Button>
+                    <span className="font-mono text-muted-foreground ml-1">{m.order_index}</span>
+                  </div>
+                </td>
                 <td className="p-3 font-medium">{m.title}</td>
                 <td className="p-3 text-muted-foreground">{m.is_active ? "Yes" : "No"}</td>
-                <td className="p-3 text-right">
+                <td className="p-3 text-right whitespace-nowrap">
+                  <Button size="sm" variant="ghost" title="Generate quiz from transcript" onClick={() => setQuizFor(m)}><Sparkles className="h-3 w-3" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => { setEditing(m); setOpen(true); }}><Pencil className="h-3 w-3" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => confirm("Delete module?") && del.mutate(m.id)}><Trash2 className="h-3 w-3" /></Button>
                 </td>
@@ -68,6 +91,7 @@ function AdminModules() {
       </Card>
 
       <ModuleDialog open={open} onOpenChange={setOpen} module={editing} />
+      <TranscriptQuizDialog module={quizFor} onOpenChange={(o) => !o && setQuizFor(null)} />
     </div>
   );
 }
@@ -121,6 +145,65 @@ function BulkUpload({ nextOrder }: { nextOrder: number }) {
         onChange={(e) => e.target.files && handleFiles(e.target.files)}
       />
     </label>
+  );
+}
+
+function TranscriptQuizDialog({ module: m, onOpenChange }: { module: Module | null; onOpenChange: (o: boolean) => void }) {
+  const qc = useQueryClient();
+  const [transcript, setTranscript] = useState("");
+  const [count, setCount] = useState(5);
+  const [replace, setReplace] = useState(false);
+
+  const gen = useMutation({
+    mutationFn: () => generateQuizFromTranscript({ data: { module_id: m!.id, transcript, count, replace } }),
+    onSuccess: (res) => {
+      toast.success(`Generated ${res.inserted} question${res.inserted === 1 ? "" : "s"}`);
+      qc.invalidateQueries({ queryKey: ["questions", m!.id] });
+      setTranscript("");
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  async function handleFile(file: File) {
+    const text = await file.text();
+    setTranscript(text);
+  }
+
+  return (
+    <Dialog open={!!m} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader><DialogTitle>Generate quiz — {m?.title}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Transcript</Label>
+            <Textarea rows={10} value={transcript} onChange={(e) => setTranscript(e.target.value)} placeholder="Paste transcript text or upload a .txt/.vtt/.srt file…" />
+            <div className="mt-2">
+              <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-input cursor-pointer hover:bg-accent">
+                <Upload className="h-4 w-4" />
+                Upload transcript file
+                <input type="file" accept=".txt,.vtt,.srt,.md,text/*" className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+              </label>
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">{transcript.length.toLocaleString()} characters</div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>How many questions</Label>
+              <Input type="number" min={1} max={15} value={count} onChange={(e) => setCount(Math.max(1, Math.min(15, parseInt(e.target.value) || 5)))} />
+            </div>
+            <div className="flex items-end gap-2">
+              <Switch checked={replace} onCheckedChange={setReplace} />
+              <Label className="mb-2">Replace existing questions</Label>
+            </div>
+          </div>
+          <Button onClick={() => gen.mutate()} disabled={transcript.length < 50 || gen.isPending} className="w-full">
+            {gen.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating…</> : <><Sparkles className="h-4 w-4 mr-2" />Generate quiz</>}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -220,4 +303,3 @@ function ModuleDialog({ open, onOpenChange, module: m }: { open: boolean; onOpen
     </Dialog>
   );
 }
-

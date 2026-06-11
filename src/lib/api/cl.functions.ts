@@ -894,3 +894,86 @@ export const changeMyPassword = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Admin: reorder modules ----------
+export const reorderModules = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    order: z.array(z.object({ id: z.string().uuid(), order_index: z.number().int() })).max(500),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Two-pass to avoid unique collisions if any. Bump first into negative space, then set final.
+    for (const item of data.order) {
+      const { error } = await supabaseAdmin.from("modules").update({ order_index: -1000 - item.order_index }).eq("id", item.id);
+      if (error) throw new Error(error.message);
+    }
+    for (const item of data.order) {
+      const { error } = await supabaseAdmin.from("modules").update({ order_index: item.order_index }).eq("id", item.id);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+// ---------- Admin: generate quiz questions from transcript ----------
+export const generateQuizFromTranscript = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    module_id: z.string().uuid(),
+    transcript: z.string().min(50).max(100_000),
+    count: z.number().int().min(1).max(15).default(5),
+    replace: z.boolean().default(false),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+
+    const system = `You generate multiple-choice quiz questions from training transcripts. Output ONLY valid JSON matching this schema: {"questions":[{"question_text":string,"options":[string,string,string,string],"correct_answer":number}]}. correct_answer is the 0-based index into options. Make questions clear, test understanding (not trivia), and ensure exactly one correct option per question.`;
+    const user = `Generate ${data.count} multiple-choice questions (4 options each) from this transcript:\n\n${data.transcript}`;
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`AI gateway error ${res.status}: ${text.slice(0, 200)}`);
+    }
+    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const content = json.choices?.[0]?.message?.content ?? "{}";
+    let parsed: { questions?: Array<{ question_text: string; options: string[]; correct_answer: number }> };
+    try { parsed = JSON.parse(content); } catch { throw new Error("AI returned invalid JSON"); }
+    const questions = (parsed.questions ?? []).filter((q) =>
+      q && typeof q.question_text === "string" && Array.isArray(q.options) && q.options.length >= 2 &&
+      typeof q.correct_answer === "number" && q.correct_answer >= 0 && q.correct_answer < q.options.length
+    );
+    if (questions.length === 0) throw new Error("AI returned no usable questions");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.replace) {
+      const { error: delErr } = await supabaseAdmin.from("quiz_questions").delete().eq("module_id", data.module_id);
+      if (delErr) throw new Error(delErr.message);
+    }
+    const rows = questions.map((q) => ({
+      module_id: data.module_id,
+      question_text: q.question_text.slice(0, 500),
+      options: q.options.slice(0, 6).map((o) => String(o).slice(0, 300)),
+      correct_answer: q.correct_answer,
+    }));
+    const { error } = await supabaseAdmin.from("quiz_questions").insert(rows);
+    if (error) throw new Error(error.message);
+    return { inserted: rows.length };
+  });
