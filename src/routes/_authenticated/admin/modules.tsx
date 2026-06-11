@@ -37,9 +37,12 @@ function AdminModules() {
   return (
     <div className="space-y-6 max-w-6xl">
       <PageHeader title="Training modules" action={
-        <Button onClick={() => { setEditing(null); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-1" />New module
-        </Button>
+        <div className="flex gap-2">
+          <BulkUpload nextOrder={(modules[modules.length - 1]?.order_index ?? -1) + 1} />
+          <Button onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" />New module
+          </Button>
+        </div>
       } />
 
       <Card className="overflow-hidden">
@@ -66,6 +69,58 @@ function AdminModules() {
 
       <ModuleDialog open={open} onOpenChange={setOpen} module={editing} />
     </div>
+  );
+}
+
+function BulkUpload({ nextOrder }: { nextOrder: number }) {
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
+
+  async function handleFiles(files: FileList) {
+    if (!files.length) return;
+    setBusy(true);
+    setProgress({ done: 0, total: files.length });
+    let order = nextOrder;
+    let failures = 0;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const ext = file.name.split(".").pop() || "mp4";
+        const path = `${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("module-videos").upload(path, file, {
+          contentType: file.type || "video/mp4",
+          upsert: false,
+        });
+        if (upErr) throw upErr;
+        const title = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || `Module ${order + 1}`;
+        await createModule({ data: { title, description: "", video_url: `storage:${path}`, order_index: order, is_active: true } });
+        order++;
+      } catch (e) {
+        failures++;
+        toast.error(`${file.name}: ${(e as Error).message}`);
+      }
+      setProgress({ done: i + 1, total: files.length });
+    }
+    setBusy(false);
+    qc.invalidateQueries({ queryKey: ["modules"] });
+    if (failures === 0) toast.success(`Uploaded ${files.length} module${files.length === 1 ? "" : "s"}`);
+    else toast.warning(`Completed with ${failures} failure(s)`);
+  }
+
+  return (
+    <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-input cursor-pointer hover:bg-accent">
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+      {busy ? `Uploading ${progress.done}/${progress.total}…` : "Bulk upload"}
+      <input
+        type="file"
+        accept="video/*"
+        multiple
+        className="hidden"
+        disabled={busy}
+        onChange={(e) => e.target.files && handleFiles(e.target.files)}
+      />
+    </label>
   );
 }
 
