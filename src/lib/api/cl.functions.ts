@@ -826,7 +826,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
   }).parse)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const [profile, leads, completions, attempts, commissions, totalModules, appointments] = await Promise.all([
+    const [profile, leads, completions, attempts, commissions, totalModules, appointments, calls] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", data.user_id).maybeSingle(),
       supabase.from("leads").select("*").eq("assigned_user_id", data.user_id).order("created_at", { ascending: false }),
       supabase.from("module_completions").select("*").eq("user_id", data.user_id),
@@ -834,6 +834,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
       supabase.from("commissions").select("*").eq("user_id", data.user_id).order("created_at", { ascending: false }),
       supabase.from("modules").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase.from("appointments").select("*").eq("user_id", data.user_id).order("scheduled_at", { ascending: false }),
+      supabase.from("call_logs").select("started_at, created_at").eq("user_id", data.user_id),
     ]);
     const commRows = commissions.data ?? [];
     const balance = commRows.reduce((s, c) => s + Number(c.amount), 0);
@@ -841,6 +842,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
     const unpaid = balance - paid;
     const appts = appointments.data ?? [];
     const allLeads = leads.data ?? [];
+    const allCalls = calls.data ?? [];
 
     const days = data.range === "day" ? 1 : data.range === "week" ? 7 : data.range === "month" ? 30 : data.range === "90d" ? 90 : null;
     const cutoff = days ? Date.now() - days * 86400_000 : null;
@@ -852,6 +854,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
 
     const bookings = inRange(appts.filter((a) => a.type === "booking"), "scheduled_at");
     const leadsInRange = inRange(allLeads, "created_at");
+    const callsInRange = inRange(allCalls as Record<string, unknown>[], "started_at");
 
     return {
       profile: profile.data,
@@ -870,9 +873,11 @@ export const getClientDetail = createServerFn({ method: "GET" })
         lost: bookings.filter((a) => a.outcome === "lost").length,
         pending: bookings.filter((a) => !a.outcome).length,
         leadsCount: leadsInRange.length,
+        dials: callsInRange.length,
       },
     };
   });
+
 
 // ---------- Admin: invite client ----------
 export const DEFAULT_CLIENT_PASSWORD = "ConversionLab1095!";
