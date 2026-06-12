@@ -820,7 +820,10 @@ export const listClients = createServerFn({ method: "GET" })
 
 export const getClientDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ user_id: z.string().uuid() }).parse)
+  .inputValidator(z.object({
+    user_id: z.string().uuid(),
+    range: z.enum(["day", "week", "month", "90d", "all"]).default("all"),
+  }).parse)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const [profile, leads, completions, attempts, commissions, totalModules, appointments] = await Promise.all([
@@ -837,10 +840,22 @@ export const getClientDetail = createServerFn({ method: "GET" })
     const paid = commRows.filter((c) => c.paid_at).reduce((s, c) => s + Number(c.amount), 0);
     const unpaid = balance - paid;
     const appts = appointments.data ?? [];
-    const bookings = appts.filter((a) => a.type === "booking");
+    const allLeads = leads.data ?? [];
+
+    const days = data.range === "day" ? 1 : data.range === "week" ? 7 : data.range === "month" ? 30 : data.range === "90d" ? 90 : null;
+    const cutoff = days ? Date.now() - days * 86400_000 : null;
+    const inRange = <T extends Record<string, unknown>>(arr: T[], key: string) =>
+      cutoff == null ? arr : arr.filter((r) => {
+        const v = r[key];
+        return typeof v === "string" && new Date(v).getTime() >= cutoff;
+      });
+
+    const bookings = inRange(appts.filter((a) => a.type === "booking"), "scheduled_at");
+    const leadsInRange = inRange(allLeads, "created_at");
+
     return {
       profile: profile.data,
-      leads: leads.data ?? [],
+      leads: allLeads,
       completions: completions.data ?? [],
       attempts: attempts.data ?? [],
       commissions: commRows,
@@ -854,6 +869,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
         closed: bookings.filter((a) => a.outcome === "closed").length,
         lost: bookings.filter((a) => a.outcome === "lost").length,
         pending: bookings.filter((a) => !a.outcome).length,
+        leadsCount: leadsInRange.length,
       },
     };
   });
