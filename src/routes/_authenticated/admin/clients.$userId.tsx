@@ -14,14 +14,16 @@ import { Briefcase, DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, Cal
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+type Range = "day" | "week" | "month" | "90d" | "all";
+
 export const Route = createFileRoute("/_authenticated/admin/clients/$userId")({
-  loader: ({ context, params }) => context.queryClient.ensureQueryData(opts(params.userId)),
+  loader: ({ context, params }) => context.queryClient.ensureQueryData(opts(params.userId, "all")),
   component: SetterDetailPage,
 });
 
-const opts = (id: string) => queryOptions({
-  queryKey: ["client-detail", id],
-  queryFn: () => getClientDetail({ data: { user_id: id } }),
+const opts = (id: string, range: Range) => queryOptions({
+  queryKey: ["client-detail", id, range],
+  queryFn: () => getClientDetail({ data: { user_id: id, range } }),
 });
 
 const fmtDate = (s?: string | null) =>
@@ -39,9 +41,18 @@ type Commission = {
   paid_method: string | null;
 };
 
+const RANGES: { id: Range; label: string }[] = [
+  { id: "day", label: "Day" },
+  { id: "week", label: "Week" },
+  { id: "month", label: "Month" },
+  { id: "90d", label: "90 days" },
+  { id: "all", label: "All time" },
+];
+
 function SetterDetailPage() {
   const { userId } = Route.useParams();
-  const { data } = useSuspenseQuery(opts(userId));
+  const [range, setRange] = useState<Range>("all");
+  const { data } = useSuspenseQuery(opts(userId, range));
   const qc = useQueryClient();
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
@@ -67,11 +78,25 @@ function SetterDetailPage() {
         action={<Button variant="ghost" asChild><Link to="/admin/clients">← All setters</Link></Button>}
       />
 
+      <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">
+        {RANGES.map((r) => (
+          <Button
+            key={r.id}
+            size="sm"
+            variant={range === r.id ? "default" : "ghost"}
+            className="h-7 text-xs"
+            onClick={() => setRange(r.id)}
+          >
+            {r.label}
+          </Button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Bookings" value={data.stats.bookings} icon={CalendarClock} />
         <StatCard label="Closed" value={data.stats.closed} icon={CheckCircle2} />
         <StatCard label="Lost" value={data.stats.lost} icon={XCircle} />
-        <StatCard label="Leads" value={data.leads.length} icon={Briefcase} />
+        <StatCard label="Leads" value={data.stats.leadsCount} icon={Briefcase} />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
