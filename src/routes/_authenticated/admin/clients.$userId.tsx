@@ -100,6 +100,8 @@ function SetterDetailPage() {
         <StatCard label="Closed" value={data.stats.closed} icon={CheckCircle2} />
         <StatCard label="Lost" value={data.stats.lost} icon={XCircle} />
         <StatCard label="Leads" value={data.stats.leadsCount} icon={Briefcase} />
+        <StatCard label="Dials" value={data.stats.dials} icon={Phone} />
+
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
