@@ -49,9 +49,14 @@ const SCRAPE_TOGGLES: Array<{ key: keyof ApifyInput; label: string; hint: string
 ];
 
 
+type SetterRange = "day" | "week" | "month" | "90d";
 const settingsOpts = queryOptions({ queryKey: ["scraper-settings"], queryFn: () => getScraperSettings() });
-const settersOpts = queryOptions({ queryKey: ["scraper-setters"], queryFn: () => listScraperSetters() });
+const settersOpts = (range: SetterRange) => queryOptions({
+  queryKey: ["scraper-setters", range],
+  queryFn: () => listScraperSetters({ data: { range } }),
+});
 const runsOpts = queryOptions({ queryKey: ["scraper-runs"], queryFn: () => listScraperRuns() });
+
 
 export const Route = createFileRoute("/_authenticated/admin/scraper")({
   loader: ({ context }) => Promise.all([
