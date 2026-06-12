@@ -114,6 +114,26 @@ function SetterDetailPage() {
         ))}
       </div>
 
+      <Card className="p-4 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">OpenPhone (Quo) number</div>
+          <div className="font-mono text-sm mt-0.5">{assignedNumber ?? <span className="text-muted-foreground">— none assigned —</span>}</div>
+          {profileExtra?.personal_phone_e164 && (
+            <div className="text-xs text-muted-foreground mt-1">Forwards to {profileExtra.personal_phone_e164}</div>
+          )}
+        </div>
+        {assignedNumber ? (
+          <Button size="sm" variant="outline" onClick={() => unassign.mutate()} disabled={unassign.isPending}>
+            {unassign.isPending ? "Releasing…" : "Release number"}
+          </Button>
+        ) : (
+          <Button size="sm" onClick={() => provision.mutate()} disabled={provision.isPending}>
+            {provision.isPending ? "Assigning…" : "Provision number"}
+          </Button>
+        )}
+      </Card>
+
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Bookings" value={data.stats.bookings} icon={CalendarClock} />
         <StatCard label="Closed" value={data.stats.closed} icon={CheckCircle2} />
