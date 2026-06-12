@@ -300,6 +300,11 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
 
                 {/* Outcome actions */}
                 <div className="space-y-2">
+                  {lead.phone && (
+                    <div className="flex justify-center pb-1">
+                      <CallButton leadId={lead.id} variant="inline" />
+                    </div>
+                  )}
                   <div className="text-xs uppercase tracking-widest text-muted-foreground">Set outcome</div>
                   <div className="grid grid-cols-2 gap-1.5 sm:gap-2 [&>button]:min-w-0">
                     <Button onClick={() => setBookOpen(true)} className="h-9 px-2 text-xs bg-success text-success-foreground hover:bg-success/90 sm:h-12 sm:text-sm">
