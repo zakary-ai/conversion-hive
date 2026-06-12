@@ -151,7 +151,14 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                           )}
                         </div>
                       )}
-                      <Button size="sm" variant="outline" className="w-full" onClick={() => setMode(appt.outcome === "lost" ? "lost" : "closed")}>
+                      {appt.outcome === "no_show" && (
+                        <div className="rounded-md bg-warning/10 border border-warning/30 p-3">
+                          <div className="flex items-center gap-2 text-warning font-medium">
+                            <UserX className="h-4 w-4" /> Lead did not show
+                          </div>
+                        </div>
+                      )}
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => setMode(appt.outcome === "lost" ? "lost" : appt.outcome === "no_show" ? "no_show" : "closed")}>
                         Edit outcome
                       </Button>
                     </div>
@@ -173,6 +180,15 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                           className={cn(mode === "lost" && "bg-destructive hover:bg-destructive/90 text-destructive-foreground")}
                         >
                           <XCircle className="h-4 w-4 mr-1" /> Lost
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => mutation.mutate({ id: appt.id, outcome: "no_show" })}
+                          disabled={mutation.isPending}
+                          className="bg-warning/10 hover:bg-warning/20 text-warning border-warning/30"
+                        >
+                          <UserX className="h-4 w-4 mr-1" /> No show
                         </Button>
                         {appt.outcome && mode !== "none" && (
                           <Button size="sm" variant="ghost" onClick={() => setMode("none")}>
