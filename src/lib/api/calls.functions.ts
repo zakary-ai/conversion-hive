@@ -211,7 +211,7 @@ export const startBridgeCall = createServerFn({ method: "POST" })
 
     await supabase.from("leads").update({ contacted_at: new Date().toISOString() }).eq("id", lead.id);
 
-    return { ok: true, call_log_id: log?.id, dial: toNumber };
+    return { ok: true, call_log_id: log?.id, dial: toNumber, from: fromNumber };
   });
 
 // ---------- Call history ----------
