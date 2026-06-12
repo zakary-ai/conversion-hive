@@ -87,7 +87,7 @@ function LeadsPage() {
                 </div>
                 {l.phone && (
                   <div onClick={(e) => e.stopPropagation()}>
-                    <CallButton leadId={l.id} ariaLabel={`Call ${l.name}`} />
+                    <CallButton leadId={l.id} ariaLabel={`Call ${l.name}`} onCalled={() => setOpen(l)} />
                   </div>
                 )}
               </Card>
@@ -359,11 +359,18 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
   );
 }
 
-function CallButton({ leadId, ariaLabel, variant = "round" }: { leadId: string; ariaLabel?: string; variant?: "round" | "inline" }) {
+function CallButton({ leadId, ariaLabel, variant = "round", onCalled }: { leadId: string; ariaLabel?: string; variant?: "round" | "inline"; onCalled?: () => void }) {
   const m = useMutation({
     mutationFn: () => startBridgeCall({ data: { lead_id: leadId } }),
     onSuccess: (res) => {
-      if (res?.dial) window.location.href = `tel:${res.dial}`;
+      // Open the lead's outcome panel BEFORE switching to the dialer, so
+      // it's waiting on screen when the setter returns from the call.
+      onCalled?.();
+      if (res?.dial) {
+        const a = document.createElement("a");
+        a.href = `tel:${res.dial}`;
+        a.click();
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
