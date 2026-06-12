@@ -51,7 +51,10 @@ export const updateScraperSettings = createServerFn({ method: "POST" })
 
 export const listScraperSetters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((data: unknown) =>
+    z.object({ range: z.enum(["day", "week", "month", "90d"]).default("day") }).parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "client");
@@ -61,13 +64,15 @@ export const listScraperSetters = createServerFn({ method: "GET" })
       .from("profiles")
       .select("user_id, full_name, email, scraper_enabled, daily_lead_quota")
       .in("user_id", ids);
-    const { data: newLeads } = await supabaseAdmin
+    const days = data.range === "day" ? 1 : data.range === "week" ? 7 : data.range === "month" ? 30 : 90;
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const { data: rangeLeads } = await supabaseAdmin
       .from("leads")
       .select("assigned_user_id")
-      .eq("status", "New")
+      .gte("created_at", cutoff)
       .in("assigned_user_id", ids);
     const counts = new Map<string, number>();
-    for (const l of newLeads ?? []) {
+    for (const l of rangeLeads ?? []) {
       const u = l.assigned_user_id as string | null;
       if (u) counts.set(u, (counts.get(u) ?? 0) + 1);
     }
@@ -80,6 +85,7 @@ export const listScraperSetters = createServerFn({ method: "GET" })
       current_new: counts.get(p.user_id as string) ?? 0,
     }));
   });
+
 
 export const updateSetterScraperConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

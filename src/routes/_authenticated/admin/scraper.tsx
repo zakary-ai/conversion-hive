@@ -49,23 +49,30 @@ const SCRAPE_TOGGLES: Array<{ key: keyof ApifyInput; label: string; hint: string
 ];
 
 
+type SetterRange = "day" | "week" | "month" | "90d";
 const settingsOpts = queryOptions({ queryKey: ["scraper-settings"], queryFn: () => getScraperSettings() });
-const settersOpts = queryOptions({ queryKey: ["scraper-setters"], queryFn: () => listScraperSetters() });
+const settersOpts = (range: SetterRange) => queryOptions({
+  queryKey: ["scraper-setters", range],
+  queryFn: () => listScraperSetters({ data: { range } }),
+});
 const runsOpts = queryOptions({ queryKey: ["scraper-runs"], queryFn: () => listScraperRuns() });
+
 
 export const Route = createFileRoute("/_authenticated/admin/scraper")({
   loader: ({ context }) => Promise.all([
     context.queryClient.ensureQueryData(settingsOpts),
-    context.queryClient.ensureQueryData(settersOpts),
+    context.queryClient.ensureQueryData(settersOpts("day")),
     context.queryClient.ensureQueryData(runsOpts),
   ]),
   component: ScraperPage,
 });
 
 function ScraperPage() {
+  const [setterRange, setSetterRange] = useState<SetterRange>("day");
   const { data: settings } = useSuspenseQuery(settingsOpts);
-  const { data: setters } = useSuspenseQuery(settersOpts);
+  const { data: setters } = useSuspenseQuery(settersOpts(setterRange));
   const { data: runs } = useSuspenseQuery(runsOpts);
+
   const qc = useQueryClient();
 
   const DEFAULT_ACTOR = "compass/google-maps-extractor";
@@ -336,14 +343,34 @@ function ScraperPage() {
       </Card>
 
       <Card className="p-4 space-y-3">
-        <h3 className="font-semibold">Setters</h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-semibold">Setters</h3>
+          <div className="inline-flex rounded-md border border-border bg-muted/30 p-0.5 text-xs">
+            {([
+              { v: "day", l: "Day" },
+              { v: "week", l: "Week" },
+              { v: "month", l: "Month" },
+              { v: "90d", l: "90 days" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => setSetterRange(opt.v)}
+                className={`px-3 py-1 rounded ${setterRange === opt.v ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {opt.l}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-xs uppercase text-muted-foreground">
-              <tr><th className="text-left p-2">Name</th><th className="text-left p-2">New now</th><th className="text-left p-2">Daily quota</th><th className="text-left p-2">Enabled</th></tr>
+              <tr><th className="text-left p-2">Name</th><th className="text-left p-2">Leads ({setterRange === "day" ? "today" : setterRange === "week" ? "7d" : setterRange === "month" ? "30d" : "90d"})</th><th className="text-left p-2">Daily quota</th><th className="text-left p-2">Enabled</th></tr>
             </thead>
             <tbody>
               {setters.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-muted-foreground">No setters yet.</td></tr>}
+
               {setters.map((s) => (
                 <tr key={s.user_id} className="border-t border-border">
                   <td className="p-2">{s.full_name || s.email || s.user_id.slice(0, 8)}</td>
