@@ -69,6 +69,27 @@ function SetterDetailPage() {
     },
   });
 
+  const profileExtra = data.profile as unknown as { openphone_number_e164?: string | null; personal_phone_e164?: string | null } | null;
+  const assignedNumber = profileExtra?.openphone_number_e164 ?? null;
+  const provision = useMutation({
+    mutationFn: () => provisionNumberForUser({ data: { user_id: userId } }),
+    onSuccess: (r) => {
+      toast.success(`Assigned ${r.phone}`);
+      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
+      qc.invalidateQueries({ queryKey: ["openphone-pool"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const unassign = useMutation({
+    mutationFn: () => unassignUserNumber({ data: { user_id: userId } }),
+    onSuccess: () => {
+      toast.success("Number released");
+      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
+      qc.invalidateQueries({ queryKey: ["openphone-pool"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const progress = data.totalModules ? Math.round((data.completions.length / data.totalModules) * 100) : 0;
 
   return (
