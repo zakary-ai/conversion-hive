@@ -354,6 +354,31 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
   );
 }
 
+function CallButton({ leadId, ariaLabel, variant = "round" }: { leadId: string; ariaLabel?: string; variant?: "round" | "inline" }) {
+  const m = useMutation({
+    mutationFn: () => startBridgeCall({ data: { lead_id: leadId } }),
+    onSuccess: () => toast.success("Ringing your phone…"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  if (variant === "inline") {
+    return (
+      <Button onClick={() => m.mutate()} disabled={m.isPending} className="h-9 px-3 text-xs bg-primary text-primary-foreground">
+        <Phone className="h-4 w-4" /> {m.isPending ? "Ringing…" : "Call (Quo)"}
+      </Button>
+    );
+  }
+  return (
+    <button
+      onClick={() => m.mutate()}
+      disabled={m.isPending}
+      className="h-11 w-11 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow disabled:opacity-60"
+      aria-label={ariaLabel}
+    >
+      <Phone className="h-5 w-5" />
+    </button>
+  );
+}
+
 function DetailRow({ icon: Icon, label, value }: { icon: typeof Phone; label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2">
