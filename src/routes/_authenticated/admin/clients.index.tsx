@@ -24,16 +24,15 @@ function ClientsList() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [company, setCompany] = useState("");
   const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const invite = useMutation({
-    mutationFn: () => inviteClient({ data: { email, full_name: fullName, company_name: company } }),
+    mutationFn: () => inviteClient({ data: { email, full_name: fullName } }),
     onSuccess: (res) => {
       toast.success("Client invited");
       setCreated({ email: res.email, password: res.default_password });
-      setEmail(""); setFullName(""); setCompany("");
+      setEmail(""); setFullName("");
       qc.invalidateQueries({ queryKey: ["clients"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -88,7 +87,6 @@ function ClientsList() {
             <div className="space-y-4">
               <div className="space-y-2"><Label>Full name</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" /></div>
               <div className="space-y-2"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@company.com" /></div>
-              <div className="space-y-2"><Label>Company (optional)</Label><Input value={company} onChange={(e) => setCompany(e.target.value)} /></div>
               <p className="text-xs text-muted-foreground">
                 A new account will be created with the default password{" "}
                 <code className="px-1.5 py-0.5 rounded bg-muted text-foreground">{DEFAULT_CLIENT_PASSWORD}</code>.

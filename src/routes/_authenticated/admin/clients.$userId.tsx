@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Briefcase, DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone } from "lucide-react";
+import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -99,7 +99,6 @@ function SetterDetailPage() {
         <StatCard label="Bookings" value={data.stats.bookings} icon={CalendarClock} />
         <StatCard label="Closed" value={data.stats.closed} icon={CheckCircle2} />
         <StatCard label="Lost" value={data.stats.lost} icon={XCircle} />
-        <StatCard label="Leads" value={data.stats.leadsCount} icon={Briefcase} />
         <StatCard label="Dials" value={data.stats.dials} icon={Phone} />
 
       </div>
