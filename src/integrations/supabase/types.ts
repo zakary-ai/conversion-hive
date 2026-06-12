@@ -157,6 +157,24 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_settings: {
+        Row: {
+          id: number
+          slot_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          slot_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          slot_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       call_logs: {
         Row: {
           created_at: string

@@ -302,7 +302,7 @@ async function getZoomAccessToken() {
   return json.access_token ?? null;
 }
 
-async function createZoomMeeting(input: { topic: string; start_time: string }) {
+async function createZoomMeeting(input: { topic: string; start_time: string; duration: number }) {
   try {
     const token = await getZoomAccessToken();
     if (!token) return fallbackZoomUrl();
@@ -313,7 +313,7 @@ async function createZoomMeeting(input: { topic: string; start_time: string }) {
         topic: input.topic,
         type: 2,
         start_time: input.start_time,
-        duration: 30,
+        duration: input.duration,
         settings: { join_before_host: true, waiting_room: false },
       }),
     });
@@ -331,28 +331,115 @@ function fallbackZoomUrl() {
   return `https://zoom.us/j/${id}?pwd=${pwd}`;
 }
 
+// ---------- Booking settings (slot duration) ----------
+async function getSlotMinutes(): Promise<number> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: number) => { maybeSingle: () => Promise<{ data: { slot_minutes: number } | null }> } } } })
+      .from("booking_settings").select("slot_minutes").eq("id", 1).maybeSingle();
+    return data?.slot_minutes ?? 30;
+  } catch {
+    return 30;
+  }
+}
+
+export const getBookingSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => ({ slot_minutes: await getSlotMinutes() }));
+
+export const updateBookingSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    slot_minutes: z.union([z.literal(15), z.literal(30), z.literal(45), z.literal(60), z.literal(90), z.literal(120)]),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as never as { from: (t: string) => { upsert: (r: unknown, o: { onConflict: string }) => Promise<{ error: { message: string } | null }> } })
+      .from("booking_settings").upsert({ id: 1, slot_minutes: data.slot_minutes }, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+async function sendBookingConfirmationEmail(input: {
+  appointmentId: string;
+  recipientEmail: string;
+  leadName: string;
+  scheduledAt: string;
+  meetingUrl: string | null;
+  durationMinutes: number;
+}) {
+  try {
+    const origin = process.env.LOVABLE_APP_URL || process.env.PUBLIC_APP_URL;
+    if (!origin) return;
+    await fetch(`${origin}/lovable/email/transactional/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.LOVABLE_API_KEY ?? ""}`,
+      },
+      body: JSON.stringify({
+        templateName: "booking-confirmation",
+        recipientEmail: input.recipientEmail,
+        idempotencyKey: `booking-confirm-${input.appointmentId}`,
+        templateData: {
+          name: input.leadName,
+          scheduledAt: input.scheduledAt,
+          meetingUrl: input.meetingUrl,
+          durationMinutes: input.durationMinutes,
+        },
+      }),
+    });
+  } catch {
+    // best-effort; queue/infra may not be configured yet
+  }
+}
+
 export const createAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(AppointmentInput.parse)
   .handler(async ({ data, context }) => {
-    // Prevent double-booking for booking-type appointments (any setter, any client)
+    const slotMinutes = await getSlotMinutes();
     if (data.type === "booking") {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: clash } = await supabaseAdmin.from("appointments")
-        .select("id")
+      const newStart = new Date(data.scheduled_at).getTime();
+      const newEnd = newStart + slotMinutes * 60_000;
+      const windowStart = new Date(newStart - slotMinutes * 60_000 + 1).toISOString();
+      const windowEnd = new Date(newEnd - 1).toISOString();
+      const { data: nearby } = await supabaseAdmin.from("appointments")
+        .select("scheduled_at")
         .eq("type", "booking")
-        .eq("scheduled_at", data.scheduled_at)
-        .limit(1);
-      if ((clash ?? []).length > 0) {
-        throw new Error("That time slot was just taken. Please pick another.");
-      }
+        .gte("scheduled_at", windowStart)
+        .lte("scheduled_at", windowEnd);
+      const clash = (nearby ?? []).some((row) => {
+        const t = new Date(row.scheduled_at).getTime();
+        return t < newEnd && t + slotMinutes * 60_000 > newStart;
+      });
+      if (clash) throw new Error("That time slot was just taken. Please pick another.");
     }
-    // Zoom link generation paused
-    const meeting_url = null;
-    void createZoomMeeting;
+    let meeting_url: string | null = null;
+    if (data.type === "booking") {
+      meeting_url = await createZoomMeeting({
+        topic: data.name,
+        start_time: data.scheduled_at,
+        duration: slotMinutes,
+      });
+    }
     const { error, data: row } = await context.supabase.from("appointments")
       .insert({ ...data, user_id: context.userId, meeting_url }).select().single();
     if (error) throw new Error(error.message);
+
+    if (data.type === "booking" && data.email && row) {
+      void sendBookingConfirmationEmail({
+        appointmentId: row.id,
+        recipientEmail: data.email,
+        leadName: data.name,
+        scheduledAt: data.scheduled_at,
+        meetingUrl: meeting_url,
+        durationMinutes: slotMinutes,
+      });
+    }
     return row;
   });
 
@@ -439,30 +526,35 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
     const { data: allRules } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => Promise<{ data: Array<{ day_of_week: number; start_minute: number; end_minute: number }> | null }> } })
       .from("availability_rules").select("day_of_week, start_minute, end_minute");
 
+    const slotMinutes = await getSlotMinutes();
     const { data: bookings } = await supabaseAdmin.from("appointments")
       .select("scheduled_at")
       .eq("type", "booking")
-      .gte("scheduled_at", viewerDayStart.toISOString())
-      .lt("scheduled_at", viewerDayEnd.toISOString());
+      .gte("scheduled_at", new Date(viewerDayStart.getTime() - slotMinutes * 60_000).toISOString())
+      .lt("scheduled_at", new Date(viewerDayEnd.getTime() + slotMinutes * 60_000).toISOString());
 
-    const taken = new Set((bookings ?? []).map((b) => new Date(b.scheduled_at).getTime()));
+    const takenRanges = (bookings ?? []).map((b) => {
+      const start = new Date(b.scheduled_at).getTime();
+      return [start, start + slotMinutes * 60_000] as const;
+    });
+    const overlapsTaken = (start: number, end: number) =>
+      takenRanges.some(([s, e]) => s < end && e > start);
     const now = Date.now();
     const slots: string[] = [];
 
     for (const estDateKey of estDates) {
       const [ey, em, ed] = estDateKey.split("-").map(Number);
-      // day_of_week is interpreted in EST
       const probe = zonedWallToUTC(ey, em, ed, 12, 0, EST_TZ);
       const dow = zonedDayOfWeek(probe, EST_TZ);
       const rules = (allRules ?? []).filter((r) => r.day_of_week === dow);
 
       for (const r of rules) {
-        for (let mm = r.start_minute; mm + 30 <= r.end_minute; mm += 30) {
+        for (let mm = r.start_minute; mm + slotMinutes <= r.end_minute; mm += slotMinutes) {
           const slot = zonedWallToUTC(ey, em, ed, Math.floor(mm / 60), mm % 60, EST_TZ);
           const t = slot.getTime();
           if (t < now) continue;
           if (t < viewerDayStart.getTime() || t >= viewerDayEnd.getTime()) continue;
-          if (taken.has(t)) continue;
+          if (overlapsTaken(t, t + slotMinutes * 60_000)) continue;
           slots.push(slot.toISOString());
         }
       }
@@ -545,6 +637,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         outcome: z.literal("lost"),
         lost_reason: z.string().trim().max(2000).optional().default(""),
       }),
+      z.object({ id: z.string().uuid(), outcome: z.literal("no_show") }),
       z.object({ id: z.string().uuid(), outcome: z.literal("clear") }),
     ]).parse
   )
@@ -599,6 +692,20 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         });
         if (ierr) throw new Error(ierr.message);
       }
+      return { ok: true };
+    }
+
+    if (data.outcome === "no_show") {
+      const { error } = await context.supabase.from("appointments").update({
+        outcome: "no_show",
+        deal_amount: null,
+        commission_amount: null,
+        lost_reason: null,
+        outcome_set_at: new Date().toISOString(),
+        outcome_set_by: context.userId,
+      }).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      await context.supabase.from("commissions").delete().eq("appointment_id", data.id);
       return { ok: true };
     }
 

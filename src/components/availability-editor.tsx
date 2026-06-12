@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listAvailabilityRules, replaceAvailabilityRules } from "@/lib/api/cl.functions";
+import { listAvailabilityRules, replaceAvailabilityRules, getBookingSettings, updateBookingSettings } from "@/lib/api/cl.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,16 +86,49 @@ export function AvailabilityEditor() {
     });
   };
 
+  const { data: settings } = useQuery({
+    queryKey: ["booking-settings"],
+    queryFn: () => getBookingSettings(),
+  });
+  const slot = settings?.slot_minutes ?? 30;
+  const saveSlot = useMutation({
+    mutationFn: (m: 15 | 30 | 45 | 60 | 90 | 120) => updateBookingSettings({ data: { slot_minutes: m } }),
+    onSuccess: () => {
+      toast.success("Call length updated");
+      qc.invalidateQueries({ queryKey: ["booking-settings"] });
+      qc.invalidateQueries({ queryKey: ["available-slots"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <Card className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h3 className="font-display font-semibold">Booking availability <span className="text-xs font-normal text-muted-foreground">(Eastern Time)</span></h3>
-          <p className="text-xs text-muted-foreground">Setters can only book leads into 30-minute slots in these windows. Times are EST and shown to setters in their own time zone.</p>
+          <p className="text-xs text-muted-foreground">Setters can only book leads into these windows. Times are EST and shown to setters in their own time zone.</p>
         </div>
         <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
           <Save className="h-4 w-4 mr-1" /> Save
         </Button>
+      </div>
+
+      <div className="rounded-lg border border-border p-3 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="font-medium text-sm">Call length</div>
+          <div className="text-xs text-muted-foreground">How long each booked call blocks on the calendar.</div>
+        </div>
+        <Select value={String(slot)} onValueChange={(v) => saveSlot.mutate(Number(v) as 15 | 30 | 45 | 60 | 90 | 120)}>
+          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="15">15 minutes</SelectItem>
+            <SelectItem value="30">30 minutes</SelectItem>
+            <SelectItem value="45">45 minutes</SelectItem>
+            <SelectItem value="60">1 hour</SelectItem>
+            <SelectItem value="90">1.5 hours</SelectItem>
+            <SelectItem value="120">2 hours</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-3">

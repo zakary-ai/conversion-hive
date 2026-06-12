@@ -1,47 +1,52 @@
-## Goal
+## Changes
 
-When a setter clicks **Call** on a lead, OpenPhone (now branded "Quo") rings the setter's personal phone first, then bridges them to the lead — all initiated from our app. Each client account is auto-provisioned an OpenPhone phone number on signup.
+### 1. Outcome shown on admin calendar tiles
+In `src/routes/_authenticated/calendar.tsx` `ApptList`, render a badge on each booking card based on `a.outcome`:
+- `closed` → green "Closed · $X" using `deal_amount`
+- `lost` → red "Lost"
+- `no_show` → amber "No show"
+- otherwise nothing extra
 
-## Heads-up before we build
+Also surface `outcome` and `deal_amount` in `listAllAppointments` / `listMyAppointments` if not already (they are — already selected via `*`).
 
-OpenPhone's public API today exposes contacts, messages, call logs, and webhooks well, but **programmatic outbound call initiation (click-to-dial / bridge calling) is gated** — it's available on their Business/API plan and the endpoint is `POST /v1/calls`. If your OpenPhone workspace doesn't have API call-initiation enabled, the bridge will fail and we'd need to fall back to opening their dialer. I'll build assuming it's enabled and surface a clear error if not.
+### 2. Configurable booking duration
+- DB migration: add `slot_minutes int not null default 30 check (slot_minutes in (15,30,45,60,90,120))` to a new singleton `booking_settings` table (admin RLS + grants), or simplest: reuse a single-row table. Plan: create `booking_settings (id int pk default 1, slot_minutes int default 30, updated_at)` with admin-only write, authenticated read.
+- Server fns: `getBookingSettings`, `updateBookingSettings`.
+- `getAvailableSlots` in `src/lib/api/cl.functions.ts`: replace hardcoded `30` increments with `slot_minutes`; also use `slot_minutes` when checking for clashes (currently exact `eq(scheduled_at)`) — switch to a range overlap check: any booking where `scheduled_at < newEnd AND scheduled_at + duration > newStart`. Easiest: still block exact-slot collisions plus query overlaps via `gte/lt` on `scheduled_at` within `[start - duration + 1, start + duration - 1]`.
+- Zoom meeting `duration` field uses `slot_minutes`.
+- `AvailabilityEditor`: add a duration `<Select>` at the top (15/30/45/60/90/120 min) wired to the settings mutation.
 
-Also: OpenPhone does not currently expose a public "buy a number" endpoint. **Auto-provision on signup will reserve a number from a pre-purchased pool** that you (admin) top up in the OpenPhone dashboard. If the pool runs dry, signup falls back to "admin assigns later."
+### 3. Re-enable Zoom meeting creation
+In `createAppointment`, replace `meeting_url = null` with `await createZoomMeeting({ topic: data.name, start_time: data.scheduled_at })` for `type === "booking"`. Pass duration from settings.
 
-## What gets built
+### 4. No-show outcome
+- Migration: alter `appointments_outcome_check` to allow `'no_show'`.
+- `setAppointmentOutcome` zod union: add `{ outcome: 'no_show' }` branch (clears deal/commission/lost_reason like "lost" path but no reason).
+- `AppointmentDetailDialog`: add a "No show" button next to Closed/Lost; display amber "No show" badge in summary view; calendar tile badge handled in #1.
 
-### 1. Secrets & connection
-- Add `OPENPHONE_API_KEY` (server secret) — you'll paste this from OpenPhone Settings → API.
-- Add `OPENPHONE_WEBHOOK_SECRET` for verifying inbound webhooks.
+### 5. Remove "Company" from invite setter dialog
+- `src/routes/_authenticated/admin/clients.index.tsx`: drop Company input + `company` state, send `company_name: ""` (or omit).
+- Optionally hide Company column from the table (keep for now since data may exist).
 
-### 2. Database changes (one migration)
-- `profiles`: add `openphone_user_id text`, `openphone_number_e164 text`, `openphone_number_id text`, `personal_phone_e164 text` (the setter's real cell — needed for bridge leg 1).
-- New table `openphone_number_pool` (admin-managed): `id`, `phone_e164`, `openphone_number_id`, `assigned_user_id` (nullable), `assigned_at`. RLS: admin-only.
-- New table `call_logs`: `id`, `lead_id`, `user_id`, `openphone_call_id`, `direction`, `status`, `duration_sec`, `recording_url`, `started_at`, `ended_at`. RLS: setter sees own, admin sees all.
+### 6. Remove "Leads" stat on setter detail page
+- `src/routes/_authenticated/admin/clients.$userId.tsx`: remove the `StatCard label="Leads"` card.
 
-### 3. Server functions (`src/lib/api/calls.functions.ts`)
-- `provisionNumberForUser({ user_id })` — admin-only. Pulls next free row from `openphone_number_pool`, invites/creates the OpenPhone user via API, assigns the number, writes IDs back to `profiles`.
-- `setPersonalPhone({ phone })` — setter sets their cell on the profile page (this is the phone OpenPhone rings first).
-- `startBridgeCall({ lead_id })` — looks up lead phone + setter's OpenPhone number + personal phone, calls `POST https://api.openphone.com/v1/calls` with `from = setter's OP number`, `to = lead`, `userId = setter's OP user`, `participants = [personal cell]` so leg 1 rings the cell. Inserts a row in `call_logs` and updates the lead's `last_contacted_at`.
-- `listMyCalls({ lead_id? })` — for the lead detail timeline.
+### 7. Fix commission formatting on iPhone
+- `src/routes/_authenticated/commissions.tsx`: replace the raw `<table>` with a responsive card list on mobile (stack date/amount/note vertically) and keep table at `sm:` and up. Or wrap table in `overflow-x-auto` and tighten paddings — preferred: switch to a div-based stacked list for `< sm` and table for `>= sm`.
 
-### 4. Webhook (`src/routes/api/public/hooks/openphone.ts`)
-- Verifies `openphone-signature` HMAC against `OPENPHONE_WEBHOOK_SECRET`.
-- Handles `call.completed`, `call.recording.completed` → updates `call_logs` with duration, status, recording URL.
+### 8. Auto-email lead after booking
+- Run `email_domain--check_email_domain_status`. If no domain → show email setup dialog and stop until user completes it.
+- Run `setup_email_infra` + `scaffold_transactional_email` (idempotent).
+- Add a template `src/lib/email-templates/booking-confirmation.tsx` with lead name, date/time (formatted), and Zoom join link. Register in `registry.ts`.
+- In `createAppointment` handler, after insert for `type === "booking"`, fire a send to the lead's email via the internal send route (server-side fetch with service auth) using `idempotencyKey = booking-confirm-<appt.id>`. Skip if no email.
 
-### 5. UI
-- **Lead row / lead detail**: replace the existing phone link with a **Call** button (phone icon). Click → `startBridgeCall` → toast "Ringing your phone…". Disabled if setter has no `personal_phone_e164` set (with inline "Add your phone in Profile" link).
-- **Profile page**: add "Your cell phone (for bridge calling)" field — this is editable (name stays locked, per your earlier rule).
-- **Admin → Setter detail**: show assigned OpenPhone number; "Provision number" button if none; recent call log with duration + recording playback.
-- **Admin → Settings (new section "Phone numbers")**: paste-in form to add numbers to the pool (E.164 + OpenPhone number ID from their dashboard), table of pool status (assigned vs free).
+## Technical notes
+- All migrations include GRANT statements per project rules.
+- `slot_minutes` defaults to 30 so existing flows continue working.
+- Zoom env vars (`ZOOM_*`) already configured.
+- Outcome badge styling reuses existing `bg-success/15`, `bg-destructive/15`, `bg-warning/15` tokens.
 
-### 6. Hook signup to auto-provision
-- In `handle_new_user` flow (or a follow-up server fn called from the auth success handler), call `provisionNumberForUser` for the new client. If pool is empty, log a warning and continue — admin can assign later from the setter detail page.
-
-## Open questions before I start
-
-1. **Do you have the OpenPhone API key + a Business plan that allows call initiation?** If not, I can build everything except `startBridgeCall` and stub it with a clear "API call-init not enabled" error until you upgrade.
-2. **Number pool vs single shared number** — confirm you want one dedicated number per client (recommended for caller-ID consistency) vs everyone calling from one shared OpenPhone number.
-3. **Recordings** — okay to store the OpenPhone-hosted recording URL on `call_logs` and play inline? (We don't re-host the audio.)
-
-Reply with answers to those three and I'll implement.
+## Confirm before I build
+1. Booking duration choices: 15/30/45/60/90/120 min — OK?
+2. The lead confirmation email should send only for `booking` type (not callbacks). OK?
+3. Keep the existing "Company" column on the setters list (just remove from invite form), or remove the column too?

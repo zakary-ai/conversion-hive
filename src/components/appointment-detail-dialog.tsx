@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { getLead, getMe, setAppointmentOutcome } from "@/lib/api/cl.functions";
-import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw } from "lucide-react";
+import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw, UserX } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
     s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
   const showOutcome = !!me?.isAdmin && appt?.type === "booking";
-  const [mode, setMode] = useState<"none" | "closed" | "lost">("none");
+  const [mode, setMode] = useState<"none" | "closed" | "lost" | "no_show">("none");
   const [deal, setDeal] = useState("");
   const [commission, setCommission] = useState("");
   const [reason, setReason] = useState("");
@@ -55,7 +55,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   }, [appt?.id]);
 
   const mutation = useMutation({
-    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "clear" }) =>
+    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "clear" }) =>
       setAppointmentOutcome({ data: input }),
     onSuccess: () => {
       toast.success("Updated");
@@ -93,6 +93,9 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 )}
                 {appt.outcome === "lost" && (
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-destructive/15 text-destructive uppercase tracking-wider">Lost</span>
+                )}
+                {appt.outcome === "no_show" && (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-warning/15 text-warning uppercase tracking-wider">No show</span>
                 )}
               </DialogTitle>
             </DialogHeader>
@@ -148,7 +151,14 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                           )}
                         </div>
                       )}
-                      <Button size="sm" variant="outline" className="w-full" onClick={() => setMode(appt.outcome === "lost" ? "lost" : "closed")}>
+                      {appt.outcome === "no_show" && (
+                        <div className="rounded-md bg-warning/10 border border-warning/30 p-3">
+                          <div className="flex items-center gap-2 text-warning font-medium">
+                            <UserX className="h-4 w-4" /> Lead did not show
+                          </div>
+                        </div>
+                      )}
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => setMode(appt.outcome === "lost" ? "lost" : appt.outcome === "no_show" ? "no_show" : "closed")}>
                         Edit outcome
                       </Button>
                     </div>
@@ -170,6 +180,15 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                           className={cn(mode === "lost" && "bg-destructive hover:bg-destructive/90 text-destructive-foreground")}
                         >
                           <XCircle className="h-4 w-4 mr-1" /> Lost
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => mutation.mutate({ id: appt.id, outcome: "no_show" })}
+                          disabled={mutation.isPending}
+                          className="bg-warning/10 hover:bg-warning/20 text-warning border-warning/30"
+                        >
+                          <UserX className="h-4 w-4 mr-1" /> No show
                         </Button>
                         {appt.outcome && mode !== "none" && (
                           <Button size="sm" variant="ghost" onClick={() => setMode("none")}>

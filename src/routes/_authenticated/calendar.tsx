@@ -184,6 +184,11 @@ function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items
         {items.map((a) => {
           const dt = new Date(a.scheduled_at);
           const isBooking = a.type === "booking";
+          const outcomeBadge =
+            a.outcome === "closed" ? { label: `Closed${a.deal_amount != null ? ` · $${Number(a.deal_amount).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : ""}`, cls: "bg-success/15 text-success" } :
+            a.outcome === "lost" ? { label: "Lost", cls: "bg-destructive/15 text-destructive" } :
+            a.outcome === "no_show" ? { label: "No show", cls: "bg-warning/15 text-warning" } :
+            null;
           return (
             <Card
               key={a.id}
@@ -198,7 +203,14 @@ function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items
               </div>
               <div className="min-w-0 flex-1 overflow-hidden">
                 <div className="min-w-0 space-y-0.5">
-                  <div className="max-w-full truncate font-medium leading-tight">{a.name}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="max-w-full truncate font-medium leading-tight">{a.name}</div>
+                    {outcomeBadge && (
+                      <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wider", outcomeBadge.cls)}>
+                        {outcomeBadge.label}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </div>
