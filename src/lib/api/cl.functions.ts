@@ -637,6 +637,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         outcome: z.literal("lost"),
         lost_reason: z.string().trim().max(2000).optional().default(""),
       }),
+      z.object({ id: z.string().uuid(), outcome: z.literal("no_show") }),
       z.object({ id: z.string().uuid(), outcome: z.literal("clear") }),
     ]).parse
   )
@@ -691,6 +692,20 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         });
         if (ierr) throw new Error(ierr.message);
       }
+      return { ok: true };
+    }
+
+    if (data.outcome === "no_show") {
+      const { error } = await context.supabase.from("appointments").update({
+        outcome: "no_show",
+        deal_amount: null,
+        commission_amount: null,
+        lost_reason: null,
+        outcome_set_at: new Date().toISOString(),
+        outcome_set_by: context.userId,
+      }).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      await context.supabase.from("commissions").delete().eq("appointment_id", data.id);
       return { ok: true };
     }
 
