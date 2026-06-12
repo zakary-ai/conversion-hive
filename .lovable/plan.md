@@ -1,78 +1,47 @@
-# Public Apply Page + Admin Applications Inbox
+## Goal
 
-A self-contained new system. Touches no existing tables, routes, or admin pages.
+When a setter clicks **Call** on a lead, OpenPhone (now branded "Quo") rings the setter's personal phone first, then bridges them to the lead — all initiated from our app. Each client account is auto-provisioned an OpenPhone phone number on signup.
 
-## 1. Database — new `applications` table
+## Heads-up before we build
 
-Fields:
-- `full_name` (text)
-- `phone` (text)
-- `why_remote_sales` (text) — "Why do you want to get into remote sales?"
-- `current_monthly_income` (text) — keep as text so users can write "$3k", "2000 USD", etc.
-- `desired_monthly_income` (text)
-- `open_to_invest` (enum: Yes / No / Maybe)
-- `credit_score_range` (enum: 600-650, 650-700, 700-750, 750-800, 800-850)
-- `status` (enum: New, No Answer, Follow Up, Booked, Not Interested) — defaults to `New`
-- `admin_notes` (text, nullable)
-- `created_at`, `updated_at`
+OpenPhone's public API today exposes contacts, messages, call logs, and webhooks well, but **programmatic outbound call initiation (click-to-dial / bridge calling) is gated** — it's available on their Business/API plan and the endpoint is `POST /v1/calls`. If your OpenPhone workspace doesn't have API call-initiation enabled, the bridge will fail and we'd need to fall back to opening their dialer. I'll build assuming it's enabled and surface a clear error if not.
 
-Security:
-- RLS on, anon `INSERT` allowed (with light rate hygiene — required-field constraints + length limits).
-- Admin role: full `SELECT/UPDATE/DELETE`.
-- No public `SELECT`. Submitter never reads back.
+Also: OpenPhone does not currently expose a public "buy a number" endpoint. **Auto-provision on signup will reserve a number from a pre-purchased pool** that you (admin) top up in the OpenPhone dashboard. If the pool runs dry, signup falls back to "admin assigns later."
 
-## 2. Public page — `/apply`
+## What gets built
 
-Top-level route (outside `_authenticated`), SSR on, full marketing copy + form. Uses the exact copy you provided:
+### 1. Secrets & connection
+- Add `OPENPHONE_API_KEY` (server secret) — you'll paste this from OpenPhone Settings → API.
+- Add `OPENPHONE_WEBHOOK_SECRET` for verifying inbound webhooks.
 
-- Headline: "Apply Now"
-- Subhead about driven sales people, training included, etc.
-- Three feature cards: Training Included / Appointment Setting / Earn Commission
-- "Takes under 2 minutes. You will receive a phone call within 24 hours."
-- Form fields in this order:
-  1. Full name
-  2. Phone number
-  3. Why do you want to get into remote sales? (textarea)
-  4. How much do you earn monthly?
-  5. How much do you want to earn monthly?
-  6. Are you open to invest into yourself to get there? (Yes / No / Maybe)
-  7. Credit score? (600-650 … 800-850)
-- "Submit application" button → calls a public `createServerFn` that inserts via `supabaseAdmin`. Zod-validated.
-- Success state replaces the form with a confirmation message.
-- SEO `head()` with title + description.
-- No nav/sidebar chrome — standalone landing page.
+### 2. Database changes (one migration)
+- `profiles`: add `openphone_user_id text`, `openphone_number_e164 text`, `openphone_number_id text`, `personal_phone_e164 text` (the setter's real cell — needed for bridge leg 1).
+- New table `openphone_number_pool` (admin-managed): `id`, `phone_e164`, `openphone_number_id`, `assigned_user_id` (nullable), `assigned_at`. RLS: admin-only.
+- New table `call_logs`: `id`, `lead_id`, `user_id`, `openphone_call_id`, `direction`, `status`, `duration_sec`, `recording_url`, `started_at`, `ended_at`. RLS: setter sees own, admin sees all.
 
-## 3. Admin — new "Applications" section
+### 3. Server functions (`src/lib/api/calls.functions.ts`)
+- `provisionNumberForUser({ user_id })` — admin-only. Pulls next free row from `openphone_number_pool`, invites/creates the OpenPhone user via API, assigns the number, writes IDs back to `profiles`.
+- `setPersonalPhone({ phone })` — setter sets their cell on the profile page (this is the phone OpenPhone rings first).
+- `startBridgeCall({ lead_id })` — looks up lead phone + setter's OpenPhone number + personal phone, calls `POST https://api.openphone.com/v1/calls` with `from = setter's OP number`, `to = lead`, `userId = setter's OP user`, `participants = [personal cell]` so leg 1 rings the cell. Inserts a row in `call_logs` and updates the lead's `last_contacted_at`.
+- `listMyCalls({ lead_id? })` — for the lead detail timeline.
 
-New route: `/_authenticated/admin/applications` (added to admin sidebar). Completely separate from Leads.
+### 4. Webhook (`src/routes/api/public/hooks/openphone.ts`)
+- Verifies `openphone-signature` HMAC against `OPENPHONE_WEBHOOK_SECRET`.
+- Handles `call.completed`, `call.recording.completed` → updates `call_logs` with duration, status, recording URL.
 
-List view:
-- Table of all submissions, default sort: most recent first.
-- Sort dropdown: Newest, Oldest, Name A–Z, Status.
-- Filter by status (All / New / No Answer / Follow Up / Booked / Not Interested).
-- Search by name / phone.
-- Each row: name, phone, status pill, submitted date, click → opens detail dialog.
+### 5. UI
+- **Lead row / lead detail**: replace the existing phone link with a **Call** button (phone icon). Click → `startBridgeCall` → toast "Ringing your phone…". Disabled if setter has no `personal_phone_e164` set (with inline "Add your phone in Profile" link).
+- **Profile page**: add "Your cell phone (for bridge calling)" field — this is editable (name stays locked, per your earlier rule).
+- **Admin → Setter detail**: show assigned OpenPhone number; "Provision number" button if none; recent call log with duration + recording playback.
+- **Admin → Settings (new section "Phone numbers")**: paste-in form to add numbers to the pool (E.164 + OpenPhone number ID from their dashboard), table of pool status (assigned vs free).
 
-Detail dialog (per applicant):
-- All submitted fields, read-only.
-- Editable status dropdown (New, No Answer, Follow Up, Booked, Not Interested).
-- Editable internal admin notes textarea.
-- Save button → updates row.
-- Delete button (with confirm).
+### 6. Hook signup to auto-provision
+- In `handle_new_user` flow (or a follow-up server fn called from the auth success handler), call `provisionNumberForUser` for the new client. If pool is empty, log a warning and continue — admin can assign later from the setter detail page.
 
-## 4. Files
+## Open questions before I start
 
-New:
-- `supabase/migrations/<ts>_applications.sql` — table, enums, RLS, grants, updated_at trigger.
-- `src/lib/api/applications.functions.ts` — `submitApplication` (public), `listApplications`, `updateApplication`, `deleteApplication` (admin-gated).
-- `src/routes/apply.tsx` — public page + form.
-- `src/routes/_authenticated/admin/applications.tsx` — admin list + detail dialog.
+1. **Do you have the OpenPhone API key + a Business plan that allows call initiation?** If not, I can build everything except `startBridgeCall` and stub it with a clear "API call-init not enabled" error until you upgrade.
+2. **Number pool vs single shared number** — confirm you want one dedicated number per client (recommended for caller-ID consistency) vs everyone calling from one shared OpenPhone number.
+3. **Recordings** — okay to store the OpenPhone-hosted recording URL on `call_logs` and play inline? (We don't re-host the audio.)
 
-Edited:
-- `src/components/app-sidebar.tsx` — add "Applications" link under admin.
-
-## 5. Isolation guarantees
-
-- Does not touch `leads`, `profiles`, `appointments`, `commissions`, training tables, or any existing admin pages.
-- New status enum is separate from the Leads status set.
-- No shared functions with existing lead workflow.
+Reply with answers to those three and I'll implement.
