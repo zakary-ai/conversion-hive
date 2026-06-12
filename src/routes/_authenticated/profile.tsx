@@ -46,6 +46,14 @@ function ProfilePage() {
   );
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const profileExtra = (me.profile as unknown as { personal_phone_e164?: string | null; openphone_number_e164?: string | null }) ?? {};
+  const [personalPhone, setPersonalPhoneState] = useState(profileExtra.personal_phone_e164 ?? "");
+
+  const savePhone = useMutation({
+    mutationFn: () => setPersonalPhone({ data: { phone: personalPhone } }),
+    onSuccess: () => { toast.success("Cell phone saved"); qc.invalidateQueries({ queryKey: ["me"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const changePw = useMutation({
     mutationFn: () => changeMyPassword({ data: { new_password: newPassword } }),
