@@ -65,7 +65,7 @@ function ProfilePage() {
       <PageHeader title="Profile" />
       <Card className="p-6 space-y-4">
         <div><Label>Email</Label><Input value={me.profile?.email ?? ""} disabled className="mt-1" /></div>
-        <div><Label>Full name</Label><Input value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1" /></div>
+        <div><Label>Full name</Label><Input value={fullName} disabled className="mt-1" /><p className="text-xs text-muted-foreground mt-1">Contact an admin to change your name.</p></div>
         <div>
           <Label>Time zone</Label>
           <select
