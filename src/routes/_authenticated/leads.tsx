@@ -86,14 +86,9 @@ function LeadsPage() {
                   <div className="mt-1"><StatusPill status={l.status} /></div>
                 </div>
                 {l.phone && (
-                  <a
-                    href={`tel:${l.phone}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-11 w-11 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow"
-                    aria-label={`Call ${l.name}`}
-                  >
-                    <Phone className="h-5 w-5" />
-                  </a>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <CallButton leadId={l.id} ariaLabel={`Call ${l.name}`} />
+                  </div>
                 )}
               </Card>
             ))}
