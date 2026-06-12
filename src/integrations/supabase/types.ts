@@ -157,6 +157,65 @@ export type Database = {
         }
         Relationships: []
       }
+      call_logs: {
+        Row: {
+          created_at: string
+          direction: string
+          duration_sec: number | null
+          ended_at: string | null
+          from_number: string | null
+          id: string
+          lead_id: string | null
+          openphone_call_id: string | null
+          recording_url: string | null
+          started_at: string | null
+          status: string | null
+          to_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          direction?: string
+          duration_sec?: number | null
+          ended_at?: string | null
+          from_number?: string | null
+          id?: string
+          lead_id?: string | null
+          openphone_call_id?: string | null
+          recording_url?: string | null
+          started_at?: string | null
+          status?: string | null
+          to_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          duration_sec?: number | null
+          ended_at?: string | null
+          from_number?: string | null
+          id?: string
+          lead_id?: string | null
+          openphone_call_id?: string | null
+          recording_url?: string | null
+          started_at?: string | null
+          status?: string | null
+          to_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commissions: {
         Row: {
           added_by: string | null
@@ -352,6 +411,39 @@ export type Database = {
         }
         Relationships: []
       }
+      openphone_number_pool: {
+        Row: {
+          assigned_at: string | null
+          assigned_user_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          openphone_number_id: string
+          phone_e164: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_user_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          openphone_number_id: string
+          phone_e164: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_user_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          openphone_number_id?: string
+          phone_e164?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_name: string | null
@@ -360,6 +452,10 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          openphone_number_e164: string | null
+          openphone_number_id: string | null
+          openphone_user_id: string | null
+          personal_phone_e164: string | null
           scraper_enabled: boolean
           timezone: string
           user_id: string
@@ -371,6 +467,10 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          openphone_number_e164?: string | null
+          openphone_number_id?: string | null
+          openphone_user_id?: string | null
+          personal_phone_e164?: string | null
           scraper_enabled?: boolean
           timezone?: string
           user_id: string
@@ -382,6 +482,10 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          openphone_number_e164?: string | null
+          openphone_number_id?: string | null
+          openphone_user_id?: string | null
+          personal_phone_e164?: string | null
           scraper_enabled?: boolean
           timezone?: string
           user_id?: string
