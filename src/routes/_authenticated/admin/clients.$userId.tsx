@@ -14,14 +14,16 @@ import { Briefcase, DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, Cal
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+type Range = "day" | "week" | "month" | "90d" | "all";
+
 export const Route = createFileRoute("/_authenticated/admin/clients/$userId")({
-  loader: ({ context, params }) => context.queryClient.ensureQueryData(opts(params.userId)),
+  loader: ({ context, params }) => context.queryClient.ensureQueryData(opts(params.userId, "all")),
   component: SetterDetailPage,
 });
 
-const opts = (id: string) => queryOptions({
-  queryKey: ["client-detail", id],
-  queryFn: () => getClientDetail({ data: { user_id: id } }),
+const opts = (id: string, range: Range) => queryOptions({
+  queryKey: ["client-detail", id, range],
+  queryFn: () => getClientDetail({ data: { user_id: id, range } }),
 });
 
 const fmtDate = (s?: string | null) =>
