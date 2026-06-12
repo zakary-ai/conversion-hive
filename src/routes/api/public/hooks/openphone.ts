@@ -85,9 +85,12 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
               .eq("openphone_call_id", callId);
           }
         } else if (type.startsWith("call.")) {
-          const update: Record<string, unknown> = {
-            status: obj.status ?? null,
-          };
+          const update: {
+            status: string | null;
+            duration_sec?: number;
+            started_at?: string;
+            ended_at?: string;
+          } = { status: obj.status ?? null };
           if (typeof obj.duration === "number") update.duration_sec = obj.duration;
           if (obj.answeredAt) update.started_at = obj.answeredAt;
           if (obj.completedAt) update.ended_at = obj.completedAt;
