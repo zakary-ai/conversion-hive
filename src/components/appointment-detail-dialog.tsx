@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { getLead, getMe, setAppointmentOutcome } from "@/lib/api/cl.functions";
-import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw } from "lucide-react";
+import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw, UserX } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
     s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
   const showOutcome = !!me?.isAdmin && appt?.type === "booking";
-  const [mode, setMode] = useState<"none" | "closed" | "lost">("none");
+  const [mode, setMode] = useState<"none" | "closed" | "lost" | "no_show">("none");
   const [deal, setDeal] = useState("");
   const [commission, setCommission] = useState("");
   const [reason, setReason] = useState("");
@@ -55,7 +55,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   }, [appt?.id]);
 
   const mutation = useMutation({
-    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "clear" }) =>
+    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "clear" }) =>
       setAppointmentOutcome({ data: input }),
     onSuccess: () => {
       toast.success("Updated");
@@ -93,6 +93,9 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 )}
                 {appt.outcome === "lost" && (
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-destructive/15 text-destructive uppercase tracking-wider">Lost</span>
+                )}
+                {appt.outcome === "no_show" && (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-warning/15 text-warning uppercase tracking-wider">No show</span>
                 )}
               </DialogTitle>
             </DialogHeader>
