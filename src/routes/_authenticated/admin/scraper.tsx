@@ -61,16 +61,18 @@ const runsOpts = queryOptions({ queryKey: ["scraper-runs"], queryFn: () => listS
 export const Route = createFileRoute("/_authenticated/admin/scraper")({
   loader: ({ context }) => Promise.all([
     context.queryClient.ensureQueryData(settingsOpts),
-    context.queryClient.ensureQueryData(settersOpts),
+    context.queryClient.ensureQueryData(settersOpts("day")),
     context.queryClient.ensureQueryData(runsOpts),
   ]),
   component: ScraperPage,
 });
 
 function ScraperPage() {
+  const [setterRange, setSetterRange] = useState<SetterRange>("day");
   const { data: settings } = useSuspenseQuery(settingsOpts);
-  const { data: setters } = useSuspenseQuery(settersOpts);
+  const { data: setters } = useSuspenseQuery(settersOpts(setterRange));
   const { data: runs } = useSuspenseQuery(runsOpts);
+
   const qc = useQueryClient();
 
   const DEFAULT_ACTOR = "compass/google-maps-extractor";
