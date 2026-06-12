@@ -3,6 +3,7 @@ import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { useState } from "react";
 import { meQueryOptions } from "./route";
 import { updateProfile, changeMyPassword } from "@/lib/api/cl.functions";
+import { setPersonalPhone } from "@/lib/api/calls.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
