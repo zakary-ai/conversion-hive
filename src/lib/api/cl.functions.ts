@@ -526,30 +526,35 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
     const { data: allRules } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => Promise<{ data: Array<{ day_of_week: number; start_minute: number; end_minute: number }> | null }> } })
       .from("availability_rules").select("day_of_week, start_minute, end_minute");
 
+    const slotMinutes = await getSlotMinutes();
     const { data: bookings } = await supabaseAdmin.from("appointments")
       .select("scheduled_at")
       .eq("type", "booking")
-      .gte("scheduled_at", viewerDayStart.toISOString())
-      .lt("scheduled_at", viewerDayEnd.toISOString());
+      .gte("scheduled_at", new Date(viewerDayStart.getTime() - slotMinutes * 60_000).toISOString())
+      .lt("scheduled_at", new Date(viewerDayEnd.getTime() + slotMinutes * 60_000).toISOString());
 
-    const taken = new Set((bookings ?? []).map((b) => new Date(b.scheduled_at).getTime()));
+    const takenRanges = (bookings ?? []).map((b) => {
+      const start = new Date(b.scheduled_at).getTime();
+      return [start, start + slotMinutes * 60_000] as const;
+    });
+    const overlapsTaken = (start: number, end: number) =>
+      takenRanges.some(([s, e]) => s < end && e > start);
     const now = Date.now();
     const slots: string[] = [];
 
     for (const estDateKey of estDates) {
       const [ey, em, ed] = estDateKey.split("-").map(Number);
-      // day_of_week is interpreted in EST
       const probe = zonedWallToUTC(ey, em, ed, 12, 0, EST_TZ);
       const dow = zonedDayOfWeek(probe, EST_TZ);
       const rules = (allRules ?? []).filter((r) => r.day_of_week === dow);
 
       for (const r of rules) {
-        for (let mm = r.start_minute; mm + 30 <= r.end_minute; mm += 30) {
+        for (let mm = r.start_minute; mm + slotMinutes <= r.end_minute; mm += slotMinutes) {
           const slot = zonedWallToUTC(ey, em, ed, Math.floor(mm / 60), mm % 60, EST_TZ);
           const t = slot.getTime();
           if (t < now) continue;
           if (t < viewerDayStart.getTime() || t >= viewerDayEnd.getTime()) continue;
-          if (taken.has(t)) continue;
+          if (overlapsTaken(t, t + slotMinutes * 60_000)) continue;
           slots.push(slot.toISOString());
         }
       }
