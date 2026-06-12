@@ -3,7 +3,7 @@ import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { useState } from "react";
 import { meQueryOptions } from "./route";
 import { updateProfile, changeMyPassword } from "@/lib/api/cl.functions";
-import { setPersonalPhone } from "@/lib/api/calls.functions";
+
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
@@ -46,14 +46,6 @@ function ProfilePage() {
   );
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const profileExtra = (me.profile as unknown as { personal_phone_e164?: string | null; openphone_number_e164?: string | null }) ?? {};
-  const [personalPhone, setPersonalPhoneState] = useState(profileExtra.personal_phone_e164 ?? "");
-
-  const savePhone = useMutation({
-    mutationFn: () => setPersonalPhone({ data: { phone: personalPhone } }),
-    onSuccess: () => { toast.success("Cell phone saved"); qc.invalidateQueries({ queryKey: ["me"] }); },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const changePw = useMutation({
     mutationFn: () => changeMyPassword({ data: { new_password: newPassword } }),
