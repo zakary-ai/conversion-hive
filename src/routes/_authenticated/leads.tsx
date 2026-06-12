@@ -362,13 +362,15 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
 function CallButton({ leadId, ariaLabel, variant = "round" }: { leadId: string; ariaLabel?: string; variant?: "round" | "inline" }) {
   const m = useMutation({
     mutationFn: () => startBridgeCall({ data: { lead_id: leadId } }),
-    onSuccess: () => toast.success("Ringing your phone…"),
+    onSuccess: (res) => {
+      if (res?.dial) window.location.href = `tel:${res.dial}`;
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   if (variant === "inline") {
     return (
       <Button onClick={() => m.mutate()} disabled={m.isPending} className="h-9 px-3 text-xs bg-primary text-primary-foreground">
-        <Phone className="h-4 w-4" /> {m.isPending ? "Ringing…" : "Call (Quo)"}
+        <Phone className="h-4 w-4" /> {m.isPending ? "Dialing…" : "Call"}
       </Button>
     );
   }

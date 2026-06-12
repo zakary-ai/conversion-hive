@@ -185,41 +185,25 @@ export const startBridgeCall = createServerFn({ method: "POST" })
 
     const [{ data: lead }, { data: profile }] = await Promise.all([
       supabase.from("leads").select("id, phone, name").eq("id", data.lead_id).maybeSingle(),
-      supabase.from("profiles").select("personal_phone_e164, openphone_number_e164, openphone_number_id, openphone_user_id").eq("user_id", userId).maybeSingle(),
+      supabase.from("profiles").select("personal_phone_e164, openphone_number_e164").eq("user_id", userId).maybeSingle(),
     ]);
     if (!lead) throw new Error("Lead not found");
     if (!lead.phone) throw new Error("Lead has no phone number");
-    if (!profile?.openphone_number_id) throw new Error("Your OpenPhone number isn't set up yet. Ask an admin to assign one.");
-    if (!profile?.personal_phone_e164) throw new Error("Add your cell phone number in Profile first — OpenPhone will ring it before connecting the lead.");
 
     const toNumber = normalizeE164(lead.phone);
-    const fromNumber = profile.openphone_number_e164!;
+    const fromNumber = profile?.openphone_number_e164 ?? null;
 
-    // Initiate the call via OpenPhone. The user must have call-forwarding to
-    // their cell configured in OpenPhone; the API rings their forwarded device
-    // and bridges to the lead.
-    const body: Record<string, unknown> = {
-      from: profile.openphone_number_id,
-      to: [toNumber],
-    };
-    if (profile.openphone_user_id) body.userId = profile.openphone_user_id;
-
-    let openphoneCallId: string | null = null;
-    let initError: string | null = null;
-    try {
-      const resp = await opFetch(`/calls`, { method: "POST", body: JSON.stringify(body) }) as { data?: { id?: string } } | null;
-      openphoneCallId = resp?.data?.id ?? null;
-    } catch (e) {
-      initError = (e as Error).message;
-    }
-
-    // Log the attempt either way
+    // NOTE: Quo/OpenPhone's public API does not expose programmatic outbound
+    // call initiation (no POST /v1/calls). We log the attempt and return the
+    // lead's number so the client opens the device dialer. Setters using the
+    // Quo mobile/desktop app can dial from their assigned Quo number there;
+    // dialing from this app's tel: link will use the device's default line.
     const { data: log } = await supabase.from("call_logs").insert({
       lead_id: lead.id,
       user_id: userId,
-      openphone_call_id: openphoneCallId,
+      openphone_call_id: null,
       direction: "outbound",
-      status: initError ? "failed" : "initiated",
+      status: "initiated",
       from_number: fromNumber,
       to_number: toNumber,
       started_at: new Date().toISOString(),
@@ -227,8 +211,7 @@ export const startBridgeCall = createServerFn({ method: "POST" })
 
     await supabase.from("leads").update({ contacted_at: new Date().toISOString() }).eq("id", lead.id);
 
-    if (initError) throw new Error(initError);
-    return { ok: true, call_log_id: log?.id, openphone_call_id: openphoneCallId };
+    return { ok: true, call_log_id: log?.id, dial: toNumber };
   });
 
 // ---------- Call history ----------
