@@ -37,7 +37,8 @@ async function opFetch(path: string, init: RequestInit = {}) {
   return body as Record<string, unknown> | null;
 }
 
-async function assertAdmin(supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> }, userId: string) {
+type SupabaseLike = { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" | "client" }) => Promise<{ data: boolean | null }> };
+async function assertAdmin(supabase: SupabaseLike, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (!data) throw new Error("Forbidden");
 }
