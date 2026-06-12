@@ -215,7 +215,7 @@ export const startBridgeCall = createServerFn({ method: "POST" })
       started_at: new Date().toISOString(),
     }).select("id").maybeSingle();
 
-    await supabase.from("leads").update({ last_contacted_at: new Date().toISOString() }).eq("id", lead.id);
+    await supabase.from("leads").update({ contacted_at: new Date().toISOString() }).eq("id", lead.id);
 
     if (initError) throw new Error(initError);
     return { ok: true, call_log_id: log?.id, openphone_call_id: openphoneCallId };
