@@ -93,6 +93,31 @@ function ProfilePage() {
 
       <Card className="p-6 space-y-4">
         <div>
+          <h3 className="font-display font-semibold">Calling</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Your assigned business number: <span className="font-mono">{profileExtra.openphone_number_e164 ?? "— not assigned yet —"}</span>
+          </p>
+        </div>
+        <div>
+          <Label>Your cell phone (E.164)</Label>
+          <Input
+            placeholder="+15551234567"
+            value={personalPhone}
+            onChange={(e) => setPersonalPhoneState(e.target.value)}
+            className="mt-1"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            When you click "Call" on a lead, OpenPhone will ring this phone first, then connect you.
+            Make sure call forwarding to this number is enabled in your OpenPhone settings.
+          </p>
+        </div>
+        <Button onClick={() => savePhone.mutate()} disabled={!personalPhone || savePhone.isPending}>
+          {savePhone.isPending ? "Saving…" : "Save phone"}
+        </Button>
+      </Card>
+
+      <Card className="p-6 space-y-4">
+        <div>
           <h3 className="font-display font-semibold">Change password</h3>
           <p className="text-sm text-muted-foreground mt-1">Use at least 8 characters.</p>
         </div>
