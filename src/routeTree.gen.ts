@@ -31,6 +31,7 @@ import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminApplicationsRouteImport } from './routes/_authenticated/admin/applications'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
+import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
 import { Route as AuthenticatedAdminClientsUserIdRouteImport } from './routes/_authenticated/admin/clients.$userId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -153,6 +154,11 @@ const ApiPublicHooksRunScraperRoute =
     path: '/api/public/hooks/run-scraper',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOpenphoneRoute = ApiPublicHooksOpenphoneRouteImport.update({
+  id: '/api/public/hooks/openphone',
+  path: '/api/public/hooks/openphone',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminClientsUserIdRoute =
   AuthenticatedAdminClientsUserIdRouteImport.update({
     id: '/clients/$userId',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
+  '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
+  '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/admin/clients': typeof AuthenticatedAdminClientsIndexRoute
 }
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
   '/_authenticated/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
+  '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/training/'
     | '/admin/clients/$userId'
+    | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/training'
     | '/admin/clients/$userId'
+    | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/admin/clients'
   id:
@@ -304,6 +315,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/training/'
     | '/_authenticated/admin/clients/$userId'
+    | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
@@ -313,6 +325,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ApplyRoute: typeof ApplyRoute
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
 }
 
@@ -472,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRunScraperRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/openphone': {
+      id: '/api/public/hooks/openphone'
+      path: '/api/public/hooks/openphone'
+      fullPath: '/api/public/hooks/openphone'
+      preLoaderRoute: typeof ApiPublicHooksOpenphoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/clients/$userId': {
       id: '/_authenticated/admin/clients/$userId'
       path: '/clients/$userId'
@@ -544,6 +564,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ApplyRoute: ApplyRoute,
   AuthRoute: AuthRoute,
+  ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
 }
 export const routeTree = rootRouteImport
