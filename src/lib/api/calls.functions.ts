@@ -63,10 +63,20 @@ export const listNumberPool = createServerFn({ method: "GET" })
     await assertAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("openphone_number_pool")
-      .select("*, profiles:assigned_user_id(full_name, email)")
+      .select("*")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    const rows = data ?? [];
+    const userIds = Array.from(new Set(rows.map((r) => r.assigned_user_id).filter(Boolean))) as string[];
+    let profilesById = new Map<string, { full_name: string | null; email: string | null }>();
+    if (userIds.length) {
+      const { data: profs } = await context.supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", userIds);
+      profilesById = new Map((profs ?? []).map((p) => [p.user_id, { full_name: p.full_name, email: p.email }]));
+    }
+    return rows.map((r) => ({ ...r, profiles: r.assigned_user_id ? profilesById.get(r.assigned_user_id) ?? null : null }));
   });
 
 export const addNumberToPool = createServerFn({ method: "POST" })
