@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Briefcase, DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw } from "lucide-react";
+import { Briefcase, DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
