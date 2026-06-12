@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { getClientDetail, addCommission, setCommissionPaid } from "@/lib/api/cl.functions";
+import { provisionNumberForUser, unassignUserNumber } from "@/lib/api/calls.functions";
 import { PageHeader, StatCard, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,27 @@ function SetterDetailPage() {
     },
   });
 
+  const profileExtra = data.profile as unknown as { openphone_number_e164?: string | null; personal_phone_e164?: string | null } | null;
+  const assignedNumber = profileExtra?.openphone_number_e164 ?? null;
+  const provision = useMutation({
+    mutationFn: () => provisionNumberForUser({ data: { user_id: userId } }),
+    onSuccess: (r) => {
+      toast.success(`Assigned ${r.phone}`);
+      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
+      qc.invalidateQueries({ queryKey: ["openphone-pool"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const unassign = useMutation({
+    mutationFn: () => unassignUserNumber({ data: { user_id: userId } }),
+    onSuccess: () => {
+      toast.success("Number released");
+      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
+      qc.invalidateQueries({ queryKey: ["openphone-pool"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const progress = data.totalModules ? Math.round((data.completions.length / data.totalModules) * 100) : 0;
 
   return (
@@ -91,6 +113,26 @@ function SetterDetailPage() {
           </Button>
         ))}
       </div>
+
+      <Card className="p-4 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">OpenPhone (Quo) number</div>
+          <div className="font-mono text-sm mt-0.5">{assignedNumber ?? <span className="text-muted-foreground">— none assigned —</span>}</div>
+          {profileExtra?.personal_phone_e164 && (
+            <div className="text-xs text-muted-foreground mt-1">Forwards to {profileExtra.personal_phone_e164}</div>
+          )}
+        </div>
+        {assignedNumber ? (
+          <Button size="sm" variant="outline" onClick={() => unassign.mutate()} disabled={unassign.isPending}>
+            {unassign.isPending ? "Releasing…" : "Release number"}
+          </Button>
+        ) : (
+          <Button size="sm" onClick={() => provision.mutate()} disabled={provision.isPending}>
+            {provision.isPending ? "Assigning…" : "Provision number"}
+          </Button>
+        )}
+      </Card>
+
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Bookings" value={data.stats.bookings} icon={CalendarClock} />

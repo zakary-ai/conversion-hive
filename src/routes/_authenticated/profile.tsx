@@ -3,6 +3,7 @@ import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { useState } from "react";
 import { meQueryOptions } from "./route";
 import { updateProfile, changeMyPassword } from "@/lib/api/cl.functions";
+import { setPersonalPhone } from "@/lib/api/calls.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
@@ -45,6 +46,14 @@ function ProfilePage() {
   );
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const profileExtra = (me.profile as unknown as { personal_phone_e164?: string | null; openphone_number_e164?: string | null }) ?? {};
+  const [personalPhone, setPersonalPhoneState] = useState(profileExtra.personal_phone_e164 ?? "");
+
+  const savePhone = useMutation({
+    mutationFn: () => setPersonalPhone({ data: { phone: personalPhone } }),
+    onSuccess: () => { toast.success("Cell phone saved"); qc.invalidateQueries({ queryKey: ["me"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const changePw = useMutation({
     mutationFn: () => changeMyPassword({ data: { new_password: newPassword } }),
@@ -80,6 +89,31 @@ function ProfilePage() {
           <p className="text-xs text-muted-foreground mt-1">Booking slots will be shown in this time zone.</p>
         </div>
         <Button onClick={() => save.mutate()} disabled={save.isPending}>Save changes</Button>
+      </Card>
+
+      <Card className="p-6 space-y-4">
+        <div>
+          <h3 className="font-display font-semibold">Calling</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Your assigned business number: <span className="font-mono">{profileExtra.openphone_number_e164 ?? "— not assigned yet —"}</span>
+          </p>
+        </div>
+        <div>
+          <Label>Your cell phone (E.164)</Label>
+          <Input
+            placeholder="+15551234567"
+            value={personalPhone}
+            onChange={(e) => setPersonalPhoneState(e.target.value)}
+            className="mt-1"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            When you click "Call" on a lead, OpenPhone will ring this phone first, then connect you.
+            Make sure call forwarding to this number is enabled in your OpenPhone settings.
+          </p>
+        </div>
+        <Button onClick={() => savePhone.mutate()} disabled={!personalPhone || savePhone.isPending}>
+          {savePhone.isPending ? "Saving…" : "Save phone"}
+        </Button>
       </Card>
 
       <Card className="p-6 space-y-4">

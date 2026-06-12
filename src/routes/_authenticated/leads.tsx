@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { listMyLeads, updateLead, createAppointment, listMyAppointments } from "@/lib/api/cl.functions";
+import { startBridgeCall } from "@/lib/api/calls.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,14 +86,9 @@ function LeadsPage() {
                   <div className="mt-1"><StatusPill status={l.status} /></div>
                 </div>
                 {l.phone && (
-                  <a
-                    href={`tel:${l.phone}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="h-11 w-11 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow"
-                    aria-label={`Call ${l.name}`}
-                  >
-                    <Phone className="h-5 w-5" />
-                  </a>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <CallButton leadId={l.id} ariaLabel={`Call ${l.name}`} />
+                  </div>
                 )}
               </Card>
             ))}
@@ -304,6 +300,11 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
 
                 {/* Outcome actions */}
                 <div className="space-y-2">
+                  {lead.phone && (
+                    <div className="flex justify-center pb-1">
+                      <CallButton leadId={lead.id} variant="inline" />
+                    </div>
+                  )}
                   <div className="text-xs uppercase tracking-widest text-muted-foreground">Set outcome</div>
                   <div className="grid grid-cols-2 gap-1.5 sm:gap-2 [&>button]:min-w-0">
                     <Button onClick={() => setBookOpen(true)} className="h-9 px-2 text-xs bg-success text-success-foreground hover:bg-success/90 sm:h-12 sm:text-sm">
@@ -355,6 +356,31 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
         </>
       )}
     </>
+  );
+}
+
+function CallButton({ leadId, ariaLabel, variant = "round" }: { leadId: string; ariaLabel?: string; variant?: "round" | "inline" }) {
+  const m = useMutation({
+    mutationFn: () => startBridgeCall({ data: { lead_id: leadId } }),
+    onSuccess: () => toast.success("Ringing your phone…"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  if (variant === "inline") {
+    return (
+      <Button onClick={() => m.mutate()} disabled={m.isPending} className="h-9 px-3 text-xs bg-primary text-primary-foreground">
+        <Phone className="h-4 w-4" /> {m.isPending ? "Ringing…" : "Call (Quo)"}
+      </Button>
+    );
+  }
+  return (
+    <button
+      onClick={() => m.mutate()}
+      disabled={m.isPending}
+      className="h-11 w-11 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow disabled:opacity-60"
+      aria-label={ariaLabel}
+    >
+      <Phone className="h-5 w-5" />
+    </button>
   );
 }
 
