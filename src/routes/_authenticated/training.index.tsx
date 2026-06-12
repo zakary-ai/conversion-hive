@@ -4,6 +4,7 @@ import { listModules } from "@/lib/api/cl.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Play, CheckCircle2 } from "lucide-react";
 
 const opts = queryOptions({ queryKey: ["modules"], queryFn: () => listModules() });
@@ -15,10 +16,22 @@ export const Route = createFileRoute("/_authenticated/training/")({
 
 function TrainingList() {
   const { data: modules } = useSuspenseQuery(opts);
+  const total = modules.length;
+  const done = modules.filter((m: any) => m.completed).length;
+  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   return (
     <div className="space-y-6 max-w-7xl">
       <PageHeader title="Training" description="Master the Conversion Lab playbook, module by module." />
-      {modules.length === 0 ? (
+      {total > 0 && (
+        <Card className="p-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Your progress</span>
+            <span className="text-sm text-muted-foreground">{done} of {total} modules • {pct}%</span>
+          </div>
+          <Progress value={pct} />
+        </Card>
+      )}
+      {total === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">No modules published yet.</Card>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
