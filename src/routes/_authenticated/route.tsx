@@ -5,6 +5,7 @@ import { getMe } from "@/lib/api/cl.functions";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
+import logo from "@/assets/logo.png";
 
 export const meQueryOptions = queryOptions({
   queryKey: ["me"],
@@ -37,7 +38,8 @@ function AuthenticatedLayout() {
             style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
             {/* Mobile: centered title */}
-            <div className="flex h-10 items-center justify-start px-4 md:hidden">
+            <div className="flex h-10 items-center justify-start gap-2 px-4 md:hidden">
+              <img src={logo} alt="" width={24} height={24} className="h-6 w-6 rounded-md" />
               <div className="font-display font-semibold tracking-tight text-sm">
                 Conversion Lab
               </div>
