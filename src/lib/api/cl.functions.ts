@@ -1140,3 +1140,19 @@ export const generateQuizFromTranscript = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { inserted: rows.length };
   });
+
+// ---------- Account deletion (App Store compliance 5.1.1(v)) ----------
+export const deleteMyAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const userId = context.userId;
+    // Best-effort cleanup of owned/user-scoped rows. Auth user deletion cascades
+    // any FK with on delete cascade; other rows are removed explicitly here.
+    await supabaseAdmin.from("module_completions").delete().eq("user_id", userId);
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+    await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

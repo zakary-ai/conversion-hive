@@ -53,6 +53,11 @@ function AuthPage() {
         <p className="text-center text-xs text-muted-foreground mt-6">
           Accounts are created by your admin. Check your email for an invite.
         </p>
+        <p className="text-center text-xs text-muted-foreground mt-3">
+          <a href="/privacy" className="hover:text-foreground hover:underline">Privacy</a>
+          <span className="mx-2">·</span>
+          <a href="/terms" className="hover:text-foreground hover:underline">Terms</a>
+        </p>
       </div>
     </div>
   );

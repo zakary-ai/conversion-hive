@@ -33,28 +33,30 @@ function AuthenticatedLayout() {
         </div>
         <div className="flex-1 flex flex-col min-w-0">
           <header
-            className="h-14 border-b border-border flex items-center justify-between px-4 bg-card/60 backdrop-blur sticky top-0 z-40"
+            className="border-b border-border flex items-center justify-between px-4 bg-card sticky top-0 z-40"
             style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="hidden md:block"><SidebarTrigger /></div>
-              <div className="md:hidden font-display font-semibold tracking-tight truncate">
-                Conversion Lab
+            <div className="h-14 flex items-center justify-between gap-3 w-full min-w-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="hidden md:block"><SidebarTrigger /></div>
+                <div className="md:hidden font-display font-semibold tracking-tight truncate">
+                  Conversion Lab
+                </div>
+                <div className="text-sm text-muted-foreground hidden sm:block truncate">
+                  {me.isAdmin ? "Admin workspace" : "Client workspace"}
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground hidden sm:block">
-                {me.isAdmin ? "Admin workspace" : "Client workspace"}
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <div className="text-sm font-medium">{me.profile?.full_name || me.profile?.email || "User"}</div>
-                <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : "Client"}</div>
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right hidden sm:block min-w-0">
+                  <div className="text-sm font-medium truncate max-w-[180px]">{me.profile?.full_name || me.profile?.email || "User"}</div>
+                  <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : "Client"}</div>
+                </div>
               </div>
             </div>
           </header>
           <main
-            className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden pb-24 md:pb-8"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 6rem)" }}
+            className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5.5rem)" }}
           >
             <Outlet />
           </main>

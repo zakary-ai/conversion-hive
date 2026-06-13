@@ -1,0 +1,15 @@
+{
+  "name": "Conversion Lab",
+  "short_name": "Conversion Lab",
+  "description": "Sales training and lead management platform.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0a0a14",
+  "background_color": "#0a0a14",
+  "icons": [
+    { "src": "/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "maskable" }
+  ]
+}
