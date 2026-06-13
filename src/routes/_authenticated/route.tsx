@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
 import logo from "@/assets/logo.png";
+import { NotificationsBell } from "@/components/notifications-bell";
 
 export const meQueryOptions = queryOptions({
   queryKey: ["me"],
@@ -35,11 +36,14 @@ function AuthenticatedLayout() {
         <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
           <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card">
             {/* Mobile: centered title */}
-            <div className="flex h-10 items-center justify-start gap-2 px-4 md:hidden">
-              <img src={logo} alt="" width={22} height={22} className="h-5.5 w-5.5 rounded-md" />
-              <div className="font-display font-semibold tracking-tight text-sm">
-                Conversion Lab
+            <div className="flex h-10 items-center justify-between gap-2 px-4 md:hidden">
+              <div className="flex items-center gap-2 min-w-0">
+                <img src={logo} alt="" width={22} height={22} className="h-5.5 w-5.5 rounded-md" />
+                <div className="font-display font-semibold tracking-tight text-sm truncate">
+                  Conversion Lab
+                </div>
               </div>
+              <NotificationsBell />
             </div>
             {/* Desktop: original layout */}
             <div className="hidden md:flex h-14 items-center justify-between gap-3 px-4">
@@ -49,9 +53,12 @@ function AuthenticatedLayout() {
                   {me.isAdmin ? "Admin workspace" : "Client workspace"}
                 </div>
               </div>
-              <div className="text-right min-w-0">
-                <div className="text-sm font-medium truncate max-w-[180px]">{me.profile?.full_name || me.profile?.email || "User"}</div>
-                <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : "Client"}</div>
+              <div className="flex items-center gap-3">
+                <NotificationsBell />
+                <div className="text-right min-w-0">
+                  <div className="text-sm font-medium truncate max-w-[180px]">{me.profile?.full_name || me.profile?.email || "User"}</div>
+                  <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : "Client"}</div>
+                </div>
               </div>
             </div>
           </header>
