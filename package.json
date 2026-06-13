@@ -9,7 +9,10 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "ios:setup": "bun install && bun run build && npx cap add ios && npx cap sync ios && npx cap open ios",
+    "ios:sync": "bun run build && npx cap sync ios",
+    "ios:open": "npx cap open ios"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
