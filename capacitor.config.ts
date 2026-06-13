@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
     iosScheme: "https",
   },
   ios: {
-    contentInset: "always",
+    contentInset: "never",
     backgroundColor: "#0a0a14",
     limitsNavigationsToAppBoundDomains: false,
     scheme: "Conversion Lab",
@@ -35,7 +35,7 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: "DARK",
       backgroundColor: "#0a0a14",
-      overlaysWebView: true,
+      overlaysWebView: false,
     },
   },
 };
