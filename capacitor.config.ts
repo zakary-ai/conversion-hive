@@ -22,22 +22,6 @@ const config: CapacitorConfig = {
     limitsNavigationsToAppBoundDomains: false,
     scheme: "Conversion Lab",
   },
-  plugins: {
-    SplashScreen: {
-      launchShowDuration: 1200,
-      launchAutoHide: true,
-      backgroundColor: "#0a0a14",
-      showSpinner: false,
-      iosSpinnerStyle: "small",
-      splashFullScreen: true,
-      splashImmersive: true,
-    },
-    StatusBar: {
-      style: "DARK",
-      backgroundColor: "#0a0a14",
-      overlaysWebView: false,
-    },
-  },
 };
 
 export default config;
