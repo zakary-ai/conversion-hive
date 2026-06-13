@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
@@ -40,6 +41,11 @@ import { Route as AuthenticatedAdminClientsUserIdRouteImport } from './routes/_a
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/calendar': typeof AuthenticatedCalendarRoute
@@ -218,6 +225,7 @@ export interface FileRoutesByTo {
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/commissions': typeof AuthenticatedCommissionsRoute
@@ -247,6 +255,7 @@ export interface FileRoutesById {
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
+  '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/apply'
     | '/auth'
     | '/privacy'
+    | '/support'
     | '/terms'
     | '/admin'
     | '/calendar'
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/apply'
     | '/auth'
     | '/privacy'
+    | '/support'
     | '/terms'
     | '/calendar'
     | '/commissions'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/apply'
     | '/auth'
     | '/privacy'
+    | '/support'
     | '/terms'
     | '/_authenticated/admin'
     | '/_authenticated/calendar'
@@ -363,6 +375,7 @@ export interface RootRouteChildren {
   ApplyRoute: typeof ApplyRoute
   AuthRoute: typeof AuthRoute
   PrivacyRoute: typeof PrivacyRoute
+  SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
@@ -376,6 +389,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -626,6 +646,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApplyRoute: ApplyRoute,
   AuthRoute: AuthRoute,
   PrivacyRoute: PrivacyRoute,
+  SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
