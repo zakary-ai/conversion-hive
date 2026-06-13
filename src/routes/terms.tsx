@@ -47,7 +47,7 @@ function TermsPage() {
           </section>
           <section>
             <h2 className="font-display text-lg font-semibold">7. Contact</h2>
-            <p>Questions? Email <a className="text-primary hover:underline" href="mailto:support@conversionlab.company">support@conversionlab.company</a>.</p>
+            <p>Questions? Email <a className="text-primary hover:underline" href="mailto:conversionlabb@gmail.com">conversionlabb@gmail.com</a>.</p>
           </section>
         </div>
       </div>
