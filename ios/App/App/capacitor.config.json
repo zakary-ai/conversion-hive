@@ -1,0 +1,17 @@
+{
+  "appId": "com.conversionlab.app",
+  "appName": "Conversion Lab",
+  "webDir": "dist",
+  "server": {
+    "url": "https://conversion-hive.lovable.app",
+    "cleartext": false,
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0a0a14",
+    "limitsNavigationsToAppBoundDomains": false,
+    "scheme": "Conversion Lab"
+  }
+}
