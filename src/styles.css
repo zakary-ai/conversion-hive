@@ -88,8 +88,29 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    overscroll-behavior-y: none;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
   }
   h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); letter-spacing: -0.02em; }
+
+  /* Stop iOS Safari from auto-zooming when focusing an input/textarea/select */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    input, select, textarea {
+      font-size: 0.875rem;
+    }
+  }
+
+  /* Tap targets — minimum 44pt per Apple HIG */
+  button, [role="button"], a {
+    touch-action: manipulation;
+  }
 }
 
 /* Soft glow utility */
