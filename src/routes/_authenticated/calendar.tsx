@@ -131,15 +131,15 @@ function ApptView({
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[auto,1fr] lg:gap-6">
-      <Card className="flex w-full justify-center overflow-hidden p-1.5 sm:p-3 lg:w-fit">
+      <Card className="flex w-full justify-center overflow-visible p-1.5 sm:p-3 lg:w-fit">
         <Calendar
           mode="single"
           selected={date}
           onSelect={setDate}
           modifiers={{ hasAppt: (d) => daysWithAppts.has(d.toDateString()) }}
           modifiersClassNames={{ hasAppt: "relative after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:rounded-full after:bg-primary" }}
-          className="pointer-events-auto mx-auto w-full max-w-[304px] p-1 [--cell-size:1.7rem] min-[375px]:max-w-[316px] sm:max-w-none sm:p-3 sm:[--cell-size:2rem]"
-          classNames={{ root: "w-full max-w-full", month: "flex w-full flex-col gap-2 sm:gap-4", week: "mt-1 flex w-full sm:mt-2" }}
+          className="pointer-events-auto mx-auto w-full max-w-[304px] p-1 [--cell-size:1.65rem] min-[375px]:max-w-[316px] sm:max-w-none sm:p-3 sm:[--cell-size:2rem]"
+          classNames={{ root: "w-full max-w-full", month: "flex w-full flex-col gap-1 sm:gap-4", week: "mt-0.5 flex w-full sm:mt-2" }}
         />
       </Card>
 
