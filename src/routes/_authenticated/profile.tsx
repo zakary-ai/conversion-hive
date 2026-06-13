@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { meQueryOptions } from "./route";
-import { updateProfile, changeMyPassword } from "@/lib/api/cl.functions";
+import { updateProfile, changeMyPassword, deleteMyAccount } from "@/lib/api/cl.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-bits";
@@ -10,7 +10,11 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const TIMEZONES: { value: string; label: string }[] = [
@@ -104,7 +108,7 @@ function ProfilePage() {
       </Card>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h3 className="font-display font-semibold">Sign out</h3>
             <p className="text-sm text-muted-foreground mt-1">End your session on this device.</p>
@@ -121,6 +125,64 @@ function ProfilePage() {
           </Button>
         </div>
       </Card>
+
+      <Card className="p-6 border-destructive/40">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <h3 className="font-display font-semibold text-destructive">Delete account</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Permanently delete your account and personal profile. This cannot be undone.
+            </p>
+          </div>
+          <DeleteAccountButton onDeleted={() => navigate({ to: "/auth", replace: true })} />
+        </div>
+      </Card>
+
+      <p className="text-center text-xs text-muted-foreground pt-2">
+        <Link to="/privacy" className="hover:text-foreground hover:underline">Privacy Policy</Link>
+        <span className="mx-2">·</span>
+        <Link to="/terms" className="hover:text-foreground hover:underline">Terms of Use</Link>
+      </p>
     </div>
+  );
+}
+
+function DeleteAccountButton({ onDeleted }: { onDeleted: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState("");
+  const del = useMutation({
+    mutationFn: () => deleteMyAccount(),
+    onSuccess: async () => {
+      toast.success("Account deleted");
+      await supabase.auth.signOut();
+      onDeleted();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive"><Trash2 className="h-4 w-4 mr-2" />Delete account</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Permanently delete your account?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This removes your login, profile, and personal data. Type <strong>DELETE</strong> to confirm.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="DELETE" />
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={confirm !== "DELETE" || del.isPending}
+            onClick={(e) => { e.preventDefault(); del.mutate(); }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {del.isPending ? "Deleting…" : "Delete forever"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
