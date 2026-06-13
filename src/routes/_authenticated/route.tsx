@@ -27,17 +27,17 @@ function AuthenticatedLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="flex h-dvh min-h-dvh w-full overflow-hidden bg-background md:min-h-screen">
         <div className="hidden md:block">
           <AppSidebar isAdmin={me.isAdmin} />
         </div>
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
           <header
-            className="border-b border-border bg-card fixed md:sticky top-0 left-0 right-0 md:left-auto md:right-auto z-40"
-            style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
+            className="sticky top-0 z-40 shrink-0 border-b border-border bg-card"
+            style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
             {/* Mobile: centered title */}
-            <div className="md:hidden h-12 flex items-end justify-center pb-2 px-4">
+            <div className="flex h-14 items-center justify-center px-4 md:hidden">
               <div className="font-display font-semibold tracking-tight text-base">
                 Conversion Lab
               </div>
@@ -57,11 +57,7 @@ function AuthenticatedLayout() {
             </div>
           </header>
           <main
-            className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden"
-            style={{
-              paddingTop: "calc(env(safe-area-inset-top) + 4rem)",
-              paddingBottom: "calc(env(safe-area-inset-bottom) + 5.5rem)",
-            }}
+            className="mobile-app-scroll flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] sm:p-6 sm:pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-6 lg:p-8"
           >
             <Outlet />
           </main>
