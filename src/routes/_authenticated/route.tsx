@@ -33,33 +33,39 @@ function AuthenticatedLayout() {
         </div>
         <div className="flex-1 flex flex-col min-w-0">
           <header
-            className="border-b border-border flex items-center justify-between px-4 bg-card sticky top-0 z-40"
-            style={{ paddingTop: "env(safe-area-inset-top)" }}
+            className="border-b border-border bg-card fixed md:sticky top-0 left-0 right-0 md:left-auto md:right-auto z-40"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)" }}
           >
-            <div className="h-14 flex items-center justify-between gap-3 w-full min-w-0">
+            {/* Mobile: centered title */}
+            <div className="md:hidden h-12 flex items-end justify-center pb-2 px-4">
+              <div className="font-display font-semibold tracking-tight text-base">
+                Conversion Lab
+              </div>
+            </div>
+            {/* Desktop: original layout */}
+            <div className="hidden md:flex h-14 items-center justify-between gap-3 px-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="hidden md:block"><SidebarTrigger /></div>
-                <div className="md:hidden font-display font-semibold tracking-tight truncate">
-                  Conversion Lab
-                </div>
-                <div className="text-sm text-muted-foreground hidden sm:block truncate">
+                <SidebarTrigger />
+                <div className="text-sm text-muted-foreground truncate">
                   {me.isAdmin ? "Admin workspace" : "Client workspace"}
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-right hidden sm:block min-w-0">
-                  <div className="text-sm font-medium truncate max-w-[180px]">{me.profile?.full_name || me.profile?.email || "User"}</div>
-                  <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : "Client"}</div>
-                </div>
+              <div className="text-right min-w-0">
+                <div className="text-sm font-medium truncate max-w-[180px]">{me.profile?.full_name || me.profile?.email || "User"}</div>
+                <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : "Client"}</div>
               </div>
             </div>
           </header>
           <main
             className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5.5rem)" }}
+            style={{
+              paddingTop: "calc(env(safe-area-inset-top) + 4rem)",
+              paddingBottom: "calc(env(safe-area-inset-bottom) + 5.5rem)",
+            }}
           >
             <Outlet />
           </main>
+
         </div>
         <BottomNav isAdmin={me.isAdmin} />
       </div>
