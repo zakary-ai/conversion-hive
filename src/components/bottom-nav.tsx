@@ -33,7 +33,6 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card md:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="grid grid-cols-5">
 
