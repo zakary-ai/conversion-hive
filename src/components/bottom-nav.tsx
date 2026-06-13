@@ -32,9 +32,9 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 h-14 border-t border-border bg-card md:hidden"
     >
-      <ul className="grid grid-cols-5">
+      <ul className="grid h-full grid-cols-5">
 
         {items.map((item) => {
           const active = isActive(item.url);
@@ -43,7 +43,7 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
               <Link
                 to={item.url}
                 className={cn(
-                  "flex min-h-16 flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-medium transition-colors",
+                  "flex h-14 flex-col items-center justify-center gap-0.5 px-1 pt-1 pb-1 text-[10px] font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}
               >
