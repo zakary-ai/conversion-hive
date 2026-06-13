@@ -5,8 +5,10 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
-  GraduationCap, Sparkles, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
+  GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
 } from "lucide-react";
+import logo from "@/assets/logo.png";
+
 
 const clientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -44,8 +46,8 @@ export function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="h-8 w-8 shrink-0 rounded-lg bg-primary glow-primary flex items-center justify-center">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
+          <div className="h-8 w-8 shrink-0 rounded-lg overflow-hidden glow-primary">
+            <img src={logo} alt="Conversion Lab" width={32} height={32} className="h-full w-full object-cover" />
           </div>
           {!collapsed && (
             <div className="leading-tight">
