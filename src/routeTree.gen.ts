@@ -30,6 +30,7 @@ import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_authenticated/admin/commissions'
 import { Route as AuthenticatedAdminApplicationsRouteImport } from './routes/_authenticated/admin/applications'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
 import { Route as AuthenticatedAdminClientsUserIdRouteImport } from './routes/_authenticated/admin/clients.$userId'
@@ -148,6 +149,12 @@ const AuthenticatedAdminClientsIndexRoute =
     path: '/clients/',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRunScraperRoute =
   ApiPublicHooksRunScraperRouteImport.update({
     id: '/api/public/hooks/run-scraper',
@@ -189,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -213,6 +221,7 @@ export interface FileRoutesByTo {
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/admin/clients': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesById {
@@ -240,6 +249,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRouteTypes {
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/admin/clients/$userId'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
+    | '/lovable/email/queue/process'
     | '/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/admin/clients/$userId'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
+    | '/lovable/email/queue/process'
     | '/admin/clients'
   id:
     | '__root__'
@@ -317,6 +329,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/clients/$userId'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
+    | '/lovable/email/queue/process'
     | '/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
 }
@@ -327,6 +340,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -478,6 +492,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminClientsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/run-scraper': {
       id: '/api/public/hooks/run-scraper'
       path: '/api/public/hooks/run-scraper'
@@ -566,6 +587,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
