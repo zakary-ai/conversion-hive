@@ -33,13 +33,10 @@ function AuthenticatedLayout() {
           <AppSidebar isAdmin={me.isAdmin} />
         </div>
         <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
-          <header
-            className="sticky top-0 z-40 shrink-0 border-b border-border bg-card"
-            style={{ paddingTop: "env(safe-area-inset-top)" }}
-          >
+          <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card">
             {/* Mobile: centered title */}
             <div className="flex h-10 items-center justify-start gap-2 px-4 md:hidden">
-              <img src={logo} alt="" width={24} height={24} className="h-6 w-6 rounded-md" />
+              <img src={logo} alt="" width={22} height={22} className="h-5.5 w-5.5 rounded-md" />
               <div className="font-display font-semibold tracking-tight text-sm">
                 Conversion Lab
               </div>
