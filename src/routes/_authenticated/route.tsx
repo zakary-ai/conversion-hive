@@ -37,8 +37,8 @@ function AuthenticatedLayout() {
             style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
             {/* Mobile: centered title */}
-            <div className="flex h-14 items-center justify-center px-4 md:hidden">
-              <div className="font-display font-semibold tracking-tight text-base">
+            <div className="flex h-10 items-center justify-start px-4 md:hidden">
+              <div className="font-display font-semibold tracking-tight text-sm">
                 Conversion Lab
               </div>
             </div>
