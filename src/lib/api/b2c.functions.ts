@@ -559,8 +559,11 @@ export const getB2cAdminStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
+    // Day boundaries anchored to America/New_York (Eastern Time)
+    const nowEstKey = zonedDateKey(new Date(), EST_TZ); // YYYY-MM-DD in ET
+    const [ey, em, ed] = nowEstKey.split("-").map(Number);
+    const todayStart = zonedWallToUTC(ey, em, ed, 0, 0, EST_TZ);
+    const todayEnd = zonedWallToUTC(ey, em, ed + 1, 0, 0, EST_TZ);
     const tsISO = todayStart.toISOString();
     const teISO = todayEnd.toISOString();
 
