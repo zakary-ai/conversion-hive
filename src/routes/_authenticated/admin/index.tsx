@@ -1,16 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getAdminDashboard } from "@/lib/api/cl.functions";
+import { getB2cAdminStats } from "@/lib/api/b2c.functions";
 import { PageHeader, StatCard } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck2, Video, PhoneCall, Clock, ExternalLink, Mail, Phone } from "lucide-react";
+import { CalendarCheck2, Video, PhoneCall, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2 } from "lucide-react";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 import { useAdminChannel } from "@/components/app-sidebar";
 
 
 const opts = queryOptions({ queryKey: ["admin-dashboard"], queryFn: () => getAdminDashboard() });
+const b2cStatsOpts = queryOptions({ queryKey: ["b2c-admin-stats"], queryFn: () => getB2cAdminStats() });
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
@@ -21,6 +23,7 @@ type Appt = Awaited<ReturnType<typeof getAdminDashboard>>["upcomingCalls"][numbe
 
 function AdminDashboard() {
   const { data } = useSuspenseQuery(opts);
+  const { data: b2c } = useQuery(b2cStatsOpts);
   const [openAppt, setOpenAppt] = useState<Appt | null>(null);
 
   return (
@@ -30,10 +33,11 @@ function AdminDashboard() {
         <ChannelToggle />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard label="Calls booked today" value={data.callsBookedToday} icon={CalendarCheck2} hint="New bookings created today" />
-        <StatCard label="Calls going live today" value={data.callsGoingLiveToday.length} icon={Video} hint="Scheduled to start today" />
-        <StatCard label="Leads contacted today" value={data.contactedToday} icon={PhoneCall} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Scheduled leads" value={b2c?.scheduledLeads ?? 0} icon={Users} hint="Waiting to be assigned" />
+        <StatCard label="Calls going live today" value={b2c?.callsGoingLiveToday ?? 0} icon={Video} />
+        <StatCard label="Calls booked today" value={b2c?.callsBookedToday ?? 0} icon={CalendarCheck2} />
+        <StatCard label="Calls closed today" value={b2c?.callsClosedToday ?? 0} icon={CheckCircle2} />
       </div>
 
       <Section title="Upcoming calls" icon={Clock} empty="No upcoming calls scheduled.">
