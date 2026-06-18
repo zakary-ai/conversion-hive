@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
-import { listClosedDealsForCommission, updateBookingCommission } from "@/lib/api/b2c.functions";
+import {
+  listClosedDealsForCommission,
+  updateBookingCommission,
+  listCloserPayouts,
+  recordCloserPayout,
+  deleteCloserPayout,
+} from "@/lib/api/b2c.functions";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,8 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { DollarSign, Percent } from "lucide-react";
+import { DollarSign, Percent, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/b2c-commissions")({
   component: B2cCommissionsPage,
