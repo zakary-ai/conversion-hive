@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarClock, Mail, Phone, Video, ClipboardCheck } from "lucide-react";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
-import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
+import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 
 export const Route = createFileRoute("/_authenticated/closer/")({
   beforeLoad: async ({ context }) => {
@@ -42,7 +42,7 @@ function CloserHome() {
   const upcoming = rows.filter((r) => new Date(r.slot_start).getTime() >= now).slice(0, 10);
 
   const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
-  const [appOpen, setAppOpen] = useState<string | null>(null);
+  const [previewFor, setPreviewFor] = useState<B | null>(null);
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -61,7 +61,7 @@ function CloserHome() {
         <h2 className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Today</h2>
         <div className="grid gap-2">
           {today.length === 0 && <Card className="p-6 text-sm text-muted-foreground text-center">No calls today.</Card>}
-          {today.map((b) => <CallCard key={b.id} b={b} onOutcome={() => setOutcomeFor(b)} onName={() => b.application_id && setAppOpen(b.application_id)} />)}
+          {today.map((b) => <CallCard key={b.id} b={b} onOutcome={() => setOutcomeFor(b)} onPreview={() => setPreviewFor(b)} />)}
         </div>
       </section>
 
@@ -69,7 +69,7 @@ function CloserHome() {
         <h2 className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Upcoming</h2>
         <div className="grid gap-2">
           {upcoming.length === 0 && <Card className="p-6 text-sm text-muted-foreground text-center">Nothing booked yet.</Card>}
-          {upcoming.map((b) => <CallCard key={b.id} b={b} onOutcome={() => setOutcomeFor(b)} onName={() => b.application_id && setAppOpen(b.application_id)} />)}
+          {upcoming.map((b) => <CallCard key={b.id} b={b} onOutcome={() => setOutcomeFor(b)} onPreview={() => setPreviewFor(b)} />)}
         </div>
       </section>
 
@@ -82,10 +82,10 @@ function CloserHome() {
           onOpenChange={(v) => !v && setOutcomeFor(null)}
         />
       )}
-      <ApplicationDetailDialog
-        applicationId={appOpen}
-        open={!!appOpen}
-        onOpenChange={(v) => !v && setAppOpen(null)}
+      <LeadPreviewDialog
+        booking={previewFor}
+        open={!!previewFor}
+        onOpenChange={(v) => !v && setPreviewFor(null)}
       />
     </div>
   );
@@ -100,18 +100,14 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-function CallCard({ b, onOutcome, onName }: { b: B; onOutcome: () => void; onName: () => void }) {
+function CallCard({ b, onOutcome, onPreview }: { b: B; onOutcome: () => void; onPreview: () => void }) {
   const dt = new Date(b.slot_start);
   const label = dt.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   return (
     <Card className="p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div className="min-w-0">
+      <div className="min-w-0 cursor-pointer" onClick={onPreview}>
         <div className="font-medium flex items-center gap-2">
-          {b.application_id ? (
-            <button type="button" onClick={onName} className="hover:underline text-primary text-left">{b.applicant_name}</button>
-          ) : (
-            <span>{b.applicant_name}</span>
-          )}
+          <span className="text-primary hover:underline">{b.applicant_name}</span>
           <Badge variant="secondary" className="text-[10px]">{b.status}</Badge>
         </div>
         <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
@@ -133,3 +129,4 @@ function CallCard({ b, onOutcome, onName }: { b: B; onOutcome: () => void; onNam
     </Card>
   );
 }
+
