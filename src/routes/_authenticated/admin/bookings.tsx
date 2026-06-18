@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listCloserBookings, listClosers, assignCloserToBooking, unassignCloser, cancelCloserBooking } from "@/lib/api/b2c.functions";
 import { Card } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { CalendarClock, Mail, Phone, Video, X } from "lucide-react";
+import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/bookings")({
   component: BookingsPage,
