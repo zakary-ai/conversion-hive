@@ -485,3 +485,100 @@ export const cancelCloserBooking = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Admin: get full application by id ----------
+export const getApplicationById = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    // Closers can also view applications for bookings assigned to them
+    if (!isAdmin) {
+      const { data: closer } = await context.supabase
+        .from("closers").select("id").eq("user_id", context.userId).maybeSingle();
+      if (!closer) throw new Error("Forbidden");
+      const { data: booking } = await context.supabase
+        .from("closer_bookings").select("id")
+        .eq("application_id", data.id).eq("assigned_closer_id", closer.id).limit(1);
+      if (!booking || booking.length === 0) throw new Error("Forbidden");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: app, error } = await supabaseAdmin
+      .from("applications").select("*").eq("id", data.id).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!app) throw new Error("Application not found");
+    return app;
+  });
+
+// ---------- Closer: submit call outcome ----------
+const OutcomeEnum = z.enum(["not_interested", "disqualified", "closed", "deposit"]);
+export const recordBookingOutcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    booking_id: z.string().uuid(),
+    outcome: OutcomeEnum,
+    deal_amount: z.number().nonnegative().nullable().optional(),
+    deposit_amount: z.number().nonnegative().nullable().optional(),
+    follow_up_amount: z.number().nonnegative().nullable().optional(),
+    follow_up_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+    notes: z.string().max(2000).nullable().optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: booking, error: berr } = await context.supabase
+      .from("closer_bookings").select("id, assigned_closer_id").eq("id", data.booking_id).maybeSingle();
+    if (berr) throw new Error(berr.message);
+    if (!booking) throw new Error("Booking not found");
+
+    // Permission: admin OR assigned closer
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) {
+      const { data: closer } = await context.supabase
+        .from("closers").select("id").eq("user_id", context.userId).maybeSingle();
+      if (!closer || closer.id !== booking.assigned_closer_id) throw new Error("Forbidden");
+    }
+
+    const patch: Record<string, unknown> = {
+      outcome: data.outcome,
+      outcome_at: new Date().toISOString(),
+      outcome_notes: data.notes ?? null,
+      deal_amount: data.outcome === "closed" ? data.deal_amount ?? null : null,
+      deposit_amount: data.outcome === "deposit" ? data.deposit_amount ?? null : null,
+      follow_up_amount: data.outcome === "deposit" ? data.follow_up_amount ?? null : null,
+      follow_up_date: data.outcome === "deposit" ? data.follow_up_date ?? null : null,
+      status: "completed",
+    };
+    const { error } = await supabaseAdmin.from("closer_bookings").update(patch).eq("id", data.booking_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Admin: B2C dashboard stats ----------
+export const getB2cAdminStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
+    const tsISO = todayStart.toISOString();
+    const teISO = todayEnd.toISOString();
+
+    const [scheduled, going, booked, closed] = await Promise.all([
+      context.supabase.from("closer_bookings").select("id", { count: "exact", head: true })
+        .eq("status", "pending_assignment"),
+      context.supabase.from("closer_bookings").select("id", { count: "exact", head: true })
+        .in("status", ["assigned", "completed"])
+        .gte("slot_start", tsISO).lt("slot_start", teISO),
+      context.supabase.from("closer_bookings").select("id", { count: "exact", head: true })
+        .gte("created_at", tsISO).lt("created_at", teISO),
+      context.supabase.from("closer_bookings").select("id", { count: "exact", head: true })
+        .in("outcome", ["closed", "deposit"])
+        .gte("outcome_at", tsISO).lt("outcome_at", teISO),
+    ]);
+    return {
+      scheduledLeads: scheduled.count ?? 0,
+      callsGoingLiveToday: going.count ?? 0,
+      callsBookedToday: booked.count ?? 0,
+      callsClosedToday: closed.count ?? 0,
+    };
+  });
