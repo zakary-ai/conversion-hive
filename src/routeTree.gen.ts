@@ -24,6 +24,7 @@ import { Route as AuthenticatedCommissionsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authenticated/training.index'
+import { Route as AuthenticatedCloserIndexRouteImport } from './routes/_authenticated/closer/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
@@ -115,6 +116,12 @@ const AuthenticatedTrainingIndexRoute =
   AuthenticatedTrainingIndexRouteImport.update({
     id: '/training/',
     path: '/training/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCloserIndexRoute =
+  AuthenticatedCloserIndexRouteImport.update({
+    id: '/closer/',
+    path: '/closer/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -236,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/closer/': typeof AuthenticatedCloserIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
@@ -267,6 +275,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/closer': typeof AuthenticatedCloserIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
@@ -301,6 +310,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/closer/': typeof AuthenticatedCloserIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
   '/_authenticated/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
@@ -335,6 +345,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/training/$moduleId'
     | '/admin/'
+    | '/closer/'
     | '/training/'
     | '/admin/clients/$userId'
     | '/api/public/hooks/openphone'
@@ -366,6 +377,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/training/$moduleId'
     | '/admin'
+    | '/closer'
     | '/training'
     | '/admin/clients/$userId'
     | '/api/public/hooks/openphone'
@@ -399,6 +411,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/training/$moduleId'
     | '/_authenticated/admin/'
+    | '/_authenticated/closer/'
     | '/_authenticated/training/'
     | '/_authenticated/admin/clients/$userId'
     | '/api/public/hooks/openphone'
@@ -525,6 +538,13 @@ declare module '@tanstack/react-router' {
       path: '/training'
       fullPath: '/training/'
       preLoaderRoute: typeof AuthenticatedTrainingIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/closer/': {
+      id: '/_authenticated/closer/'
+      path: '/closer'
+      fullPath: '/closer/'
+      preLoaderRoute: typeof AuthenticatedCloserIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/': {
@@ -686,6 +706,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
+  AuthenticatedCloserIndexRoute: typeof AuthenticatedCloserIndexRoute
   AuthenticatedTrainingIndexRoute: typeof AuthenticatedTrainingIndexRoute
 }
 
@@ -697,6 +718,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
+  AuthenticatedCloserIndexRoute: AuthenticatedCloserIndexRoute,
   AuthenticatedTrainingIndexRoute: AuthenticatedTrainingIndexRoute,
 }
 
