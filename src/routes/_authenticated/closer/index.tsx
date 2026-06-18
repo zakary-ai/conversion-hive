@@ -33,12 +33,11 @@ function CloserHome() {
   const { data } = useQuery({ queryKey: ["closer-bookings"], queryFn: () => listCloserBookings() });
   const rows = ((data?.rows ?? []) as B[]).filter((r) => r.status === "assigned");
   const now = Date.now();
+  const ET_TZ = "America/New_York";
+  const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: ET_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const today = rows.filter((r) => {
-    const d = new Date(r.slot_start);
-    const t = d.getTime();
-    const start = new Date(); start.setHours(0,0,0,0);
-    const end = new Date(start); end.setDate(end.getDate() + 1);
-    return t >= start.getTime() && t < end.getTime();
+    const k = new Intl.DateTimeFormat("en-CA", { timeZone: ET_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(r.slot_start));
+    return k === todayKey;
   });
   const upcoming = rows.filter((r) => new Date(r.slot_start).getTime() >= now).slice(0, 10);
 
