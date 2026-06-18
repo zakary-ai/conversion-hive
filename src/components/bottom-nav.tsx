@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Briefcase, Calendar as CalendarIcon, Settings,
-  GraduationCap, UserCog, Inbox, CalendarCheck, UserPlus,
+  GraduationCap, UserCog, CalendarCheck, UserPlus, DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminChannel } from "@/components/app-sidebar";
@@ -24,8 +24,8 @@ const adminB2BItems = [
 
 const adminB2CItems = [
   { title: "Home", url: "/admin", icon: LayoutDashboard },
-  { title: "Apps", url: "/admin/applications", icon: Inbox },
   { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
+  { title: "Commissions", url: "/admin/b2c-commissions", icon: DollarSign },
   { title: "Closers", url: "/admin/closers", icon: UserPlus },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ] as const;
