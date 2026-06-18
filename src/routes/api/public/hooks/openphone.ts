@@ -27,6 +27,7 @@ function verify(rawBody: string, header: string | null, secret: string): boolean
   return timingSafeEqual(provided, expected);
 }
 
+type OpenPhoneTranscriptDialogue = { identifier?: string; userId?: string; content?: string; text?: string; start?: number };
 type OpenPhoneEvent = {
   type?: string;
   data?: {
@@ -43,9 +44,44 @@ type OpenPhoneEvent = {
       url?: string;
       media?: Array<{ url?: string; type?: string }>;
       callId?: string;
+      // transcript-shaped fields
+      dialogue?: OpenPhoneTranscriptDialogue[];
+      text?: string;
+      transcript?: string;
+      // summary-shaped fields
+      summary?: string | string[];
+      nextSteps?: string[];
     };
   };
 };
+
+function formatTranscript(obj: NonNullable<OpenPhoneEvent["data"]>["object"]): string | null {
+  if (!obj) return null;
+  if (Array.isArray(obj.dialogue) && obj.dialogue.length > 0) {
+    return obj.dialogue
+      .map((d) => {
+        const speaker = d.identifier || d.userId || "Speaker";
+        const line = d.content || d.text || "";
+        return `${speaker}: ${line}`.trim();
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (typeof obj.transcript === "string") return obj.transcript;
+  if (typeof obj.text === "string") return obj.text;
+  return null;
+}
+
+function formatSummary(obj: NonNullable<OpenPhoneEvent["data"]>["object"]): string | null {
+  if (!obj) return null;
+  const parts: string[] = [];
+  if (Array.isArray(obj.summary)) parts.push(obj.summary.join("\n"));
+  else if (typeof obj.summary === "string") parts.push(obj.summary);
+  if (Array.isArray(obj.nextSteps) && obj.nextSteps.length > 0) {
+    parts.push("Next steps:\n- " + obj.nextSteps.join("\n- "));
+  }
+  return parts.length ? parts.join("\n\n") : null;
+}
 
 export const Route = createFileRoute("/api/public/hooks/openphone")({
   server: {
@@ -82,6 +118,23 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
             await supabaseAdmin
               .from("call_logs")
               .update({ recording_url: recordingUrl })
+              .eq("openphone_call_id", callId);
+          }
+        } else if (type.startsWith("call.transcript")) {
+          const transcript = formatTranscript(obj);
+          await supabaseAdmin
+            .from("call_logs")
+            .update({
+              transcript: transcript,
+              transcript_status: obj.status ?? "completed",
+            })
+            .eq("openphone_call_id", callId);
+        } else if (type.startsWith("call.summary")) {
+          const summary = formatSummary(obj);
+          if (summary) {
+            await supabaseAdmin
+              .from("call_logs")
+              .update({ summary })
               .eq("openphone_call_id", callId);
           }
         } else if (type.startsWith("call.")) {
