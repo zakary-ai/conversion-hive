@@ -31,7 +31,7 @@ function AuthenticatedLayout() {
     <SidebarProvider>
       <div className="flex h-dvh min-h-dvh w-full overflow-hidden bg-background md:min-h-screen">
         <div className="hidden md:block">
-          <AppSidebar isAdmin={me.isAdmin} />
+          <AppSidebar isAdmin={me.isAdmin} isCloser={me.isCloser} />
         </div>
         <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
           <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card">
