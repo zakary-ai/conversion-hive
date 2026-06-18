@@ -27,6 +27,7 @@ import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedCloserIndexRouteImport } from './routes/_authenticated/closer/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
+import { Route as AuthenticatedCloserCalendarRouteImport } from './routes/_authenticated/closer/calendar'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminScraperRouteImport } from './routes/_authenticated/admin/scraper'
 import { Route as AuthenticatedAdminQuizzesRouteImport } from './routes/_authenticated/admin/quizzes'
@@ -135,6 +136,12 @@ const AuthenticatedTrainingModuleIdRoute =
     path: '/training/$moduleId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCloserCalendarRoute =
+  AuthenticatedCloserCalendarRouteImport.update({
+    id: '/closer/calendar',
+    path: '/closer/calendar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
@@ -241,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/closer/': typeof AuthenticatedCloserIndexRoute
@@ -273,6 +281,7 @@ export interface FileRoutesByTo {
   '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/closer': typeof AuthenticatedCloserIndexRoute
@@ -308,6 +317,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/_authenticated/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/closer/calendar': typeof AuthenticatedCloserCalendarRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/closer/': typeof AuthenticatedCloserIndexRoute
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/admin/quizzes'
     | '/admin/scraper'
     | '/admin/settings'
+    | '/closer/calendar'
     | '/training/$moduleId'
     | '/admin/'
     | '/closer/'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/admin/quizzes'
     | '/admin/scraper'
     | '/admin/settings'
+    | '/closer/calendar'
     | '/training/$moduleId'
     | '/admin'
     | '/closer'
@@ -409,6 +421,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/quizzes'
     | '/_authenticated/admin/scraper'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/closer/calendar'
     | '/_authenticated/training/$moduleId'
     | '/_authenticated/admin/'
     | '/_authenticated/closer/'
@@ -561,6 +574,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrainingModuleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/closer/calendar': {
+      id: '/_authenticated/closer/calendar'
+      path: '/closer/calendar'
+      fullPath: '/closer/calendar'
+      preLoaderRoute: typeof AuthenticatedCloserCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
       path: '/settings'
@@ -705,6 +725,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedCloserCalendarRoute: typeof AuthenticatedCloserCalendarRoute
   AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
   AuthenticatedCloserIndexRoute: typeof AuthenticatedCloserIndexRoute
   AuthenticatedTrainingIndexRoute: typeof AuthenticatedTrainingIndexRoute
@@ -717,6 +738,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedCloserCalendarRoute: AuthenticatedCloserCalendarRoute,
   AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
   AuthenticatedCloserIndexRoute: AuthenticatedCloserIndexRoute,
   AuthenticatedTrainingIndexRoute: AuthenticatedTrainingIndexRoute,
