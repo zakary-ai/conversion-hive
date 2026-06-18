@@ -1,78 +1,50 @@
+## B2C Pipeline — Plan
 
-# App Store–Ready iOS Build
+### 1. Admin B2B/B2C toggle
+- Add a `channel` segmented control to the admin shell (persisted to `localStorage`).
+- When `B2C` is active, the admin sidebar swaps the "Leads" / "Scraper" / "Clients" items for new B2C pages: **Applications**, **Bookings**, **Closers**.
+- B2B pages and tables are untouched.
 
-This app is a server-rendered TanStack Start web app, so the cleanest path to the App Store is a **Capacitor iOS shell that loads the published Lovable URL** (`https://conversion-hive.lovable.app`) inside a native WKWebView. That way the native binary stays tiny, every server function / Zoom / email flow keeps working, and you only have to ship updates to the web — Apple just sees a native iOS app.
+### 2. New database tables (B2C-only, separate from B2B)
+- `closers` — admin-managed roster: `user_id` (FK auth.users, nullable until invite accepted), `full_name`, `email`, `zoom_user_email`, `active`.
+- `closer_availability_rules` — per-closer weekly rules (same shape as setter `availability_rules`).
+- `closer_bookings` — booking slot: `application_id`, `slot_start`, `slot_end`, `assigned_closer_id` (nullable), `status` (`pending_assignment` | `assigned` | `completed` | `cancelled` | `no_show`), `zoom_join_url`, `zoom_meeting_id`, `applicant_email`, `applicant_name`, `applicant_phone`.
+- New role `closer` added to `app_role` enum.
+- RLS: closers can read their own bookings + availability; admins manage all; applicants insert bookings via a public server fn keyed by application token.
 
-In parallel I'll harden the whole authenticated app for iPhone: real sticky header & bottom nav, full safe-area handling (notch + home indicator), 44pt touch targets, no horizontal scroll at 375/390/430 widths.
+### 3. Apply flow change
+- After successful submit on `/apply`, redirect to `/apply/book?application=<id>&token=<one-time-token>` (token stored on the `applications` row).
+- New page renders a slot picker that calls `listCloserSlots(weekStart)` — server fn that unions all active closers' availability, subtracts existing `closer_bookings` per slot, and returns slots with `capacity = number_of_free_closers` (cap shown as 3 today since 3 closers).
+- Submit creates a `closer_bookings` row with `status='pending_assignment'`, no closer assigned yet. Confirmation page shown.
 
----
+### 4. Admin: Bookings page
+- Lists `closer_bookings` grouped by status. Each pending row shows applicant + slot + a "Assign closer" dropdown (only closers free at that slot).
+- Assigning a closer:
+  1. Updates `assigned_closer_id`, status → `assigned`.
+  2. Calls existing Zoom helper to create a meeting under that closer's `zoom_user_email` (Server-to-Server OAuth already wired via `ZOOM_*` secrets).
+  3. Stores `zoom_join_url` + `zoom_meeting_id` on the booking.
+  4. Sends app email `closer-booking-confirmation` to applicant with date/time + Zoom link.
+- Admin can also reassign (revokes old Zoom meeting, creates new one).
 
-## 1 · iOS shell (Capacitor)
+### 5. Admin: Closers page
+- Table of closers with name/email/zoom email/active toggle.
+- "Invite closer" button: admin enters name + login email + zoom email → inserts `closers` row and sends Supabase auth invite (magic link). On first sign-in, `handle_new_user` links `auth.users.id` back to the `closers` row by email and grants the `closer` role.
+- Per-closer "Edit availability" opens the existing availability editor scoped to that closer.
 
-- Add `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`, `@capacitor/status-bar`, `@capacitor/splash-screen`, `@capacitor/app`.
-- Create `capacitor.config.ts`:
-  - `appId: "com.conversionlab.app"`
-  - `appName: "Conversion Lab"`
-  - `server.url: "https://conversion-hive.lovable.app"`, `server.cleartext: false`
-  - `ios.contentInset: "always"`, `backgroundColor: "#0a0a14"`
-  - splash + status-bar config (dark, translucent)
-- Generate app icon set + splash from the existing brand mark (1024×1024 source → all iOS sizes via `@capacitor/assets`).
-- Add `ios/` project, set deployment target iOS 14+, bundle id `com.conversionlab.app`, display name "Conversion Lab", portrait only (iPhone), light+dark.
-- Add a build script + a README section with the exact Xcode steps (open `ios/App/App.xcworkspace`, set Team, Archive → Distribute App → App Store Connect).
-- Privacy: no camera/mic/location/tracking usage strings needed — webview only.
+### 6. Closer portal (new `_closer` layout)
+- `_authenticated/closer/` subtree gated by `has_role(uid,'closer')`.
+- **Home** (`/closer`): today's calls + upcoming this week, quick stats.
+- **Calendar** (`/closer/calendar`): month/week view of assigned bookings, each card showing applicant, Zoom link, contact info.
+- Closer-facing bottom nav (mobile) matches setter nav style.
 
-## 2 · App Store compliance fixes (so it passes review the first time)
+### 7. Email template
+- New app email `closer-booking-confirmation` (date/time, closer name, Zoom join link, reschedule contact). Reuses existing email infra.
 
-- **Account deletion in-app** (Apple 5.1.1(v) — hard reject if missing). Add "Delete account" in `/profile` that calls a new `deleteMyAccount` server function (deletes auth user + cascades).
-- **No external payments / signup links** — verified: applications + setter invites are in-app, no Stripe.
-- **Sign in with Apple** — only required if you offer other social logins. Currently email-only, so skipped (note in plan).
-- **Privacy policy + Terms URLs** — add `/privacy` and `/terms` routes with real content, link from `/auth` and `/profile`. Required for App Store Connect metadata.
-- **Support URL + marketing URL** — note in submission section that these need to be set in App Store Connect (uses your domain).
+### 8. Out of scope (per your note)
+- Zoom account creation/onboarding for closers — assume `zoom_user_email` is provided by admin and already exists under the Zoom org.
 
-## 3 · iPhone UI pass (all `/_authenticated/*` screens + `/auth`, `/apply`)
-
-Global (`__root.tsx` + `_authenticated/route.tsx`):
-- Viewport meta already has `viewport-fit=cover` ✓. Lock `maximum-scale=1` only on inputs to stop iOS auto-zoom (font-size ≥ 16px on inputs).
-- Header: change `sticky top-0` → keep sticky, add `pt-[env(safe-area-inset-top)]` and a solid `bg-card` (no transparency under notch).
-- Bottom nav: already fixed; add `pb-[env(safe-area-inset-bottom)]` (already there) and increase tap target to 56px min ✓.
-- Main `<main>`: remove the double padding-bottom, use `pb-[calc(env(safe-area-inset-bottom)+5rem)]` only on mobile.
-- Add `overscroll-behavior-y: none` on body to kill rubber-band white flash.
-- Add `-webkit-tap-highlight-color: transparent` globally.
-
-Per-screen audit (sticky chrome + horizontal overflow + touch targets) on:
-- `/dashboard`, `/leads`, `/calendar`, `/training`, `/training/$moduleId`, `/profile`, `/commissions`
-- `/admin`, `/admin/leads`, `/admin/clients`, `/admin/clients/$userId`, `/admin/settings`, `/admin/applications`, `/admin/modules`, `/admin/quizzes`, `/admin/commissions`, `/admin/scraper`
-- `/auth`, `/apply`
-
-Fixes applied where needed: wrap raw `<table>` in horizontal scroll containers or convert to mobile card list (same pattern used in `commissions.tsx`); ensure all dialogs are full-screen on mobile via `max-h-[calc(100dvh-2rem)]` + scroll; use `dvh` not `vh` (iOS Safari address bar); `grid-cols-[minmax(0,1fr)_auto]` on header rows per the responsive-layout rule.
-
-## 4 · PWA manifest + icons (also used by Capacitor asset generator)
-
-- `public/manifest.webmanifest` with name, short_name "Conversion Lab", `display: "standalone"`, `theme_color: "#0a0a14"`, `background_color: "#0a0a14"`, icons 192/512/maskable.
-- Apple touch icons (180×180) + favicon.
-- Link tags in `__root.tsx` head.
-- **No service worker** (per project policy — Capacitor doesn't need it and it would break the Lovable preview).
-
-## 5 · Submission checklist (delivered as a `IOS_SUBMISSION.md`)
-
-Step-by-step for first-time App Store submission: Apple Developer account, bundle id registration, App Store Connect app record, screenshots (6.7" + 6.5" required), privacy nutrition labels (data collected: email, name; not linked to tracking), age rating, description/keywords, archive & upload via Xcode, TestFlight, submit for review.
-
----
-
-## Technical details
-
-- `server.url` Capacitor mode means iOS app is a thin WKWebView pointing at production. Updates to the web ship instantly without a new App Store build — only native shell changes need resubmission. (Apple allows this as long as the app has substantive functionality, which it does.)
-- Capacitor `ios/` folder is generated locally (`npx cap add ios`) — not committed by the agent since iOS builds happen on your Mac. I'll give you the exact commands to run.
-- Account deletion server function uses `supabaseAdmin.auth.admin.deleteUser(userId)` guarded by `requireSupabaseAuth`.
-- `dvh` units are supported on iOS 15.4+ — fallback to `vh` via `min-height: 100vh; min-height: 100dvh;`.
-
----
-
-## Out of scope (ask if you want any of these)
-
-- Push notifications (needs APNs + Firebase setup).
-- Native camera/file picker (webview file input works for photos already).
-- Offline mode (would require a service worker — currently disabled by project policy).
-- Android / Play Store (mirror process if you want it next).
-
-Ready to build when you approve.
+### Technical notes
+- Tables get explicit `GRANT`s + RLS in a single migration; new `closer` role added to enum.
+- Slot capacity calculation runs server-side and re-checks at booking time to prevent races (unique partial index on `(slot_start, assigned_closer_id)` once assigned).
+- Zoom call wrapped in try/catch — if Zoom fails on assignment, the row stays `assigned` with `zoom_join_url=null` and admin sees a "Retry Zoom" button.
+- Reuses existing `slot-picker`, `availability-editor`, `date-time-picker` components.
