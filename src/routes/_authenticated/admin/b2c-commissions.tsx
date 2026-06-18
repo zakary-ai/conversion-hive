@@ -52,12 +52,22 @@ function isUnassigned(r: Row) {
   return !r.closers || r.commission_amount == null || Number(r.commission_amount) <= 0;
 }
 
+type Payout = { id: string; closer_id: string; amount: number; method: string; note: string | null; paid_at: string };
+
+const METHODS = ["Cash", "ACH", "Wire", "PayPal", "Venmo", "Zelle", "Check", "Crypto", "Other"] as const;
+
 function B2cCommissionsPage() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["closed-deals-commission"],
     queryFn: () => listClosedDealsForCommission(),
   });
   const rows = data as Row[];
+
+  const { data: payoutsData = [] } = useQuery({
+    queryKey: ["closer-payouts"],
+    queryFn: () => listCloserPayouts(),
+  });
+  const payoutsList = payoutsData as Payout[];
 
   const [range, setRange] = useState<RangeKey>("30d");
 
@@ -75,31 +85,43 @@ function B2cCommissionsPage() {
   const totalDeals = inRange.reduce((s, r) => s + dealVolume(r), 0);
 
   const unassigned = rows.filter(isUnassigned);
-  const payouts = rows.filter((r) => !isUnassigned(r));
+  const assigned = rows.filter((r) => !isUnassigned(r));
 
-  // Group payouts by closer
+  // Group assigned commissions by closer; subtract recorded payouts
   const grouped = useMemo(() => {
-    const m = new Map<string, { closer: { id: string; full_name: string; email: string }; total: number; rows: Row[] }>();
-    for (const r of payouts) {
+    const m = new Map<string, { closer: { id: string; full_name: string; email: string }; earned: number; rows: Row[] }>();
+    for (const r of assigned) {
       if (!r.closers) continue;
       const key = r.closers.id;
-      const g = m.get(key) ?? { closer: r.closers, total: 0, rows: [] };
-      g.total += Number(r.commission_amount ?? 0);
+      const g = m.get(key) ?? { closer: r.closers, earned: 0, rows: [] };
+      g.earned += Number(r.commission_amount ?? 0);
       g.rows.push(r);
       m.set(key, g);
     }
-    return Array.from(m.values()).sort((a, b) => b.total - a.total);
-  }, [payouts]);
+    const paidByCloser = new Map<string, { paid: number; payouts: Payout[] }>();
+    for (const p of payoutsList) {
+      const cur = paidByCloser.get(p.closer_id) ?? { paid: 0, payouts: [] };
+      cur.paid += Number(p.amount);
+      cur.payouts.push(p);
+      paidByCloser.set(p.closer_id, cur);
+    }
+    return Array.from(m.values())
+      .map((g) => {
+        const pb = paidByCloser.get(g.closer.id) ?? { paid: 0, payouts: [] };
+        return { ...g, paid: pb.paid, payouts: pb.payouts, owed: g.earned - pb.paid };
+      })
+      .sort((a, b) => b.owed - a.owed);
+  }, [assigned, payoutsList]);
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-display font-semibold">Assign Commissions</h1>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-wrap sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-display font-semibold">Assign Commissions</h1>
           <p className="text-sm text-muted-foreground">Edit deal amount or percentage to recalculate the closer's commission.</p>
         </div>
         <Select value={range} onValueChange={(v) => setRange(v as RangeKey)}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[130px] sm:w-[160px] shrink-0"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="1d">Today</SelectItem>
             <SelectItem value="30d">Last 30 days</SelectItem>
@@ -111,22 +133,24 @@ function B2cCommissionsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Card className="p-4">
+        <Card className="p-4 min-w-0">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Total deal volume</div>
-          <div className="text-2xl font-display font-semibold mt-1">{money(totalDeals)}</div>
+          <div className="text-xl sm:text-2xl font-display font-semibold mt-1 truncate">{money(totalDeals)}</div>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 min-w-0">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Total commissions</div>
-          <div className="text-2xl font-display font-semibold mt-1 text-success">{money(totalCommission)}</div>
+          <div className="text-xl sm:text-2xl font-display font-semibold mt-1 text-success truncate">{money(totalCommission)}</div>
         </Card>
       </div>
 
       <Tabs defaultValue="history" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="history">Closed history <Badge variant="secondary" className="ml-2">{rows.length}</Badge></TabsTrigger>
-          <TabsTrigger value="unassigned">Unassigned <Badge variant="secondary" className="ml-2">{unassigned.length}</Badge></TabsTrigger>
-          <TabsTrigger value="payouts">Payouts <Badge variant="secondary" className="ml-2">{grouped.length}</Badge></TabsTrigger>
-        </TabsList>
+        <div className="-mx-1 overflow-x-auto">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="history" className="flex-1 sm:flex-none text-xs sm:text-sm">History <Badge variant="secondary" className="ml-1.5">{rows.length}</Badge></TabsTrigger>
+            <TabsTrigger value="unassigned" className="flex-1 sm:flex-none text-xs sm:text-sm">Unassigned <Badge variant="secondary" className="ml-1.5">{unassigned.length}</Badge></TabsTrigger>
+            <TabsTrigger value="payouts" className="flex-1 sm:flex-none text-xs sm:text-sm">Payouts <Badge variant="secondary" className="ml-1.5">{grouped.length}</Badge></TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="history" className="grid gap-3">
           {isLoading && <Card className="p-6 text-center text-sm text-muted-foreground">Loading…</Card>}
@@ -148,7 +172,17 @@ function B2cCommissionsPage() {
           {grouped.length === 0 ? (
             <Card className="p-6 text-center text-sm text-muted-foreground">No payouts yet.</Card>
           ) : (
-            grouped.map((g) => <PayoutGroup key={g.closer.id} closer={g.closer} total={g.total} rows={g.rows} />)
+            grouped.map((g) => (
+              <PayoutGroup
+                key={g.closer.id}
+                closer={g.closer}
+                earned={g.earned}
+                paid={g.paid}
+                owed={g.owed}
+                rows={g.rows}
+                payouts={g.payouts}
+              />
+            ))
           )}
         </TabsContent>
       </Tabs>
@@ -156,37 +190,174 @@ function B2cCommissionsPage() {
   );
 }
 
-function PayoutGroup({ closer, total, rows }: { closer: { full_name: string; email: string }; total: number; rows: Row[] }) {
+function PayoutGroup({
+  closer, earned, paid, owed, rows, payouts,
+}: {
+  closer: { id: string; full_name: string; email: string };
+  earned: number; paid: number; owed: number;
+  rows: Row[]; payouts: Payout[];
+}) {
   const [open, setOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   return (
     <Card className="p-4">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between gap-3 text-left">
+      <button type="button" onClick={() => setOpen((v) => !v)} className="w-full grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left">
         <div className="min-w-0">
-          <div className="font-medium">{closer.full_name}</div>
-          <div className="text-xs text-muted-foreground">{closer.email} · {rows.length} deal{rows.length === 1 ? "" : "s"}</div>
+          <div className="font-medium truncate">{closer.full_name}</div>
+          <div className="text-xs text-muted-foreground truncate">{closer.email} · {rows.length} deal{rows.length === 1 ? "" : "s"}</div>
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Owed</div>
-          <div className="text-xl font-semibold text-success">{money(total)}</div>
+          <div className="text-lg sm:text-xl font-semibold text-success">{money(owed)}</div>
+          <div className="text-[10px] text-muted-foreground">Earned {money(earned)} · Paid {money(paid)}</div>
         </div>
       </button>
+
       {open && (
-        <div className="mt-3 border-t border-border pt-3 space-y-2">
-          {rows.map((r) => (
-            <div key={r.id} className="flex items-center justify-between text-sm">
-              <div className="min-w-0">
-                <div className="font-medium truncate">{r.applicant_name}</div>
-                <div className="text-xs text-muted-foreground capitalize">
-                  {r.outcome} · {r.outcome_at ? new Date(r.outcome_at).toLocaleDateString() : "—"} · {money(dealVolume(r))}
-                  {r.commission_percent != null && <> · {r.commission_percent}%</>}
+        <div className="mt-3 border-t border-border pt-3 space-y-3">
+          <div>
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Deals</div>
+            <div className="space-y-2">
+              {rows.map((r) => (
+                <div key={r.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-sm">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{r.applicant_name}</div>
+                    <div className="text-xs text-muted-foreground capitalize truncate">
+                      {r.outcome} · {r.outcome_at ? new Date(r.outcome_at).toLocaleDateString() : "—"} · {money(dealVolume(r))}
+                      {r.commission_percent != null && <> · {r.commission_percent}%</>}
+                    </div>
+                  </div>
+                  <div className="text-success font-medium shrink-0">{money(r.commission_amount)}</div>
                 </div>
-              </div>
-              <div className="text-success font-medium">{money(r.commission_amount)}</div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {payouts.length > 0 && (
+            <div>
+              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Payouts</div>
+              <div className="space-y-1">
+                {payouts.map((p) => <PayoutLine key={p.id} payout={p} />)}
+              </div>
+            </div>
+          )}
         </div>
       )}
+
+      <div className="mt-3 flex justify-end">
+        <Button size="sm" onClick={() => setPayOpen(true)}>Record payout</Button>
+      </div>
+
+      <PayoutDialog
+        open={payOpen}
+        onOpenChange={setPayOpen}
+        closer={closer}
+        suggested={owed > 0 ? owed : 0}
+      />
     </Card>
+  );
+}
+
+function PayoutLine({ payout }: { payout: Payout }) {
+  const qc = useQueryClient();
+  const del = useMutation({
+    mutationFn: () => deleteCloserPayout({ data: { id: payout.id } }),
+    onSuccess: () => { toast.success("Payout removed"); qc.invalidateQueries({ queryKey: ["closer-payouts"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-sm">
+      <div className="min-w-0">
+        <div className="truncate">{payout.method}{payout.note ? ` · ${payout.note}` : ""}</div>
+        <div className="text-xs text-muted-foreground">{new Date(payout.paid_at).toLocaleDateString()}</div>
+      </div>
+      <div className="font-medium shrink-0">{money(payout.amount)}</div>
+      <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => del.mutate()} disabled={del.isPending}>
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
+function PayoutDialog({
+  open, onOpenChange, closer, suggested,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  closer: { id: string; full_name: string };
+  suggested: number;
+}) {
+  const qc = useQueryClient();
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState<string>("ACH");
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setAmount(suggested > 0 ? String(suggested.toFixed(2)) : "");
+      setMethod("ACH");
+      setNote("");
+    }
+  }, [open, suggested]);
+
+  const save = useMutation({
+    mutationFn: () => recordCloserPayout({
+      data: {
+        closer_id: closer.id,
+        amount: parseFloat(amount),
+        method,
+        note: note.trim() || null,
+      },
+    }),
+    onSuccess: () => {
+      toast.success("Payout recorded");
+      qc.invalidateQueries({ queryKey: ["closer-payouts"] });
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const amt = parseFloat(amount);
+  const valid = !isNaN(amt) && amt > 0 && method;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Pay {closer.full_name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Amount ($)</Label>
+            <Input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+            {suggested > 0 && (
+              <button type="button" onClick={() => setAmount(suggested.toFixed(2))} className="text-xs text-primary mt-1">
+                Use full owed amount ({money(suggested)})
+              </button>
+            )}
+          </div>
+          <div>
+            <Label className="text-xs">Method</Label>
+            <Select value={method} onValueChange={setMethod}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Note (optional)</Label>
+            <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Reference, period, etc." />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={!valid || save.isPending}>
+            {save.isPending ? "Saving…" : "Record payout"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
