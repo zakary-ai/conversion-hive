@@ -252,8 +252,8 @@ export const createCloserBooking = createServerFn({ method: "POST" })
   });
 
 // ---------- Admin: closers CRUD ----------
-type AdminCtx = { supabase: { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" | "client" | "closer" }) => Promise<{ data: boolean | null; error: { message: string } | null }> }; userId: string };
-async function assertAdmin(ctx: AdminCtx) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "admin" });
   if (!data) throw new Error("Forbidden");
 }
