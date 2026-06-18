@@ -206,9 +206,9 @@ function ApplyPage() {
             <div className="h-14 w-14 mx-auto rounded-full bg-success/20 text-success flex items-center justify-center mb-4">
               <CheckCircle2 className="h-7 w-7" />
             </div>
-            <h2 className="text-2xl font-display font-semibold">You're booked!</h2>
+            <h2 className="text-2xl font-display font-semibold">Application submitted</h2>
             <p className="mt-3 text-muted-foreground">
-              We received your booking. You'll receive a confirmation email with the Zoom link as soon as a closer is assigned.
+              We will review your application and you will get an email shortly if your interview is confirmed.
             </p>
           </Card>
         )}
