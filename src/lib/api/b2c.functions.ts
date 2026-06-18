@@ -784,3 +784,52 @@ export const getB2cAdminStats = createServerFn({ method: "GET" })
       callsClosedToday: closed.count ?? 0,
     };
   });
+
+// ---------- Admin: list closer payouts ----------
+export const listCloserPayouts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase
+      .from("closer_payouts")
+      .select("id, closer_id, amount, method, note, paid_at, created_at")
+      .order("paid_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+// ---------- Admin: record a payout ----------
+export const recordCloserPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    closer_id: z.string().uuid(),
+    amount: z.number().positive(),
+    method: z.string().trim().min(1).max(60),
+    note: z.string().trim().max(500).optional().nullable(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_payouts") as any).insert({
+      closer_id: data.closer_id,
+      amount: data.amount,
+      method: data.method,
+      note: data.note ?? null,
+      created_by: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Admin: delete a payout ----------
+export const deleteCloserPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("closer_payouts").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
