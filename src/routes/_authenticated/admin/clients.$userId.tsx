@@ -266,10 +266,6 @@ function SetterDetailPage() {
   );
 }
 
-function UnpayButton({ id, userId }: { id: string; userId: string }) {
-  const qc = useQueryClient();
-  const m = useMutation({
-
 type CallRowItem = {
   id: string;
   created_at: string;
