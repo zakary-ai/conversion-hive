@@ -380,6 +380,47 @@ export type Database = {
           },
         ]
       }
+      closer_payouts: {
+        Row: {
+          amount: number
+          closer_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          method: string
+          note: string | null
+          paid_at: string
+        }
+        Insert: {
+          amount: number
+          closer_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method: string
+          note?: string | null
+          paid_at?: string
+        }
+        Update: {
+          amount?: number
+          closer_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method?: string
+          note?: string | null
+          paid_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "closer_payouts_closer_id_fkey"
+            columns: ["closer_id"]
+            isOneToOne: false
+            referencedRelation: "closers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       closers: {
         Row: {
           active: boolean
