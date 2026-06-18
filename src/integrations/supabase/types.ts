@@ -283,8 +283,15 @@ export type Database = {
           application_id: string | null
           assigned_closer_id: string | null
           created_at: string
+          deal_amount: number | null
+          deposit_amount: number | null
+          follow_up_amount: number | null
+          follow_up_date: string | null
           id: string
           notes: string | null
+          outcome: string | null
+          outcome_at: string | null
+          outcome_notes: string | null
           slot_end: string
           slot_start: string
           status: string
@@ -299,8 +306,15 @@ export type Database = {
           application_id?: string | null
           assigned_closer_id?: string | null
           created_at?: string
+          deal_amount?: number | null
+          deposit_amount?: number | null
+          follow_up_amount?: number | null
+          follow_up_date?: string | null
           id?: string
           notes?: string | null
+          outcome?: string | null
+          outcome_at?: string | null
+          outcome_notes?: string | null
           slot_end: string
           slot_start: string
           status?: string
@@ -315,8 +329,15 @@ export type Database = {
           application_id?: string | null
           assigned_closer_id?: string | null
           created_at?: string
+          deal_amount?: number | null
+          deposit_amount?: number | null
+          follow_up_amount?: number | null
+          follow_up_date?: string | null
           id?: string
           notes?: string | null
+          outcome?: string | null
+          outcome_at?: string | null
+          outcome_notes?: string | null
           slot_end?: string
           slot_start?: string
           status?: string

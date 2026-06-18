@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listCloserBookings, listClosers, assignCloserToBooking, unassignCloser, cancelCloserBooking } from "@/lib/api/b2c.functions";
 import { Card } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { CalendarClock, Mail, Phone, Video, X } from "lucide-react";
+import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/bookings")({
   component: BookingsPage,
@@ -96,6 +98,8 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
     onSuccess: () => { toast.success("Cancelled"); qc.invalidateQueries({ queryKey: ["closer-bookings"] }); },
   });
 
+  const [openAppId, setOpenAppId] = useState<string | null>(null);
+
   const dt = new Date(booking.slot_start);
   const label = dt.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
@@ -103,7 +107,17 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
     <Card className="p-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <div className="font-medium">{booking.applicant_name}</div>
+          {booking.application_id ? (
+            <button
+              type="button"
+              onClick={() => setOpenAppId(booking.application_id)}
+              className="font-medium text-left hover:underline text-primary"
+            >
+              {booking.applicant_name}
+            </button>
+          ) : (
+            <div className="font-medium">{booking.applicant_name}</div>
+          )}
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
             <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {label}</span>
             <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {booking.applicant_email}</span>
@@ -140,6 +154,11 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
           )}
         </div>
       </div>
+      <ApplicationDetailDialog
+        applicationId={openAppId}
+        open={!!openAppId}
+        onOpenChange={(v) => !v && setOpenAppId(null)}
+      />
     </Card>
   );
 }
