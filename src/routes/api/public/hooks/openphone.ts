@@ -151,6 +151,13 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
             .from("call_logs")
             .update(update)
             .eq("openphone_call_id", callId);
+
+          // After a call completes, backfill recording + transcript + summary via REST.
+          // Recordings/transcripts can finish processing after the completed event fires,
+          // so we re-query a few seconds later; non-fatal if any are missing.
+          if (type === "call.completed" || obj.status === "completed") {
+            void backfillCallArtifacts(callId).catch((e) => console.error("openphone backfill", e));
+          }
         }
 
         return Response.json({ ok: true });
