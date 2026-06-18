@@ -1,0 +1,1 @@
+ALTER TABLE public.closer_bookings ADD COLUMN IF NOT EXISTS google_calendar_event_id text;
