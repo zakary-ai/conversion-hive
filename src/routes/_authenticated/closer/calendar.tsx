@@ -6,7 +6,10 @@ import { meQueryOptions } from "@/routes/_authenticated/route";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, Video, CalendarClock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Mail, Phone, Video, CalendarClock, ClipboardCheck } from "lucide-react";
+import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
+import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 
 export const Route = createFileRoute("/_authenticated/closer/calendar")({
   beforeLoad: async ({ context }) => {
@@ -17,8 +20,14 @@ export const Route = createFileRoute("/_authenticated/closer/calendar")({
 });
 
 type B = {
-  id: string; slot_start: string; status: string; zoom_join_url: string | null;
-  applicant_name: string; applicant_email: string; applicant_phone: string | null;
+  id: string;
+  application_id: string | null;
+  slot_start: string;
+  status: string;
+  zoom_join_url: string | null;
+  applicant_name: string;
+  applicant_email: string;
+  applicant_phone: string | null;
 };
 
 function sameDay(a: Date, b: Date) {
@@ -29,6 +38,8 @@ function CloserCalendar() {
   const { data } = useQuery({ queryKey: ["closer-bookings"], queryFn: () => listCloserBookings() });
   const rows = (data?.rows ?? []) as B[];
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [previewFor, setPreviewFor] = useState<B | null>(null);
+  const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
 
   const bookedDays = useMemo(() => rows.map((r) => new Date(r.slot_start)), [rows]);
   const dayBookings = useMemo(() => date ? rows.filter((r) => sameDay(new Date(r.slot_start), date)) : [], [rows, date]);
@@ -61,26 +72,49 @@ function CloserCalendar() {
             const time = new Date(b.slot_start).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
             return (
               <Card key={b.id} className="p-4 flex items-center justify-between gap-3 flex-wrap">
-                <div className="min-w-0">
-                  <div className="font-medium flex items-center gap-2">{b.applicant_name} <Badge variant="secondary" className="text-[10px]">{b.status}</Badge></div>
+                <div className="min-w-0 cursor-pointer" onClick={() => setPreviewFor(b)}>
+                  <div className="font-medium flex items-center gap-2">
+                    <span className="text-primary hover:underline">{b.applicant_name}</span>
+                    <Badge variant="secondary" className="text-[10px]">{b.status}</Badge>
+                  </div>
                   <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
                     <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {time}</span>
                     <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {b.applicant_email}</span>
                     {b.applicant_phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {b.applicant_phone}</span>}
                   </div>
                 </div>
-                {b.zoom_join_url && (
-                  <a href={b.zoom_join_url} target="_blank" rel="noreferrer">
-                    <button className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
-                      <Video className="h-3 w-3" /> Join
-                    </button>
-                  </a>
-                )}
+                <div className="flex items-center gap-2">
+                  {b.zoom_join_url && (
+                    <a href={b.zoom_join_url} target="_blank" rel="noreferrer">
+                      <Button size="sm" className="gap-1"><Video className="h-3 w-3" /> Join</Button>
+                    </a>
+                  )}
+                  {b.status === "assigned" && (
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => setOutcomeFor(b)}>
+                      <ClipboardCheck className="h-3 w-3" /> Outcome
+                    </Button>
+                  )}
+                </div>
               </Card>
             );
           })}
         </div>
       </div>
+
+      <LeadPreviewDialog
+        booking={previewFor}
+        open={!!previewFor}
+        onOpenChange={(v) => !v && setPreviewFor(null)}
+      />
+      {outcomeFor && (
+        <OutcomeDialog
+          bookingId={outcomeFor.id}
+          applicationId={outcomeFor.application_id}
+          applicantName={outcomeFor.applicant_name}
+          open={!!outcomeFor}
+          onOpenChange={(v) => !v && setOutcomeFor(null)}
+        />
+      )}
     </div>
   );
 }
