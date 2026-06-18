@@ -154,6 +154,11 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
           )}
         </div>
       </div>
+      <ApplicationDetailDialog
+        applicationId={openAppId}
+        open={!!openAppId}
+        onOpenChange={(v) => !v && setOpenAppId(null)}
+      />
     </Card>
   );
 }
