@@ -340,7 +340,7 @@ function CallRow({ call }: { call: CallRowItem }) {
   );
 }
 
-function UnpayButtonInner({ id, userId }: { id: string; userId: string }) {
+function UnpayButton({ id, userId }: { id: string; userId: string }) {
   const qc = useQueryClient();
   const m = useMutation({
     mutationFn: () => setCommissionPaid({ data: { id, paid: false } }),
