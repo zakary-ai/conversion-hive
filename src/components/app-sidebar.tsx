@@ -33,7 +33,6 @@ const adminB2BItems = [
 
 const adminB2CItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Applications", url: "/admin/applications", icon: Inbox },
   { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
   { title: "Closers", url: "/admin/closers", icon: UserPlus },
   { title: "Commissions", url: "/admin/b2c-commissions", icon: DollarSign },
