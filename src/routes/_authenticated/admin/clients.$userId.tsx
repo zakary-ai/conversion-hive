@@ -269,6 +269,84 @@ function SetterDetailPage() {
 function UnpayButton({ id, userId }: { id: string; userId: string }) {
   const qc = useQueryClient();
   const m = useMutation({
+
+type CallRowItem = {
+  id: string;
+  created_at: string;
+  started_at: string | null;
+  ended_at: string | null;
+  duration_sec: number | null;
+  status: string | null;
+  direction: string;
+  to_number: string | null;
+  from_number: string | null;
+  recording_url: string | null;
+  transcript: string | null;
+  transcript_status: string | null;
+  summary: string | null;
+  leads?: { name?: string | null; company?: string | null } | null;
+};
+
+function CallRow({ call }: { call: CallRowItem }) {
+  const [open, setOpen] = useState(false);
+  const when = call.started_at || call.created_at;
+  const duration = call.duration_sec
+    ? `${Math.floor(call.duration_sec / 60)}m ${call.duration_sec % 60}s`
+    : null;
+  const hasArtifacts = !!(call.recording_url || call.transcript || call.summary);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full p-3 flex items-center gap-3 text-sm hover:bg-muted/30 text-left">
+        <div className="h-8 w-8 rounded-md flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
+          <Phone className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-medium truncate">
+            {call.leads?.name || call.to_number || "Unknown"}
+            {call.leads?.company && <span className="text-muted-foreground"> · {call.leads.company}</span>}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {new Date(when).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+            {duration && <> · {duration}</>}
+            {call.status && <> · {call.status}</>}
+          </div>
+        </div>
+        {hasArtifacts && <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />}
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="px-3 pb-4 space-y-3">
+          {call.recording_url ? (
+            <audio controls preload="none" src={call.recording_url} className="w-full" />
+          ) : (
+            <div className="text-xs text-muted-foreground">Recording not available.</div>
+          )}
+          {call.summary && (
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Summary</div>
+              <div className="text-sm whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-3">{call.summary}</div>
+            </div>
+          )}
+          {call.transcript ? (
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                Transcript {call.transcript_status && call.transcript_status !== "completed" && <>· {call.transcript_status}</>}
+              </div>
+              <div className="text-sm whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-3 max-h-80 overflow-y-auto">
+                {call.transcript}
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground">Transcript not available yet.</div>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function UnpayButtonInner({ id, userId }: { id: string; userId: string }) {
+  const qc = useQueryClient();
+  const m = useMutation({
     mutationFn: () => setCommissionPaid({ data: { id, paid: false } }),
     onSuccess: () => {
       toast.success("Marked unpaid");
