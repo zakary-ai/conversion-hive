@@ -26,6 +26,7 @@ import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedCloserIndexRouteImport } from './routes/_authenticated/closer/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
+import { Route as AuthenticatedCloserCommissionsRouteImport } from './routes/_authenticated/closer/commissions'
 import { Route as AuthenticatedCloserCalendarRouteImport } from './routes/_authenticated/closer/calendar'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminScraperRouteImport } from './routes/_authenticated/admin/scraper'
@@ -129,6 +130,12 @@ const AuthenticatedTrainingModuleIdRoute =
   AuthenticatedTrainingModuleIdRouteImport.update({
     id: '/training/$moduleId',
     path: '/training/$moduleId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCloserCommissionsRoute =
+  AuthenticatedCloserCommissionsRouteImport.update({
+    id: '/closer/commissions',
+    path: '/closer/commissions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCloserCalendarRoute =
@@ -250,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
+  '/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/closer/': typeof AuthenticatedCloserIndexRoute
@@ -283,6 +291,7 @@ export interface FileRoutesByTo {
   '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
+  '/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/closer': typeof AuthenticatedCloserIndexRoute
@@ -319,6 +328,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/closer/calendar': typeof AuthenticatedCloserCalendarRoute
+  '/_authenticated/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/closer/': typeof AuthenticatedCloserIndexRoute
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/admin/scraper'
     | '/admin/settings'
     | '/closer/calendar'
+    | '/closer/commissions'
     | '/training/$moduleId'
     | '/admin/'
     | '/closer/'
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin/scraper'
     | '/admin/settings'
     | '/closer/calendar'
+    | '/closer/commissions'
     | '/training/$moduleId'
     | '/admin'
     | '/closer'
@@ -423,6 +435,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/scraper'
     | '/_authenticated/admin/settings'
     | '/_authenticated/closer/calendar'
+    | '/_authenticated/closer/commissions'
     | '/_authenticated/training/$moduleId'
     | '/_authenticated/admin/'
     | '/_authenticated/closer/'
@@ -566,6 +579,13 @@ declare module '@tanstack/react-router' {
       path: '/training/$moduleId'
       fullPath: '/training/$moduleId'
       preLoaderRoute: typeof AuthenticatedTrainingModuleIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/closer/commissions': {
+      id: '/_authenticated/closer/commissions'
+      path: '/closer/commissions'
+      fullPath: '/closer/commissions'
+      preLoaderRoute: typeof AuthenticatedCloserCommissionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/closer/calendar': {
@@ -730,6 +750,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedCloserCalendarRoute: typeof AuthenticatedCloserCalendarRoute
+  AuthenticatedCloserCommissionsRoute: typeof AuthenticatedCloserCommissionsRoute
   AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
   AuthenticatedCloserIndexRoute: typeof AuthenticatedCloserIndexRoute
   AuthenticatedTrainingIndexRoute: typeof AuthenticatedTrainingIndexRoute
@@ -743,6 +764,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedCloserCalendarRoute: AuthenticatedCloserCalendarRoute,
+  AuthenticatedCloserCommissionsRoute: AuthenticatedCloserCommissionsRoute,
   AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
   AuthenticatedCloserIndexRoute: AuthenticatedCloserIndexRoute,
   AuthenticatedTrainingIndexRoute: AuthenticatedTrainingIndexRoute,
