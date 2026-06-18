@@ -605,6 +605,18 @@ export const getApplicationById = createServerFn({ method: "GET" })
 
 // ---------- Closer: submit call outcome ----------
 const OutcomeEnum = z.enum(["not_interested", "disqualified", "closed", "deposit"]);
+const CommissionPctEnum = z.union([z.literal(10), z.literal(15), z.literal(20)]);
+
+function computeCommission(outcome: string, deal: number | null, deposit: number | null, followUp: number | null, pct: number | null) {
+  if (!pct) return null;
+  let base = 0;
+  if (outcome === "closed") base = deal ?? 0;
+  else if (outcome === "deposit") base = (deposit ?? 0) + (followUp ?? 0);
+  else return null;
+  if (base <= 0) return null;
+  return Math.round(base * (pct / 100) * 100) / 100;
+}
+
 export const recordBookingOutcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
@@ -614,6 +626,7 @@ export const recordBookingOutcome = createServerFn({ method: "POST" })
     deposit_amount: z.number().nonnegative().nullable().optional(),
     follow_up_amount: z.number().nonnegative().nullable().optional(),
     follow_up_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+    commission_percent: CommissionPctEnum.nullable().optional(),
     notes: z.string().max(2000).nullable().optional(),
   }).parse)
   .handler(async ({ data, context }) => {
@@ -623,7 +636,6 @@ export const recordBookingOutcome = createServerFn({ method: "POST" })
     if (berr) throw new Error(berr.message);
     if (!booking) throw new Error("Booking not found");
 
-    // Permission: admin OR assigned closer
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     if (!isAdmin) {
       const { data: closer } = await context.supabase
@@ -631,14 +643,22 @@ export const recordBookingOutcome = createServerFn({ method: "POST" })
       if (!closer || closer.id !== booking.assigned_closer_id) throw new Error("Forbidden");
     }
 
+    const deal = data.outcome === "closed" ? data.deal_amount ?? null : null;
+    const deposit = data.outcome === "deposit" ? data.deposit_amount ?? null : null;
+    const followUp = data.outcome === "deposit" ? data.follow_up_amount ?? null : null;
+    const pct = (data.outcome === "closed" || data.outcome === "deposit") ? data.commission_percent ?? null : null;
+    const commissionAmount = computeCommission(data.outcome, deal, deposit, followUp, pct);
+
     const patch = {
       outcome: data.outcome,
       outcome_at: new Date().toISOString(),
       outcome_notes: data.notes ?? null,
-      deal_amount: data.outcome === "closed" ? data.deal_amount ?? null : null,
-      deposit_amount: data.outcome === "deposit" ? data.deposit_amount ?? null : null,
-      follow_up_amount: data.outcome === "deposit" ? data.follow_up_amount ?? null : null,
+      deal_amount: deal,
+      deposit_amount: deposit,
+      follow_up_amount: followUp,
       follow_up_date: data.outcome === "deposit" ? data.follow_up_date ?? null : null,
+      commission_percent: pct,
+      commission_amount: commissionAmount,
       status: "completed",
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -646,6 +666,91 @@ export const recordBookingOutcome = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Admin: list closed/deposit deals for commission assignment ----------
+export const listClosedDealsForCommission = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase
+      .from("closer_bookings")
+      .select("id, applicant_name, applicant_email, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, closers:assigned_closer_id (id, full_name, email)")
+      .in("outcome", ["closed", "deposit"])
+      .order("outcome_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+// ---------- Admin: edit commission on a booking ----------
+export const updateBookingCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    booking_id: z.string().uuid(),
+    deal_amount: z.number().nonnegative().nullable().optional(),
+    deposit_amount: z.number().nonnegative().nullable().optional(),
+    follow_up_amount: z.number().nonnegative().nullable().optional(),
+    commission_percent: z.number().min(0).max(100).nullable().optional(),
+    commission_amount: z.number().nonnegative().nullable().optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: gerr } = await context.supabase
+      .from("closer_bookings")
+      .select("outcome, deal_amount, deposit_amount, follow_up_amount, commission_percent")
+      .eq("id", data.booking_id).maybeSingle();
+    if (gerr) throw new Error(gerr.message);
+    if (!row) throw new Error("Booking not found");
+
+    const outcome = row.outcome as string;
+    const deal = data.deal_amount !== undefined ? data.deal_amount : (row.deal_amount as number | null);
+    const deposit = data.deposit_amount !== undefined ? data.deposit_amount : (row.deposit_amount as number | null);
+    const followUp = data.follow_up_amount !== undefined ? data.follow_up_amount : (row.follow_up_amount as number | null);
+    const pct = data.commission_percent !== undefined ? data.commission_percent : (row.commission_percent as number | null);
+
+    // If admin passed an explicit commission_amount, honor it. Otherwise recompute.
+    const commissionAmount = data.commission_amount !== undefined
+      ? data.commission_amount
+      : computeCommission(outcome, deal, deposit, followUp, pct);
+
+    const patch: Record<string, unknown> = {
+      deal_amount: deal,
+      deposit_amount: deposit,
+      follow_up_amount: followUp,
+      commission_percent: pct,
+      commission_amount: commissionAmount,
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any).update(patch).eq("id", data.booking_id);
+    if (error) throw new Error(error.message);
+    return { ok: true, commission_amount: commissionAmount };
+  });
+
+// ---------- Closer: list my commissions from B2C bookings ----------
+export const listMyCloserCommissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: closer } = await context.supabase
+      .from("closers").select("id").eq("user_id", context.userId).maybeSingle();
+    if (!closer) return { rows: [], totals: { closed: 0, deposit: 0, commission: 0 } };
+    const { data, error } = await context.supabase
+      .from("closer_bookings")
+      .select("id, applicant_name, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount")
+      .eq("assigned_closer_id", closer.id)
+      .in("outcome", ["closed", "deposit"])
+      .order("outcome_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    const totals = rows.reduce((acc, r) => {
+      const c = Number(r.commission_amount ?? 0);
+      acc.commission += c;
+      if (r.outcome === "closed") acc.closed += Number(r.deal_amount ?? 0);
+      if (r.outcome === "deposit") acc.deposit += Number(r.deposit_amount ?? 0) + Number(r.follow_up_amount ?? 0);
+      return acc;
+    }, { closed: 0, deposit: 0, commission: 0 });
+    return { rows, totals };
+  });
+
 
 // ---------- Admin: B2C dashboard stats ----------
 export const getB2cAdminStats = createServerFn({ method: "GET" })
