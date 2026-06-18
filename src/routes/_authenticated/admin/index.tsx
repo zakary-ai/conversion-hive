@@ -49,6 +49,24 @@ function AdminDashboard() {
   );
 }
 
+function ChannelToggle() {
+  const [channel, setChannel] = useAdminChannel();
+  return (
+    <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5 text-xs shrink-0">
+      <button
+        type="button"
+        onClick={() => setChannel("b2b")}
+        className={`rounded-md px-3 py-1.5 font-medium transition ${channel === "b2b" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+      >B2B</button>
+      <button
+        type="button"
+        onClick={() => setChannel("b2c")}
+        className={`rounded-md px-3 py-1.5 font-medium transition ${channel === "b2c" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+      >B2C</button>
+    </div>
+  );
+}
+
 function Section({ title, icon: Icon, children, empty }: { title: string; icon: typeof Clock; children: React.ReactNode; empty: string }) {
   const items = Array.isArray(children) ? children : [children];
   const hasItems = items.filter(Boolean).length > 0;
