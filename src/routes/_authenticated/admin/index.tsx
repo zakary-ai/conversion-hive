@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarCheck2, Video, PhoneCall, Clock, ExternalLink, Mail, Phone } from "lucide-react";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
+import { useAdminChannel } from "@/components/app-sidebar";
+
 
 const opts = queryOptions({ queryKey: ["admin-dashboard"], queryFn: () => getAdminDashboard() });
 
@@ -23,7 +25,10 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <PageHeader title="Admin overview" description="Live metrics across all setters." />
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <PageHeader title="Admin overview" description="Live metrics across all setters." />
+        <ChannelToggle />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard label="Calls booked today" value={data.callsBookedToday} icon={CalendarCheck2} hint="New bookings created today" />
@@ -40,6 +45,24 @@ function AdminDashboard() {
       </Section>
 
       <AppointmentDetailDialog appt={openAppt} onClose={() => setOpenAppt(null)} />
+    </div>
+  );
+}
+
+function ChannelToggle() {
+  const [channel, setChannel] = useAdminChannel();
+  return (
+    <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5 text-xs shrink-0">
+      <button
+        type="button"
+        onClick={() => setChannel("b2b")}
+        className={`rounded-md px-3 py-1.5 font-medium transition ${channel === "b2b" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+      >B2B</button>
+      <button
+        type="button"
+        onClick={() => setChannel("b2c")}
+        className={`rounded-md px-3 py-1.5 font-medium transition ${channel === "b2c" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+      >B2C</button>
     </div>
   );
 }
