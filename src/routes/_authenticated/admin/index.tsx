@@ -25,7 +25,10 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <PageHeader title="Admin overview" description="Live metrics across all setters." />
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <PageHeader title="Admin overview" description="Live metrics across all setters." />
+        <ChannelToggle />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard label="Calls booked today" value={data.callsBookedToday} icon={CalendarCheck2} hint="New bookings created today" />
