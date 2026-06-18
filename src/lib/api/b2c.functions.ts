@@ -538,7 +538,7 @@ export const recordBookingOutcome = createServerFn({ method: "POST" })
       if (!closer || closer.id !== booking.assigned_closer_id) throw new Error("Forbidden");
     }
 
-    const patch: Record<string, unknown> = {
+    const patch = {
       outcome: data.outcome,
       outcome_at: new Date().toISOString(),
       outcome_notes: data.notes ?? null,
@@ -548,7 +548,8 @@ export const recordBookingOutcome = createServerFn({ method: "POST" })
       follow_up_date: data.outcome === "deposit" ? data.follow_up_date ?? null : null,
       status: "completed",
     };
-    const { error } = await supabaseAdmin.from("closer_bookings").update(patch).eq("id", data.booking_id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any).update(patch).eq("id", data.booking_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
