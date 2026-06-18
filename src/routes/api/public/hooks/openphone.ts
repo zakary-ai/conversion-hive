@@ -83,6 +83,51 @@ function formatSummary(obj: NonNullable<OpenPhoneEvent["data"]>["object"]): stri
   return parts.length ? parts.join("\n\n") : null;
 }
 
+async function opGet(path: string): Promise<unknown | null> {
+  const key = process.env.OPENPHONE_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(`https://api.openphone.com${path}`, {
+      headers: { Authorization: key },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function backfillCallArtifacts(callId: string): Promise<void> {
+  // Give OpenPhone a moment to finish processing
+  await new Promise((r) => setTimeout(r, 8000));
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const patch: { recording_url?: string; transcript?: string; transcript_status?: string; summary?: string } = {};
+
+  type RecRes = { data?: Array<{ url?: string; media?: Array<{ url?: string }> }> };
+  const rec = (await opGet(`/v1/call-recordings/${encodeURIComponent(callId)}`)) as RecRes | null;
+  const recUrl = rec?.data?.[0]?.url || rec?.data?.[0]?.media?.[0]?.url;
+  if (recUrl) patch.recording_url = recUrl;
+
+  type TxRes = { data?: { status?: string; dialogue?: OpenPhoneTranscriptDialogue[]; text?: string; transcript?: string } };
+  const tx = (await opGet(`/v1/call-transcripts/${encodeURIComponent(callId)}`)) as TxRes | null;
+  if (tx?.data) {
+    const t = formatTranscript(tx.data as NonNullable<OpenPhoneEvent["data"]>["object"]);
+    if (t) patch.transcript = t;
+    if (tx.data.status) patch.transcript_status = tx.data.status;
+  }
+
+  type SumRes = { data?: { summary?: string | string[]; nextSteps?: string[] } };
+  const sum = (await opGet(`/v1/call-summaries/${encodeURIComponent(callId)}`)) as SumRes | null;
+  if (sum?.data) {
+    const s = formatSummary(sum.data as NonNullable<OpenPhoneEvent["data"]>["object"]);
+    if (s) patch.summary = s;
+  }
+
+  if (Object.keys(patch).length === 0) return;
+  await supabaseAdmin.from("call_logs").update(patch).eq("openphone_call_id", callId);
+}
+
 export const Route = createFileRoute("/api/public/hooks/openphone")({
   server: {
     handlers: {
