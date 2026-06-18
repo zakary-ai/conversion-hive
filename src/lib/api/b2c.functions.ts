@@ -547,11 +547,17 @@ export const unassignCloser = createServerFn({ method: "POST" })
   .inputValidator(z.object({ booking_id: z.string().uuid() }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { data: existing } = await context.supabase
+      .from("closer_bookings").select("google_calendar_event_id").eq("id", data.booking_id).maybeSingle();
+    if (existing?.google_calendar_event_id) {
+      await gcalDeleteEvent(existing.google_calendar_event_id as string);
+    }
     const { error } = await context.supabase.from("closer_bookings").update({
       assigned_closer_id: null,
       status: "pending_assignment",
       zoom_join_url: null,
       zoom_meeting_id: null,
+      google_calendar_event_id: null,
     }).eq("id", data.booking_id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -562,8 +568,13 @@ export const cancelCloserBooking = createServerFn({ method: "POST" })
   .inputValidator(z.object({ booking_id: z.string().uuid() }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { data: existing } = await context.supabase
+      .from("closer_bookings").select("google_calendar_event_id").eq("id", data.booking_id).maybeSingle();
+    if (existing?.google_calendar_event_id) {
+      await gcalDeleteEvent(existing.google_calendar_event_id as string);
+    }
     const { error } = await context.supabase.from("closer_bookings")
-      .update({ status: "cancelled" }).eq("id", data.booking_id);
+      .update({ status: "cancelled", google_calendar_event_id: null }).eq("id", data.booking_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
