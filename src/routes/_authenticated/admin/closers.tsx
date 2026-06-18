@@ -208,7 +208,7 @@ function CloserAvail({ closerId }: { closerId: string }) {
   );
 }
 
-import { useEffect } from "react";
+
 function useStateSyncToByDay(
   data: Array<{ day_of_week: number; start_minute: number; end_minute: number }>,
   setByDay: React.Dispatch<React.SetStateAction<Record<number, Rule[]>>>,
