@@ -506,11 +506,28 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
       duration: SLOT_MINUTES,
     });
 
+    // Create Google Calendar event titled "<Closer name> with <Lead name>"
+    const eventTitle = `${closer.full_name} with ${booking.applicant_name}`;
+    const descLines = [
+      `Lead: ${booking.applicant_name}`,
+      booking.applicant_email ? `Email: ${booking.applicant_email}` : "",
+      booking.applicant_phone ? `Phone: ${booking.applicant_phone}` : "",
+      zoom.join_url ? `\nZoom: ${zoom.join_url}` : "",
+    ].filter(Boolean).join("\n");
+    const calEventId = await gcalCreateEvent({
+      summary: eventTitle,
+      description: descLines,
+      startISO: booking.slot_start as string,
+      endISO: booking.slot_end as string,
+      attendees: [closer.email as string, booking.applicant_email as string],
+    });
+
     const { error: uerr } = await supabaseAdmin.from("closer_bookings").update({
       assigned_closer_id: data.closer_id,
       status: "assigned",
       zoom_join_url: zoom.join_url,
       zoom_meeting_id: zoom.meeting_id,
+      google_calendar_event_id: calEventId,
     }).eq("id", data.booking_id);
     if (uerr) throw new Error(uerr.message);
 
