@@ -32,6 +32,7 @@ import { Route as AuthenticatedAdminQuizzesRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminModulesRouteImport } from './routes/_authenticated/admin/modules'
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin/leads'
 import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_authenticated/admin/commissions'
+import { Route as AuthenticatedAdminClosersRouteImport } from './routes/_authenticated/admin/closers'
 import { Route as AuthenticatedAdminApplicationsRouteImport } from './routes/_authenticated/admin/applications'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -161,6 +162,12 @@ const AuthenticatedAdminCommissionsRoute =
     path: '/commissions',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminClosersRoute =
+  AuthenticatedAdminClosersRouteImport.update({
+    id: '/closers',
+    path: '/closers',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminApplicationsRoute =
   AuthenticatedAdminApplicationsRouteImport.update({
     id: '/applications',
@@ -212,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/apply/book': typeof ApplyBookRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
+  '/admin/closers': typeof AuthenticatedAdminClosersRoute
   '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
@@ -241,6 +249,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/apply/book': typeof ApplyBookRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
+  '/admin/closers': typeof AuthenticatedAdminClosersRoute
   '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
@@ -273,6 +282,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/apply/book': typeof ApplyBookRoute
   '/_authenticated/admin/applications': typeof AuthenticatedAdminApplicationsRoute
+  '/_authenticated/admin/closers': typeof AuthenticatedAdminClosersRoute
   '/_authenticated/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/_authenticated/admin/modules': typeof AuthenticatedAdminModulesRoute
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/apply/book'
     | '/admin/applications'
+    | '/admin/closers'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/modules'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/apply/book'
     | '/admin/applications'
+    | '/admin/closers'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/modules'
@@ -365,6 +377,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/apply/book'
     | '/_authenticated/admin/applications'
+    | '/_authenticated/admin/closers'
     | '/_authenticated/admin/commissions'
     | '/_authenticated/admin/leads'
     | '/_authenticated/admin/modules'
@@ -557,6 +570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCommissionsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/closers': {
+      id: '/_authenticated/admin/closers'
+      path: '/closers'
+      fullPath: '/admin/closers'
+      preLoaderRoute: typeof AuthenticatedAdminClosersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/applications': {
       id: '/_authenticated/admin/applications'
       path: '/applications'
@@ -604,6 +624,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminApplicationsRoute: typeof AuthenticatedAdminApplicationsRoute
+  AuthenticatedAdminClosersRoute: typeof AuthenticatedAdminClosersRoute
   AuthenticatedAdminCommissionsRoute: typeof AuthenticatedAdminCommissionsRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
   AuthenticatedAdminModulesRoute: typeof AuthenticatedAdminModulesRoute
@@ -618,6 +639,7 @@ interface AuthenticatedAdminRouteRouteChildren {
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminApplicationsRoute: AuthenticatedAdminApplicationsRoute,
+    AuthenticatedAdminClosersRoute: AuthenticatedAdminClosersRoute,
     AuthenticatedAdminCommissionsRoute: AuthenticatedAdminCommissionsRoute,
     AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
     AuthenticatedAdminModulesRoute: AuthenticatedAdminModulesRoute,
