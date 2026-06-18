@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { listClosedDealsForCommission, updateBookingCommission } from "@/lib/api/b2c.functions";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { DollarSign, Percent } from "lucide-react";
 
@@ -33,6 +34,16 @@ type Row = {
 const money = (n: number | null | undefined) =>
   n == null ? "—" : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+const dealVolume = (r: Row) =>
+  Number(r.deal_amount ?? 0) + Number(r.deposit_amount ?? 0) + Number(r.follow_up_amount ?? 0);
+
+type RangeKey = "1d" | "30d" | "60d" | "90d" | "all";
+const RANGE_DAYS: Record<RangeKey, number | null> = { "1d": 1, "30d": 30, "60d": 60, "90d": 90, all: null };
+
+function isUnassigned(r: Row) {
+  return !r.closers || r.commission_amount == null || Number(r.commission_amount) <= 0;
+}
+
 function B2cCommissionsPage() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["closed-deals-commission"],
@@ -40,14 +51,55 @@ function B2cCommissionsPage() {
   });
   const rows = data as Row[];
 
-  const totalCommission = rows.reduce((s, r) => s + Number(r.commission_amount ?? 0), 0);
-  const totalDeals = rows.reduce((s, r) => s + Number(r.deal_amount ?? 0) + Number(r.deposit_amount ?? 0) + Number(r.follow_up_amount ?? 0), 0);
+  const [range, setRange] = useState<RangeKey>("30d");
+
+  const inRange = useMemo(() => {
+    const days = RANGE_DAYS[range];
+    if (days == null) return rows;
+    const cutoff = Date.now() - days * 86400_000;
+    return rows.filter((r) => {
+      const t = r.outcome_at ? new Date(r.outcome_at).getTime() : 0;
+      return t >= cutoff;
+    });
+  }, [rows, range]);
+
+  const totalCommission = inRange.reduce((s, r) => s + Number(r.commission_amount ?? 0), 0);
+  const totalDeals = inRange.reduce((s, r) => s + dealVolume(r), 0);
+
+  const unassigned = rows.filter(isUnassigned);
+  const payouts = rows.filter((r) => !isUnassigned(r));
+
+  // Group payouts by closer
+  const grouped = useMemo(() => {
+    const m = new Map<string, { closer: { id: string; full_name: string; email: string }; total: number; rows: Row[] }>();
+    for (const r of payouts) {
+      if (!r.closers) continue;
+      const key = r.closers.id;
+      const g = m.get(key) ?? { closer: r.closers, total: 0, rows: [] };
+      g.total += Number(r.commission_amount ?? 0);
+      g.rows.push(r);
+      m.set(key, g);
+    }
+    return Array.from(m.values()).sort((a, b) => b.total - a.total);
+  }, [payouts]);
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-display font-semibold">Assign Commissions</h1>
-        <p className="text-sm text-muted-foreground">All closed and deposit deals. Edit the deal amount or percentage to recalculate the closer's commission.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-display font-semibold">Assign Commissions</h1>
+          <p className="text-sm text-muted-foreground">Edit deal amount or percentage to recalculate the closer's commission.</p>
+        </div>
+        <Select value={range} onValueChange={(v) => setRange(v as RangeKey)}>
+          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1d">Today</SelectItem>
+            <SelectItem value="30d">Last 30 days</SelectItem>
+            <SelectItem value="60d">Last 60 days</SelectItem>
+            <SelectItem value="90d">Last 90 days</SelectItem>
+            <SelectItem value="all">All time</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -61,14 +113,72 @@ function B2cCommissionsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-3">
-        {isLoading && <Card className="p-6 text-center text-sm text-muted-foreground">Loading…</Card>}
-        {!isLoading && rows.length === 0 && (
-          <Card className="p-6 text-center text-sm text-muted-foreground">No closed deals yet.</Card>
-        )}
-        {rows.map((r) => <DealRow key={r.id} row={r} />)}
-      </div>
+      <Tabs defaultValue="history" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="history">Closed history <Badge variant="secondary" className="ml-2">{rows.length}</Badge></TabsTrigger>
+          <TabsTrigger value="unassigned">Unassigned <Badge variant="secondary" className="ml-2">{unassigned.length}</Badge></TabsTrigger>
+          <TabsTrigger value="payouts">Payouts <Badge variant="secondary" className="ml-2">{grouped.length}</Badge></TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="history" className="grid gap-3">
+          {isLoading && <Card className="p-6 text-center text-sm text-muted-foreground">Loading…</Card>}
+          {!isLoading && rows.length === 0 && (
+            <Card className="p-6 text-center text-sm text-muted-foreground">No closed deals yet.</Card>
+          )}
+          {rows.map((r) => <DealRow key={r.id} row={r} />)}
+        </TabsContent>
+
+        <TabsContent value="unassigned" className="grid gap-3">
+          {unassigned.length === 0 ? (
+            <Card className="p-6 text-center text-sm text-muted-foreground">All commissions are assigned.</Card>
+          ) : (
+            unassigned.map((r) => <DealRow key={r.id} row={r} />)
+          )}
+        </TabsContent>
+
+        <TabsContent value="payouts" className="grid gap-3">
+          {grouped.length === 0 ? (
+            <Card className="p-6 text-center text-sm text-muted-foreground">No payouts yet.</Card>
+          ) : (
+            grouped.map((g) => <PayoutGroup key={g.closer.id} closer={g.closer} total={g.total} rows={g.rows} />)
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+function PayoutGroup({ closer, total, rows }: { closer: { full_name: string; email: string }; total: number; rows: Row[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card className="p-4">
+      <button type="button" onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between gap-3 text-left">
+        <div className="min-w-0">
+          <div className="font-medium">{closer.full_name}</div>
+          <div className="text-xs text-muted-foreground">{closer.email} · {rows.length} deal{rows.length === 1 ? "" : "s"}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">Owed</div>
+          <div className="text-xl font-semibold text-success">{money(total)}</div>
+        </div>
+      </button>
+      {open && (
+        <div className="mt-3 border-t border-border pt-3 space-y-2">
+          {rows.map((r) => (
+            <div key={r.id} className="flex items-center justify-between text-sm">
+              <div className="min-w-0">
+                <div className="font-medium truncate">{r.applicant_name}</div>
+                <div className="text-xs text-muted-foreground capitalize">
+                  {r.outcome} · {r.outcome_at ? new Date(r.outcome_at).toLocaleDateString() : "—"} · {money(dealVolume(r))}
+                  {r.commission_percent != null && <> · {r.commission_percent}%</>}
+                </div>
+              </div>
+              <div className="text-success font-medium">{money(r.commission_amount)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
