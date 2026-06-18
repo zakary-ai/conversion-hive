@@ -77,6 +77,71 @@ async function createZoomMeetingForUser(input: {
   }
 }
 
+// ---------- Google Calendar (shared company calendar via connector gateway) ----------
+const GCAL_GATEWAY = "https://connector-gateway.lovable.dev/google_calendar/calendar/v3";
+
+async function gcalCreateEvent(input: {
+  summary: string;
+  description: string;
+  startISO: string;
+  endISO: string;
+  attendees: string[];
+}): Promise<string | null> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  const connKey = process.env.GOOGLE_CALENDAR_API_KEY;
+  if (!lovableKey || !connKey) return null;
+  try {
+    const res = await fetch(
+      `${GCAL_GATEWAY}/calendars/primary/events?sendUpdates=all`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": connKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          summary: input.summary,
+          description: input.description,
+          start: { dateTime: input.startISO },
+          end: { dateTime: input.endISO },
+          attendees: input.attendees.filter(Boolean).map((email) => ({ email })),
+          reminders: { useDefault: true },
+        }),
+      },
+    );
+    if (!res.ok) {
+      console.error("gcal create failed", res.status, await res.text().catch(() => ""));
+      return null;
+    }
+    const j = (await res.json()) as { id?: string };
+    return j.id ?? null;
+  } catch (e) {
+    console.error("gcal create error", e);
+    return null;
+  }
+}
+
+async function gcalDeleteEvent(eventId: string): Promise<void> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  const connKey = process.env.GOOGLE_CALENDAR_API_KEY;
+  if (!lovableKey || !connKey || !eventId) return;
+  try {
+    await fetch(
+      `${GCAL_GATEWAY}/calendars/primary/events/${encodeURIComponent(eventId)}?sendUpdates=all`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": connKey,
+        },
+      },
+    );
+  } catch (e) {
+    console.error("gcal delete error", e);
+  }
+}
+
 // ---------- Public: list available closer slots for a date ----------
 const EST_TZ = "America/New_York";
 const SLOT_MINUTES = 30;
@@ -441,11 +506,28 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
       duration: SLOT_MINUTES,
     });
 
+    // Create Google Calendar event titled "<Closer name> with <Lead name>"
+    const eventTitle = `${closer.full_name} with ${booking.applicant_name}`;
+    const descLines = [
+      `Lead: ${booking.applicant_name}`,
+      booking.applicant_email ? `Email: ${booking.applicant_email}` : "",
+      booking.applicant_phone ? `Phone: ${booking.applicant_phone}` : "",
+      zoom.join_url ? `\nZoom: ${zoom.join_url}` : "",
+    ].filter(Boolean).join("\n");
+    const calEventId = await gcalCreateEvent({
+      summary: eventTitle,
+      description: descLines,
+      startISO: booking.slot_start as string,
+      endISO: booking.slot_end as string,
+      attendees: [closer.email as string, booking.applicant_email as string],
+    });
+
     const { error: uerr } = await supabaseAdmin.from("closer_bookings").update({
       assigned_closer_id: data.closer_id,
       status: "assigned",
       zoom_join_url: zoom.join_url,
       zoom_meeting_id: zoom.meeting_id,
+      google_calendar_event_id: calEventId,
     }).eq("id", data.booking_id);
     if (uerr) throw new Error(uerr.message);
 
@@ -465,11 +547,17 @@ export const unassignCloser = createServerFn({ method: "POST" })
   .inputValidator(z.object({ booking_id: z.string().uuid() }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { data: existing } = await context.supabase
+      .from("closer_bookings").select("google_calendar_event_id").eq("id", data.booking_id).maybeSingle();
+    if (existing?.google_calendar_event_id) {
+      await gcalDeleteEvent(existing.google_calendar_event_id as string);
+    }
     const { error } = await context.supabase.from("closer_bookings").update({
       assigned_closer_id: null,
       status: "pending_assignment",
       zoom_join_url: null,
       zoom_meeting_id: null,
+      google_calendar_event_id: null,
     }).eq("id", data.booking_id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -480,8 +568,13 @@ export const cancelCloserBooking = createServerFn({ method: "POST" })
   .inputValidator(z.object({ booking_id: z.string().uuid() }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { data: existing } = await context.supabase
+      .from("closer_bookings").select("google_calendar_event_id").eq("id", data.booking_id).maybeSingle();
+    if (existing?.google_calendar_event_id) {
+      await gcalDeleteEvent(existing.google_calendar_event_id as string);
+    }
     const { error } = await context.supabase.from("closer_bookings")
-      .update({ status: "cancelled" }).eq("id", data.booking_id);
+      .update({ status: "cancelled", google_calendar_event_id: null }).eq("id", data.booking_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

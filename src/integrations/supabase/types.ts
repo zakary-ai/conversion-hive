@@ -287,6 +287,7 @@ export type Database = {
           deposit_amount: number | null
           follow_up_amount: number | null
           follow_up_date: string | null
+          google_calendar_event_id: string | null
           id: string
           notes: string | null
           outcome: string | null
@@ -310,6 +311,7 @@ export type Database = {
           deposit_amount?: number | null
           follow_up_amount?: number | null
           follow_up_date?: string | null
+          google_calendar_event_id?: string | null
           id?: string
           notes?: string | null
           outcome?: string | null
@@ -333,6 +335,7 @@ export type Database = {
           deposit_amount?: number | null
           follow_up_amount?: number | null
           follow_up_date?: string | null
+          google_calendar_event_id?: string | null
           id?: string
           notes?: string | null
           outcome?: string | null
