@@ -6,11 +6,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { CalendarClock, Mail, Phone, Video, X } from "lucide-react";
 import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
+import { ApplicationsPanel, appsOpts } from "@/components/admin/applications-panel";
 
 export const Route = createFileRoute("/_authenticated/admin/bookings")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(appsOpts),
   component: BookingsPage,
 });
 
@@ -38,29 +41,42 @@ function BookingsPage() {
   const past = rows.filter((r) => !["pending_assignment", "assigned"].includes(r.status));
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-7xl">
       <div>
-        <h1 className="text-2xl font-display font-semibold">B2C Bookings</h1>
-        <p className="text-sm text-muted-foreground">Assign a closer to each booking. A Zoom link is generated and emailed automatically.</p>
+        <h1 className="text-2xl font-display font-semibold">B2C Inbox</h1>
+        <p className="text-sm text-muted-foreground">Bookings and applications in one place.</p>
       </div>
 
-      <Section title="Pending assignment" count={pending.length}>
-        {pending.length === 0 ? <Empty>No bookings waiting.</Empty> : pending.map((b) => (
-          <BookingCard key={b.id} booking={b} closers={closers} />
-        ))}
-      </Section>
+      <Tabs defaultValue="bookings" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="bookings">Bookings</TabsTrigger>
+          <TabsTrigger value="applications">Applications</TabsTrigger>
+        </TabsList>
 
-      <Section title="Assigned" count={assigned.length}>
-        {assigned.length === 0 ? <Empty>No assigned bookings.</Empty> : assigned.map((b) => (
-          <BookingCard key={b.id} booking={b} closers={closers} />
-        ))}
-      </Section>
+        <TabsContent value="bookings" className="space-y-6">
+          <Section title="Pending assignment" count={pending.length}>
+            {pending.length === 0 ? <Empty>No bookings waiting.</Empty> : pending.map((b) => (
+              <BookingCard key={b.id} booking={b} closers={closers} />
+            ))}
+          </Section>
 
-      <Section title="History" count={past.length}>
-        {past.length === 0 ? <Empty>Nothing here yet.</Empty> : past.map((b) => (
-          <BookingCard key={b.id} booking={b} closers={closers} />
-        ))}
-      </Section>
+          <Section title="Assigned" count={assigned.length}>
+            {assigned.length === 0 ? <Empty>No assigned bookings.</Empty> : assigned.map((b) => (
+              <BookingCard key={b.id} booking={b} closers={closers} />
+            ))}
+          </Section>
+
+          <Section title="History" count={past.length}>
+            {past.length === 0 ? <Empty>Nothing here yet.</Empty> : past.map((b) => (
+              <BookingCard key={b.id} booking={b} closers={closers} />
+            ))}
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="applications">
+          <ApplicationsPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
