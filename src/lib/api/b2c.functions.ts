@@ -77,6 +77,71 @@ async function createZoomMeetingForUser(input: {
   }
 }
 
+// ---------- Google Calendar (shared company calendar via connector gateway) ----------
+const GCAL_GATEWAY = "https://connector-gateway.lovable.dev/google_calendar/calendar/v3";
+
+async function gcalCreateEvent(input: {
+  summary: string;
+  description: string;
+  startISO: string;
+  endISO: string;
+  attendees: string[];
+}): Promise<string | null> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  const connKey = process.env.GOOGLE_CALENDAR_API_KEY;
+  if (!lovableKey || !connKey) return null;
+  try {
+    const res = await fetch(
+      `${GCAL_GATEWAY}/calendars/primary/events?sendUpdates=all`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": connKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          summary: input.summary,
+          description: input.description,
+          start: { dateTime: input.startISO },
+          end: { dateTime: input.endISO },
+          attendees: input.attendees.filter(Boolean).map((email) => ({ email })),
+          reminders: { useDefault: true },
+        }),
+      },
+    );
+    if (!res.ok) {
+      console.error("gcal create failed", res.status, await res.text().catch(() => ""));
+      return null;
+    }
+    const j = (await res.json()) as { id?: string };
+    return j.id ?? null;
+  } catch (e) {
+    console.error("gcal create error", e);
+    return null;
+  }
+}
+
+async function gcalDeleteEvent(eventId: string): Promise<void> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  const connKey = process.env.GOOGLE_CALENDAR_API_KEY;
+  if (!lovableKey || !connKey || !eventId) return;
+  try {
+    await fetch(
+      `${GCAL_GATEWAY}/calendars/primary/events/${encodeURIComponent(eventId)}?sendUpdates=all`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": connKey,
+        },
+      },
+    );
+  } catch (e) {
+    console.error("gcal delete error", e);
+  }
+}
+
 // ---------- Public: list available closer slots for a date ----------
 const EST_TZ = "America/New_York";
 const SLOT_MINUTES = 30;
