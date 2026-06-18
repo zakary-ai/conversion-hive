@@ -6,7 +6,7 @@ import { getB2cAdminStats } from "@/lib/api/b2c.functions";
 import { PageHeader, StatCard } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck2, Video, PhoneCall, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2 } from "lucide-react";
+import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2 } from "lucide-react";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 import { useAdminChannel } from "@/components/app-sidebar";
 
