@@ -137,9 +137,6 @@ function CloserAvail({ closerId }: { closerId: string }) {
 
   // hydrate when data arrives
   const dataKey = data.map(r => `${r.day_of_week}-${r.start_minute}-${r.end_minute}`).join("|");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useState(() => { /* noop */ });
-  // simple sync via effect
   useStateSyncToByDay(data, setByDay, dataKey);
 
   const save = useMutation({
