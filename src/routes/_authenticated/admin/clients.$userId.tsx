@@ -224,6 +224,22 @@ function SetterDetailPage() {
       </Card>
 
       <Card className="overflow-hidden">
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <h3 className="font-display font-semibold">Call recordings & transcripts</h3>
+          <span className="text-xs text-muted-foreground">{data.calls?.length ?? 0} calls</span>
+        </div>
+        {(data.calls?.length ?? 0) === 0 ? (
+          <div className="p-6 text-sm text-muted-foreground text-center">No calls yet.</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {data.calls.slice(0, 50).map((c) => (
+              <CallRow key={c.id} call={c} />
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="overflow-hidden">
         <div className="p-4 border-b border-border"><h3 className="font-display font-semibold">Leads ({data.leads.length})</h3></div>
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
