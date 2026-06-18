@@ -27,6 +27,7 @@ function verify(rawBody: string, header: string | null, secret: string): boolean
   return timingSafeEqual(provided, expected);
 }
 
+type OpenPhoneTranscriptDialogue = { identifier?: string; userId?: string; content?: string; text?: string; start?: number };
 type OpenPhoneEvent = {
   type?: string;
   data?: {
@@ -43,9 +44,89 @@ type OpenPhoneEvent = {
       url?: string;
       media?: Array<{ url?: string; type?: string }>;
       callId?: string;
+      // transcript-shaped fields
+      dialogue?: OpenPhoneTranscriptDialogue[];
+      text?: string;
+      transcript?: string;
+      // summary-shaped fields
+      summary?: string | string[];
+      nextSteps?: string[];
     };
   };
 };
+
+function formatTranscript(obj: NonNullable<OpenPhoneEvent["data"]>["object"]): string | null {
+  if (!obj) return null;
+  if (Array.isArray(obj.dialogue) && obj.dialogue.length > 0) {
+    return obj.dialogue
+      .map((d) => {
+        const speaker = d.identifier || d.userId || "Speaker";
+        const line = d.content || d.text || "";
+        return `${speaker}: ${line}`.trim();
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (typeof obj.transcript === "string") return obj.transcript;
+  if (typeof obj.text === "string") return obj.text;
+  return null;
+}
+
+function formatSummary(obj: NonNullable<OpenPhoneEvent["data"]>["object"]): string | null {
+  if (!obj) return null;
+  const parts: string[] = [];
+  if (Array.isArray(obj.summary)) parts.push(obj.summary.join("\n"));
+  else if (typeof obj.summary === "string") parts.push(obj.summary);
+  if (Array.isArray(obj.nextSteps) && obj.nextSteps.length > 0) {
+    parts.push("Next steps:\n- " + obj.nextSteps.join("\n- "));
+  }
+  return parts.length ? parts.join("\n\n") : null;
+}
+
+async function opGet(path: string): Promise<unknown | null> {
+  const key = process.env.OPENPHONE_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(`https://api.openphone.com${path}`, {
+      headers: { Authorization: key },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function backfillCallArtifacts(callId: string): Promise<void> {
+  // Give OpenPhone a moment to finish processing
+  await new Promise((r) => setTimeout(r, 8000));
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const patch: { recording_url?: string; transcript?: string; transcript_status?: string; summary?: string } = {};
+
+  type RecRes = { data?: Array<{ url?: string; media?: Array<{ url?: string }> }> };
+  const rec = (await opGet(`/v1/call-recordings/${encodeURIComponent(callId)}`)) as RecRes | null;
+  const recUrl = rec?.data?.[0]?.url || rec?.data?.[0]?.media?.[0]?.url;
+  if (recUrl) patch.recording_url = recUrl;
+
+  type TxRes = { data?: { status?: string; dialogue?: OpenPhoneTranscriptDialogue[]; text?: string; transcript?: string } };
+  const tx = (await opGet(`/v1/call-transcripts/${encodeURIComponent(callId)}`)) as TxRes | null;
+  if (tx?.data) {
+    const t = formatTranscript(tx.data as NonNullable<OpenPhoneEvent["data"]>["object"]);
+    if (t) patch.transcript = t;
+    if (tx.data.status) patch.transcript_status = tx.data.status;
+  }
+
+  type SumRes = { data?: { summary?: string | string[]; nextSteps?: string[] } };
+  const sum = (await opGet(`/v1/call-summaries/${encodeURIComponent(callId)}`)) as SumRes | null;
+  if (sum?.data) {
+    const s = formatSummary(sum.data as NonNullable<OpenPhoneEvent["data"]>["object"]);
+    if (s) patch.summary = s;
+  }
+
+  if (Object.keys(patch).length === 0) return;
+  await supabaseAdmin.from("call_logs").update(patch).eq("openphone_call_id", callId);
+}
 
 export const Route = createFileRoute("/api/public/hooks/openphone")({
   server: {
@@ -84,6 +165,23 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
               .update({ recording_url: recordingUrl })
               .eq("openphone_call_id", callId);
           }
+        } else if (type.startsWith("call.transcript")) {
+          const transcript = formatTranscript(obj);
+          await supabaseAdmin
+            .from("call_logs")
+            .update({
+              transcript: transcript,
+              transcript_status: obj.status ?? "completed",
+            })
+            .eq("openphone_call_id", callId);
+        } else if (type.startsWith("call.summary")) {
+          const summary = formatSummary(obj);
+          if (summary) {
+            await supabaseAdmin
+              .from("call_logs")
+              .update({ summary })
+              .eq("openphone_call_id", callId);
+          }
         } else if (type.startsWith("call.")) {
           const update: {
             status: string | null;
@@ -98,6 +196,13 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
             .from("call_logs")
             .update(update)
             .eq("openphone_call_id", callId);
+
+          // After a call completes, backfill recording + transcript + summary via REST.
+          // Recordings/transcripts can finish processing after the completed event fires,
+          // so we re-query a few seconds later; non-fatal if any are missing.
+          if (type === "call.completed" || obj.status === "completed") {
+            void backfillCallArtifacts(callId).catch((e) => console.error("openphone backfill", e));
+          }
         }
 
         return Response.json({ ok: true });

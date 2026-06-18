@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone } from "lucide-react";
+import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -223,6 +224,22 @@ function SetterDetailPage() {
       </Card>
 
       <Card className="overflow-hidden">
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <h3 className="font-display font-semibold">Call recordings & transcripts</h3>
+          <span className="text-xs text-muted-foreground">{data.calls?.length ?? 0} calls</span>
+        </div>
+        {(data.calls?.length ?? 0) === 0 ? (
+          <div className="p-6 text-sm text-muted-foreground text-center">No calls yet.</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {data.calls.slice(0, 50).map((c) => (
+              <CallRow key={c.id} call={c} />
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="overflow-hidden">
         <div className="p-4 border-b border-border"><h3 className="font-display font-semibold">Leads ({data.leads.length})</h3></div>
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
@@ -246,6 +263,80 @@ function SetterDetailPage() {
         onClose={() => setPayTarget(null)}
       />
     </div>
+  );
+}
+
+type CallRowItem = {
+  id: string;
+  created_at: string;
+  started_at: string | null;
+  ended_at: string | null;
+  duration_sec: number | null;
+  status: string | null;
+  direction: string;
+  to_number: string | null;
+  from_number: string | null;
+  recording_url: string | null;
+  transcript: string | null;
+  transcript_status: string | null;
+  summary: string | null;
+  leads?: { name?: string | null; company?: string | null } | null;
+};
+
+function CallRow({ call }: { call: CallRowItem }) {
+  const [open, setOpen] = useState(false);
+  const when = call.started_at || call.created_at;
+  const duration = call.duration_sec
+    ? `${Math.floor(call.duration_sec / 60)}m ${call.duration_sec % 60}s`
+    : null;
+  const hasArtifacts = !!(call.recording_url || call.transcript || call.summary);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full p-3 flex items-center gap-3 text-sm hover:bg-muted/30 text-left">
+        <div className="h-8 w-8 rounded-md flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
+          <Phone className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-medium truncate">
+            {call.leads?.name || call.to_number || "Unknown"}
+            {call.leads?.company && <span className="text-muted-foreground"> · {call.leads.company}</span>}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {new Date(when).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+            {duration && <> · {duration}</>}
+            {call.status && <> · {call.status}</>}
+          </div>
+        </div>
+        {hasArtifacts && <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />}
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="px-3 pb-4 space-y-3">
+          {call.recording_url ? (
+            <audio controls preload="none" src={call.recording_url} className="w-full" />
+          ) : (
+            <div className="text-xs text-muted-foreground">Recording not available.</div>
+          )}
+          {call.summary && (
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Summary</div>
+              <div className="text-sm whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-3">{call.summary}</div>
+            </div>
+          )}
+          {call.transcript ? (
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                Transcript {call.transcript_status && call.transcript_status !== "completed" && <>· {call.transcript_status}</>}
+              </div>
+              <div className="text-sm whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-3 max-h-80 overflow-y-auto">
+                {call.transcript}
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground">Transcript not available yet.</div>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 

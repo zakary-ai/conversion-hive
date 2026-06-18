@@ -194,7 +194,10 @@ export type Database = {
           recording_url: string | null
           started_at: string | null
           status: string | null
+          summary: string | null
           to_number: string | null
+          transcript: string | null
+          transcript_status: string | null
           updated_at: string
           user_id: string
         }
@@ -210,7 +213,10 @@ export type Database = {
           recording_url?: string | null
           started_at?: string | null
           status?: string | null
+          summary?: string | null
           to_number?: string | null
+          transcript?: string | null
+          transcript_status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -226,7 +232,10 @@ export type Database = {
           recording_url?: string | null
           started_at?: string | null
           status?: string | null
+          summary?: string | null
           to_number?: string | null
+          transcript?: string | null
+          transcript_status?: string | null
           updated_at?: string
           user_id?: string
         }
