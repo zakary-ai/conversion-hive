@@ -69,7 +69,7 @@ function AuthenticatedLayout() {
           </main>
 
         </div>
-        <BottomNav isAdmin={me.isAdmin} />
+        <BottomNav isAdmin={me.isAdmin} isCloser={me.isCloser} />
       </div>
     </SidebarProvider>
   );
