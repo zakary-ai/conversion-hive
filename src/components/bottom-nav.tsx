@@ -1,9 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
-  GraduationCap, Settings, Briefcase, Calendar as CalendarIcon,
+  LayoutDashboard, Users, Briefcase, Calendar as CalendarIcon, Settings,
+  GraduationCap, UserCog, Inbox, CalendarCheck, UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAdminChannel } from "@/components/app-sidebar";
 
 const clientItems = [
   { title: "Home", url: "/dashboard", icon: LayoutDashboard },
@@ -13,7 +14,7 @@ const clientItems = [
   { title: "Profile", url: "/profile", icon: UserCog },
 ] as const;
 
-const adminItems = [
+const adminB2BItems = [
   { title: "Home", url: "/admin", icon: LayoutDashboard },
   { title: "Leads", url: "/admin/leads", icon: Briefcase },
   { title: "Calendar", url: "/calendar", icon: CalendarIcon },
@@ -21,21 +22,35 @@ const adminItems = [
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ] as const;
 
-export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
+const adminB2CItems = [
+  { title: "Home", url: "/admin", icon: LayoutDashboard },
+  { title: "Apps", url: "/admin/applications", icon: Inbox },
+  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
+  { title: "Closers", url: "/admin/closers", icon: UserPlus },
+  { title: "Settings", url: "/admin/settings", icon: Settings },
+] as const;
+
+const closerItems = [
+  { title: "Home", url: "/closer", icon: LayoutDashboard },
+  { title: "Calendar", url: "/closer/calendar", icon: CalendarIcon },
+  { title: "Profile", url: "/profile", icon: UserCog },
+] as const;
+
+export function BottomNav({ isAdmin, isCloser }: { isAdmin: boolean; isCloser?: boolean }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const items = isAdmin ? adminItems : clientItems;
+  const [channel] = useAdminChannel();
+  const items = isAdmin
+    ? channel === "b2c" ? adminB2CItems : adminB2BItems
+    : isCloser ? closerItems : clientItems;
 
   const isActive = (url: string) =>
-    url === "/admin" || url === "/dashboard"
+    url === "/admin" || url === "/dashboard" || url === "/closer"
       ? pathname === url
       : pathname === url || pathname.startsWith(url + "/");
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-50 h-14 border-t border-border bg-card md:hidden"
-    >
-      <ul className="grid h-full grid-cols-5">
-
+    <nav className="fixed inset-x-0 bottom-0 z-50 h-14 border-t border-border bg-card md:hidden">
+      <ul className={cn("grid h-full", `grid-cols-${items.length}`)} style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((item) => {
           const active = isActive(item.url);
           return (

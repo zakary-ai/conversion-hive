@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApplyBookRouteImport } from './routes/apply.book'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -23,14 +24,18 @@ import { Route as AuthenticatedCommissionsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authenticated/training.index'
+import { Route as AuthenticatedCloserIndexRouteImport } from './routes/_authenticated/closer/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
+import { Route as AuthenticatedCloserCalendarRouteImport } from './routes/_authenticated/closer/calendar'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminScraperRouteImport } from './routes/_authenticated/admin/scraper'
 import { Route as AuthenticatedAdminQuizzesRouteImport } from './routes/_authenticated/admin/quizzes'
 import { Route as AuthenticatedAdminModulesRouteImport } from './routes/_authenticated/admin/modules'
 import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin/leads'
 import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_authenticated/admin/commissions'
+import { Route as AuthenticatedAdminClosersRouteImport } from './routes/_authenticated/admin/closers'
+import { Route as AuthenticatedAdminBookingsRouteImport } from './routes/_authenticated/admin/bookings'
 import { Route as AuthenticatedAdminApplicationsRouteImport } from './routes/_authenticated/admin/applications'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -72,6 +77,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApplyBookRoute = ApplyBookRouteImport.update({
+  id: '/book',
+  path: '/book',
+  getParentRoute: () => ApplyRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -109,6 +119,12 @@ const AuthenticatedTrainingIndexRoute =
     path: '/training/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCloserIndexRoute =
+  AuthenticatedCloserIndexRouteImport.update({
+    id: '/closer/',
+    path: '/closer/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -118,6 +134,12 @@ const AuthenticatedTrainingModuleIdRoute =
   AuthenticatedTrainingModuleIdRouteImport.update({
     id: '/training/$moduleId',
     path: '/training/$moduleId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCloserCalendarRoute =
+  AuthenticatedCloserCalendarRouteImport.update({
+    id: '/closer/calendar',
+    path: '/closer/calendar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminSettingsRoute =
@@ -153,6 +175,18 @@ const AuthenticatedAdminCommissionsRoute =
   AuthenticatedAdminCommissionsRouteImport.update({
     id: '/commissions',
     path: '/commissions',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminClosersRoute =
+  AuthenticatedAdminClosersRouteImport.update({
+    id: '/closers',
+    path: '/closers',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminBookingsRoute =
+  AuthenticatedAdminBookingsRouteImport.update({
+    id: '/bookings',
+    path: '/bookings',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminApplicationsRoute =
@@ -193,7 +227,7 @@ const AuthenticatedAdminClientsUserIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/apply': typeof ApplyRoute
+  '/apply': typeof ApplyRouteWithChildren
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
@@ -204,15 +238,20 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/apply/book': typeof ApplyBookRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
+  '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
+  '/admin/closers': typeof AuthenticatedAdminClosersRoute
   '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
   '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/closer/': typeof AuthenticatedCloserIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
@@ -222,7 +261,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/apply': typeof ApplyRoute
+  '/apply': typeof ApplyRouteWithChildren
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
@@ -232,15 +271,20 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/apply/book': typeof ApplyBookRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
+  '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
+  '/admin/closers': typeof AuthenticatedAdminClosersRoute
   '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/admin/modules': typeof AuthenticatedAdminModulesRoute
   '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/closer': typeof AuthenticatedCloserIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
   '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
@@ -252,7 +296,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/apply': typeof ApplyRoute
+  '/apply': typeof ApplyRouteWithChildren
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
@@ -263,15 +307,20 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/apply/book': typeof ApplyBookRoute
   '/_authenticated/admin/applications': typeof AuthenticatedAdminApplicationsRoute
+  '/_authenticated/admin/bookings': typeof AuthenticatedAdminBookingsRoute
+  '/_authenticated/admin/closers': typeof AuthenticatedAdminClosersRoute
   '/_authenticated/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
   '/_authenticated/admin/modules': typeof AuthenticatedAdminModulesRoute
   '/_authenticated/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
   '/_authenticated/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/closer/calendar': typeof AuthenticatedCloserCalendarRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/closer/': typeof AuthenticatedCloserIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
   '/_authenticated/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
@@ -294,15 +343,20 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leads'
     | '/profile'
+    | '/apply/book'
     | '/admin/applications'
+    | '/admin/bookings'
+    | '/admin/closers'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/modules'
     | '/admin/quizzes'
     | '/admin/scraper'
     | '/admin/settings'
+    | '/closer/calendar'
     | '/training/$moduleId'
     | '/admin/'
+    | '/closer/'
     | '/training/'
     | '/admin/clients/$userId'
     | '/api/public/hooks/openphone'
@@ -322,15 +376,20 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leads'
     | '/profile'
+    | '/apply/book'
     | '/admin/applications'
+    | '/admin/bookings'
+    | '/admin/closers'
     | '/admin/commissions'
     | '/admin/leads'
     | '/admin/modules'
     | '/admin/quizzes'
     | '/admin/scraper'
     | '/admin/settings'
+    | '/closer/calendar'
     | '/training/$moduleId'
     | '/admin'
+    | '/closer'
     | '/training'
     | '/admin/clients/$userId'
     | '/api/public/hooks/openphone'
@@ -352,15 +411,20 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/leads'
     | '/_authenticated/profile'
+    | '/apply/book'
     | '/_authenticated/admin/applications'
+    | '/_authenticated/admin/bookings'
+    | '/_authenticated/admin/closers'
     | '/_authenticated/admin/commissions'
     | '/_authenticated/admin/leads'
     | '/_authenticated/admin/modules'
     | '/_authenticated/admin/quizzes'
     | '/_authenticated/admin/scraper'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/closer/calendar'
     | '/_authenticated/training/$moduleId'
     | '/_authenticated/admin/'
+    | '/_authenticated/closer/'
     | '/_authenticated/training/'
     | '/_authenticated/admin/clients/$userId'
     | '/api/public/hooks/openphone'
@@ -372,7 +436,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  ApplyRoute: typeof ApplyRoute
+  ApplyRoute: typeof ApplyRouteWithChildren
   AuthRoute: typeof AuthRoute
   PrivacyRoute: typeof PrivacyRoute
   SupportRoute: typeof SupportRoute
@@ -433,6 +497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apply/book': {
+      id: '/apply/book'
+      path: '/book'
+      fullPath: '/apply/book'
+      preLoaderRoute: typeof ApplyBookRouteImport
+      parentRoute: typeof ApplyRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -482,6 +553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrainingIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/closer/': {
+      id: '/_authenticated/closer/'
+      path: '/closer'
+      fullPath: '/closer/'
+      preLoaderRoute: typeof AuthenticatedCloserIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -494,6 +572,13 @@ declare module '@tanstack/react-router' {
       path: '/training/$moduleId'
       fullPath: '/training/$moduleId'
       preLoaderRoute: typeof AuthenticatedTrainingModuleIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/closer/calendar': {
+      id: '/_authenticated/closer/calendar'
+      path: '/closer/calendar'
+      fullPath: '/closer/calendar'
+      preLoaderRoute: typeof AuthenticatedCloserCalendarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/settings': {
@@ -536,6 +621,20 @@ declare module '@tanstack/react-router' {
       path: '/commissions'
       fullPath: '/admin/commissions'
       preLoaderRoute: typeof AuthenticatedAdminCommissionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/closers': {
+      id: '/_authenticated/admin/closers'
+      path: '/closers'
+      fullPath: '/admin/closers'
+      preLoaderRoute: typeof AuthenticatedAdminClosersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/bookings': {
+      id: '/_authenticated/admin/bookings'
+      path: '/bookings'
+      fullPath: '/admin/bookings'
+      preLoaderRoute: typeof AuthenticatedAdminBookingsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/applications': {
@@ -585,6 +684,8 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminApplicationsRoute: typeof AuthenticatedAdminApplicationsRoute
+  AuthenticatedAdminBookingsRoute: typeof AuthenticatedAdminBookingsRoute
+  AuthenticatedAdminClosersRoute: typeof AuthenticatedAdminClosersRoute
   AuthenticatedAdminCommissionsRoute: typeof AuthenticatedAdminCommissionsRoute
   AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
   AuthenticatedAdminModulesRoute: typeof AuthenticatedAdminModulesRoute
@@ -599,6 +700,8 @@ interface AuthenticatedAdminRouteRouteChildren {
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminApplicationsRoute: AuthenticatedAdminApplicationsRoute,
+    AuthenticatedAdminBookingsRoute: AuthenticatedAdminBookingsRoute,
+    AuthenticatedAdminClosersRoute: AuthenticatedAdminClosersRoute,
     AuthenticatedAdminCommissionsRoute: AuthenticatedAdminCommissionsRoute,
     AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
     AuthenticatedAdminModulesRoute: AuthenticatedAdminModulesRoute,
@@ -622,7 +725,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedCloserCalendarRoute: typeof AuthenticatedCloserCalendarRoute
   AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
+  AuthenticatedCloserIndexRoute: typeof AuthenticatedCloserIndexRoute
   AuthenticatedTrainingIndexRoute: typeof AuthenticatedTrainingIndexRoute
 }
 
@@ -633,17 +738,29 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedCloserCalendarRoute: AuthenticatedCloserCalendarRoute,
   AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
+  AuthenticatedCloserIndexRoute: AuthenticatedCloserIndexRoute,
   AuthenticatedTrainingIndexRoute: AuthenticatedTrainingIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApplyRouteChildren {
+  ApplyBookRoute: typeof ApplyBookRoute
+}
+
+const ApplyRouteChildren: ApplyRouteChildren = {
+  ApplyBookRoute: ApplyBookRoute,
+}
+
+const ApplyRouteWithChildren = ApplyRoute._addFileChildren(ApplyRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  ApplyRoute: ApplyRoute,
+  ApplyRoute: ApplyRouteWithChildren,
   AuthRoute: AuthRoute,
   PrivacyRoute: PrivacyRoute,
   SupportRoute: SupportRoute,
@@ -655,13 +772,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

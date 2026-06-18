@@ -33,6 +33,7 @@ export const getMe = createServerFn({ method: "GET" })
       profile,
       isAdmin: roleSet.has("admin"),
       isClient: roleSet.has("client"),
+      isCloser: roleSet.has("closer"),
     };
   });
 

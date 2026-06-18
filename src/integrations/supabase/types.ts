@@ -17,10 +17,12 @@ export type Database = {
       applications: {
         Row: {
           admin_notes: string | null
+          booking_token: string
           created_at: string
           credit_score_range: Database["public"]["Enums"]["application_credit"]
           current_monthly_income: string
           desired_monthly_income: string
+          email: string | null
           full_name: string
           id: string
           open_to_invest: Database["public"]["Enums"]["application_invest"]
@@ -31,10 +33,12 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          booking_token?: string
           created_at?: string
           credit_score_range: Database["public"]["Enums"]["application_credit"]
           current_monthly_income: string
           desired_monthly_income: string
+          email?: string | null
           full_name: string
           id?: string
           open_to_invest: Database["public"]["Enums"]["application_invest"]
@@ -45,10 +49,12 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          booking_token?: string
           created_at?: string
           credit_score_range?: Database["public"]["Enums"]["application_credit"]
           current_monthly_income?: string
           desired_monthly_income?: string
+          email?: string | null
           full_name?: string
           id?: string
           open_to_invest?: Database["public"]["Enums"]["application_invest"]
@@ -233,6 +239,140 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      closer_availability_rules: {
+        Row: {
+          closer_id: string
+          created_at: string
+          day_of_week: number
+          end_minute: number
+          id: string
+          start_minute: number
+        }
+        Insert: {
+          closer_id: string
+          created_at?: string
+          day_of_week: number
+          end_minute: number
+          id?: string
+          start_minute: number
+        }
+        Update: {
+          closer_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_minute?: number
+          id?: string
+          start_minute?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "closer_availability_rules_closer_id_fkey"
+            columns: ["closer_id"]
+            isOneToOne: false
+            referencedRelation: "closers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      closer_bookings: {
+        Row: {
+          applicant_email: string
+          applicant_name: string
+          applicant_phone: string | null
+          application_id: string | null
+          assigned_closer_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          slot_end: string
+          slot_start: string
+          status: string
+          updated_at: string
+          zoom_join_url: string | null
+          zoom_meeting_id: string | null
+        }
+        Insert: {
+          applicant_email: string
+          applicant_name: string
+          applicant_phone?: string | null
+          application_id?: string | null
+          assigned_closer_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          slot_end: string
+          slot_start: string
+          status?: string
+          updated_at?: string
+          zoom_join_url?: string | null
+          zoom_meeting_id?: string | null
+        }
+        Update: {
+          applicant_email?: string
+          applicant_name?: string
+          applicant_phone?: string | null
+          application_id?: string | null
+          assigned_closer_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          slot_end?: string
+          slot_start?: string
+          status?: string
+          updated_at?: string
+          zoom_join_url?: string | null
+          zoom_meeting_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "closer_bookings_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closer_bookings_assigned_closer_id_fkey"
+            columns: ["assigned_closer_id"]
+            isOneToOne: false
+            referencedRelation: "closers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      closers: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          updated_at: string
+          user_id: string | null
+          zoom_user_email: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          zoom_user_email?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          zoom_user_email?: string | null
+        }
+        Relationships: []
       }
       commissions: {
         Row: {
@@ -859,7 +999,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "client"
+      app_role: "admin" | "client" | "closer"
       application_credit:
         | "600-650"
         | "650-700"
@@ -1010,7 +1150,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "client"],
+      app_role: ["admin", "client", "closer"],
       application_credit: [
         "600-650",
         "650-700",
