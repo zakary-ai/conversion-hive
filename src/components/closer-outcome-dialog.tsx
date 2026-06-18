@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 type Outcome = "not_interested" | "disqualified" | "closed" | "deposit";
+type Pct = 10 | 15 | 20;
 
 export function OutcomeDialog({
   bookingId,
@@ -30,6 +31,7 @@ export function OutcomeDialog({
   const [depositAmount, setDepositAmount] = useState("");
   const [followUpAmount, setFollowUpAmount] = useState("");
   const [followUpDate, setFollowUpDate] = useState("");
+  const [commissionPct, setCommissionPct] = useState<Pct | null>(null);
   const [notes, setNotes] = useState("");
 
   const { data: app } = useQuery({
@@ -47,6 +49,7 @@ export function OutcomeDialog({
         deposit_amount: outcome === "deposit" ? Number(depositAmount) || 0 : null,
         follow_up_amount: outcome === "deposit" ? Number(followUpAmount) || 0 : null,
         follow_up_date: outcome === "deposit" ? followUpDate : null,
+        commission_percent: (outcome === "closed" || outcome === "deposit") ? commissionPct : null,
         notes: notes || null,
       },
     }),
@@ -54,6 +57,8 @@ export function OutcomeDialog({
       toast.success("Outcome recorded");
       qc.invalidateQueries({ queryKey: ["closer-bookings"] });
       qc.invalidateQueries({ queryKey: ["b2c-admin-stats"] });
+      qc.invalidateQueries({ queryKey: ["my-closer-commissions"] });
+      qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
       reset();
       onOpenChange(false);
     },
@@ -62,16 +67,18 @@ export function OutcomeDialog({
 
   function reset() {
     setOutcome(null); setDealAmount(""); setDepositAmount("");
-    setFollowUpAmount(""); setFollowUpDate(""); setNotes("");
+    setFollowUpAmount(""); setFollowUpDate(""); setCommissionPct(null); setNotes("");
   }
 
+  const needsPct = outcome === "closed" || outcome === "deposit";
   const canSubmit = outcome
     && (outcome !== "closed" || Number(dealAmount) > 0)
-    && (outcome !== "deposit" || (Number(depositAmount) > 0 && Number(followUpAmount) > 0 && !!followUpDate));
+    && (outcome !== "deposit" || (Number(depositAmount) > 0 && Number(followUpAmount) > 0 && !!followUpDate))
+    && (!needsPct || commissionPct !== null);
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Call outcome — {applicantName}</DialogTitle>
         </DialogHeader>
@@ -121,6 +128,26 @@ export function OutcomeDialog({
             <div className="space-y-1">
               <Label htmlFor="fd">Follow-up date</Label>
               <Input id="fd" type="date" value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} />
+            </div>
+          </div>
+        )}
+
+        {needsPct && (
+          <div className="space-y-2">
+            <Label>Commission %</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {([10, 15, 20] as Pct[]).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setCommissionPct(p)}
+                  className={`rounded-md border px-3 py-2 text-sm font-medium transition ${
+                    commissionPct === p ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted/40"
+                  }`}
+                >
+                  {p}%
+                </button>
+              ))}
             </div>
           </div>
         )}
