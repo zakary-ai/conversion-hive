@@ -26,6 +26,7 @@ import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedCloserIndexRouteImport } from './routes/_authenticated/closer/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
+import { Route as AuthenticatedCloserCommissionsRouteImport } from './routes/_authenticated/closer/commissions'
 import { Route as AuthenticatedCloserCalendarRouteImport } from './routes/_authenticated/closer/calendar'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminScraperRouteImport } from './routes/_authenticated/admin/scraper'
@@ -35,6 +36,7 @@ import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_authenticated/admin/commissions'
 import { Route as AuthenticatedAdminClosersRouteImport } from './routes/_authenticated/admin/closers'
 import { Route as AuthenticatedAdminBookingsRouteImport } from './routes/_authenticated/admin/bookings'
+import { Route as AuthenticatedAdminB2cCommissionsRouteImport } from './routes/_authenticated/admin/b2c-commissions'
 import { Route as AuthenticatedAdminApplicationsRouteImport } from './routes/_authenticated/admin/applications'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -130,6 +132,12 @@ const AuthenticatedTrainingModuleIdRoute =
     path: '/training/$moduleId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCloserCommissionsRoute =
+  AuthenticatedCloserCommissionsRouteImport.update({
+    id: '/closer/commissions',
+    path: '/closer/commissions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCloserCalendarRoute =
   AuthenticatedCloserCalendarRouteImport.update({
     id: '/closer/calendar',
@@ -183,6 +191,12 @@ const AuthenticatedAdminBookingsRoute =
     path: '/bookings',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminB2cCommissionsRoute =
+  AuthenticatedAdminB2cCommissionsRouteImport.update({
+    id: '/b2c-commissions',
+    path: '/b2c-commissions',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminApplicationsRoute =
   AuthenticatedAdminApplicationsRouteImport.update({
     id: '/applications',
@@ -233,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
+  '/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
   '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
   '/admin/closers': typeof AuthenticatedAdminClosersRoute
   '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
@@ -242,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
+  '/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/closer/': typeof AuthenticatedCloserIndexRoute
@@ -265,6 +281,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
+  '/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
   '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
   '/admin/closers': typeof AuthenticatedAdminClosersRoute
   '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
@@ -274,6 +291,7 @@ export interface FileRoutesByTo {
   '/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
+  '/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/closer': typeof AuthenticatedCloserIndexRoute
@@ -300,6 +318,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/admin/applications': typeof AuthenticatedAdminApplicationsRoute
+  '/_authenticated/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
   '/_authenticated/admin/bookings': typeof AuthenticatedAdminBookingsRoute
   '/_authenticated/admin/closers': typeof AuthenticatedAdminClosersRoute
   '/_authenticated/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
@@ -309,6 +328,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/scraper': typeof AuthenticatedAdminScraperRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/closer/calendar': typeof AuthenticatedCloserCalendarRoute
+  '/_authenticated/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/closer/': typeof AuthenticatedCloserIndexRoute
@@ -335,6 +355,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/profile'
     | '/admin/applications'
+    | '/admin/b2c-commissions'
     | '/admin/bookings'
     | '/admin/closers'
     | '/admin/commissions'
@@ -344,6 +365,7 @@ export interface FileRouteTypes {
     | '/admin/scraper'
     | '/admin/settings'
     | '/closer/calendar'
+    | '/closer/commissions'
     | '/training/$moduleId'
     | '/admin/'
     | '/closer/'
@@ -367,6 +389,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/profile'
     | '/admin/applications'
+    | '/admin/b2c-commissions'
     | '/admin/bookings'
     | '/admin/closers'
     | '/admin/commissions'
@@ -376,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin/scraper'
     | '/admin/settings'
     | '/closer/calendar'
+    | '/closer/commissions'
     | '/training/$moduleId'
     | '/admin'
     | '/closer'
@@ -401,6 +425,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/profile'
     | '/_authenticated/admin/applications'
+    | '/_authenticated/admin/b2c-commissions'
     | '/_authenticated/admin/bookings'
     | '/_authenticated/admin/closers'
     | '/_authenticated/admin/commissions'
@@ -410,6 +435,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/scraper'
     | '/_authenticated/admin/settings'
     | '/_authenticated/closer/calendar'
+    | '/_authenticated/closer/commissions'
     | '/_authenticated/training/$moduleId'
     | '/_authenticated/admin/'
     | '/_authenticated/closer/'
@@ -555,6 +581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrainingModuleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/closer/commissions': {
+      id: '/_authenticated/closer/commissions'
+      path: '/closer/commissions'
+      fullPath: '/closer/commissions'
+      preLoaderRoute: typeof AuthenticatedCloserCommissionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/closer/calendar': {
       id: '/_authenticated/closer/calendar'
       path: '/closer/calendar'
@@ -618,6 +651,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBookingsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/b2c-commissions': {
+      id: '/_authenticated/admin/b2c-commissions'
+      path: '/b2c-commissions'
+      fullPath: '/admin/b2c-commissions'
+      preLoaderRoute: typeof AuthenticatedAdminB2cCommissionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/applications': {
       id: '/_authenticated/admin/applications'
       path: '/applications'
@@ -665,6 +705,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminApplicationsRoute: typeof AuthenticatedAdminApplicationsRoute
+  AuthenticatedAdminB2cCommissionsRoute: typeof AuthenticatedAdminB2cCommissionsRoute
   AuthenticatedAdminBookingsRoute: typeof AuthenticatedAdminBookingsRoute
   AuthenticatedAdminClosersRoute: typeof AuthenticatedAdminClosersRoute
   AuthenticatedAdminCommissionsRoute: typeof AuthenticatedAdminCommissionsRoute
@@ -681,6 +722,8 @@ interface AuthenticatedAdminRouteRouteChildren {
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminApplicationsRoute: AuthenticatedAdminApplicationsRoute,
+    AuthenticatedAdminB2cCommissionsRoute:
+      AuthenticatedAdminB2cCommissionsRoute,
     AuthenticatedAdminBookingsRoute: AuthenticatedAdminBookingsRoute,
     AuthenticatedAdminClosersRoute: AuthenticatedAdminClosersRoute,
     AuthenticatedAdminCommissionsRoute: AuthenticatedAdminCommissionsRoute,
@@ -707,6 +750,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedCloserCalendarRoute: typeof AuthenticatedCloserCalendarRoute
+  AuthenticatedCloserCommissionsRoute: typeof AuthenticatedCloserCommissionsRoute
   AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
   AuthenticatedCloserIndexRoute: typeof AuthenticatedCloserIndexRoute
   AuthenticatedTrainingIndexRoute: typeof AuthenticatedTrainingIndexRoute
@@ -720,6 +764,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedCloserCalendarRoute: AuthenticatedCloserCalendarRoute,
+  AuthenticatedCloserCommissionsRoute: AuthenticatedCloserCommissionsRoute,
   AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
   AuthenticatedCloserIndexRoute: AuthenticatedCloserIndexRoute,
   AuthenticatedTrainingIndexRoute: AuthenticatedTrainingIndexRoute,

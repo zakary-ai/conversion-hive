@@ -291,6 +291,8 @@ export type Database = {
           applicant_phone: string | null
           application_id: string | null
           assigned_closer_id: string | null
+          commission_amount: number | null
+          commission_percent: number | null
           created_at: string
           deal_amount: number | null
           deposit_amount: number | null
@@ -315,6 +317,8 @@ export type Database = {
           applicant_phone?: string | null
           application_id?: string | null
           assigned_closer_id?: string | null
+          commission_amount?: number | null
+          commission_percent?: number | null
           created_at?: string
           deal_amount?: number | null
           deposit_amount?: number | null
@@ -339,6 +343,8 @@ export type Database = {
           applicant_phone?: string | null
           application_id?: string | null
           assigned_closer_id?: string | null
+          commission_amount?: number | null
+          commission_percent?: number | null
           created_at?: string
           deal_amount?: number | null
           deposit_amount?: number | null

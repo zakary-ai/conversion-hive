@@ -36,14 +36,17 @@ const adminB2CItems = [
   { title: "Applications", url: "/admin/applications", icon: Inbox },
   { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
   { title: "Closers", url: "/admin/closers", icon: UserPlus },
+  { title: "Commissions", url: "/admin/b2c-commissions", icon: DollarSign },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ] as const;
 
 const closerItems = [
   { title: "Home", url: "/closer", icon: LayoutDashboard },
   { title: "Calendar", url: "/closer/calendar", icon: CalendarIcon },
+  { title: "Commissions", url: "/closer/commissions", icon: DollarSign },
   { title: "Profile", url: "/profile", icon: UserCog },
 ] as const;
+
 
 const CHANNEL_KEY = "cl_admin_channel";
 export type AdminChannel = "b2b" | "b2c";
