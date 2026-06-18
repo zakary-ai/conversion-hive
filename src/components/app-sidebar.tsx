@@ -1,4 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, useSidebar,
@@ -6,9 +7,9 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
+  UserPlus, CalendarCheck,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
-
 
 const clientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -19,11 +20,10 @@ const clientItems = [
   { title: "Profile", url: "/profile", icon: UserCog },
 ] as const;
 
-const adminItems = [
+const adminB2BItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Setters", url: "/admin/clients", icon: Users },
   { title: "Leads", url: "/admin/leads", icon: Briefcase },
-  { title: "Applications", url: "/admin/applications", icon: Inbox },
   { title: "Calendar", url: "/calendar", icon: CalendarIcon },
   { title: "Modules", url: "/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/admin/quizzes", icon: ListChecks },
@@ -31,14 +31,61 @@ const adminItems = [
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ] as const;
 
-export function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
+const adminB2CItems = [
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Applications", url: "/admin/applications", icon: Inbox },
+  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
+  { title: "Closers", url: "/admin/closers", icon: UserPlus },
+  { title: "Settings", url: "/admin/settings", icon: Settings },
+] as const;
+
+const closerItems = [
+  { title: "Home", url: "/closer", icon: LayoutDashboard },
+  { title: "Calendar", url: "/closer/calendar", icon: CalendarIcon },
+  { title: "Profile", url: "/profile", icon: UserCog },
+] as const;
+
+const CHANNEL_KEY = "cl_admin_channel";
+export type AdminChannel = "b2b" | "b2c";
+
+export function useAdminChannel(): [AdminChannel, (c: AdminChannel) => void] {
+  const [channel, setChannel] = useState<AdminChannel>("b2b");
+  useEffect(() => {
+    const v = (typeof window !== "undefined" && localStorage.getItem(CHANNEL_KEY)) as AdminChannel | null;
+    if (v === "b2b" || v === "b2c") setChannel(v);
+    const onStorage = () => {
+      const next = localStorage.getItem(CHANNEL_KEY) as AdminChannel | null;
+      if (next === "b2b" || next === "b2c") setChannel(next);
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("admin-channel-change", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("admin-channel-change", onStorage);
+    };
+  }, []);
+  const set = (c: AdminChannel) => {
+    localStorage.setItem(CHANNEL_KEY, c);
+    setChannel(c);
+    window.dispatchEvent(new Event("admin-channel-change"));
+  };
+  return [channel, set];
+}
+
+export function AppSidebar({ isAdmin, isCloser }: { isAdmin: boolean; isCloser?: boolean }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const items = isAdmin ? adminItems : clientItems;
+  const [channel, setChannel] = useAdminChannel();
+
+  const items = isAdmin
+    ? channel === "b2c" ? adminB2CItems : adminB2BItems
+    : isCloser ? closerItems : clientItems;
+
+  const label = isAdmin ? "Admin" : isCloser ? "Closer" : "Client";
 
   const isActive = (url: string) =>
-    url === "/admin" || url === "/dashboard"
+    url === "/admin" || url === "/dashboard" || url === "/closer"
       ? pathname === url
       : pathname === url || pathname.startsWith(url + "/");
 
@@ -52,10 +99,26 @@ export function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
           {!collapsed && (
             <div className="leading-tight">
               <div className="font-display font-semibold tracking-tight">Conversion Lab</div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{isAdmin ? "Admin" : "Client"}</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
             </div>
           )}
         </div>
+        {isAdmin && !collapsed && (
+          <div className="px-2 pb-2">
+            <div className="inline-flex w-full rounded-lg border border-border bg-muted/30 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setChannel("b2b")}
+                className={`flex-1 rounded-md px-2 py-1 font-medium transition ${channel === "b2b" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              >B2B</button>
+              <button
+                type="button"
+                onClick={() => setChannel("b2c")}
+                className={`flex-1 rounded-md px-2 py-1 font-medium transition ${channel === "b2c" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+              >B2C</button>
+            </div>
+          </div>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

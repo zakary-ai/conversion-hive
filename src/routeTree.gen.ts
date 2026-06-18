@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApplyBookRouteImport } from './routes/apply.book'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -71,6 +72,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApplyBookRoute = ApplyBookRouteImport.update({
+  id: '/book',
+  path: '/book',
+  getParentRoute: () => ApplyRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
@@ -193,7 +199,7 @@ const AuthenticatedAdminClientsUserIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/apply': typeof ApplyRoute
+  '/apply': typeof ApplyRouteWithChildren
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/apply/book': typeof ApplyBookRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
   '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -222,7 +229,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/apply': typeof ApplyRoute
+  '/apply': typeof ApplyRouteWithChildren
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
@@ -232,6 +239,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/apply/book': typeof ApplyBookRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
   '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -252,7 +260,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/apply': typeof ApplyRoute
+  '/apply': typeof ApplyRouteWithChildren
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/apply/book': typeof ApplyBookRoute
   '/_authenticated/admin/applications': typeof AuthenticatedAdminApplicationsRoute
   '/_authenticated/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leads'
     | '/profile'
+    | '/apply/book'
     | '/admin/applications'
     | '/admin/commissions'
     | '/admin/leads'
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leads'
     | '/profile'
+    | '/apply/book'
     | '/admin/applications'
     | '/admin/commissions'
     | '/admin/leads'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/leads'
     | '/_authenticated/profile'
+    | '/apply/book'
     | '/_authenticated/admin/applications'
     | '/_authenticated/admin/commissions'
     | '/_authenticated/admin/leads'
@@ -372,7 +384,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  ApplyRoute: typeof ApplyRoute
+  ApplyRoute: typeof ApplyRouteWithChildren
   AuthRoute: typeof AuthRoute
   PrivacyRoute: typeof PrivacyRoute
   SupportRoute: typeof SupportRoute
@@ -432,6 +444,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/apply/book': {
+      id: '/apply/book'
+      path: '/book'
+      fullPath: '/apply/book'
+      preLoaderRoute: typeof ApplyBookRouteImport
+      parentRoute: typeof ApplyRoute
     }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
@@ -640,10 +659,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApplyRouteChildren {
+  ApplyBookRoute: typeof ApplyBookRoute
+}
+
+const ApplyRouteChildren: ApplyRouteChildren = {
+  ApplyBookRoute: ApplyBookRoute,
+}
+
+const ApplyRouteWithChildren = ApplyRoute._addFileChildren(ApplyRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  ApplyRoute: ApplyRoute,
+  ApplyRoute: ApplyRouteWithChildren,
   AuthRoute: AuthRoute,
   PrivacyRoute: PrivacyRoute,
   SupportRoute: SupportRoute,
