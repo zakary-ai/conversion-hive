@@ -33,10 +33,10 @@ function AuthenticatedLayout() {
   // Force first-login password change for setters/closers (and any user the admin flagged).
   // Admins are exempt — they already chose their own password.
   useEffect(() => {
-    if (me.mustChangePassword && !me.isAdmin && location.pathname !== "/set-password") {
+    if (me.mustChangePassword && location.pathname !== "/set-password") {
       navigate({ to: "/set-password", replace: true });
     }
-  }, [me.mustChangePassword, me.isAdmin, location.pathname, navigate]);
+  }, [me.mustChangePassword, location.pathname, navigate]);
 
 
 
