@@ -169,6 +169,51 @@ export type Database = {
         }
         Relationships: []
       }
+      b2c_availability_rules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_minute: number
+          id: string
+          start_minute: number
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_minute: number
+          id?: string
+          start_minute: number
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_minute?: number
+          id?: string
+          start_minute?: number
+        }
+        Relationships: []
+      }
+      b2c_settings: {
+        Row: {
+          days_out: number
+          id: number
+          slot_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          days_out?: number
+          id?: number
+          slot_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          days_out?: number
+          id?: number
+          slot_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       booking_settings: {
         Row: {
           id: number

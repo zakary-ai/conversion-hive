@@ -144,7 +144,29 @@ async function gcalDeleteEvent(eventId: string): Promise<void> {
 
 // ---------- Public: list available closer slots for a date ----------
 const EST_TZ = "America/New_York";
-const SLOT_MINUTES = 30;
+const DEFAULT_SLOT_MINUTES = 30;
+
+async function getB2cSettingsRow(): Promise<{ slot_minutes: number; days_out: number }> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: number) => { maybeSingle: () => Promise<{ data: { slot_minutes: number; days_out: number } | null }> } } } })
+      .from("b2c_settings").select("slot_minutes, days_out").eq("id", 1).maybeSingle();
+    return { slot_minutes: data?.slot_minutes ?? DEFAULT_SLOT_MINUTES, days_out: data?.days_out ?? 14 };
+  } catch {
+    return { slot_minutes: DEFAULT_SLOT_MINUTES, days_out: 14 };
+  }
+}
+
+async function listB2cAvailRules(): Promise<Array<{ day_of_week: number; start_minute: number; end_minute: number }>> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => Promise<{ data: Array<{ day_of_week: number; start_minute: number; end_minute: number }> | null }> } })
+      .from("b2c_availability_rules").select("day_of_week, start_minute, end_minute");
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
 
 function zonedDateKey(d: Date, tz: string) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
@@ -178,6 +200,21 @@ export const listCloserSlotsForDate = createServerFn({ method: "GET" })
     const viewerDayStart = zonedWallToUTC(vy, vm, vd, 0, 0, viewerTz);
     const viewerDayEnd = zonedWallToUTC(vy, vm, vd + 1, 0, 0, viewerTz);
 
+    const { slot_minutes: SLOT, days_out } = await getB2cSettingsRow();
+    // Enforce booking horizon
+    const horizonMs = Date.now() + days_out * 24 * 60 * 60 * 1000;
+    if (viewerDayStart.getTime() > horizonMs) return [] as Array<{ iso: string; capacity: number }>;
+
+    const adminRules = await listB2cAvailRules();
+    // group admin windows by day of week
+    const adminByDow = new Map<number, Array<{ s: number; e: number }>>();
+    for (const r of adminRules) {
+      const arr = adminByDow.get(r.day_of_week) ?? [];
+      arr.push({ s: r.start_minute, e: r.end_minute });
+      adminByDow.set(r.day_of_week, arr);
+    }
+    const hasAdminRules = adminRules.length > 0;
+
     const estDates = new Set<string>();
     estDates.add(zonedDateKey(viewerDayStart, EST_TZ));
     estDates.add(zonedDateKey(new Date(viewerDayEnd.getTime() - 1), EST_TZ));
@@ -196,12 +233,11 @@ export const listCloserSlotsForDate = createServerFn({ method: "GET" })
     const { data: existing } = await supabaseAdmin
       .from("closer_bookings")
       .select("slot_start, assigned_closer_id")
-      .gte("slot_start", new Date(viewerDayStart.getTime() - SLOT_MINUTES * 60_000).toISOString())
-      .lt("slot_start", new Date(viewerDayEnd.getTime() + SLOT_MINUTES * 60_000).toISOString())
+      .gte("slot_start", new Date(viewerDayStart.getTime() - SLOT * 60_000).toISOString())
+      .lt("slot_start", new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString())
       .in("status", ["pending_assignment", "assigned"]);
 
     const now = Date.now();
-    // map of iso -> Set of closer_ids that are busy at that slot
     const pendingPerSlot = new Map<string, number>();
     const assignedBusy = new Map<string, Set<string>>();
     for (const b of existing ?? []) {
@@ -222,19 +258,23 @@ export const listCloserSlotsForDate = createServerFn({ method: "GET" })
       const probe = zonedWallToUTC(ey, em, ed, 12, 0, EST_TZ);
       const dow = zonedDayOfWeek(probe, EST_TZ);
       const todaysRules = (rules ?? []).filter((r) => r.day_of_week === dow);
-      // group rule windows by closer
+      const adminWindows = adminByDow.get(dow) ?? [];
+      // If admin has rules but none for this day, day is closed
+      if (hasAdminRules && adminWindows.length === 0) continue;
+      const inAdmin = (mm: number) =>
+        !hasAdminRules || adminWindows.some((w) => mm >= w.s && mm + SLOT <= w.e);
+
       const byCloser = new Map<string, Array<{ s: number; e: number }>>();
       for (const r of todaysRules) {
         const arr = byCloser.get(r.closer_id as string) ?? [];
         arr.push({ s: r.start_minute as number, e: r.end_minute as number });
         byCloser.set(r.closer_id as string, arr);
       }
-      // build set of all candidate slot start minutes across all closers
       const candidateMinutes = new Set<number>();
       for (const windows of byCloser.values()) {
         for (const w of windows) {
-          for (let mm = w.s; mm + SLOT_MINUTES <= w.e; mm += SLOT_MINUTES) {
-            candidateMinutes.add(mm);
+          for (let mm = w.s; mm + SLOT <= w.e; mm += SLOT) {
+            if (inAdmin(mm)) candidateMinutes.add(mm);
           }
         }
       }
@@ -242,16 +282,15 @@ export const listCloserSlotsForDate = createServerFn({ method: "GET" })
         const slot = zonedWallToUTC(ey, em, ed, Math.floor(mm / 60), mm % 60, EST_TZ);
         const t = slot.getTime();
         if (t < now) continue;
+        if (t > horizonMs) continue;
         if (t < viewerDayStart.getTime() || t >= viewerDayEnd.getTime()) continue;
         const iso = slot.toISOString();
-        // count closers who are (a) available at this minute and (b) not already assigned to this slot
         const assigned = assignedBusy.get(iso) ?? new Set<string>();
         let avail = 0;
         for (const [cid, windows] of byCloser.entries()) {
           if (assigned.has(cid)) continue;
-          if (windows.some((w) => mm >= w.s && mm + SLOT_MINUTES <= w.e)) avail += 1;
+          if (windows.some((w) => mm >= w.s && mm + SLOT <= w.e)) avail += 1;
         }
-        // subtract pending-assignment bookings (consume one closer each)
         avail -= pendingPerSlot.get(iso) ?? 0;
         if (avail > 0) slotMap.set(iso, avail);
       }
@@ -285,8 +324,9 @@ export const createCloserBooking = createServerFn({ method: "POST" })
       .from("closer_bookings").select("id").eq("application_id", data.application_id).limit(1);
     if ((existing ?? []).length > 0) throw new Error("You've already booked a call.");
 
+    const { slot_minutes: SLOT } = await getB2cSettingsRow();
     const start = new Date(data.slot_start);
-    const end = new Date(start.getTime() + SLOT_MINUTES * 60_000);
+    const end = new Date(start.getTime() + SLOT * 60_000);
 
     // capacity check
     const { data: activeClosers } = await supabaseAdmin
@@ -449,6 +489,7 @@ async function sendCloserBookingEmail(input: {
   applicantName: string;
   scheduledAt: string;
   meetingUrl: string | null;
+  durationMinutes: number;
 }) {
   try {
     const origin = process.env.LOVABLE_APP_URL || process.env.PUBLIC_APP_URL;
@@ -467,7 +508,7 @@ async function sendCloserBookingEmail(input: {
           name: input.applicantName,
           scheduledAt: input.scheduledAt,
           meetingUrl: input.meetingUrl,
-          durationMinutes: SLOT_MINUTES,
+          durationMinutes: input.durationMinutes,
         },
       }),
     });
@@ -499,11 +540,12 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
       .neq("id", data.booking_id);
     if ((conflict ?? []).length > 0) throw new Error("That closer is already booked at this time.");
 
+    const { slot_minutes: SLOT } = await getB2cSettingsRow();
     const zoom = await createZoomMeetingForUser({
       zoomUserEmail: (closer.zoom_user_email as string) || (closer.email as string),
       topic: `Sales call — ${booking.applicant_name}`,
       start_time: booking.slot_start as string,
-      duration: SLOT_MINUTES,
+      duration: SLOT,
     });
 
     // Create Google Calendar event titled "<Closer name> with <Lead name>"
@@ -537,6 +579,7 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
       applicantName: booking.applicant_name as string,
       scheduledAt: booking.slot_start as string,
       meetingUrl: zoom.join_url,
+      durationMinutes: SLOT,
     });
 
     return { ok: true, zoom_join_url: zoom.join_url };
@@ -832,4 +875,77 @@ export const deleteCloserPayout = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("closer_payouts").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// ---------- Admin: B2C booking calendar settings & availability ----------
+export const getB2cSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    return await getB2cSettingsRow();
+  });
+
+export const updateB2cSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    slot_minutes: z.union([z.literal(15), z.literal(30), z.literal(45), z.literal(60), z.literal(90), z.literal(120)]),
+    days_out: z.number().int().min(1).max(180),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as never as { from: (t: string) => { upsert: (r: unknown, o: { onConflict: string }) => Promise<{ error: { message: string } | null }> } })
+      .from("b2c_settings").upsert({ id: 1, slot_minutes: data.slot_minutes, days_out: data.days_out, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const B2cRule = z.object({
+  day_of_week: z.number().int().min(0).max(6),
+  start_minute: z.number().int().min(0).max(1439),
+  end_minute: z.number().int().min(1).max(1440),
+});
+
+export const listB2cAvailability = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    return await listB2cAvailRules();
+  });
+
+export const replaceB2cAvailability = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ rules: z.array(B2cRule).max(100) }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const table = (supabaseAdmin as never as { from: (t: string) => { delete: () => { neq: (c: string, v: string) => Promise<{ error: { message: string } | null }> }; insert: (rows: unknown[]) => Promise<{ error: { message: string } | null }> } }).from("b2c_availability_rules");
+    const del = await table.delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (del.error) throw new Error(del.error.message);
+    if (data.rules.length > 0) {
+      const ins = await table.insert(data.rules);
+      if (ins.error) throw new Error(ins.error.message);
+    }
+    return { ok: true };
+  });
+
+// List all bookings on a specific date (admin's local date), grouped by status
+export const listBookingsForDate = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    tz: z.string().max(60).optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const tz = data.tz || EST_TZ;
+    const [y, m, d] = data.date.split("-").map(Number);
+    const start = zonedWallToUTC(y, m, d, 0, 0, tz);
+    const end = zonedWallToUTC(y, m, d + 1, 0, 0, tz);
+    const { data: rows, error } = await context.supabase
+      .from("closer_bookings")
+      .select("*, closers:assigned_closer_id (full_name, email)")
+      .gte("slot_start", start.toISOString())
+      .lt("slot_start", end.toISOString())
+      .order("slot_start", { ascending: true });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
   });
