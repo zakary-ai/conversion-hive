@@ -78,6 +78,10 @@ function BookingsPage() {
         <TabsContent value="applications">
           <ApplicationsPanel />
         </TabsContent>
+
+        <TabsContent value="calendar">
+          <B2cCalendarPanel />
+        </TabsContent>
       </Tabs>
     </div>
   );
