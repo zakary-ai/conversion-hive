@@ -489,6 +489,7 @@ async function sendCloserBookingEmail(input: {
   applicantName: string;
   scheduledAt: string;
   meetingUrl: string | null;
+  durationMinutes: number;
 }) {
   try {
     const origin = process.env.LOVABLE_APP_URL || process.env.PUBLIC_APP_URL;
