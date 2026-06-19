@@ -4,16 +4,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ---------- Public: submit application with email + return booking token ----------
 const InvestEnum = z.enum(["Yes", "No", "Maybe"]);
-const CreditEnum = z.enum(["600-650", "650-700", "700-750", "750-800", "800-850"]);
+const CreditEnum = z.enum(["Below 600", "600-650", "650-700", "700-750", "750-800", "800-850"]);
 
 const SubmitSchema = z.object({
   full_name: z.string().trim().min(1).max(200),
   phone: z.string().trim().min(4).max(40),
-  email: z.string().trim().email().max(200),
-  why_remote_sales: z.string().trim().min(1).max(2000),
+  email: z.string().trim().email().max(200).optional().nullable(),
+  why_remote_sales: z.string().trim().max(2000).optional().nullable(),
   current_monthly_income: z.string().trim().min(1).max(60),
   desired_monthly_income: z.string().trim().min(1).max(60),
-  open_to_invest: InvestEnum,
+  open_to_invest: InvestEnum.optional().nullable(),
   credit_score_range: CreditEnum,
 });
 

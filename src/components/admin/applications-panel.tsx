@@ -152,12 +152,12 @@ function ApplicationDialog({ app, onClose }: { app: Application | null; onClose:
               <Field label="Submitted" value={new Date(app.created_at).toLocaleString()} />
               <Field label="Current monthly income" value={app.current_monthly_income} />
               <Field label="Desired monthly income" value={app.desired_monthly_income} />
-              <Field label="Open to invest" value={app.open_to_invest} />
+              <Field label="Open to invest" value={app.open_to_invest ?? "—"} />
               <Field label="Credit score range" value={app.credit_score_range} />
             </div>
             <div>
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Why remote sales</Label>
-              <div className="mt-1 p-3 rounded-md bg-muted/30 border border-border text-sm whitespace-pre-wrap">{app.why_remote_sales}</div>
+              <div className="mt-1 p-3 rounded-md bg-muted/30 border border-border text-sm whitespace-pre-wrap">{app.why_remote_sales ?? "—"}</div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-border">

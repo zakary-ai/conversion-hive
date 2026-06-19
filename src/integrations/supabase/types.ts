@@ -25,11 +25,13 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
-          open_to_invest: Database["public"]["Enums"]["application_invest"]
+          open_to_invest:
+            | Database["public"]["Enums"]["application_invest"]
+            | null
           phone: string
           status: Database["public"]["Enums"]["application_status"]
           updated_at: string
-          why_remote_sales: string
+          why_remote_sales: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -41,11 +43,13 @@ export type Database = {
           email?: string | null
           full_name: string
           id?: string
-          open_to_invest: Database["public"]["Enums"]["application_invest"]
+          open_to_invest?:
+            | Database["public"]["Enums"]["application_invest"]
+            | null
           phone: string
           status?: Database["public"]["Enums"]["application_status"]
           updated_at?: string
-          why_remote_sales: string
+          why_remote_sales?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -57,11 +61,13 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
-          open_to_invest?: Database["public"]["Enums"]["application_invest"]
+          open_to_invest?:
+            | Database["public"]["Enums"]["application_invest"]
+            | null
           phone?: string
           status?: Database["public"]["Enums"]["application_status"]
           updated_at?: string
-          why_remote_sales?: string
+          why_remote_sales?: string | null
         }
         Relationships: []
       }
@@ -1081,6 +1087,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "client" | "closer"
       application_credit:
+        | "Below 600"
         | "600-650"
         | "650-700"
         | "700-750"
@@ -1232,6 +1239,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "client", "closer"],
       application_credit: [
+        "Below 600",
         "600-650",
         "650-700",
         "700-750",
