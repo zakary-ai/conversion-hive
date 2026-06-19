@@ -1,5 +1,7 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getMe } from "@/lib/api/cl.functions";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
