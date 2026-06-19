@@ -876,3 +876,76 @@ export const deleteCloserPayout = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Admin: B2C booking calendar settings & availability ----------
+export const getB2cSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    return await getB2cSettingsRow();
+  });
+
+export const updateB2cSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    slot_minutes: z.union([z.literal(15), z.literal(30), z.literal(45), z.literal(60), z.literal(90), z.literal(120)]),
+    days_out: z.number().int().min(1).max(180),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as never as { from: (t: string) => { upsert: (r: unknown, o: { onConflict: string }) => Promise<{ error: { message: string } | null }> } })
+      .from("b2c_settings").upsert({ id: 1, slot_minutes: data.slot_minutes, days_out: data.days_out, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const B2cRule = z.object({
+  day_of_week: z.number().int().min(0).max(6),
+  start_minute: z.number().int().min(0).max(1439),
+  end_minute: z.number().int().min(1).max(1440),
+});
+
+export const listB2cAvailability = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    return await listB2cAvailRules();
+  });
+
+export const replaceB2cAvailability = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ rules: z.array(B2cRule).max(100) }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const table = (supabaseAdmin as never as { from: (t: string) => { delete: () => { neq: (c: string, v: string) => Promise<{ error: { message: string } | null }> }; insert: (rows: unknown[]) => Promise<{ error: { message: string } | null }> } }).from("b2c_availability_rules");
+    const del = await table.delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (del.error) throw new Error(del.error.message);
+    if (data.rules.length > 0) {
+      const ins = await table.insert(data.rules);
+      if (ins.error) throw new Error(ins.error.message);
+    }
+    return { ok: true };
+  });
+
+// List all bookings on a specific date (admin's local date), grouped by status
+export const listBookingsForDate = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    tz: z.string().max(60).optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const tz = data.tz || EST_TZ;
+    const [y, m, d] = data.date.split("-").map(Number);
+    const start = zonedWallToUTC(y, m, d, 0, 0, tz);
+    const end = zonedWallToUTC(y, m, d + 1, 0, 0, tz);
+    const { data: rows, error } = await context.supabase
+      .from("closer_bookings")
+      .select("*, closers:assigned_closer_id (full_name, email)")
+      .gte("slot_start", start.toISOString())
+      .lt("slot_start", end.toISOString())
+      .order("slot_start", { ascending: true });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
