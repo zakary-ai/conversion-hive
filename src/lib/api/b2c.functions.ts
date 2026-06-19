@@ -144,7 +144,29 @@ async function gcalDeleteEvent(eventId: string): Promise<void> {
 
 // ---------- Public: list available closer slots for a date ----------
 const EST_TZ = "America/New_York";
-const SLOT_MINUTES = 30;
+const DEFAULT_SLOT_MINUTES = 30;
+
+async function getB2cSettingsRow(): Promise<{ slot_minutes: number; days_out: number }> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: number) => { maybeSingle: () => Promise<{ data: { slot_minutes: number; days_out: number } | null }> } } } })
+      .from("b2c_settings").select("slot_minutes, days_out").eq("id", 1).maybeSingle();
+    return { slot_minutes: data?.slot_minutes ?? DEFAULT_SLOT_MINUTES, days_out: data?.days_out ?? 14 };
+  } catch {
+    return { slot_minutes: DEFAULT_SLOT_MINUTES, days_out: 14 };
+  }
+}
+
+async function listB2cAvailRules(): Promise<Array<{ day_of_week: number; start_minute: number; end_minute: number }>> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => Promise<{ data: Array<{ day_of_week: number; start_minute: number; end_minute: number }> | null }> } })
+      .from("b2c_availability_rules").select("day_of_week, start_minute, end_minute");
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
 
 function zonedDateKey(d: Date, tz: string) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
