@@ -1027,10 +1027,11 @@ export const inviteClient = createServerFn({ method: "POST" })
     const newUserId = created.user?.id;
     if (!newUserId) throw new Error("Failed to create user");
 
-    // Ensure profile reflects provided fields (trigger may have created it)
+    // Ensure profile reflects provided fields (trigger may have created it) and force password change
     await supabaseAdmin.from("profiles").update({
       full_name: data.full_name,
       company_name: data.company_name ?? "",
+      must_change_password: true,
     }).eq("user_id", newUserId);
 
     // Best-effort: send Supabase's built-in invite/magic-link email so they get notified.
