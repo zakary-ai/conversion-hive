@@ -200,6 +200,21 @@ export const listCloserSlotsForDate = createServerFn({ method: "GET" })
     const viewerDayStart = zonedWallToUTC(vy, vm, vd, 0, 0, viewerTz);
     const viewerDayEnd = zonedWallToUTC(vy, vm, vd + 1, 0, 0, viewerTz);
 
+    const { slot_minutes: SLOT, days_out } = await getB2cSettingsRow();
+    // Enforce booking horizon
+    const horizonMs = Date.now() + days_out * 24 * 60 * 60 * 1000;
+    if (viewerDayStart.getTime() > horizonMs) return [] as Array<{ iso: string; capacity: number }>;
+
+    const adminRules = await listB2cAvailRules();
+    // group admin windows by day of week
+    const adminByDow = new Map<number, Array<{ s: number; e: number }>>();
+    for (const r of adminRules) {
+      const arr = adminByDow.get(r.day_of_week) ?? [];
+      arr.push({ s: r.start_minute, e: r.end_minute });
+      adminByDow.set(r.day_of_week, arr);
+    }
+    const hasAdminRules = adminRules.length > 0;
+
     const estDates = new Set<string>();
     estDates.add(zonedDateKey(viewerDayStart, EST_TZ));
     estDates.add(zonedDateKey(new Date(viewerDayEnd.getTime() - 1), EST_TZ));
@@ -218,12 +233,11 @@ export const listCloserSlotsForDate = createServerFn({ method: "GET" })
     const { data: existing } = await supabaseAdmin
       .from("closer_bookings")
       .select("slot_start, assigned_closer_id")
-      .gte("slot_start", new Date(viewerDayStart.getTime() - SLOT_MINUTES * 60_000).toISOString())
-      .lt("slot_start", new Date(viewerDayEnd.getTime() + SLOT_MINUTES * 60_000).toISOString())
+      .gte("slot_start", new Date(viewerDayStart.getTime() - SLOT * 60_000).toISOString())
+      .lt("slot_start", new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString())
       .in("status", ["pending_assignment", "assigned"]);
 
     const now = Date.now();
-    // map of iso -> Set of closer_ids that are busy at that slot
     const pendingPerSlot = new Map<string, number>();
     const assignedBusy = new Map<string, Set<string>>();
     for (const b of existing ?? []) {
@@ -244,19 +258,23 @@ export const listCloserSlotsForDate = createServerFn({ method: "GET" })
       const probe = zonedWallToUTC(ey, em, ed, 12, 0, EST_TZ);
       const dow = zonedDayOfWeek(probe, EST_TZ);
       const todaysRules = (rules ?? []).filter((r) => r.day_of_week === dow);
-      // group rule windows by closer
+      const adminWindows = adminByDow.get(dow) ?? [];
+      // If admin has rules but none for this day, day is closed
+      if (hasAdminRules && adminWindows.length === 0) continue;
+      const inAdmin = (mm: number) =>
+        !hasAdminRules || adminWindows.some((w) => mm >= w.s && mm + SLOT <= w.e);
+
       const byCloser = new Map<string, Array<{ s: number; e: number }>>();
       for (const r of todaysRules) {
         const arr = byCloser.get(r.closer_id as string) ?? [];
         arr.push({ s: r.start_minute as number, e: r.end_minute as number });
         byCloser.set(r.closer_id as string, arr);
       }
-      // build set of all candidate slot start minutes across all closers
       const candidateMinutes = new Set<number>();
       for (const windows of byCloser.values()) {
         for (const w of windows) {
-          for (let mm = w.s; mm + SLOT_MINUTES <= w.e; mm += SLOT_MINUTES) {
-            candidateMinutes.add(mm);
+          for (let mm = w.s; mm + SLOT <= w.e; mm += SLOT) {
+            if (inAdmin(mm)) candidateMinutes.add(mm);
           }
         }
       }
@@ -264,16 +282,15 @@ export const listCloserSlotsForDate = createServerFn({ method: "GET" })
         const slot = zonedWallToUTC(ey, em, ed, Math.floor(mm / 60), mm % 60, EST_TZ);
         const t = slot.getTime();
         if (t < now) continue;
+        if (t > horizonMs) continue;
         if (t < viewerDayStart.getTime() || t >= viewerDayEnd.getTime()) continue;
         const iso = slot.toISOString();
-        // count closers who are (a) available at this minute and (b) not already assigned to this slot
         const assigned = assignedBusy.get(iso) ?? new Set<string>();
         let avail = 0;
         for (const [cid, windows] of byCloser.entries()) {
           if (assigned.has(cid)) continue;
-          if (windows.some((w) => mm >= w.s && mm + SLOT_MINUTES <= w.e)) avail += 1;
+          if (windows.some((w) => mm >= w.s && mm + SLOT <= w.e)) avail += 1;
         }
-        // subtract pending-assignment bookings (consume one closer each)
         avail -= pendingPerSlot.get(iso) ?? 0;
         if (avail > 0) slotMap.set(iso, avail);
       }
