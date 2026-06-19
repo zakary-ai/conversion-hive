@@ -1,5 +1,7 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getMe } from "@/lib/api/cl.functions";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -25,6 +27,18 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { data: me } = useSuspenseQuery(meQueryOptions);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Force first-login password change for setters/closers (and any user the admin flagged).
+  // Admins are exempt — they already chose their own password.
+  useEffect(() => {
+    if (me.mustChangePassword && !me.isAdmin && location.pathname !== "/set-password") {
+      navigate({ to: "/set-password", replace: true });
+    }
+  }, [me.mustChangePassword, me.isAdmin, location.pathname, navigate]);
+
+
 
 
   return (

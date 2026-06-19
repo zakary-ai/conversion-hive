@@ -867,6 +867,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          must_change_password: boolean
           openphone_number_e164: string | null
           openphone_number_id: string | null
           openphone_user_id: string | null
@@ -882,6 +883,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          must_change_password?: boolean
           openphone_number_e164?: string | null
           openphone_number_id?: string | null
           openphone_user_id?: string | null
@@ -897,6 +899,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          must_change_password?: boolean
           openphone_number_e164?: string | null
           openphone_number_id?: string | null
           openphone_user_id?: string | null

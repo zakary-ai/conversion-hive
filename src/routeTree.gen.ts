@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSetPasswordRouteImport } from './routes/_authenticated/set-password'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -78,6 +79,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSetPasswordRoute =
+  AuthenticatedSetPasswordRouteImport.update({
+    id: '/set-password',
+    path: '/set-password',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -246,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/set-password': typeof AuthenticatedSetPasswordRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
   '/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
   '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
@@ -280,6 +288,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/set-password': typeof AuthenticatedSetPasswordRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
   '/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
   '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
@@ -317,6 +326,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/set-password': typeof AuthenticatedSetPasswordRoute
   '/_authenticated/admin/applications': typeof AuthenticatedAdminApplicationsRoute
   '/_authenticated/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
   '/_authenticated/admin/bookings': typeof AuthenticatedAdminBookingsRoute
@@ -354,6 +364,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leads'
     | '/profile'
+    | '/set-password'
     | '/admin/applications'
     | '/admin/b2c-commissions'
     | '/admin/bookings'
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leads'
     | '/profile'
+    | '/set-password'
     | '/admin/applications'
     | '/admin/b2c-commissions'
     | '/admin/bookings'
@@ -424,6 +436,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/leads'
     | '/_authenticated/profile'
+    | '/_authenticated/set-password'
     | '/_authenticated/admin/applications'
     | '/_authenticated/admin/b2c-commissions'
     | '/_authenticated/admin/bookings'
@@ -510,6 +523,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/set-password': {
+      id: '/_authenticated/set-password'
+      path: '/set-password'
+      fullPath: '/set-password'
+      preLoaderRoute: typeof AuthenticatedSetPasswordRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
@@ -749,6 +769,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSetPasswordRoute: typeof AuthenticatedSetPasswordRoute
   AuthenticatedCloserCalendarRoute: typeof AuthenticatedCloserCalendarRoute
   AuthenticatedCloserCommissionsRoute: typeof AuthenticatedCloserCommissionsRoute
   AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
@@ -763,6 +784,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSetPasswordRoute: AuthenticatedSetPasswordRoute,
   AuthenticatedCloserCalendarRoute: AuthenticatedCloserCalendarRoute,
   AuthenticatedCloserCommissionsRoute: AuthenticatedCloserCommissionsRoute,
   AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,

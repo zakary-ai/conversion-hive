@@ -29,8 +29,8 @@ function ClosersPage() {
 
   const create = useMutation({
     mutationFn: () => createCloser({ data: form }),
-    onSuccess: () => {
-      toast.success("Closer invited");
+    onSuccess: (res) => {
+      toast.success(`Closer created. Temp password: ${res.default_password}`, { duration: 15000 });
       qc.invalidateQueries({ queryKey: ["closers"] });
       setOpen(false);
       setForm({ full_name: "", email: "", zoom_user_email: "" });
