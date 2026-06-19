@@ -1,19 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  submitB2cApplication,
-  listCloserSlotsForDate,
-  createCloserBooking,
-} from "@/lib/api/b2c.functions";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { submitB2cApplication } from "@/lib/api/b2c.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { GraduationCap, CalendarCheck, DollarSign, Sparkles, CheckCircle2, CalendarClock } from "lucide-react";
+import { GraduationCap, CalendarCheck, DollarSign, Sparkles, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/apply")({
   head: () => ({
@@ -27,44 +21,33 @@ export const Route = createFileRoute("/apply")({
   component: ApplyPage,
 });
 
-type Invest = "Yes" | "No" | "Maybe";
-type Credit = "600-650" | "650-700" | "700-750" | "750-800" | "800-850";
-type Step = "form" | "book" | "done";
+const CURRENT_INCOME = ["Under $1,500", "$1,500-$3,000", "$3,000-$5,000", "$5,000+"] as const;
+const DESIRED_INCOME = ["$3,000-$5,000", "$5,000-$8,000", "$8,000-$12,000", "$12,000+"] as const;
+const CREDIT = ["Below 600", "600-650", "650-700", "700-750", "750-800", "800-850"] as const;
+type Credit = typeof CREDIT[number];
 
-function toDateKey(d: Date, tz: string) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(d);
-}
+type Step = "form" | "done";
 
 function ApplyPage() {
   const [step, setStep] = useState<Step>("form");
-  const [appCtx, setAppCtx] = useState<{ id: string; token: string } | null>(null);
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
-    email: "",
-    why_remote_sales: "",
     current_monthly_income: "",
     desired_monthly_income: "",
-    open_to_invest: "" as Invest | "",
     credit_score_range: "" as Credit | "",
   });
   const [error, setError] = useState<string | null>(null);
 
   const mutate = useMutation({
     mutationFn: () => submitB2cApplication({ data: {
-      ...form,
-      open_to_invest: form.open_to_invest as Invest,
+      full_name: form.full_name,
+      phone: form.phone,
+      current_monthly_income: form.current_monthly_income,
+      desired_monthly_income: form.desired_monthly_income,
       credit_score_range: form.credit_score_range as Credit,
     } }),
-    onSuccess: ({ id, token }) => {
-      setAppCtx({ id, token });
-      setStep("book");
-      requestAnimationFrame(() => {
-        document.getElementById("apply")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    },
+    onSuccess: () => setStep("done"),
     onError: (e: Error) => setError(e.message),
   });
 
@@ -74,11 +57,8 @@ function ApplyPage() {
   const valid =
     form.full_name.trim() &&
     form.phone.trim() &&
-    form.email.trim() &&
-    form.why_remote_sales.trim() &&
-    form.current_monthly_income.trim() &&
-    form.desired_monthly_income.trim() &&
-    form.open_to_invest &&
+    form.current_monthly_income &&
+    form.desired_monthly_income &&
     form.credit_score_range;
 
   return (
@@ -121,7 +101,7 @@ function ApplyPage() {
             <div className="text-center mb-6">
               <h2 className="text-2xl font-display font-semibold">Apply now</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Takes under 2 minutes. You'll pick your interview time right after.
+                Takes under 2 minutes. You will receive a phone call within 24 hours.
               </p>
             </div>
 
@@ -130,38 +110,25 @@ function ApplyPage() {
                 <Label>Full name</Label>
                 <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} />
               </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>Phone number</Label>
-                  <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
-                </div>
+              <div>
+                <Label>Phone number</Label>
+                <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
               </div>
               <div>
-                <Label>Why do you want to get into remote sales?</Label>
-                <Textarea rows={4} value={form.why_remote_sales} onChange={(e) => set("why_remote_sales", e.target.value)} />
-              </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>How much do you earn monthly?</Label>
-                  <Input value={form.current_monthly_income} onChange={(e) => set("current_monthly_income", e.target.value)} />
-                </div>
-                <div>
-                  <Label>How much do you want to earn monthly?</Label>
-                  <Input value={form.desired_monthly_income} onChange={(e) => set("desired_monthly_income", e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <Label>Are you open to invest into yourself to get there?</Label>
-                <Select value={form.open_to_invest} onValueChange={(v) => set("open_to_invest", v as Invest)}>
-                  <SelectTrigger><SelectValue placeholder="Select an answer" /></SelectTrigger>
+                <Label>How much do you earn monthly?</Label>
+                <Select value={form.current_monthly_income} onValueChange={(v) => set("current_monthly_income", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Yes">Yes</SelectItem>
-                    <SelectItem value="No">No</SelectItem>
-                    <SelectItem value="Maybe">Maybe</SelectItem>
+                    {CURRENT_INCOME.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>How much do you want to earn monthly?</Label>
+                <Select value={form.desired_monthly_income} onValueChange={(v) => set("desired_monthly_income", v)}>
+                  <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
+                  <SelectContent>
+                    {DESIRED_INCOME.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -170,11 +137,7 @@ function ApplyPage() {
                 <Select value={form.credit_score_range} onValueChange={(v) => set("credit_score_range", v as Credit)}>
                   <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="600-650">600-650</SelectItem>
-                    <SelectItem value="650-700">650-700</SelectItem>
-                    <SelectItem value="700-750">700-750</SelectItem>
-                    <SelectItem value="750-800">750-800</SelectItem>
-                    <SelectItem value="800-850">800-850</SelectItem>
+                    {CREDIT.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -187,18 +150,10 @@ function ApplyPage() {
                 disabled={!valid || mutate.isPending}
                 onClick={() => { setError(null); mutate.mutate(); }}
               >
-                {mutate.isPending ? "Submitting…" : "Submit & pick interview time"}
+                {mutate.isPending ? "Submitting…" : "Submit application"}
               </Button>
             </div>
           </Card>
-        )}
-
-        {step === "book" && appCtx && (
-          <InlineBooking
-            applicationId={appCtx.id}
-            token={appCtx.token}
-            onDone={() => setStep("done")}
-          />
         )}
 
         {step === "done" && (
@@ -208,144 +163,11 @@ function ApplyPage() {
             </div>
             <h2 className="text-2xl font-display font-semibold">Application submitted</h2>
             <p className="mt-3 text-muted-foreground">
-              We will review your application and you will get an email shortly if your interview is confirmed.
+              Thanks! You will receive a phone call within 24 hours.
             </p>
           </Card>
         )}
       </section>
     </div>
-  );
-}
-
-function InlineBooking({
-  applicationId, token, onDone,
-}: { applicationId: string; token: string; onDone: () => void }) {
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York";
-
-  // Allowed booking window: 1–3 days from today (inclusive).
-  const windowDays = useMemo(() => {
-    const base = new Date();
-    base.setHours(0, 0, 0, 0);
-    return [1, 2, 3].map((offset) => {
-      const d = new Date(base);
-      d.setDate(d.getDate() + offset);
-      return d;
-    });
-  }, []);
-
-  const [date, setDate] = useState<Date>(windowDays[0]);
-  const [selected, setSelected] = useState<Date | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-
-  const dateKey = toDateKey(date, tz);
-  const { data: slots = [], isLoading } = useQuery({
-    queryKey: ["closer-slots", dateKey, tz],
-    queryFn: () => listCloserSlotsForDate({ data: { date: dateKey, tz } }),
-  });
-
-  useEffect(() => { setSelected(null); }, [dateKey]);
-
-  const book = useMutation({
-    mutationFn: () => createCloserBooking({ data: {
-      application_id: applicationId, token, slot_start: selected!.toISOString(),
-    } }),
-    onSuccess: () => onDone(),
-    onError: (e: Error) => setErr(e.message),
-  });
-
-  const tzLabel = tz.split("/").pop()?.replace(/_/g, " ") ?? tz;
-
-  return (
-    <Card className="p-6 space-y-5">
-      <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-xs uppercase tracking-widest text-primary mb-3">
-          <Sparkles className="h-3 w-3" /> Application received
-        </div>
-        <h2 className="text-2xl font-display font-semibold">Pick your interview time</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Choose a 30-minute slot in the next 3 days. We'll email you the Zoom link.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        {windowDays.map((d) => {
-          const active = toDateKey(d, tz) === dateKey;
-          return (
-            <button
-              key={d.toISOString()}
-              type="button"
-              onClick={() => setDate(d)}
-              className={cn(
-                "rounded-xl border p-3 text-center transition-colors",
-                active
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card hover:bg-accent",
-              )}
-            >
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {d.toLocaleDateString(undefined, { weekday: "short" })}
-              </div>
-              <div className="text-lg font-display font-semibold">
-                {d.toLocaleDateString(undefined, { day: "numeric" })}
-              </div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {d.toLocaleDateString(undefined, { month: "short" })}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-3">
-        <div className="flex items-center justify-between mb-2 gap-2">
-          <div className="flex items-center gap-2 text-sm font-medium min-w-0">
-            <CalendarClock className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="truncate">
-              {date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-            </span>
-          </div>
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{tzLabel}</div>
-        </div>
-        {isLoading && <div className="text-sm text-muted-foreground">Loading times…</div>}
-        {!isLoading && slots.length === 0 && (
-          <div className="text-sm text-muted-foreground">No open times this day. Try another date above.</div>
-        )}
-        {slots.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto">
-            {slots.map(({ iso, capacity }) => {
-              const d = new Date(iso);
-              const isSel = selected && d.getTime() === selected.getTime();
-              const label = new Intl.DateTimeFormat(undefined, {
-                timeZone: tz, hour: "numeric", minute: "2-digit",
-              }).format(d);
-              return (
-                <Button
-                  key={iso}
-                  type="button"
-                  size="sm"
-                  variant={isSel ? "default" : "outline"}
-                  onClick={() => setSelected(d)}
-                  className={cn("text-xs flex flex-col h-auto py-2", isSel && "ring-2 ring-primary")}
-                >
-                  <span>{label}</span>
-                  <span className="text-[9px] text-muted-foreground">{capacity} left</span>
-                </Button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {err && <p className="text-sm text-destructive">{err}</p>}
-
-      <Button
-        size="lg"
-        className="w-full"
-        disabled={!selected || book.isPending}
-        onClick={() => { setErr(null); book.mutate(); }}
-      >
-        {book.isPending ? "Booking…" : selected ? "Confirm booking" : "Pick a time"}
-      </Button>
-    </Card>
   );
 }
