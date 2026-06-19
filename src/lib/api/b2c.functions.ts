@@ -540,11 +540,12 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
       .neq("id", data.booking_id);
     if ((conflict ?? []).length > 0) throw new Error("That closer is already booked at this time.");
 
+    const { slot_minutes: SLOT } = await getB2cSettingsRow();
     const zoom = await createZoomMeetingForUser({
       zoomUserEmail: (closer.zoom_user_email as string) || (closer.email as string),
       topic: `Sales call — ${booking.applicant_name}`,
       start_time: booking.slot_start as string,
-      duration: SLOT_MINUTES,
+      duration: SLOT,
     });
 
     // Create Google Calendar event titled "<Closer name> with <Lead name>"
@@ -578,6 +579,7 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
       applicantName: booking.applicant_name as string,
       scheduledAt: booking.slot_start as string,
       meetingUrl: zoom.join_url,
+      durationMinutes: SLOT,
     });
 
     return { ok: true, zoom_join_url: zoom.join_url };
