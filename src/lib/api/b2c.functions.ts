@@ -373,6 +373,8 @@ export const listClosers = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const DEFAULT_CLOSER_PASSWORD = "ConversionLab1095!";
+
 export const createCloser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
@@ -383,19 +385,31 @@ export const createCloser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const email = data.email.toLowerCase();
     const { data: row, error } = await supabaseAdmin.from("closers").insert({
       full_name: data.full_name,
-      email: data.email.toLowerCase(),
-      zoom_user_email: data.zoom_user_email || data.email.toLowerCase(),
+      email,
+      zoom_user_email: data.zoom_user_email || email,
     }).select("id").single();
     if (error) throw new Error(error.message);
-    // Send Supabase auth invite (best-effort)
-    try {
-      await supabaseAdmin.auth.admin.inviteUserByEmail(data.email);
-    } catch {
-      // ignore — admin can resend later
+
+    // Create the auth user immediately with default password (handle_new_user trigger
+    // links them to the closers row by email and grants the 'closer' role).
+    const { data: created, error: userErr } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: DEFAULT_CLOSER_PASSWORD,
+      email_confirm: true,
+      user_metadata: { full_name: data.full_name },
+    });
+    if (userErr) throw new Error(userErr.message);
+    const newUserId = created.user?.id;
+    if (newUserId) {
+      // Force first-login password change
+      await supabaseAdmin.from("profiles")
+        .update({ must_change_password: true, full_name: data.full_name })
+        .eq("user_id", newUserId);
     }
-    return { id: row.id };
+    return { id: row.id, default_password: DEFAULT_CLOSER_PASSWORD };
   });
 
 export const updateCloser = createServerFn({ method: "POST" })
