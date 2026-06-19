@@ -31,6 +31,7 @@ export const getMe = createServerFn({ method: "GET" })
     return {
       userId,
       profile,
+      mustChangePassword: !!profile?.must_change_password,
       isAdmin: roleSet.has("admin"),
       isClient: roleSet.has("client"),
       isCloser: roleSet.has("closer"),
