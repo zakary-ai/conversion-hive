@@ -324,8 +324,9 @@ export const createCloserBooking = createServerFn({ method: "POST" })
       .from("closer_bookings").select("id").eq("application_id", data.application_id).limit(1);
     if ((existing ?? []).length > 0) throw new Error("You've already booked a call.");
 
+    const { slot_minutes: SLOT } = await getB2cSettingsRow();
     const start = new Date(data.slot_start);
-    const end = new Date(start.getTime() + SLOT_MINUTES * 60_000);
+    const end = new Date(start.getTime() + SLOT * 60_000);
 
     // capacity check
     const { data: activeClosers } = await supabaseAdmin
@@ -506,7 +507,7 @@ async function sendCloserBookingEmail(input: {
           name: input.applicantName,
           scheduledAt: input.scheduledAt,
           meetingUrl: input.meetingUrl,
-          durationMinutes: SLOT_MINUTES,
+          durationMinutes: input.durationMinutes,
         },
       }),
     });
