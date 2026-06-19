@@ -1063,6 +1063,10 @@ export const changeMyPassword = createServerFn({ method: "POST" })
       password: data.new_password,
     });
     if (error) throw new Error(error.message);
+    // Clear the first-login flag
+    await supabaseAdmin.from("profiles")
+      .update({ must_change_password: false })
+      .eq("user_id", context.userId);
     return { ok: true };
   });
 
