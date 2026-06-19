@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { CalendarClock, Mail, Phone, Video, X } from "lucide-react";
 import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
 import { ApplicationsPanel, appsOpts } from "@/components/admin/applications-panel";
+import { B2cCalendarPanel } from "@/components/admin/b2c-calendar-panel";
 
 export const Route = createFileRoute("/_authenticated/admin/bookings")({
   loader: ({ context }) => context.queryClient.ensureQueryData(appsOpts),
@@ -51,6 +52,7 @@ function BookingsPage() {
         <TabsList>
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="bookings" className="space-y-6">
