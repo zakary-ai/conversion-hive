@@ -152,7 +152,7 @@ function ApplicationDialog({ app, onClose }: { app: Application | null; onClose:
               <Field label="Submitted" value={new Date(app.created_at).toLocaleString()} />
               <Field label="Current monthly income" value={app.current_monthly_income} />
               <Field label="Desired monthly income" value={app.desired_monthly_income} />
-              <Field label="Open to invest" value={app.open_to_invest} />
+              <Field label="Open to invest" value={app.open_to_invest ?? "—"} />
               <Field label="Credit score range" value={app.credit_score_range} />
             </div>
             <div>
