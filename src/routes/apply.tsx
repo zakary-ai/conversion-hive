@@ -33,6 +33,7 @@ function ApplyPage() {
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
+    email: "",
     current_monthly_income: "",
     desired_monthly_income: "",
     credit_score_range: "" as Credit | "",
@@ -43,6 +44,7 @@ function ApplyPage() {
     mutationFn: () => submitB2cApplication({ data: {
       full_name: form.full_name,
       phone: form.phone,
+      email: form.email.trim() || null,
       current_monthly_income: form.current_monthly_income,
       desired_monthly_income: form.desired_monthly_income,
       credit_score_range: form.credit_score_range as Credit,
@@ -57,6 +59,7 @@ function ApplyPage() {
   const valid =
     form.full_name.trim() &&
     form.phone.trim() &&
+    form.email.trim() &&
     form.current_monthly_income &&
     form.desired_monthly_income &&
     form.credit_score_range;
