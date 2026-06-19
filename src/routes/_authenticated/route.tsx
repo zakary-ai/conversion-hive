@@ -27,6 +27,18 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { data: me } = useSuspenseQuery(meQueryOptions);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Force first-login password change for setters/closers (and any user the admin flagged).
+  // Admins are exempt — they already chose their own password.
+  useEffect(() => {
+    if (me.mustChangePassword && !me.isAdmin && location.pathname !== "/set-password") {
+      navigate({ to: "/set-password", replace: true });
+    }
+  }, [me.mustChangePassword, me.isAdmin, location.pathname, navigate]);
+
+
 
 
   return (
