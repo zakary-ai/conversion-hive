@@ -118,6 +118,10 @@ function ApplyPage() {
                 <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
               </div>
               <div>
+                <Label>Email</Label>
+                <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+              </div>
+              <div>
                 <Label>How much do you earn monthly?</Label>
                 <Select value={form.current_monthly_income} onValueChange={(v) => set("current_monthly_income", v)}>
                   <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
