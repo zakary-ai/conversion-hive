@@ -481,7 +481,9 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string | null
-          zoom_user_email: string | null
+          zoom_account_id: string | null
+          zoom_client_id: string | null
+          zoom_client_secret: string | null
         }
         Insert: {
           active?: boolean
@@ -491,7 +493,9 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string | null
-          zoom_user_email?: string | null
+          zoom_account_id?: string | null
+          zoom_client_id?: string | null
+          zoom_client_secret?: string | null
         }
         Update: {
           active?: boolean
@@ -501,7 +505,9 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string | null
-          zoom_user_email?: string | null
+          zoom_account_id?: string | null
+          zoom_client_id?: string | null
+          zoom_client_secret?: string | null
         }
         Relationships: []
       }
