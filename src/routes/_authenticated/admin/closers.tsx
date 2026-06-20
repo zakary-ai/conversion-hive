@@ -77,13 +77,16 @@ type CloserRow = {
   id: string;
   full_name: string;
   email: string;
-  zoom_user_email: string | null;
   active: boolean;
+  zoom_account_id: string | null;
+  zoom_client_id: string | null;
+  zoom_client_secret: string | null;
 };
 
 function CloserRow({ closer }: { closer: CloserRow }) {
   const qc = useQueryClient();
   const [editAvail, setEditAvail] = useState(false);
+  const [editZoom, setEditZoom] = useState(false);
   const toggle = useMutation({
     mutationFn: (active: boolean) => updateCloser({ data: { id: closer.id, active } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["closers"] }),
@@ -94,25 +97,38 @@ function CloserRow({ closer }: { closer: CloserRow }) {
     onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["closers"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+  const hasZoom = !!(closer.zoom_account_id && closer.zoom_client_id && closer.zoom_client_secret);
   return (
     <Card className="p-4 flex items-center justify-between gap-4 flex-wrap">
       <div className="min-w-0">
         <div className="font-medium">{closer.full_name}</div>
         <div className="text-xs text-muted-foreground truncate">{closer.email}</div>
-        {closer.zoom_user_email && closer.zoom_user_email !== closer.email && (
-          <div className="text-xs text-muted-foreground truncate">Zoom: {closer.zoom_user_email}</div>
-        )}
+        <div className="text-xs mt-1">
+          <span className={hasZoom ? "text-emerald-600" : "text-amber-600"}>
+            {hasZoom ? "Zoom API connected" : "Zoom API not set"}
+          </span>
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 text-xs">
           <span className="text-muted-foreground">Active</span>
           <Switch checked={closer.active} onCheckedChange={(v) => toggle.mutate(v)} />
         </div>
+        <Dialog open={editZoom} onOpenChange={setEditZoom}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline"><KeyRound className="h-3.5 w-3.5 mr-1" /> Zoom API</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{closer.full_name}'s Zoom API credentials</DialogTitle></DialogHeader>
+            <CloserZoomCreds closer={closer} onDone={() => setEditZoom(false)} />
+          </DialogContent>
+        </Dialog>
         <Dialog open={editAvail} onOpenChange={setEditAvail}>
           <DialogTrigger asChild><Button size="sm" variant="outline">Availability</Button></DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>{closer.full_name}'s availability</DialogTitle></DialogHeader>
             <CloserAvail closerId={closer.id} />
+
           </DialogContent>
         </Dialog>
         <Button size="icon" variant="ghost" onClick={() => del.mutate()}>
