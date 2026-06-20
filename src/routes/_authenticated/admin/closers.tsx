@@ -54,7 +54,7 @@ function ClosersPage() {
             <div className="space-y-3">
               <div><Label>Full name</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
               <div><Label>Login email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-              <div><Label>Zoom email (optional — defaults to login email)</Label><Input type="email" value={form.zoom_user_email} onChange={(e) => setForm({ ...form, zoom_user_email: e.target.value })} /></div>
+              <p className="text-xs text-muted-foreground">Zoom credentials are added per-closer after invite via the "Zoom API" button.</p>
               <Button className="w-full" disabled={!form.full_name || !form.email || create.isPending} onClick={() => create.mutate()}>
                 {create.isPending ? "Inviting…" : "Send invite"}
               </Button>
