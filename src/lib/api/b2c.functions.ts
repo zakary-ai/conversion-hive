@@ -500,7 +500,7 @@ export const listCloserBookings = createServerFn({ method: "GET" })
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     const { data, error } = await context.supabase
       .from("closer_bookings")
-      .select("*, closers:assigned_closer_id (full_name, email, zoom_user_email)")
+      .select("*, closers:assigned_closer_id (full_name, email)")
       .order("slot_start", { ascending: true });
     if (error) throw new Error(error.message);
     return { rows: data ?? [], isAdmin: !!isAdmin };
