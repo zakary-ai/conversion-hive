@@ -30,15 +30,15 @@ export const submitB2cApplication = createServerFn({ method: "POST" })
     return { id: row.id, token: row.booking_token as string };
   });
 
-// ---------- Zoom helpers (per-user account) ----------
-async function getZoomToken(): Promise<string | null> {
-  const accountId = process.env.ZOOM_ACCOUNT_ID;
-  const clientId = process.env.ZOOM_CLIENT_ID;
-  const clientSecret = process.env.ZOOM_CLIENT_SECRET;
-  if (!accountId || !clientId || !clientSecret) return null;
-  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+// ---------- Zoom helpers (per-closer credentials) ----------
+async function getZoomToken(creds: {
+  accountId: string;
+  clientId: string;
+  clientSecret: string;
+}): Promise<string | null> {
+  const basic = Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString("base64");
   const res = await fetch(
-    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${accountId}`,
+    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${creds.accountId}`,
     { method: "POST", headers: { Authorization: `Basic ${basic}` } },
   );
   if (!res.ok) return null;
@@ -47,16 +47,25 @@ async function getZoomToken(): Promise<string | null> {
 }
 
 async function createZoomMeetingForUser(input: {
-  zoomUserEmail: string;
+  accountId: string | null;
+  clientId: string | null;
+  clientSecret: string | null;
   topic: string;
   start_time: string;
   duration: number;
 }): Promise<{ join_url: string | null; meeting_id: string | null }> {
   try {
-    const token = await getZoomToken();
+    if (!input.accountId || !input.clientId || !input.clientSecret) {
+      return { join_url: null, meeting_id: null };
+    }
+    const token = await getZoomToken({
+      accountId: input.accountId,
+      clientId: input.clientId,
+      clientSecret: input.clientSecret,
+    });
     if (!token) return { join_url: null, meeting_id: null };
     const res = await fetch(
-      `https://api.zoom.us/v2/users/${encodeURIComponent(input.zoomUserEmail)}/meetings`,
+      `https://api.zoom.us/v2/users/me/meetings`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
