@@ -389,7 +389,6 @@ export const createCloser = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     full_name: z.string().trim().min(1).max(200),
     email: z.string().trim().email().max(200),
-    zoom_user_email: z.string().trim().email().max(200).optional().or(z.literal("")),
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -398,7 +397,6 @@ export const createCloser = createServerFn({ method: "POST" })
     const { data: row, error } = await supabaseAdmin.from("closers").insert({
       full_name: data.full_name,
       email,
-      zoom_user_email: data.zoom_user_email || email,
     }).select("id").single();
     if (error) throw new Error(error.message);
 
@@ -426,8 +424,10 @@ export const updateCloser = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     id: z.string().uuid(),
     full_name: z.string().trim().min(1).max(200).optional(),
-    zoom_user_email: z.string().trim().email().max(200).optional(),
     active: z.boolean().optional(),
+    zoom_account_id: z.string().trim().max(200).nullable().optional(),
+    zoom_client_id: z.string().trim().max(200).nullable().optional(),
+    zoom_client_secret: z.string().trim().max(500).nullable().optional(),
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
