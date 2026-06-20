@@ -565,7 +565,9 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
 
     const { slot_minutes: SLOT } = await getB2cSettingsRow();
     const zoom = await createZoomMeetingForUser({
-      zoomUserEmail: (closer.zoom_user_email as string) || (closer.email as string),
+      accountId: (closer.zoom_account_id as string | null) ?? null,
+      clientId: (closer.zoom_client_id as string | null) ?? null,
+      clientSecret: (closer.zoom_client_secret as string | null) ?? null,
       topic: `Sales call — ${booking.applicant_name}`,
       start_time: booking.slot_start as string,
       duration: SLOT,
