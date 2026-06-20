@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, Save, UserPlus } from "lucide-react";
+import { Trash2, Plus, Save, UserPlus, KeyRound } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/closers")({
   component: ClosersPage,
