@@ -30,15 +30,15 @@ export const submitB2cApplication = createServerFn({ method: "POST" })
     return { id: row.id, token: row.booking_token as string };
   });
 
-// ---------- Zoom helpers (per-user account) ----------
-async function getZoomToken(): Promise<string | null> {
-  const accountId = process.env.ZOOM_ACCOUNT_ID;
-  const clientId = process.env.ZOOM_CLIENT_ID;
-  const clientSecret = process.env.ZOOM_CLIENT_SECRET;
-  if (!accountId || !clientId || !clientSecret) return null;
-  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+// ---------- Zoom helpers (per-closer credentials) ----------
+async function getZoomToken(creds: {
+  accountId: string;
+  clientId: string;
+  clientSecret: string;
+}): Promise<string | null> {
+  const basic = Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString("base64");
   const res = await fetch(
-    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${accountId}`,
+    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${creds.accountId}`,
     { method: "POST", headers: { Authorization: `Basic ${basic}` } },
   );
   if (!res.ok) return null;
@@ -47,16 +47,25 @@ async function getZoomToken(): Promise<string | null> {
 }
 
 async function createZoomMeetingForUser(input: {
-  zoomUserEmail: string;
+  accountId: string | null;
+  clientId: string | null;
+  clientSecret: string | null;
   topic: string;
   start_time: string;
   duration: number;
 }): Promise<{ join_url: string | null; meeting_id: string | null }> {
   try {
-    const token = await getZoomToken();
+    if (!input.accountId || !input.clientId || !input.clientSecret) {
+      return { join_url: null, meeting_id: null };
+    }
+    const token = await getZoomToken({
+      accountId: input.accountId,
+      clientId: input.clientId,
+      clientSecret: input.clientSecret,
+    });
     if (!token) return { join_url: null, meeting_id: null };
     const res = await fetch(
-      `https://api.zoom.us/v2/users/${encodeURIComponent(input.zoomUserEmail)}/meetings`,
+      `https://api.zoom.us/v2/users/me/meetings`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -380,7 +389,6 @@ export const createCloser = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     full_name: z.string().trim().min(1).max(200),
     email: z.string().trim().email().max(200),
-    zoom_user_email: z.string().trim().email().max(200).optional().or(z.literal("")),
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -389,7 +397,6 @@ export const createCloser = createServerFn({ method: "POST" })
     const { data: row, error } = await supabaseAdmin.from("closers").insert({
       full_name: data.full_name,
       email,
-      zoom_user_email: data.zoom_user_email || email,
     }).select("id").single();
     if (error) throw new Error(error.message);
 
@@ -417,8 +424,10 @@ export const updateCloser = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     id: z.string().uuid(),
     full_name: z.string().trim().min(1).max(200).optional(),
-    zoom_user_email: z.string().trim().email().max(200).optional(),
     active: z.boolean().optional(),
+    zoom_account_id: z.string().trim().max(200).nullable().optional(),
+    zoom_client_id: z.string().trim().max(200).nullable().optional(),
+    zoom_client_secret: z.string().trim().max(500).nullable().optional(),
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -491,7 +500,7 @@ export const listCloserBookings = createServerFn({ method: "GET" })
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     const { data, error } = await context.supabase
       .from("closer_bookings")
-      .select("*, closers:assigned_closer_id (full_name, email, zoom_user_email)")
+      .select("*, closers:assigned_closer_id (full_name, email)")
       .order("slot_start", { ascending: true });
     if (error) throw new Error(error.message);
     return { rows: data ?? [], isAdmin: !!isAdmin };
@@ -556,7 +565,9 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
 
     const { slot_minutes: SLOT } = await getB2cSettingsRow();
     const zoom = await createZoomMeetingForUser({
-      zoomUserEmail: (closer.zoom_user_email as string) || (closer.email as string),
+      accountId: (closer.zoom_account_id as string | null) ?? null,
+      clientId: (closer.zoom_client_id as string | null) ?? null,
+      clientSecret: (closer.zoom_client_secret as string | null) ?? null,
       topic: `Sales call — ${booking.applicant_name}`,
       start_time: booking.slot_start as string,
       duration: SLOT,

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, Save, UserPlus } from "lucide-react";
+import { Trash2, Plus, Save, UserPlus, KeyRound } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/closers")({
   component: ClosersPage,
@@ -25,7 +25,7 @@ function ClosersPage() {
   const qc = useQueryClient();
   const { data: closers = [] } = useQuery({ queryKey: ["closers"], queryFn: () => listClosers() });
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "", zoom_user_email: "" });
+  const [form, setForm] = useState({ full_name: "", email: "" });
 
   const create = useMutation({
     mutationFn: () => createCloser({ data: form }),
@@ -33,7 +33,7 @@ function ClosersPage() {
       toast.success(`Closer created. Temp password: ${res.default_password}`, { duration: 15000 });
       qc.invalidateQueries({ queryKey: ["closers"] });
       setOpen(false);
-      setForm({ full_name: "", email: "", zoom_user_email: "" });
+      setForm({ full_name: "", email: "" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -54,7 +54,7 @@ function ClosersPage() {
             <div className="space-y-3">
               <div><Label>Full name</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
               <div><Label>Login email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-              <div><Label>Zoom email (optional — defaults to login email)</Label><Input type="email" value={form.zoom_user_email} onChange={(e) => setForm({ ...form, zoom_user_email: e.target.value })} /></div>
+              <p className="text-xs text-muted-foreground">Zoom credentials are added per-closer after invite via the "Zoom API" button.</p>
               <Button className="w-full" disabled={!form.full_name || !form.email || create.isPending} onClick={() => create.mutate()}>
                 {create.isPending ? "Inviting…" : "Send invite"}
               </Button>
@@ -77,13 +77,16 @@ type CloserRow = {
   id: string;
   full_name: string;
   email: string;
-  zoom_user_email: string | null;
   active: boolean;
+  zoom_account_id: string | null;
+  zoom_client_id: string | null;
+  zoom_client_secret: string | null;
 };
 
 function CloserRow({ closer }: { closer: CloserRow }) {
   const qc = useQueryClient();
   const [editAvail, setEditAvail] = useState(false);
+  const [editZoom, setEditZoom] = useState(false);
   const toggle = useMutation({
     mutationFn: (active: boolean) => updateCloser({ data: { id: closer.id, active } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["closers"] }),
@@ -94,25 +97,38 @@ function CloserRow({ closer }: { closer: CloserRow }) {
     onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["closers"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+  const hasZoom = !!(closer.zoom_account_id && closer.zoom_client_id && closer.zoom_client_secret);
   return (
     <Card className="p-4 flex items-center justify-between gap-4 flex-wrap">
       <div className="min-w-0">
         <div className="font-medium">{closer.full_name}</div>
         <div className="text-xs text-muted-foreground truncate">{closer.email}</div>
-        {closer.zoom_user_email && closer.zoom_user_email !== closer.email && (
-          <div className="text-xs text-muted-foreground truncate">Zoom: {closer.zoom_user_email}</div>
-        )}
+        <div className="text-xs mt-1">
+          <span className={hasZoom ? "text-emerald-600" : "text-amber-600"}>
+            {hasZoom ? "Zoom API connected" : "Zoom API not set"}
+          </span>
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 text-xs">
           <span className="text-muted-foreground">Active</span>
           <Switch checked={closer.active} onCheckedChange={(v) => toggle.mutate(v)} />
         </div>
+        <Dialog open={editZoom} onOpenChange={setEditZoom}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline"><KeyRound className="h-3.5 w-3.5 mr-1" /> Zoom API</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>{closer.full_name}'s Zoom API credentials</DialogTitle></DialogHeader>
+            <CloserZoomCreds closer={closer} onDone={() => setEditZoom(false)} />
+          </DialogContent>
+        </Dialog>
         <Dialog open={editAvail} onOpenChange={setEditAvail}>
           <DialogTrigger asChild><Button size="sm" variant="outline">Availability</Button></DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>{closer.full_name}'s availability</DialogTitle></DialogHeader>
             <CloserAvail closerId={closer.id} />
+
           </DialogContent>
         </Dialog>
         <Button size="icon" variant="ghost" onClick={() => del.mutate()}>
@@ -217,4 +233,68 @@ function useStateSyncToByDay(
     setByDay(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
+}
+
+function CloserZoomCreds({ closer, onDone }: { closer: CloserRow; onDone: () => void }) {
+  const qc = useQueryClient();
+  const [accountId, setAccountId] = useState(closer.zoom_account_id ?? "");
+  const [clientId, setClientId] = useState(closer.zoom_client_id ?? "");
+  const [clientSecret, setClientSecret] = useState(closer.zoom_client_secret ?? "");
+
+  const save = useMutation({
+    mutationFn: () => updateCloser({
+      data: {
+        id: closer.id,
+        zoom_account_id: accountId.trim() || null,
+        zoom_client_id: clientId.trim() || null,
+        zoom_client_secret: clientSecret.trim() || null,
+      },
+    }),
+    onSuccess: () => {
+      toast.success("Zoom credentials saved");
+      qc.invalidateQueries({ queryKey: ["closers"] });
+      onDone();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const clear = useMutation({
+    mutationFn: () => updateCloser({
+      data: { id: closer.id, zoom_account_id: null, zoom_client_id: null, zoom_client_secret: null },
+    }),
+    onSuccess: () => {
+      toast.success("Zoom credentials removed");
+      qc.invalidateQueries({ queryKey: ["closers"] });
+      onDone();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        From the closer's Zoom Server-to-Server OAuth app. Meetings for this closer will be created on their own Zoom account.
+      </p>
+      <div>
+        <Label>Account ID</Label>
+        <Input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Zoom Account ID" />
+      </div>
+      <div>
+        <Label>Client ID</Label>
+        <Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Zoom Client ID" />
+      </div>
+      <div>
+        <Label>Client Secret</Label>
+        <Input type="password" value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} placeholder="Zoom Client Secret" />
+      </div>
+      <div className="flex gap-2 pt-2">
+        <Button onClick={() => save.mutate()} disabled={save.isPending} className="flex-1">
+          <Save className="h-4 w-4 mr-1" /> Save
+        </Button>
+        <Button variant="outline" onClick={() => clear.mutate()} disabled={clear.isPending}>
+          Clear
+        </Button>
+      </div>
+    </div>
+  );
 }
