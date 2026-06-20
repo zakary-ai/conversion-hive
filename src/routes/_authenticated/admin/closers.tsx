@@ -25,7 +25,7 @@ function ClosersPage() {
   const qc = useQueryClient();
   const { data: closers = [] } = useQuery({ queryKey: ["closers"], queryFn: () => listClosers() });
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "", zoom_user_email: "" });
+  const [form, setForm] = useState({ full_name: "", email: "" });
 
   const create = useMutation({
     mutationFn: () => createCloser({ data: form }),
@@ -33,7 +33,7 @@ function ClosersPage() {
       toast.success(`Closer created. Temp password: ${res.default_password}`, { duration: 15000 });
       qc.invalidateQueries({ queryKey: ["closers"] });
       setOpen(false);
-      setForm({ full_name: "", email: "", zoom_user_email: "" });
+      setForm({ full_name: "", email: "" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
