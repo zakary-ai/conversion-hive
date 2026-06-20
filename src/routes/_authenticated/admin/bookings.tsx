@@ -29,7 +29,7 @@ type Booking = {
   applicant_name: string;
   applicant_email: string;
   applicant_phone: string | null;
-  closers?: { full_name: string; email: string; zoom_user_email: string | null } | null;
+  closers?: { full_name: string; email: string } | null;
 };
 
 function BookingsPage() {
