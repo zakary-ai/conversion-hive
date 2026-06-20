@@ -234,3 +234,67 @@ function useStateSyncToByDay(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 }
+
+function CloserZoomCreds({ closer, onDone }: { closer: CloserRow; onDone: () => void }) {
+  const qc = useQueryClient();
+  const [accountId, setAccountId] = useState(closer.zoom_account_id ?? "");
+  const [clientId, setClientId] = useState(closer.zoom_client_id ?? "");
+  const [clientSecret, setClientSecret] = useState(closer.zoom_client_secret ?? "");
+
+  const save = useMutation({
+    mutationFn: () => updateCloser({
+      data: {
+        id: closer.id,
+        zoom_account_id: accountId.trim() || null,
+        zoom_client_id: clientId.trim() || null,
+        zoom_client_secret: clientSecret.trim() || null,
+      },
+    }),
+    onSuccess: () => {
+      toast.success("Zoom credentials saved");
+      qc.invalidateQueries({ queryKey: ["closers"] });
+      onDone();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const clear = useMutation({
+    mutationFn: () => updateCloser({
+      data: { id: closer.id, zoom_account_id: null, zoom_client_id: null, zoom_client_secret: null },
+    }),
+    onSuccess: () => {
+      toast.success("Zoom credentials removed");
+      qc.invalidateQueries({ queryKey: ["closers"] });
+      onDone();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        From the closer's Zoom Server-to-Server OAuth app. Meetings for this closer will be created on their own Zoom account.
+      </p>
+      <div>
+        <Label>Account ID</Label>
+        <Input value={accountId} onChange={(e) => setAccountId(e.target.value)} placeholder="Zoom Account ID" />
+      </div>
+      <div>
+        <Label>Client ID</Label>
+        <Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Zoom Client ID" />
+      </div>
+      <div>
+        <Label>Client Secret</Label>
+        <Input type="password" value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} placeholder="Zoom Client Secret" />
+      </div>
+      <div className="flex gap-2 pt-2">
+        <Button onClick={() => save.mutate()} disabled={save.isPending} className="flex-1">
+          <Save className="h-4 w-4 mr-1" /> Save
+        </Button>
+        <Button variant="outline" onClick={() => clear.mutate()} disabled={clear.isPending}>
+          Clear
+        </Button>
+      </div>
+    </div>
+  );
+}
