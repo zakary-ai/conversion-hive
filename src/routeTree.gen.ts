@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -49,6 +50,11 @@ import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
 import { Route as AuthenticatedAdminClientsUserIdRouteImport } from './routes/_authenticated/admin/clients.$userId'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -273,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/calendar': typeof AuthenticatedCalendarRoute
   '/commissions': typeof AuthenticatedCommissionsRoute
@@ -313,6 +320,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/commissions': typeof AuthenticatedCommissionsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -354,6 +362,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/commissions': typeof AuthenticatedCommissionsRoute
@@ -396,6 +405,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/support'
     | '/terms'
+    | '/unsubscribe'
     | '/admin'
     | '/calendar'
     | '/commissions'
@@ -436,6 +446,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/support'
     | '/terms'
+    | '/unsubscribe'
     | '/calendar'
     | '/commissions'
     | '/dashboard'
@@ -476,6 +487,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/support'
     | '/terms'
+    | '/unsubscribe'
     | '/_authenticated/admin'
     | '/_authenticated/calendar'
     | '/_authenticated/commissions'
@@ -518,6 +530,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
@@ -529,6 +542,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -885,6 +905,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
