@@ -309,6 +309,21 @@ export const listCloserSlotsForDate = createServerFn({ method: "GET" })
       .map(([iso, capacity]) => ({ iso, capacity }));
   });
 
+// Public: booking window + open weekdays for the apply page calendar
+export const getPublicBookingWindow = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { days_out } = await getB2cSettingsRow();
+    const adminRules = await listB2cAvailRules();
+    const weekdays = Array.from(new Set(adminRules.map((r) => r.day_of_week))).sort();
+    return {
+      days_out,
+      // null => no admin rules configured, treat all weekdays as potentially open
+      open_weekdays: adminRules.length > 0 ? weekdays : null,
+    } as { days_out: number; open_weekdays: number[] | null };
+  });
+
+
+
 // ---------- Public: create a closer booking from an application ----------
 export const createCloserBooking = createServerFn({ method: "POST" })
   .inputValidator(z.object({
