@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import { template as closerCallProspect } from './closer-call-prospect'
 import { template as closerCallCloser } from './closer-call-closer'
+import { template as closerInvite } from './closer-invite'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -14,4 +15,5 @@ export interface TemplateEntry {
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'closer-call-prospect': closerCallProspect,
   'closer-call-closer': closerCallCloser,
+  'closer-invite': closerInvite,
 }
