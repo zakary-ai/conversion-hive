@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { submitB2cApplication } from "@/lib/api/b2c.functions";
+import { useState, useMemo } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking } from "@/lib/api/b2c.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GraduationCap, CalendarCheck, DollarSign, Sparkles, CheckCircle2 } from "lucide-react";
+import { GraduationCap, CalendarCheck, DollarSign, Sparkles, CheckCircle2, CalendarClock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/apply")({
   head: () => ({
@@ -26,10 +28,17 @@ const DESIRED_INCOME = ["$3,000-$5,000", "$5,000-$8,000", "$8,000-$12,000", "$12
 const CREDIT = ["Below 600", "600-650", "650-700", "700-750", "750-800", "800-850"] as const;
 type Credit = typeof CREDIT[number];
 
-type Step = "form" | "done";
+type Step = "form" | "book" | "done";
+
+function toDateKey(d: Date, tz: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(d);
+}
 
 function ApplyPage() {
   const [step, setStep] = useState<Step>("form");
+  const [appInfo, setAppInfo] = useState<{ id: string; token: string } | null>(null);
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
@@ -40,7 +49,7 @@ function ApplyPage() {
   });
   const [error, setError] = useState<string | null>(null);
 
-  const mutate = useMutation({
+  const submit = useMutation({
     mutationFn: () => submitB2cApplication({ data: {
       full_name: form.full_name,
       phone: form.phone,
@@ -49,7 +58,10 @@ function ApplyPage() {
       desired_monthly_income: form.desired_monthly_income,
       credit_score_range: form.credit_score_range as Credit,
     } }),
-    onSuccess: () => setStep("done"),
+    onSuccess: (res) => {
+      setAppInfo({ id: res.id, token: res.token });
+      setStep("book");
+    },
     onError: (e: Error) => setError(e.message),
   });
 
@@ -104,7 +116,7 @@ function ApplyPage() {
             <div className="text-center mb-6">
               <h2 className="text-2xl font-display font-semibold">Apply now</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Takes under 2 minutes. You will receive a phone call within 24 hours.
+                Takes under 2 minutes. You'll book your call right after.
               </p>
             </div>
 
@@ -154,13 +166,21 @@ function ApplyPage() {
               <Button
                 size="lg"
                 className="w-full"
-                disabled={!valid || mutate.isPending}
-                onClick={() => { setError(null); mutate.mutate(); }}
+                disabled={!valid || submit.isPending}
+                onClick={() => { setError(null); submit.mutate(); }}
               >
-                {mutate.isPending ? "Submitting…" : "Submit application"}
+                {submit.isPending ? "Submitting…" : "Submit application"}
               </Button>
             </div>
           </Card>
+        )}
+
+        {step === "book" && appInfo && (
+          <BookingStep
+            appId={appInfo.id}
+            token={appInfo.token}
+            onBooked={() => setStep("done")}
+          />
         )}
 
         {step === "done" && (
@@ -168,13 +188,118 @@ function ApplyPage() {
             <div className="h-14 w-14 mx-auto rounded-full bg-success/20 text-success flex items-center justify-center mb-4">
               <CheckCircle2 className="h-7 w-7" />
             </div>
-            <h2 className="text-2xl font-display font-semibold">Application submitted</h2>
+            <h2 className="text-2xl font-display font-semibold">You're booked</h2>
             <p className="mt-3 text-muted-foreground">
-              Thanks! You will receive a phone call within 24 hours.
+              Thanks! We'll send a calendar invite shortly with the call details.
             </p>
           </Card>
         )}
       </section>
     </div>
+  );
+}
+
+function BookingStep({ appId, token, onBooked }: { appId: string; token: string; onBooked: () => void }) {
+  const tz = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
+    [],
+  );
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const dateKey = date ? toDateKey(date, tz) : null;
+  const { data: slots = [], isLoading } = useQuery({
+    queryKey: ["public-closer-slots", dateKey, tz],
+    queryFn: () => listCloserSlotsForDate({ data: { date: dateKey!, tz } }),
+    enabled: !!dateKey,
+  });
+
+  const book = useMutation({
+    mutationFn: (iso: string) => createCloserBooking({ data: {
+      application_id: appId, token, slot_start: iso,
+    } }),
+    onSuccess: () => onBooked(),
+    onError: (e: Error) => setErr(e.message),
+  });
+
+  const tzLabel = tz.split("/").pop()?.replace(/_/g, " ") ?? tz;
+
+  return (
+    <Card className="p-6 bg-card border-border">
+      <div className="text-center mb-5">
+        <h2 className="text-2xl font-display font-semibold">Book your call</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Pick a time that works for you. The call takes about 30 minutes.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <div className="rounded-xl border border-border bg-card p-2 flex justify-center">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={(d) => { if (d) { setDate(d); setPicked(null); } }}
+            disabled={(d) => d < today}
+            className="pointer-events-auto"
+          />
+        </div>
+        <div className="rounded-xl border border-border bg-card p-3">
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <div className="flex items-center gap-2 text-sm font-medium min-w-0">
+              <CalendarClock className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="truncate">
+                {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "Pick a date"}
+              </span>
+            </div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground whitespace-nowrap">{tzLabel}</div>
+          </div>
+          {!date && <div className="text-sm text-muted-foreground">Select a date to see open times.</div>}
+          {date && isLoading && <div className="text-sm text-muted-foreground">Loading times…</div>}
+          {date && !isLoading && slots.length === 0 && (
+            <div className="text-sm text-muted-foreground">No open times this day.</div>
+          )}
+          {slots.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto">
+              {slots.map((s) => {
+                const d = new Date(s.iso);
+                const selected = picked === s.iso;
+                const label = new Intl.DateTimeFormat(undefined, {
+                  timeZone: tz, hour: "numeric", minute: "2-digit",
+                }).format(d);
+                return (
+                  <Button
+                    key={s.iso}
+                    type="button"
+                    size="sm"
+                    variant={selected ? "default" : "outline"}
+                    onClick={() => setPicked(s.iso)}
+                    className={cn("text-xs", selected && "ring-2 ring-primary")}
+                  >
+                    {label}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {err && <p className="text-sm text-destructive">{err}</p>}
+
+        <Button
+          size="lg"
+          className="w-full"
+          disabled={!picked || book.isPending}
+          onClick={() => { if (picked) { setErr(null); book.mutate(picked); } }}
+        >
+          {book.isPending ? "Booking…" : picked ? "Confirm booking" : "Pick a time"}
+        </Button>
+      </div>
+    </Card>
   );
 }
