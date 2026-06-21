@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking } from "@/lib/api/b2c.functions";
+import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking, getPublicBookingWindow } from "@/lib/api/b2c.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
