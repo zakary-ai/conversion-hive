@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listClosers, createCloser, updateCloser, deleteCloser, listCloserAvailability, replaceCloserAvailability } from "@/lib/api/b2c.functions";
+import { listClosers, createCloser, updateCloser, deleteCloser, listCloserAvailability, replaceCloserAvailability, resendCloserInvite } from "@/lib/api/b2c.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +97,11 @@ function CloserRow({ closer }: { closer: CloserRow }) {
     onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["closers"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+  const resend = useMutation({
+    mutationFn: () => resendCloserInvite({ data: { id: closer.id } }),
+    onSuccess: () => toast.success(`Invite re-sent to ${closer.email}`),
+    onError: (e: Error) => toast.error(e.message),
+  });
   const hasZoom = !!(closer.zoom_account_id && closer.zoom_client_id && closer.zoom_client_secret);
   return (
     <Card className="p-4 flex items-center justify-between gap-4 flex-wrap">
@@ -131,6 +136,9 @@ function CloserRow({ closer }: { closer: CloserRow }) {
 
           </DialogContent>
         </Dialog>
+        <Button size="sm" variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>
+          {resend.isPending ? "Sending…" : "Resend invite"}
+        </Button>
         <Button size="icon" variant="ghost" onClick={() => del.mutate()}>
           <Trash2 className="h-4 w-4" />
         </Button>
