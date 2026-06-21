@@ -269,7 +269,9 @@ function BookingStep({ appId, token, onBooked }: { appId: string; token: string;
             mode="single"
             selected={date}
             onSelect={(d) => { if (d) { setDate(d); setPicked(null); } }}
-            disabled={(d) => d < today}
+            disabled={(d) => d < today || d > horizonEnd || isDayClosed(d)}
+            toDate={horizonEnd}
+
             className="pointer-events-auto"
           />
         </div>
