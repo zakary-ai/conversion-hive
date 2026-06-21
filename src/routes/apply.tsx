@@ -213,12 +213,36 @@ function BookingStep({ appId, token, onBooked }: { appId: string; token: string;
   const [picked, setPicked] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  const { data: window } = useQuery({
+    queryKey: ["public-booking-window"],
+    queryFn: () => getPublicBookingWindow(),
+  });
+
+  const horizonEnd = useMemo(() => {
+    const days = window?.days_out ?? 14;
+    const d = new Date(today);
+    d.setDate(d.getDate() + days);
+    return d;
+  }, [window?.days_out, today]);
+
+  const estDow = (d: Date) => {
+    const name = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short" }).format(d);
+    return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(name);
+  };
+
+  const isDayClosed = (d: Date) => {
+    if (!window) return false;
+    if (window.open_weekdays === null) return false;
+    return !window.open_weekdays.includes(estDow(d));
+  };
+
   const dateKey = date ? toDateKey(date, tz) : null;
   const { data: slots = [], isLoading } = useQuery({
     queryKey: ["public-closer-slots", dateKey, tz],
     queryFn: () => listCloserSlotsForDate({ data: { date: dateKey!, tz } }),
     enabled: !!dateKey,
   });
+
 
   const book = useMutation({
     mutationFn: (iso: string) => createCloserBooking({ data: {
