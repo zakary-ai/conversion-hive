@@ -521,37 +521,75 @@ export const listCloserBookings = createServerFn({ method: "GET" })
     return { rows: data ?? [], isAdmin: !!isAdmin };
   });
 
-async function sendCloserBookingEmail(input: {
+function formatScheduledLabel(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      weekday: "long", month: "long", day: "numeric", year: "numeric",
+      hour: "numeric", minute: "2-digit", timeZoneName: "short",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+async function sendCloserBookingEmails(input: {
   bookingId: string;
-  recipientEmail: string;
   applicantName: string;
+  applicantEmail: string | null;
+  applicantPhone: string | null;
+  closerName: string;
+  closerEmail: string | null;
   scheduledAt: string;
   meetingUrl: string | null;
   durationMinutes: number;
 }) {
   try {
-    const origin = process.env.LOVABLE_APP_URL || process.env.PUBLIC_APP_URL;
-    if (!origin) return;
-    await fetch(`${origin}/lovable/email/transactional/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.LOVABLE_API_KEY ?? ""}`,
-      },
-      body: JSON.stringify({
-        templateName: "booking-confirmation",
-        recipientEmail: input.recipientEmail,
-        idempotencyKey: `closer-booking-${input.bookingId}`,
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    const scheduledLabel = formatScheduledLabel(input.scheduledAt);
+
+    const tasks: Array<Promise<unknown>> = [];
+
+    if (input.applicantEmail) {
+      tasks.push(sendTransactional({
+        templateName: "closer-call-prospect",
+        recipientEmail: input.applicantEmail,
+        idempotencyKey: `closer-booking-prospect-${input.bookingId}`,
         templateData: {
           name: input.applicantName,
           scheduledAt: input.scheduledAt,
+          scheduledLabel,
+          meetingUrl: input.meetingUrl,
+          durationMinutes: input.durationMinutes,
+          closerName: input.closerName,
+        },
+      }));
+    }
+
+    if (input.closerEmail) {
+      tasks.push(sendTransactional({
+        templateName: "closer-call-closer",
+        recipientEmail: input.closerEmail,
+        idempotencyKey: `closer-booking-closer-${input.bookingId}`,
+        templateData: {
+          closerName: input.closerName,
+          applicantName: input.applicantName,
+          applicantEmail: input.applicantEmail,
+          applicantPhone: input.applicantPhone,
+          scheduledAt: input.scheduledAt,
+          scheduledLabel,
           meetingUrl: input.meetingUrl,
           durationMinutes: input.durationMinutes,
         },
-      }),
-    });
-  } catch { /* best effort */ }
+      }));
+    }
+
+    await Promise.allSettled(tasks);
+  } catch (e) {
+    console.error("sendCloserBookingEmails failed", e);
+  }
 }
+
 
 export const assignCloserToBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
