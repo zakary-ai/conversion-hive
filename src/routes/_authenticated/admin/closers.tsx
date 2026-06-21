@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listClosers, createCloser, updateCloser, deleteCloser, listCloserAvailability, replaceCloserAvailability } from "@/lib/api/b2c.functions";
+import { listClosers, createCloser, updateCloser, deleteCloser, listCloserAvailability, replaceCloserAvailability, resendCloserInvite } from "@/lib/api/b2c.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
