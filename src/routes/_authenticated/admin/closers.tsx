@@ -136,6 +136,9 @@ function CloserRow({ closer }: { closer: CloserRow }) {
 
           </DialogContent>
         </Dialog>
+        <Button size="sm" variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>
+          {resend.isPending ? "Sending…" : "Resend invite"}
+        </Button>
         <Button size="icon" variant="ghost" onClick={() => del.mutate()}>
           <Trash2 className="h-4 w-4" />
         </Button>
