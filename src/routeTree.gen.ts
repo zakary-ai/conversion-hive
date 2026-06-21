@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AuthenticatedSetPasswordRouteImport } from './routes/_authenticated/set-password'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
@@ -26,6 +27,7 @@ import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authenticated/training.index'
 import { Route as AuthenticatedCloserIndexRouteImport } from './routes/_authenticated/closer/index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
 import { Route as AuthenticatedCloserCommissionsRouteImport } from './routes/_authenticated/closer/commissions'
 import { Route as AuthenticatedCloserCalendarRouteImport } from './routes/_authenticated/closer/calendar'
@@ -40,6 +42,8 @@ import { Route as AuthenticatedAdminBookingsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminB2cCommissionsRouteImport } from './routes/_authenticated/admin/b2c-commissions'
 import { Route as AuthenticatedAdminApplicationsRouteImport } from './routes/_authenticated/admin/applications'
 import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
@@ -77,6 +81,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSetPasswordRoute =
@@ -132,6 +141,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTrainingModuleIdRoute =
   AuthenticatedTrainingModuleIdRouteImport.update({
@@ -216,6 +230,18 @@ const AuthenticatedAdminClientsIndexRoute =
     path: '/clients/',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -254,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/set-password': typeof AuthenticatedSetPasswordRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
   '/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
   '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
@@ -267,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
   '/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/closer/': typeof AuthenticatedCloserIndexRoute
   '/training/': typeof AuthenticatedTrainingIndexRoute
@@ -274,6 +302,8 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -289,6 +319,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/set-password': typeof AuthenticatedSetPasswordRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
   '/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
   '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
@@ -302,6 +333,7 @@ export interface FileRoutesByTo {
   '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
   '/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
   '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/closer': typeof AuthenticatedCloserIndexRoute
   '/training': typeof AuthenticatedTrainingIndexRoute
@@ -309,6 +341,8 @@ export interface FileRoutesByTo {
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/admin/clients': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesById {
@@ -327,6 +361,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/set-password': typeof AuthenticatedSetPasswordRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/_authenticated/admin/applications': typeof AuthenticatedAdminApplicationsRoute
   '/_authenticated/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
   '/_authenticated/admin/bookings': typeof AuthenticatedAdminBookingsRoute
@@ -340,6 +375,7 @@ export interface FileRoutesById {
   '/_authenticated/closer/calendar': typeof AuthenticatedCloserCalendarRoute
   '/_authenticated/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
   '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/closer/': typeof AuthenticatedCloserIndexRoute
   '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
@@ -347,6 +383,8 @@ export interface FileRoutesById {
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
 }
 export interface FileRouteTypes {
@@ -365,6 +403,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/profile'
     | '/set-password'
+    | '/email/unsubscribe'
     | '/admin/applications'
     | '/admin/b2c-commissions'
     | '/admin/bookings'
@@ -378,6 +417,7 @@ export interface FileRouteTypes {
     | '/closer/calendar'
     | '/closer/commissions'
     | '/training/$moduleId'
+    | '/lovable/email/suppression'
     | '/admin/'
     | '/closer/'
     | '/training/'
@@ -385,6 +425,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -400,6 +442,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/profile'
     | '/set-password'
+    | '/email/unsubscribe'
     | '/admin/applications'
     | '/admin/b2c-commissions'
     | '/admin/bookings'
@@ -413,6 +456,7 @@ export interface FileRouteTypes {
     | '/closer/calendar'
     | '/closer/commissions'
     | '/training/$moduleId'
+    | '/lovable/email/suppression'
     | '/admin'
     | '/closer'
     | '/training'
@@ -420,6 +464,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/admin/clients'
   id:
     | '__root__'
@@ -437,6 +483,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/profile'
     | '/_authenticated/set-password'
+    | '/email/unsubscribe'
     | '/_authenticated/admin/applications'
     | '/_authenticated/admin/b2c-commissions'
     | '/_authenticated/admin/bookings'
@@ -450,6 +497,7 @@ export interface FileRouteTypes {
     | '/_authenticated/closer/calendar'
     | '/_authenticated/closer/commissions'
     | '/_authenticated/training/$moduleId'
+    | '/lovable/email/suppression'
     | '/_authenticated/admin/'
     | '/_authenticated/closer/'
     | '/_authenticated/training/'
@@ -457,6 +505,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
 }
@@ -468,9 +518,13 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -522,6 +576,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/set-password': {
@@ -593,6 +654,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/training/$moduleId': {
       id: '/_authenticated/training/$moduleId'
@@ -691,6 +759,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/clients/'
       preLoaderRoute: typeof AuthenticatedAdminClientsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -803,9 +885,13 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
