@@ -38,11 +38,20 @@ function AuthPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signIn, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !signIn.session) {
+      setLoading(false);
+      return toast.error(error?.message || "Sign-in failed");
+    }
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", signIn.session.user.id);
     setLoading(false);
-    if (error) return toast.error(error.message);
     toast.success("Welcome back");
-    navigate({ to: "/" });
+    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    const isCloser = (roles ?? []).some((r) => r.role === "closer");
+    navigate({ to: isAdmin ? "/admin" : isCloser ? "/closer" : "/dashboard" });
   };
 
   return (
