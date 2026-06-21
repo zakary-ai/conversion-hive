@@ -431,7 +431,74 @@ export const createCloser = createServerFn({ method: "POST" })
         .update({ must_change_password: true, full_name: data.full_name })
         .eq("user_id", newUserId);
     }
+
+    await sendCloserInviteEmail({
+      closerId: row.id,
+      email,
+      fullName: data.full_name,
+      password: DEFAULT_CLOSER_PASSWORD,
+    });
+
     return { id: row.id, default_password: DEFAULT_CLOSER_PASSWORD };
+  });
+
+async function sendCloserInviteEmail(input: {
+  closerId: string;
+  email: string;
+  fullName: string;
+  password: string;
+}) {
+  try {
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    await sendTransactional({
+      templateName: "closer-invite",
+      recipientEmail: input.email,
+      idempotencyKey: `closer-invite-${input.closerId}-${Date.now()}`,
+      templateData: {
+        closerName: input.fullName,
+        email: input.email,
+        password: input.password,
+        loginUrl: "https://conversionlab.space/auth",
+      },
+    });
+  } catch (e) {
+    console.error("sendCloserInviteEmail failed", e);
+  }
+}
+
+export const resendCloserInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: closer, error } = await supabaseAdmin
+      .from("closers").select("id, email, full_name").eq("id", data.id).single();
+    if (error || !closer) throw new Error(error?.message || "Closer not found");
+
+    // Reset their password to the default so the emailed credentials work.
+    const { data: userRow } = await supabaseAdmin.auth.admin.listUsers();
+    const authUser = userRow?.users?.find((u) => (u.email || "").toLowerCase() === closer.email.toLowerCase());
+    if (authUser) {
+      await supabaseAdmin.auth.admin.updateUserById(authUser.id, { password: DEFAULT_CLOSER_PASSWORD });
+      await supabaseAdmin.from("profiles").update({ must_change_password: true }).eq("user_id", authUser.id);
+    } else {
+      // No auth user yet — create one
+      await supabaseAdmin.auth.admin.createUser({
+        email: closer.email,
+        password: DEFAULT_CLOSER_PASSWORD,
+        email_confirm: true,
+        user_metadata: { full_name: closer.full_name },
+      });
+    }
+
+    await sendCloserInviteEmail({
+      closerId: closer.id,
+      email: closer.email,
+      fullName: closer.full_name,
+      password: DEFAULT_CLOSER_PASSWORD,
+    });
+    return { ok: true };
   });
 
 export const updateCloser = createServerFn({ method: "POST" })
