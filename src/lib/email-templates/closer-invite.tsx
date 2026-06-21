@@ -43,7 +43,7 @@ const Email = ({ closerName, email, password, loginUrl }: Props) => (
 
 export const template = {
   component: Email,
-  subject: 'You've been invited to Conversion Lab',
+  subject: "You've been invited to Conversion Lab",
   displayName: 'Closer invite',
   previewData: {
     closerName: 'Jamie',
