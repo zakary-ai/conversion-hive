@@ -651,14 +651,18 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
     }).eq("id", data.booking_id);
     if (uerr) throw new Error(uerr.message);
 
-    void sendCloserBookingEmail({
+    void sendCloserBookingEmails({
       bookingId: data.booking_id,
-      recipientEmail: booking.applicant_email as string,
       applicantName: booking.applicant_name as string,
+      applicantEmail: (booking.applicant_email as string | null) ?? null,
+      applicantPhone: (booking.applicant_phone as string | null) ?? null,
+      closerName: closer.full_name as string,
+      closerEmail: (closer.email as string | null) ?? null,
       scheduledAt: booking.slot_start as string,
       meetingUrl: zoom.join_url,
       durationMinutes: SLOT,
     });
+
 
     return { ok: true, zoom_join_url: zoom.join_url };
   });
