@@ -97,6 +97,11 @@ function CloserRow({ closer }: { closer: CloserRow }) {
     onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["closers"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+  const resend = useMutation({
+    mutationFn: () => resendCloserInvite({ data: { id: closer.id } }),
+    onSuccess: () => toast.success(`Invite re-sent to ${closer.email}`),
+    onError: (e: Error) => toast.error(e.message),
+  });
   const hasZoom = !!(closer.zoom_account_id && closer.zoom_client_id && closer.zoom_client_secret);
   return (
     <Card className="p-4 flex items-center justify-between gap-4 flex-wrap">
