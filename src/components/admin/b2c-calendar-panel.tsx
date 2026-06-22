@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X } from "lucide-react";
+import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
 
@@ -169,6 +169,8 @@ export function B2cCalendarPanel() {
 
   // Date picker for bookings
   const [selected, setSelected] = useState<Date | undefined>(new Date());
+  const [availabilityOpen, setAvailabilityOpen] = useState<boolean>(false);
+
   const selectedKey = useMemo(() => (selected ? dateKey(selected) : null), [selected]);
   const { data: dayBookings = [] } = useQuery({
     queryKey: ["bookings-for-date", selectedKey],
@@ -241,76 +243,93 @@ export function B2cCalendarPanel() {
       {/* Weekly availability */}
       <Card className="p-4 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h3 className="font-display font-semibold">
-              Weekly availability{" "}
-              <span className="text-xs font-normal text-muted-foreground">(Eastern Time)</span>
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Leads can only book inside these windows. Leave a day off to block it entirely.
-            </p>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => saveAvailability.mutate()}
-            disabled={saveAvailability.isPending}
+          <button
+            type="button"
+            onClick={() => setAvailabilityOpen((v) => !v)}
+            className="flex items-start gap-2 text-left min-w-0 flex-1"
+            aria-expanded={availabilityOpen}
           >
-            <Save className="h-4 w-4 mr-1" /> Save availability
-          </Button>
+            <ChevronDown
+              className={`h-4 w-4 mt-1 shrink-0 transition-transform ${availabilityOpen ? "" : "-rotate-90"}`}
+            />
+            <div className="min-w-0">
+              <h3 className="font-display font-semibold">
+                Weekly availability{" "}
+                <span className="text-xs font-normal text-muted-foreground">(Eastern Time)</span>
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {availabilityOpen
+                  ? "Leads can only book inside these windows. Leave a day off to block it entirely."
+                  : "Tap to edit weekly windows."}
+              </p>
+            </div>
+          </button>
+          {availabilityOpen && (
+            <Button
+              size="sm"
+              onClick={() => saveAvailability.mutate()}
+              disabled={saveAvailability.isPending}
+            >
+              <Save className="h-4 w-4 mr-1" /> Save availability
+            </Button>
+          )}
         </div>
 
-        <div className="space-y-3">
-          {DAYS.map((label, dow) => {
-            const enabled = !!byDay[dow];
-            const ranges = byDay[dow] ?? [];
-            return (
-              <div key={dow} className="rounded-lg border border-border p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Switch checked={enabled} onCheckedChange={(v) => toggleDay(dow, v)} />
-                    <div className="font-medium w-12">{label}</div>
+        {availabilityOpen && (
+          <div className="space-y-3">
+            {DAYS.map((label, dow) => {
+              const enabled = !!byDay[dow];
+              const ranges = byDay[dow] ?? [];
+              return (
+                <div key={dow} className="rounded-lg border border-border p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Switch checked={enabled} onCheckedChange={(v) => toggleDay(dow, v)} />
+                      <div className="font-medium w-12">{label}</div>
+                    </div>
+                    {enabled && (
+                      <Button size="sm" variant="ghost" onClick={() => addRange(dow)}>
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Add range
+                      </Button>
+                    )}
                   </div>
                   {enabled && (
-                    <Button size="sm" variant="ghost" onClick={() => addRange(dow)}>
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Add range
-                    </Button>
+                    <div className="mt-2 space-y-2">
+                      {ranges.map((r, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <Input
+                            type="time"
+                            value={toTime(r.start_minute)}
+                            step={1800}
+                            onChange={(e) =>
+                              updateRange(dow, idx, { start_minute: fromTime(e.target.value) })
+                            }
+                            className="w-32"
+                          />
+                          <span className="text-muted-foreground text-sm">to</span>
+                          <Input
+                            type="time"
+                            value={toTime(r.end_minute)}
+                            step={1800}
+                            onChange={(e) =>
+                              updateRange(dow, idx, { end_minute: fromTime(e.target.value) })
+                            }
+                            className="w-32"
+                          />
+                          <Button size="icon" variant="ghost" onClick={() => removeRange(dow, idx)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-                {enabled && (
-                  <div className="mt-2 space-y-2">
-                    {ranges.map((r, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <Input
-                          type="time"
-                          value={toTime(r.start_minute)}
-                          step={1800}
-                          onChange={(e) =>
-                            updateRange(dow, idx, { start_minute: fromTime(e.target.value) })
-                          }
-                          className="w-32"
-                        />
-                        <span className="text-muted-foreground text-sm">to</span>
-                        <Input
-                          type="time"
-                          value={toTime(r.end_minute)}
-                          step={1800}
-                          onChange={(e) =>
-                            updateRange(dow, idx, { end_minute: fromTime(e.target.value) })
-                          }
-                          className="w-32"
-                        />
-                        <Button size="icon" variant="ghost" onClick={() => removeRange(dow, idx)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
+
 
       {/* Date → bookings */}
       <Card className="p-4">
