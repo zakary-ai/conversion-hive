@@ -373,7 +373,9 @@ type DayBooking = {
   applicant_name: string;
   applicant_email: string;
   applicant_phone: string | null;
+  zoom_join_url?: string | null;
   closers?: { full_name: string; email: string } | null;
+
 };
 type CloserOpt = { id: string; full_name: string; active: boolean };
 
