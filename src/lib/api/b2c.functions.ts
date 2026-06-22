@@ -652,7 +652,7 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
       accountId: (closer.zoom_account_id as string | null) ?? null,
       clientId: (closer.zoom_client_id as string | null) ?? null,
       clientSecret: (closer.zoom_client_secret as string | null) ?? null,
-      topic: `Sales call — ${booking.applicant_name}`,
+      topic: `${booking.applicant_name} — Interview`,
       start_time: booking.slot_start as string,
       duration: SLOT,
     });
