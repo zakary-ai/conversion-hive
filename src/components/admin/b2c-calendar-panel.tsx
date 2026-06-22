@@ -334,7 +334,7 @@ export function B2cCalendarPanel() {
       {/* Date → bookings */}
       <Card className="p-4">
         <div className="grid md:grid-cols-[auto_1fr] gap-6">
-          <div>
+          <div className="flex flex-col items-center md:items-start">
             <h3 className="font-display font-semibold mb-2">Pick a date</h3>
             <Calendar
               mode="single"
@@ -343,7 +343,7 @@ export function B2cCalendarPanel() {
               className="rounded-md border"
             />
           </div>
-          <div>
+          <div className="text-center md:text-left">
             <h3 className="font-display font-semibold mb-2">
               {selected
                 ? selected.toLocaleDateString(undefined, {
@@ -360,6 +360,7 @@ export function B2cCalendarPanel() {
           </div>
         </div>
       </Card>
+
     </div>
   );
 }
