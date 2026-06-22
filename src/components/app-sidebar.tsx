@@ -7,7 +7,7 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck,
+  UserPlus, CalendarCheck, ShieldCheck,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -28,6 +28,7 @@ const adminB2BItems = [
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/app/admin/commissions", icon: DollarSign },
+  { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
 
