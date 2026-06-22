@@ -1379,6 +1379,8 @@ export const resendAdminInvite = createServerFn({ method: "POST" })
   });
 
 // ---------- Admin: revoke admin ----------
+export const SUPER_ADMIN_EMAIL = "conversionlabb@gmail.com";
+
 export const revokeAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ user_id: z.string().uuid() }).parse)
@@ -1389,6 +1391,14 @@ export const revokeAdmin = createServerFn({ method: "POST" })
     if (data.user_id === context.userId) throw new Error("You cannot revoke your own admin access");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Protect the super admin account — its admin status cannot be revoked.
+    const { data: targetProfile } = await supabaseAdmin
+      .from("profiles").select("email").eq("user_id", data.user_id).maybeSingle();
+    if (targetProfile?.email && targetProfile.email.toLowerCase() === SUPER_ADMIN_EMAIL) {
+      throw new Error("The super admin account cannot be revoked");
+    }
+
     const { count } = await supabaseAdmin
       .from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
     if ((count ?? 0) <= 1) throw new Error("Cannot revoke the last remaining admin");
