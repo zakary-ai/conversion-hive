@@ -1256,12 +1256,14 @@ export const listAdmins = createServerFn({ method: "GET" })
     const byId = new Map((profiles ?? []).map((p) => [p.user_id, p]));
     return (adminRoles ?? []).map((r) => {
       const p = byId.get(r.user_id);
+      const email = p?.email ?? "";
       return {
         user_id: r.user_id,
         full_name: p?.full_name ?? "",
-        email: p?.email ?? "",
+        email,
         created_at: r.created_at,
         is_self: r.user_id === context.userId,
+        is_super_admin: email.toLowerCase() === "conversionlabb@gmail.com",
       };
     });
   });
