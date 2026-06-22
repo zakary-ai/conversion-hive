@@ -2,7 +2,7 @@ import * as React from 'react'
 import { render as renderAsync } from '@react-email/components'
 import { TEMPLATES } from '@/lib/email-templates/registry'
 
-const SITE_NAME = 'conversion-hive'
+const SITE_NAME = 'Conversion Lab'
 const SENDER_DOMAIN = 'notify.conversionlab.company'
 const FROM_DOMAIN = 'notify.conversionlab.company'
 
