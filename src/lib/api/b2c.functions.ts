@@ -711,10 +711,15 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
     if ((conflict ?? []).length > 0) throw new Error("That closer is already booked at this time.");
 
     const { slot_minutes: SLOT } = await getB2cSettingsRow();
+    const { data: zoomCreds } = await supabaseAdmin
+      .from("closer_zoom_credentials")
+      .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+      .eq("closer_id", data.closer_id)
+      .maybeSingle();
     const zoom = await createZoomMeetingForUser({
-      accountId: (closer.zoom_account_id as string | null) ?? null,
-      clientId: (closer.zoom_client_id as string | null) ?? null,
-      clientSecret: (closer.zoom_client_secret as string | null) ?? null,
+      accountId: (zoomCreds?.zoom_account_id as string | null) ?? null,
+      clientId: (zoomCreds?.zoom_client_id as string | null) ?? null,
+      clientSecret: (zoomCreds?.zoom_client_secret as string | null) ?? null,
       topic: `${booking.applicant_name} — Interview`,
       start_time: booking.slot_start as string,
       duration: SLOT,
