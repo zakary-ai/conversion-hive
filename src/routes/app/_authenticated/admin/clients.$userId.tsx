@@ -498,6 +498,26 @@ function matchesQuery(l: SetterLead, q: string) {
   );
 }
 
+// A lead has a "real" call if any call_logs row for it is not a manual_outcome marker.
+function leadHasRealCall(leadId: string, calls: CallRowItem[]) {
+  return calls.some(
+    (c) =>
+      (c as { lead_id?: string | null }).lead_id === leadId &&
+      c.status !== "manual_outcome",
+  );
+}
+
+function NoCallBadge() {
+  return (
+    <span
+      title="Outcome marked without an attached call"
+      className="inline-flex items-center gap-1 rounded-full bg-warning/15 text-warning px-2 py-0.5 text-[10px] font-medium"
+    >
+      <AlertTriangle className="h-3 w-3" /> No call
+    </span>
+  );
+}
+
 function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRowItem[] }) {
   const [tab, setTab] = useState<"uncontacted" | "contacted">("uncontacted");
   const [openLead, setOpenLead] = useState<SetterLead | null>(null);
