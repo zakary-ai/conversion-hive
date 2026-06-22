@@ -47,6 +47,7 @@ import { Route as AppAuthenticatedAdminClosersRouteImport } from './routes/app/_
 import { Route as AppAuthenticatedAdminBookingsRouteImport } from './routes/app/_authenticated/admin/bookings'
 import { Route as AppAuthenticatedAdminB2cCommissionsRouteImport } from './routes/app/_authenticated/admin/b2c-commissions'
 import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/app/_authenticated/admin/applications'
+import { Route as AppAuthenticatedAdminAdminsRouteImport } from './routes/app/_authenticated/admin/admins'
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
@@ -266,6 +267,12 @@ const AppAuthenticatedAdminApplicationsRoute =
     path: '/applications',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
+const AppAuthenticatedAdminAdminsRoute =
+  AppAuthenticatedAdminAdminsRouteImport.update({
+    id: '/admins',
+    path: '/admins',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
 const ApiPublicHooksSendCallRemindersRoute =
   ApiPublicHooksSendCallRemindersRouteImport.update({
     id: '/api/public/hooks/send-call-reminders',
@@ -318,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
+  '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
@@ -361,6 +369,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
+  '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
@@ -407,6 +416,7 @@ export interface FileRoutesById {
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
+  '/app/_authenticated/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/_authenticated/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/_authenticated/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/_authenticated/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
+    | '/app/admin/admins'
     | '/app/admin/applications'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
@@ -496,6 +507,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
+    | '/app/admin/admins'
     | '/app/admin/applications'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
@@ -541,6 +553,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
+    | '/app/_authenticated/admin/admins'
     | '/app/_authenticated/admin/applications'
     | '/app/_authenticated/admin/b2c-commissions'
     | '/app/_authenticated/admin/bookings'
@@ -851,6 +864,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAdminApplicationsRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
+    '/app/_authenticated/admin/admins': {
+      id: '/app/_authenticated/admin/admins'
+      path: '/admins'
+      fullPath: '/app/admin/admins'
+      preLoaderRoute: typeof AppAuthenticatedAdminAdminsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
     '/api/public/hooks/send-call-reminders': {
       id: '/api/public/hooks/send-call-reminders'
       path: '/api/public/hooks/send-call-reminders'
@@ -890,6 +910,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAuthenticatedAdminRouteRouteChildren {
+  AppAuthenticatedAdminAdminsRoute: typeof AppAuthenticatedAdminAdminsRoute
   AppAuthenticatedAdminApplicationsRoute: typeof AppAuthenticatedAdminApplicationsRoute
   AppAuthenticatedAdminB2cCommissionsRoute: typeof AppAuthenticatedAdminB2cCommissionsRoute
   AppAuthenticatedAdminBookingsRoute: typeof AppAuthenticatedAdminBookingsRoute
@@ -907,6 +928,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
 
 const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteChildren =
   {
+    AppAuthenticatedAdminAdminsRoute: AppAuthenticatedAdminAdminsRoute,
     AppAuthenticatedAdminApplicationsRoute:
       AppAuthenticatedAdminApplicationsRoute,
     AppAuthenticatedAdminB2cCommissionsRoute:

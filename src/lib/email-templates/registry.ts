@@ -4,6 +4,8 @@ import { template as closerCallProspectReminder } from './closer-call-prospect-r
 import { template as closerCallCloser } from './closer-call-closer'
 import { template as closerInvite } from './closer-invite'
 import { template as setterInvite } from './setter-invite'
+import { template as adminInvite } from './admin-invite'
+
 
 
 export interface TemplateEntry {
@@ -21,4 +23,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'closer-call-closer': closerCallCloser,
   'closer-invite': closerInvite,
   'setter-invite': setterInvite,
+  'admin-invite': adminInvite,
 }
