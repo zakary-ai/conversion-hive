@@ -3,7 +3,7 @@
   "appName": "Conversion Lab",
   "webDir": "dist",
   "server": {
-    "url": "https://conversion-hive.lovable.app",
+    "url": "https://conversionlab.space",
     "cleartext": false,
     "androidScheme": "https",
     "iosScheme": "https"
