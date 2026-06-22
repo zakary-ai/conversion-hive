@@ -50,7 +50,10 @@ function LeadsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <PageHeader title="My leads" description={`${visibleLeads.length} active · up to 75 per day`} />
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <PageHeader title="My leads" description={`${visibleLeads.length} active · up to 75 per day`} />
+        <RequestMoreLeadsButton uncontactedCount={visibleLeads.filter((l) => l.status === "New").length} />
+      </div>
 
       <Tabs defaultValue="leads" className="space-y-4">
         <TabsList>
