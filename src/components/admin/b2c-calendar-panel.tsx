@@ -110,6 +110,7 @@ export function B2cCalendarPanel() {
       toast.success("Availability saved");
       qc.invalidateQueries({ queryKey: ["b2c-availability"] });
       qc.invalidateQueries({ queryKey: ["closer-slots"] });
+      qc.invalidateQueries({ queryKey: ["public-closer-slots"] });
       qc.invalidateQueries({ queryKey: ["bookings-for-date"] });
       qc.invalidateQueries({ queryKey: ["public-booking-window"] });
     },
