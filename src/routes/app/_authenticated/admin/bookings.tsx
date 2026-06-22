@@ -48,12 +48,16 @@ function BookingsPage() {
         <p className="text-sm text-muted-foreground">Bookings and applications in one place.</p>
       </div>
 
-      <Tabs defaultValue="bookings" className="space-y-4">
+      <Tabs defaultValue="calendar" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="calendar">
+          <B2cCalendarPanel />
+        </TabsContent>
 
         <TabsContent value="bookings" className="space-y-6">
           <Section title="Pending assignment" count={pending.length}>
@@ -77,10 +81,6 @@ function BookingsPage() {
 
         <TabsContent value="applications">
           <ApplicationsPanel />
-        </TabsContent>
-
-        <TabsContent value="calendar">
-          <B2cCalendarPanel />
         </TabsContent>
       </Tabs>
     </div>
