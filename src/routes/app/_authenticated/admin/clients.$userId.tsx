@@ -79,7 +79,12 @@ function SetterDetailPage() {
       <PageHeader
         title={data.profile?.full_name || data.profile?.email || "Setter"}
         description={data.profile?.email ?? undefined}
-        action={<Button variant="ghost" asChild><Link to="/app/admin/clients">← All setters</Link></Button>}
+        action={
+          <div className="flex items-center gap-2">
+            <BackfillButton userId={userId} />
+            <Button variant="ghost" asChild><Link to="/app/admin/clients">← All setters</Link></Button>
+          </div>
+        }
       />
 
       <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">
