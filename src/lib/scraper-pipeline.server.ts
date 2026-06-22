@@ -60,26 +60,23 @@ async function callApify(actorId: string, input: Record<string, unknown>, token:
   return data as RawLead[];
 }
 
-function startOfTodayET(): string {
-  // Approximate "today" in ET. Server runs UTC; ET = UTC-5 (standard) / UTC-4 (DST).
-  // Use America/New_York via Intl to compute the midnight boundary.
+// Returns the UTC ISO string corresponding to 00:00:00 America/New_York "today".
+// DST-aware via Intl (no fixed offset).
+export function startOfTodayET(): string {
   const now = new Date();
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
   });
-  const parts = Object.fromEntries(fmt.formatToParts(now).filter(p => p.type !== "literal").map(p => [p.type, p.value]));
-  // Compute the offset between UTC and ET right now (in minutes)
+  const parts = Object.fromEntries(fmt.formatToParts(now).filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
   const etAsUtc = Date.UTC(
     Number(parts.year), Number(parts.month) - 1, Number(parts.day),
     Number(parts.hour), Number(parts.minute), Number(parts.second),
   );
   const offsetMs = etAsUtc - now.getTime();
-  // ET midnight (start of day) expressed in UTC:
   const etMidnightAsUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
-  const utcMs = etMidnightAsUtc - offsetMs;
-  return new Date(utcMs).toISOString();
+  return new Date(etMidnightAsUtc - offsetMs).toISOString();
 }
 
 async function loadLeadsTodayByUser(userIds: string[]): Promise<Map<string, number>> {
@@ -89,7 +86,7 @@ async function loadLeadsTodayByUser(userIds: string[]): Promise<Map<string, numb
   const { data } = await supabaseAdmin
     .from("leads")
     .select("assigned_user_id")
-    .gte("created_at", since)
+    .gte("assigned_at", since)
     .in("assigned_user_id", userIds);
   for (const r of data ?? []) {
     const u = r.assigned_user_id as string | null;
