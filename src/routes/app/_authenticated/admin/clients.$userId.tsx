@@ -706,6 +706,7 @@ function SetterLeadDetailDialog({
   onClose: () => void;
 }) {
   const leadCalls = lead ? calls.filter((c) => (c as { lead_id?: string | null }).lead_id === lead.id) : [];
+  const realCalls = leadCalls.filter((c) => c.status !== "manual_outcome");
   return (
     <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -715,6 +716,7 @@ function SetterLeadDetailDialog({
               <DialogTitle className="flex items-center gap-2 flex-wrap">
                 <span>{lead.name}</span>
                 <StatusPill status={lead.status} />
+                {realCalls.length === 0 && <NoCallBadge />}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 text-sm">
