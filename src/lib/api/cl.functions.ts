@@ -173,7 +173,7 @@ export const submitQuiz = createServerFn({ method: "POST" })
     answers: z.array(z.number().int()),
   }).parse)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: qs } = await supabaseAdmin
       .from("quiz_questions").select("id, correct_answer").eq("module_id", data.module_id).order("created_at");
@@ -181,7 +181,7 @@ export const submitQuiz = createServerFn({ method: "POST" })
     let correct = 0;
     questions.forEach((q, i) => { if (data.answers[i] === q.correct_answer) correct++; });
     const score = questions.length ? Math.round((correct / questions.length) * 100) : 0;
-    const { error } = await supabase.from("quiz_attempts").insert({
+    const { error } = await supabaseAdmin.from("quiz_attempts").insert({
       user_id: userId, module_id: data.module_id, score, answers: data.answers,
     });
     if (error) throw new Error(error.message);
