@@ -155,6 +155,44 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
         const callId = obj.callId || obj.id!;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+        // Make sure a call_logs row exists for this openphone_call_id. Our app
+        // inserts a row at dial-time with openphone_call_id=null (the id isn't
+        // known yet). On the first webhook event for a real call we adopt the
+        // most recent un-linked dial that targets the same phone number so
+        // recordings and transcripts land on it.
+        {
+          const { data: existing } = await supabaseAdmin
+            .from("call_logs")
+            .select("id")
+            .eq("openphone_call_id", callId)
+            .maybeSingle();
+          if (!existing) {
+            const toRaw = Array.isArray(obj.to) ? obj.to[0] : obj.to;
+            const toDigits = (toRaw ?? "").replace(/\D/g, "").slice(-10);
+            if (toDigits) {
+              const sinceIso = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+              const { data: candidates } = await supabaseAdmin
+                .from("call_logs")
+                .select("id, to_number")
+                .is("openphone_call_id", null)
+                .gte("started_at", sinceIso)
+                .order("started_at", { ascending: false })
+                .limit(20);
+              const match = (candidates ?? []).find(
+                (r) => (r.to_number ?? "").replace(/\D/g, "").slice(-10) === toDigits,
+              );
+              if (match) {
+                const adopt: { openphone_call_id: string; from_number?: string; direction?: string } = {
+                  openphone_call_id: callId,
+                };
+                if (typeof obj.from === "string") adopt.from_number = obj.from;
+                if (typeof obj.direction === "string") adopt.direction = obj.direction;
+                await supabaseAdmin.from("call_logs").update(adopt).eq("id", match.id);
+              }
+            }
+          }
+        }
+
         const type = payload.type ?? "";
 
         if (type.startsWith("call.recording")) {
