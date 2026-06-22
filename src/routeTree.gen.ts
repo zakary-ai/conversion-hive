@@ -15,40 +15,42 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
-import { Route as AuthenticatedSetPasswordRouteImport } from './routes/_authenticated/set-password'
-import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
-import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedCommissionsRouteImport } from './routes/_authenticated/commissions'
-import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
-import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
-import { Route as AuthenticatedTrainingIndexRouteImport } from './routes/_authenticated/training.index'
-import { Route as AuthenticatedCloserIndexRouteImport } from './routes/_authenticated/closer/index'
-import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AppAuthRouteImport } from './routes/app/auth'
+import { Route as AppAuthenticatedRouteRouteImport } from './routes/app/_authenticated/route'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
-import { Route as AuthenticatedTrainingModuleIdRouteImport } from './routes/_authenticated/training.$moduleId'
-import { Route as AuthenticatedCloserCommissionsRouteImport } from './routes/_authenticated/closer/commissions'
-import { Route as AuthenticatedCloserCalendarRouteImport } from './routes/_authenticated/closer/calendar'
-import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
-import { Route as AuthenticatedAdminScraperRouteImport } from './routes/_authenticated/admin/scraper'
-import { Route as AuthenticatedAdminQuizzesRouteImport } from './routes/_authenticated/admin/quizzes'
-import { Route as AuthenticatedAdminModulesRouteImport } from './routes/_authenticated/admin/modules'
-import { Route as AuthenticatedAdminLeadsRouteImport } from './routes/_authenticated/admin/leads'
-import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_authenticated/admin/commissions'
-import { Route as AuthenticatedAdminClosersRouteImport } from './routes/_authenticated/admin/closers'
-import { Route as AuthenticatedAdminBookingsRouteImport } from './routes/_authenticated/admin/bookings'
-import { Route as AuthenticatedAdminB2cCommissionsRouteImport } from './routes/_authenticated/admin/b2c-commissions'
-import { Route as AuthenticatedAdminApplicationsRouteImport } from './routes/_authenticated/admin/applications'
-import { Route as AuthenticatedAdminClientsIndexRouteImport } from './routes/_authenticated/admin/clients.index'
+import { Route as AppAuthenticatedSetPasswordRouteImport } from './routes/app/_authenticated/set-password'
+import { Route as AppAuthenticatedProfileRouteImport } from './routes/app/_authenticated/profile'
+import { Route as AppAuthenticatedLeadsRouteImport } from './routes/app/_authenticated/leads'
+import { Route as AppAuthenticatedDashboardRouteImport } from './routes/app/_authenticated/dashboard'
+import { Route as AppAuthenticatedCommissionsRouteImport } from './routes/app/_authenticated/commissions'
+import { Route as AppAuthenticatedCalendarRouteImport } from './routes/app/_authenticated/calendar'
+import { Route as AppAuthenticatedAdminRouteRouteImport } from './routes/app/_authenticated/admin/route'
+import { Route as AppAuthenticatedTrainingIndexRouteImport } from './routes/app/_authenticated/training.index'
+import { Route as AppAuthenticatedCloserIndexRouteImport } from './routes/app/_authenticated/closer/index'
+import { Route as AppAuthenticatedAdminIndexRouteImport } from './routes/app/_authenticated/admin/index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as AppAuthenticatedTrainingModuleIdRouteImport } from './routes/app/_authenticated/training.$moduleId'
+import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
+import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
+import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
+import { Route as AppAuthenticatedAdminScraperRouteImport } from './routes/app/_authenticated/admin/scraper'
+import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
+import { Route as AppAuthenticatedAdminModulesRouteImport } from './routes/app/_authenticated/admin/modules'
+import { Route as AppAuthenticatedAdminLeadsRouteImport } from './routes/app/_authenticated/admin/leads'
+import { Route as AppAuthenticatedAdminCommissionsRouteImport } from './routes/app/_authenticated/admin/commissions'
+import { Route as AppAuthenticatedAdminClosersRouteImport } from './routes/app/_authenticated/admin/closers'
+import { Route as AppAuthenticatedAdminBookingsRouteImport } from './routes/app/_authenticated/admin/bookings'
+import { Route as AppAuthenticatedAdminB2cCommissionsRouteImport } from './routes/app/_authenticated/admin/b2c-commissions'
+import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/app/_authenticated/admin/applications'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
-import { Route as AuthenticatedAdminClientsUserIdRouteImport } from './routes/_authenticated/admin/clients.$userId'
+import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
+import { Route as AppAuthenticatedAdminClientsUserIdRouteImport } from './routes/app/_authenticated/admin/clients.$userId'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -80,8 +82,9 @@ const ApplyRoute = ApplyRouteImport.update({
   path: '/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -94,147 +97,77 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedSetPasswordRoute =
-  AuthenticatedSetPasswordRouteImport.update({
-    id: '/set-password',
-    path: '/set-password',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AppAuthRoute = AppAuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCommissionsRoute =
-  AuthenticatedCommissionsRouteImport.update({
-    id: '/commissions',
-    path: '/commissions',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedTrainingIndexRoute =
-  AuthenticatedTrainingIndexRouteImport.update({
-    id: '/training/',
-    path: '/training/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCloserIndexRoute =
-  AuthenticatedCloserIndexRouteImport.update({
-    id: '/closer/',
-    path: '/closer/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+const AppAuthenticatedRouteRoute = AppAuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedTrainingModuleIdRoute =
-  AuthenticatedTrainingModuleIdRouteImport.update({
-    id: '/training/$moduleId',
-    path: '/training/$moduleId',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const AppAuthenticatedSetPasswordRoute =
+  AppAuthenticatedSetPasswordRouteImport.update({
+    id: '/set-password',
+    path: '/set-password',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedCloserCommissionsRoute =
-  AuthenticatedCloserCommissionsRouteImport.update({
-    id: '/closer/commissions',
-    path: '/closer/commissions',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCloserCalendarRoute =
-  AuthenticatedCloserCalendarRouteImport.update({
-    id: '/closer/calendar',
-    path: '/closer/calendar',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAdminSettingsRoute =
-  AuthenticatedAdminSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminScraperRoute =
-  AuthenticatedAdminScraperRouteImport.update({
-    id: '/scraper',
-    path: '/scraper',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminQuizzesRoute =
-  AuthenticatedAdminQuizzesRouteImport.update({
-    id: '/quizzes',
-    path: '/quizzes',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminModulesRoute =
-  AuthenticatedAdminModulesRouteImport.update({
-    id: '/modules',
-    path: '/modules',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
-  } as any)
-const AuthenticatedAdminLeadsRoute = AuthenticatedAdminLeadsRouteImport.update({
+const AppAuthenticatedProfileRoute = AppAuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppAuthenticatedRouteRoute,
+} as any)
+const AppAuthenticatedLeadsRoute = AppAuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
+  getParentRoute: () => AppAuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminCommissionsRoute =
-  AuthenticatedAdminCommissionsRouteImport.update({
+const AppAuthenticatedDashboardRoute =
+  AppAuthenticatedDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedCommissionsRoute =
+  AppAuthenticatedCommissionsRouteImport.update({
     id: '/commissions',
     path: '/commissions',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminClosersRoute =
-  AuthenticatedAdminClosersRouteImport.update({
-    id: '/closers',
-    path: '/closers',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
+const AppAuthenticatedCalendarRoute =
+  AppAuthenticatedCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminBookingsRoute =
-  AuthenticatedAdminBookingsRouteImport.update({
-    id: '/bookings',
-    path: '/bookings',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
+const AppAuthenticatedAdminRouteRoute =
+  AppAuthenticatedAdminRouteRouteImport.update({
+    id: '/admin',
+    path: '/admin',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminB2cCommissionsRoute =
-  AuthenticatedAdminB2cCommissionsRouteImport.update({
-    id: '/b2c-commissions',
-    path: '/b2c-commissions',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
+const AppAuthenticatedTrainingIndexRoute =
+  AppAuthenticatedTrainingIndexRouteImport.update({
+    id: '/training/',
+    path: '/training/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminApplicationsRoute =
-  AuthenticatedAdminApplicationsRouteImport.update({
-    id: '/applications',
-    path: '/applications',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
+const AppAuthenticatedCloserIndexRoute =
+  AppAuthenticatedCloserIndexRouteImport.update({
+    id: '/closer/',
+    path: '/closer/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminClientsIndexRoute =
-  AuthenticatedAdminClientsIndexRouteImport.update({
-    id: '/clients/',
-    path: '/clients/',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
+const AppAuthenticatedAdminIndexRoute =
+  AppAuthenticatedAdminIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
@@ -254,6 +187,84 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AppAuthenticatedTrainingModuleIdRoute =
+  AppAuthenticatedTrainingModuleIdRouteImport.update({
+    id: '/training/$moduleId',
+    path: '/training/$moduleId',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedCloserCommissionsRoute =
+  AppAuthenticatedCloserCommissionsRouteImport.update({
+    id: '/closer/commissions',
+    path: '/closer/commissions',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedCloserCalendarRoute =
+  AppAuthenticatedCloserCalendarRouteImport.update({
+    id: '/closer/calendar',
+    path: '/closer/calendar',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAdminSettingsRoute =
+  AppAuthenticatedAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminScraperRoute =
+  AppAuthenticatedAdminScraperRouteImport.update({
+    id: '/scraper',
+    path: '/scraper',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminQuizzesRoute =
+  AppAuthenticatedAdminQuizzesRouteImport.update({
+    id: '/quizzes',
+    path: '/quizzes',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminModulesRoute =
+  AppAuthenticatedAdminModulesRouteImport.update({
+    id: '/modules',
+    path: '/modules',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminLeadsRoute =
+  AppAuthenticatedAdminLeadsRouteImport.update({
+    id: '/leads',
+    path: '/leads',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminCommissionsRoute =
+  AppAuthenticatedAdminCommissionsRouteImport.update({
+    id: '/commissions',
+    path: '/commissions',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminClosersRoute =
+  AppAuthenticatedAdminClosersRouteImport.update({
+    id: '/closers',
+    path: '/closers',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminBookingsRoute =
+  AppAuthenticatedAdminBookingsRouteImport.update({
+    id: '/bookings',
+    path: '/bookings',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminB2cCommissionsRoute =
+  AppAuthenticatedAdminB2cCommissionsRouteImport.update({
+    id: '/b2c-commissions',
+    path: '/b2c-commissions',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminApplicationsRoute =
+  AppAuthenticatedAdminApplicationsRouteImport.update({
+    id: '/applications',
+    path: '/applications',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
 const ApiPublicHooksRunScraperRoute =
   ApiPublicHooksRunScraperRouteImport.update({
     id: '/api/public/hooks/run-scraper',
@@ -265,266 +276,284 @@ const ApiPublicHooksOpenphoneRoute = ApiPublicHooksOpenphoneRouteImport.update({
   path: '/api/public/hooks/openphone',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminClientsUserIdRoute =
-  AuthenticatedAdminClientsUserIdRouteImport.update({
+const AppAuthenticatedAdminClientsIndexRoute =
+  AppAuthenticatedAdminClientsIndexRouteImport.update({
+    id: '/clients/',
+    path: '/clients/',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminClientsUserIdRoute =
+  AppAuthenticatedAdminClientsUserIdRouteImport.update({
     id: '/clients/$userId',
     path: '/clients/$userId',
-    getParentRoute: () => AuthenticatedAdminRouteRoute,
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
-  '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
-  '/calendar': typeof AuthenticatedCalendarRoute
-  '/commissions': typeof AuthenticatedCommissionsRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/leads': typeof AuthenticatedLeadsRoute
-  '/profile': typeof AuthenticatedProfileRoute
-  '/set-password': typeof AuthenticatedSetPasswordRoute
+  '/app/auth': typeof AppAuthRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
-  '/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
-  '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
-  '/admin/closers': typeof AuthenticatedAdminClosersRoute
-  '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
-  '/admin/leads': typeof AuthenticatedAdminLeadsRoute
-  '/admin/modules': typeof AuthenticatedAdminModulesRoute
-  '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
-  '/admin/scraper': typeof AuthenticatedAdminScraperRoute
-  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
-  '/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
-  '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/app/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
+  '/app/calendar': typeof AppAuthenticatedCalendarRoute
+  '/app/commissions': typeof AppAuthenticatedCommissionsRoute
+  '/app/dashboard': typeof AppAuthenticatedDashboardRoute
+  '/app/leads': typeof AppAuthenticatedLeadsRoute
+  '/app/profile': typeof AppAuthenticatedProfileRoute
+  '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
-  '/admin/': typeof AuthenticatedAdminIndexRoute
-  '/closer/': typeof AuthenticatedCloserIndexRoute
-  '/training/': typeof AuthenticatedTrainingIndexRoute
-  '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
+  '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
+  '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
+  '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
+  '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
+  '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
+  '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
+  '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
+  '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
+  '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
+  '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
+  '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
+  '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/training/$moduleId': typeof AppAuthenticatedTrainingModuleIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
-  '/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
+  '/app/admin/': typeof AppAuthenticatedAdminIndexRoute
+  '/app/closer/': typeof AppAuthenticatedCloserIndexRoute
+  '/app/training/': typeof AppAuthenticatedTrainingIndexRoute
+  '/app/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
+  '/app/admin/clients/': typeof AppAuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
-  '/calendar': typeof AuthenticatedCalendarRoute
-  '/commissions': typeof AuthenticatedCommissionsRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/leads': typeof AuthenticatedLeadsRoute
-  '/profile': typeof AuthenticatedProfileRoute
-  '/set-password': typeof AuthenticatedSetPasswordRoute
+  '/app/auth': typeof AppAuthRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/admin/applications': typeof AuthenticatedAdminApplicationsRoute
-  '/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
-  '/admin/bookings': typeof AuthenticatedAdminBookingsRoute
-  '/admin/closers': typeof AuthenticatedAdminClosersRoute
-  '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
-  '/admin/leads': typeof AuthenticatedAdminLeadsRoute
-  '/admin/modules': typeof AuthenticatedAdminModulesRoute
-  '/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
-  '/admin/scraper': typeof AuthenticatedAdminScraperRoute
-  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/closer/calendar': typeof AuthenticatedCloserCalendarRoute
-  '/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
-  '/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/app/calendar': typeof AppAuthenticatedCalendarRoute
+  '/app/commissions': typeof AppAuthenticatedCommissionsRoute
+  '/app/dashboard': typeof AppAuthenticatedDashboardRoute
+  '/app/leads': typeof AppAuthenticatedLeadsRoute
+  '/app/profile': typeof AppAuthenticatedProfileRoute
+  '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
-  '/admin': typeof AuthenticatedAdminIndexRoute
-  '/closer': typeof AuthenticatedCloserIndexRoute
-  '/training': typeof AuthenticatedTrainingIndexRoute
-  '/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
+  '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
+  '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
+  '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
+  '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
+  '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
+  '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
+  '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
+  '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
+  '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
+  '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
+  '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
+  '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/training/$moduleId': typeof AppAuthenticatedTrainingModuleIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
-  '/admin/clients': typeof AuthenticatedAdminClientsIndexRoute
+  '/app/admin': typeof AppAuthenticatedAdminIndexRoute
+  '/app/closer': typeof AppAuthenticatedCloserIndexRoute
+  '/app/training': typeof AppAuthenticatedTrainingIndexRoute
+  '/app/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
+  '/app/admin/clients': typeof AppAuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/app': typeof AppRouteRouteWithChildren
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
-  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
-  '/_authenticated/commissions': typeof AuthenticatedCommissionsRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/leads': typeof AuthenticatedLeadsRoute
-  '/_authenticated/profile': typeof AuthenticatedProfileRoute
-  '/_authenticated/set-password': typeof AuthenticatedSetPasswordRoute
+  '/app/_authenticated': typeof AppAuthenticatedRouteRouteWithChildren
+  '/app/auth': typeof AppAuthRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
-  '/_authenticated/admin/applications': typeof AuthenticatedAdminApplicationsRoute
-  '/_authenticated/admin/b2c-commissions': typeof AuthenticatedAdminB2cCommissionsRoute
-  '/_authenticated/admin/bookings': typeof AuthenticatedAdminBookingsRoute
-  '/_authenticated/admin/closers': typeof AuthenticatedAdminClosersRoute
-  '/_authenticated/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
-  '/_authenticated/admin/leads': typeof AuthenticatedAdminLeadsRoute
-  '/_authenticated/admin/modules': typeof AuthenticatedAdminModulesRoute
-  '/_authenticated/admin/quizzes': typeof AuthenticatedAdminQuizzesRoute
-  '/_authenticated/admin/scraper': typeof AuthenticatedAdminScraperRoute
-  '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
-  '/_authenticated/closer/calendar': typeof AuthenticatedCloserCalendarRoute
-  '/_authenticated/closer/commissions': typeof AuthenticatedCloserCommissionsRoute
-  '/_authenticated/training/$moduleId': typeof AuthenticatedTrainingModuleIdRoute
+  '/app/_authenticated/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
+  '/app/_authenticated/calendar': typeof AppAuthenticatedCalendarRoute
+  '/app/_authenticated/commissions': typeof AppAuthenticatedCommissionsRoute
+  '/app/_authenticated/dashboard': typeof AppAuthenticatedDashboardRoute
+  '/app/_authenticated/leads': typeof AppAuthenticatedLeadsRoute
+  '/app/_authenticated/profile': typeof AppAuthenticatedProfileRoute
+  '/app/_authenticated/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
-  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
-  '/_authenticated/closer/': typeof AuthenticatedCloserIndexRoute
-  '/_authenticated/training/': typeof AuthenticatedTrainingIndexRoute
-  '/_authenticated/admin/clients/$userId': typeof AuthenticatedAdminClientsUserIdRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
+  '/app/_authenticated/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
+  '/app/_authenticated/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
+  '/app/_authenticated/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
+  '/app/_authenticated/admin/closers': typeof AppAuthenticatedAdminClosersRoute
+  '/app/_authenticated/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
+  '/app/_authenticated/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
+  '/app/_authenticated/admin/modules': typeof AppAuthenticatedAdminModulesRoute
+  '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
+  '/app/_authenticated/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
+  '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
+  '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
+  '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/_authenticated/training/$moduleId': typeof AppAuthenticatedTrainingModuleIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
-  '/_authenticated/admin/clients/': typeof AuthenticatedAdminClientsIndexRoute
+  '/app/_authenticated/admin/': typeof AppAuthenticatedAdminIndexRoute
+  '/app/_authenticated/closer/': typeof AppAuthenticatedCloserIndexRoute
+  '/app/_authenticated/training/': typeof AppAuthenticatedTrainingIndexRoute
+  '/app/_authenticated/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
+  '/app/_authenticated/admin/clients/': typeof AppAuthenticatedAdminClientsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
     | '/apply'
     | '/auth'
     | '/privacy'
     | '/support'
     | '/terms'
     | '/unsubscribe'
-    | '/admin'
-    | '/calendar'
-    | '/commissions'
-    | '/dashboard'
-    | '/leads'
-    | '/profile'
-    | '/set-password'
+    | '/app/auth'
     | '/email/unsubscribe'
-    | '/admin/applications'
-    | '/admin/b2c-commissions'
-    | '/admin/bookings'
-    | '/admin/closers'
-    | '/admin/commissions'
-    | '/admin/leads'
-    | '/admin/modules'
-    | '/admin/quizzes'
-    | '/admin/scraper'
-    | '/admin/settings'
-    | '/closer/calendar'
-    | '/closer/commissions'
-    | '/training/$moduleId'
+    | '/app/admin'
+    | '/app/calendar'
+    | '/app/commissions'
+    | '/app/dashboard'
+    | '/app/leads'
+    | '/app/profile'
+    | '/app/set-password'
     | '/lovable/email/suppression'
-    | '/admin/'
-    | '/closer/'
-    | '/training/'
-    | '/admin/clients/$userId'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
+    | '/app/admin/applications'
+    | '/app/admin/b2c-commissions'
+    | '/app/admin/bookings'
+    | '/app/admin/closers'
+    | '/app/admin/commissions'
+    | '/app/admin/leads'
+    | '/app/admin/modules'
+    | '/app/admin/quizzes'
+    | '/app/admin/scraper'
+    | '/app/admin/settings'
+    | '/app/closer/calendar'
+    | '/app/closer/commissions'
+    | '/app/training/$moduleId'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
-    | '/admin/clients/'
+    | '/app/admin/'
+    | '/app/closer/'
+    | '/app/training/'
+    | '/app/admin/clients/$userId'
+    | '/app/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app'
     | '/apply'
     | '/auth'
     | '/privacy'
     | '/support'
     | '/terms'
     | '/unsubscribe'
-    | '/calendar'
-    | '/commissions'
-    | '/dashboard'
-    | '/leads'
-    | '/profile'
-    | '/set-password'
+    | '/app/auth'
     | '/email/unsubscribe'
-    | '/admin/applications'
-    | '/admin/b2c-commissions'
-    | '/admin/bookings'
-    | '/admin/closers'
-    | '/admin/commissions'
-    | '/admin/leads'
-    | '/admin/modules'
-    | '/admin/quizzes'
-    | '/admin/scraper'
-    | '/admin/settings'
-    | '/closer/calendar'
-    | '/closer/commissions'
-    | '/training/$moduleId'
+    | '/app/calendar'
+    | '/app/commissions'
+    | '/app/dashboard'
+    | '/app/leads'
+    | '/app/profile'
+    | '/app/set-password'
     | '/lovable/email/suppression'
-    | '/admin'
-    | '/closer'
-    | '/training'
-    | '/admin/clients/$userId'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
+    | '/app/admin/applications'
+    | '/app/admin/b2c-commissions'
+    | '/app/admin/bookings'
+    | '/app/admin/closers'
+    | '/app/admin/commissions'
+    | '/app/admin/leads'
+    | '/app/admin/modules'
+    | '/app/admin/quizzes'
+    | '/app/admin/scraper'
+    | '/app/admin/settings'
+    | '/app/closer/calendar'
+    | '/app/closer/commissions'
+    | '/app/training/$moduleId'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
-    | '/admin/clients'
+    | '/app/admin'
+    | '/app/closer'
+    | '/app/training'
+    | '/app/admin/clients/$userId'
+    | '/app/admin/clients'
   id:
     | '__root__'
     | '/'
-    | '/_authenticated'
+    | '/app'
     | '/apply'
     | '/auth'
     | '/privacy'
     | '/support'
     | '/terms'
     | '/unsubscribe'
-    | '/_authenticated/admin'
-    | '/_authenticated/calendar'
-    | '/_authenticated/commissions'
-    | '/_authenticated/dashboard'
-    | '/_authenticated/leads'
-    | '/_authenticated/profile'
-    | '/_authenticated/set-password'
+    | '/app/_authenticated'
+    | '/app/auth'
     | '/email/unsubscribe'
-    | '/_authenticated/admin/applications'
-    | '/_authenticated/admin/b2c-commissions'
-    | '/_authenticated/admin/bookings'
-    | '/_authenticated/admin/closers'
-    | '/_authenticated/admin/commissions'
-    | '/_authenticated/admin/leads'
-    | '/_authenticated/admin/modules'
-    | '/_authenticated/admin/quizzes'
-    | '/_authenticated/admin/scraper'
-    | '/_authenticated/admin/settings'
-    | '/_authenticated/closer/calendar'
-    | '/_authenticated/closer/commissions'
-    | '/_authenticated/training/$moduleId'
+    | '/app/_authenticated/admin'
+    | '/app/_authenticated/calendar'
+    | '/app/_authenticated/commissions'
+    | '/app/_authenticated/dashboard'
+    | '/app/_authenticated/leads'
+    | '/app/_authenticated/profile'
+    | '/app/_authenticated/set-password'
     | '/lovable/email/suppression'
-    | '/_authenticated/admin/'
-    | '/_authenticated/closer/'
-    | '/_authenticated/training/'
-    | '/_authenticated/admin/clients/$userId'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
+    | '/app/_authenticated/admin/applications'
+    | '/app/_authenticated/admin/b2c-commissions'
+    | '/app/_authenticated/admin/bookings'
+    | '/app/_authenticated/admin/closers'
+    | '/app/_authenticated/admin/commissions'
+    | '/app/_authenticated/admin/leads'
+    | '/app/_authenticated/admin/modules'
+    | '/app/_authenticated/admin/quizzes'
+    | '/app/_authenticated/admin/scraper'
+    | '/app/_authenticated/admin/settings'
+    | '/app/_authenticated/closer/calendar'
+    | '/app/_authenticated/closer/commissions'
+    | '/app/_authenticated/training/$moduleId'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
-    | '/_authenticated/admin/clients/'
+    | '/app/_authenticated/admin/'
+    | '/app/_authenticated/closer/'
+    | '/app/_authenticated/training/'
+    | '/app/_authenticated/admin/clients/$userId'
+    | '/app/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AppRouteRoute: typeof AppRouteRouteWithChildren
   ApplyRoute: typeof ApplyRoute
   AuthRoute: typeof AuthRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -584,11 +613,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -605,75 +634,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/set-password': {
-      id: '/_authenticated/set-password'
-      path: '/set-password'
-      fullPath: '/set-password'
-      preLoaderRoute: typeof AuthenticatedSetPasswordRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/app/auth': {
+      id: '/app/auth'
+      path: '/auth'
+      fullPath: '/app/auth'
+      preLoaderRoute: typeof AppAuthRouteImport
+      parentRoute: typeof AppRouteRoute
     }
-    '/_authenticated/profile': {
-      id: '/_authenticated/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AuthenticatedProfileRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/leads': {
-      id: '/_authenticated/leads'
-      path: '/leads'
-      fullPath: '/leads'
-      preLoaderRoute: typeof AuthenticatedLeadsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/commissions': {
-      id: '/_authenticated/commissions'
-      path: '/commissions'
-      fullPath: '/commissions'
-      preLoaderRoute: typeof AuthenticatedCommissionsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/calendar': {
-      id: '/_authenticated/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/training/': {
-      id: '/_authenticated/training/'
-      path: '/training'
-      fullPath: '/training/'
-      preLoaderRoute: typeof AuthenticatedTrainingIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/closer/': {
-      id: '/_authenticated/closer/'
-      path: '/closer'
-      fullPath: '/closer/'
-      preLoaderRoute: typeof AuthenticatedCloserIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/': {
-      id: '/_authenticated/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+    '/app/_authenticated': {
+      id: '/app/_authenticated'
+      path: ''
+      fullPath: '/app'
+      preLoaderRoute: typeof AppAuthenticatedRouteRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -682,103 +655,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/training/$moduleId': {
-      id: '/_authenticated/training/$moduleId'
-      path: '/training/$moduleId'
-      fullPath: '/training/$moduleId'
-      preLoaderRoute: typeof AuthenticatedTrainingModuleIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/app/_authenticated/set-password': {
+      id: '/app/_authenticated/set-password'
+      path: '/set-password'
+      fullPath: '/app/set-password'
+      preLoaderRoute: typeof AppAuthenticatedSetPasswordRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/closer/commissions': {
-      id: '/_authenticated/closer/commissions'
-      path: '/closer/commissions'
-      fullPath: '/closer/commissions'
-      preLoaderRoute: typeof AuthenticatedCloserCommissionsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/app/_authenticated/profile': {
+      id: '/app/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppAuthenticatedProfileRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/closer/calendar': {
-      id: '/_authenticated/closer/calendar'
-      path: '/closer/calendar'
-      fullPath: '/closer/calendar'
-      preLoaderRoute: typeof AuthenticatedCloserCalendarRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin/settings': {
-      id: '/_authenticated/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/scraper': {
-      id: '/_authenticated/admin/scraper'
-      path: '/scraper'
-      fullPath: '/admin/scraper'
-      preLoaderRoute: typeof AuthenticatedAdminScraperRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/quizzes': {
-      id: '/_authenticated/admin/quizzes'
-      path: '/quizzes'
-      fullPath: '/admin/quizzes'
-      preLoaderRoute: typeof AuthenticatedAdminQuizzesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/modules': {
-      id: '/_authenticated/admin/modules'
-      path: '/modules'
-      fullPath: '/admin/modules'
-      preLoaderRoute: typeof AuthenticatedAdminModulesRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
-    }
-    '/_authenticated/admin/leads': {
-      id: '/_authenticated/admin/leads'
+    '/app/_authenticated/leads': {
+      id: '/app/_authenticated/leads'
       path: '/leads'
-      fullPath: '/admin/leads'
-      preLoaderRoute: typeof AuthenticatedAdminLeadsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+      fullPath: '/app/leads'
+      preLoaderRoute: typeof AppAuthenticatedLeadsRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/admin/commissions': {
-      id: '/_authenticated/admin/commissions'
+    '/app/_authenticated/dashboard': {
+      id: '/app/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AppAuthenticatedDashboardRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/commissions': {
+      id: '/app/_authenticated/commissions'
       path: '/commissions'
-      fullPath: '/admin/commissions'
-      preLoaderRoute: typeof AuthenticatedAdminCommissionsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+      fullPath: '/app/commissions'
+      preLoaderRoute: typeof AppAuthenticatedCommissionsRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/admin/closers': {
-      id: '/_authenticated/admin/closers'
-      path: '/closers'
-      fullPath: '/admin/closers'
-      preLoaderRoute: typeof AuthenticatedAdminClosersRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+    '/app/_authenticated/calendar': {
+      id: '/app/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/app/calendar'
+      preLoaderRoute: typeof AppAuthenticatedCalendarRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/admin/bookings': {
-      id: '/_authenticated/admin/bookings'
-      path: '/bookings'
-      fullPath: '/admin/bookings'
-      preLoaderRoute: typeof AuthenticatedAdminBookingsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+    '/app/_authenticated/admin': {
+      id: '/app/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAuthenticatedAdminRouteRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/admin/b2c-commissions': {
-      id: '/_authenticated/admin/b2c-commissions'
-      path: '/b2c-commissions'
-      fullPath: '/admin/b2c-commissions'
-      preLoaderRoute: typeof AuthenticatedAdminB2cCommissionsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+    '/app/_authenticated/training/': {
+      id: '/app/_authenticated/training/'
+      path: '/training'
+      fullPath: '/app/training/'
+      preLoaderRoute: typeof AppAuthenticatedTrainingIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/admin/applications': {
-      id: '/_authenticated/admin/applications'
-      path: '/applications'
-      fullPath: '/admin/applications'
-      preLoaderRoute: typeof AuthenticatedAdminApplicationsRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+    '/app/_authenticated/closer/': {
+      id: '/app/_authenticated/closer/'
+      path: '/closer'
+      fullPath: '/app/closer/'
+      preLoaderRoute: typeof AppAuthenticatedCloserIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/_authenticated/admin/clients/': {
-      id: '/_authenticated/admin/clients/'
-      path: '/clients'
-      fullPath: '/admin/clients/'
-      preLoaderRoute: typeof AuthenticatedAdminClientsIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+    '/app/_authenticated/admin/': {
+      id: '/app/_authenticated/admin/'
+      path: '/'
+      fullPath: '/app/admin/'
+      preLoaderRoute: typeof AppAuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
@@ -801,6 +746,97 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/_authenticated/training/$moduleId': {
+      id: '/app/_authenticated/training/$moduleId'
+      path: '/training/$moduleId'
+      fullPath: '/app/training/$moduleId'
+      preLoaderRoute: typeof AppAuthenticatedTrainingModuleIdRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/closer/commissions': {
+      id: '/app/_authenticated/closer/commissions'
+      path: '/closer/commissions'
+      fullPath: '/app/closer/commissions'
+      preLoaderRoute: typeof AppAuthenticatedCloserCommissionsRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/closer/calendar': {
+      id: '/app/_authenticated/closer/calendar'
+      path: '/closer/calendar'
+      fullPath: '/app/closer/calendar'
+      preLoaderRoute: typeof AppAuthenticatedCloserCalendarRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/admin/settings': {
+      id: '/app/_authenticated/admin/settings'
+      path: '/settings'
+      fullPath: '/app/admin/settings'
+      preLoaderRoute: typeof AppAuthenticatedAdminSettingsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/scraper': {
+      id: '/app/_authenticated/admin/scraper'
+      path: '/scraper'
+      fullPath: '/app/admin/scraper'
+      preLoaderRoute: typeof AppAuthenticatedAdminScraperRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/quizzes': {
+      id: '/app/_authenticated/admin/quizzes'
+      path: '/quizzes'
+      fullPath: '/app/admin/quizzes'
+      preLoaderRoute: typeof AppAuthenticatedAdminQuizzesRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/modules': {
+      id: '/app/_authenticated/admin/modules'
+      path: '/modules'
+      fullPath: '/app/admin/modules'
+      preLoaderRoute: typeof AppAuthenticatedAdminModulesRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/leads': {
+      id: '/app/_authenticated/admin/leads'
+      path: '/leads'
+      fullPath: '/app/admin/leads'
+      preLoaderRoute: typeof AppAuthenticatedAdminLeadsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/commissions': {
+      id: '/app/_authenticated/admin/commissions'
+      path: '/commissions'
+      fullPath: '/app/admin/commissions'
+      preLoaderRoute: typeof AppAuthenticatedAdminCommissionsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/closers': {
+      id: '/app/_authenticated/admin/closers'
+      path: '/closers'
+      fullPath: '/app/admin/closers'
+      preLoaderRoute: typeof AppAuthenticatedAdminClosersRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/bookings': {
+      id: '/app/_authenticated/admin/bookings'
+      path: '/bookings'
+      fullPath: '/app/admin/bookings'
+      preLoaderRoute: typeof AppAuthenticatedAdminBookingsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/b2c-commissions': {
+      id: '/app/_authenticated/admin/b2c-commissions'
+      path: '/b2c-commissions'
+      fullPath: '/app/admin/b2c-commissions'
+      preLoaderRoute: typeof AppAuthenticatedAdminB2cCommissionsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/applications': {
+      id: '/app/_authenticated/admin/applications'
+      path: '/applications'
+      fullPath: '/app/admin/applications'
+      preLoaderRoute: typeof AppAuthenticatedAdminApplicationsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
     '/api/public/hooks/run-scraper': {
       id: '/api/public/hooks/run-scraper'
       path: '/api/public/hooks/run-scraper'
@@ -815,91 +851,119 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOpenphoneRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/clients/$userId': {
-      id: '/_authenticated/admin/clients/$userId'
+    '/app/_authenticated/admin/clients/': {
+      id: '/app/_authenticated/admin/clients/'
+      path: '/clients'
+      fullPath: '/app/admin/clients/'
+      preLoaderRoute: typeof AppAuthenticatedAdminClientsIndexRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/clients/$userId': {
+      id: '/app/_authenticated/admin/clients/$userId'
       path: '/clients/$userId'
-      fullPath: '/admin/clients/$userId'
-      preLoaderRoute: typeof AuthenticatedAdminClientsUserIdRouteImport
-      parentRoute: typeof AuthenticatedAdminRouteRoute
+      fullPath: '/app/admin/clients/$userId'
+      preLoaderRoute: typeof AppAuthenticatedAdminClientsUserIdRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
   }
 }
 
-interface AuthenticatedAdminRouteRouteChildren {
-  AuthenticatedAdminApplicationsRoute: typeof AuthenticatedAdminApplicationsRoute
-  AuthenticatedAdminB2cCommissionsRoute: typeof AuthenticatedAdminB2cCommissionsRoute
-  AuthenticatedAdminBookingsRoute: typeof AuthenticatedAdminBookingsRoute
-  AuthenticatedAdminClosersRoute: typeof AuthenticatedAdminClosersRoute
-  AuthenticatedAdminCommissionsRoute: typeof AuthenticatedAdminCommissionsRoute
-  AuthenticatedAdminLeadsRoute: typeof AuthenticatedAdminLeadsRoute
-  AuthenticatedAdminModulesRoute: typeof AuthenticatedAdminModulesRoute
-  AuthenticatedAdminQuizzesRoute: typeof AuthenticatedAdminQuizzesRoute
-  AuthenticatedAdminScraperRoute: typeof AuthenticatedAdminScraperRoute
-  AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
-  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
-  AuthenticatedAdminClientsUserIdRoute: typeof AuthenticatedAdminClientsUserIdRoute
-  AuthenticatedAdminClientsIndexRoute: typeof AuthenticatedAdminClientsIndexRoute
+interface AppAuthenticatedAdminRouteRouteChildren {
+  AppAuthenticatedAdminApplicationsRoute: typeof AppAuthenticatedAdminApplicationsRoute
+  AppAuthenticatedAdminB2cCommissionsRoute: typeof AppAuthenticatedAdminB2cCommissionsRoute
+  AppAuthenticatedAdminBookingsRoute: typeof AppAuthenticatedAdminBookingsRoute
+  AppAuthenticatedAdminClosersRoute: typeof AppAuthenticatedAdminClosersRoute
+  AppAuthenticatedAdminCommissionsRoute: typeof AppAuthenticatedAdminCommissionsRoute
+  AppAuthenticatedAdminLeadsRoute: typeof AppAuthenticatedAdminLeadsRoute
+  AppAuthenticatedAdminModulesRoute: typeof AppAuthenticatedAdminModulesRoute
+  AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
+  AppAuthenticatedAdminScraperRoute: typeof AppAuthenticatedAdminScraperRoute
+  AppAuthenticatedAdminSettingsRoute: typeof AppAuthenticatedAdminSettingsRoute
+  AppAuthenticatedAdminIndexRoute: typeof AppAuthenticatedAdminIndexRoute
+  AppAuthenticatedAdminClientsUserIdRoute: typeof AppAuthenticatedAdminClientsUserIdRoute
+  AppAuthenticatedAdminClientsIndexRoute: typeof AppAuthenticatedAdminClientsIndexRoute
 }
 
-const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
+const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteChildren =
   {
-    AuthenticatedAdminApplicationsRoute: AuthenticatedAdminApplicationsRoute,
-    AuthenticatedAdminB2cCommissionsRoute:
-      AuthenticatedAdminB2cCommissionsRoute,
-    AuthenticatedAdminBookingsRoute: AuthenticatedAdminBookingsRoute,
-    AuthenticatedAdminClosersRoute: AuthenticatedAdminClosersRoute,
-    AuthenticatedAdminCommissionsRoute: AuthenticatedAdminCommissionsRoute,
-    AuthenticatedAdminLeadsRoute: AuthenticatedAdminLeadsRoute,
-    AuthenticatedAdminModulesRoute: AuthenticatedAdminModulesRoute,
-    AuthenticatedAdminQuizzesRoute: AuthenticatedAdminQuizzesRoute,
-    AuthenticatedAdminScraperRoute: AuthenticatedAdminScraperRoute,
-    AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
-    AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
-    AuthenticatedAdminClientsUserIdRoute: AuthenticatedAdminClientsUserIdRoute,
-    AuthenticatedAdminClientsIndexRoute: AuthenticatedAdminClientsIndexRoute,
+    AppAuthenticatedAdminApplicationsRoute:
+      AppAuthenticatedAdminApplicationsRoute,
+    AppAuthenticatedAdminB2cCommissionsRoute:
+      AppAuthenticatedAdminB2cCommissionsRoute,
+    AppAuthenticatedAdminBookingsRoute: AppAuthenticatedAdminBookingsRoute,
+    AppAuthenticatedAdminClosersRoute: AppAuthenticatedAdminClosersRoute,
+    AppAuthenticatedAdminCommissionsRoute:
+      AppAuthenticatedAdminCommissionsRoute,
+    AppAuthenticatedAdminLeadsRoute: AppAuthenticatedAdminLeadsRoute,
+    AppAuthenticatedAdminModulesRoute: AppAuthenticatedAdminModulesRoute,
+    AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
+    AppAuthenticatedAdminScraperRoute: AppAuthenticatedAdminScraperRoute,
+    AppAuthenticatedAdminSettingsRoute: AppAuthenticatedAdminSettingsRoute,
+    AppAuthenticatedAdminIndexRoute: AppAuthenticatedAdminIndexRoute,
+    AppAuthenticatedAdminClientsUserIdRoute:
+      AppAuthenticatedAdminClientsUserIdRoute,
+    AppAuthenticatedAdminClientsIndexRoute:
+      AppAuthenticatedAdminClientsIndexRoute,
   }
 
-const AuthenticatedAdminRouteRouteWithChildren =
-  AuthenticatedAdminRouteRoute._addFileChildren(
-    AuthenticatedAdminRouteRouteChildren,
+const AppAuthenticatedAdminRouteRouteWithChildren =
+  AppAuthenticatedAdminRouteRoute._addFileChildren(
+    AppAuthenticatedAdminRouteRouteChildren,
   )
 
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
-  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
-  AuthenticatedCommissionsRoute: typeof AuthenticatedCommissionsRoute
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
-  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
-  AuthenticatedSetPasswordRoute: typeof AuthenticatedSetPasswordRoute
-  AuthenticatedCloserCalendarRoute: typeof AuthenticatedCloserCalendarRoute
-  AuthenticatedCloserCommissionsRoute: typeof AuthenticatedCloserCommissionsRoute
-  AuthenticatedTrainingModuleIdRoute: typeof AuthenticatedTrainingModuleIdRoute
-  AuthenticatedCloserIndexRoute: typeof AuthenticatedCloserIndexRoute
-  AuthenticatedTrainingIndexRoute: typeof AuthenticatedTrainingIndexRoute
+interface AppAuthenticatedRouteRouteChildren {
+  AppAuthenticatedAdminRouteRoute: typeof AppAuthenticatedAdminRouteRouteWithChildren
+  AppAuthenticatedCalendarRoute: typeof AppAuthenticatedCalendarRoute
+  AppAuthenticatedCommissionsRoute: typeof AppAuthenticatedCommissionsRoute
+  AppAuthenticatedDashboardRoute: typeof AppAuthenticatedDashboardRoute
+  AppAuthenticatedLeadsRoute: typeof AppAuthenticatedLeadsRoute
+  AppAuthenticatedProfileRoute: typeof AppAuthenticatedProfileRoute
+  AppAuthenticatedSetPasswordRoute: typeof AppAuthenticatedSetPasswordRoute
+  AppAuthenticatedCloserCalendarRoute: typeof AppAuthenticatedCloserCalendarRoute
+  AppAuthenticatedCloserCommissionsRoute: typeof AppAuthenticatedCloserCommissionsRoute
+  AppAuthenticatedTrainingModuleIdRoute: typeof AppAuthenticatedTrainingModuleIdRoute
+  AppAuthenticatedCloserIndexRoute: typeof AppAuthenticatedCloserIndexRoute
+  AppAuthenticatedTrainingIndexRoute: typeof AppAuthenticatedTrainingIndexRoute
 }
 
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
-  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
-  AuthenticatedCommissionsRoute: AuthenticatedCommissionsRoute,
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
-  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
-  AuthenticatedSetPasswordRoute: AuthenticatedSetPasswordRoute,
-  AuthenticatedCloserCalendarRoute: AuthenticatedCloserCalendarRoute,
-  AuthenticatedCloserCommissionsRoute: AuthenticatedCloserCommissionsRoute,
-  AuthenticatedTrainingModuleIdRoute: AuthenticatedTrainingModuleIdRoute,
-  AuthenticatedCloserIndexRoute: AuthenticatedCloserIndexRoute,
-  AuthenticatedTrainingIndexRoute: AuthenticatedTrainingIndexRoute,
+const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
+  AppAuthenticatedAdminRouteRoute: AppAuthenticatedAdminRouteRouteWithChildren,
+  AppAuthenticatedCalendarRoute: AppAuthenticatedCalendarRoute,
+  AppAuthenticatedCommissionsRoute: AppAuthenticatedCommissionsRoute,
+  AppAuthenticatedDashboardRoute: AppAuthenticatedDashboardRoute,
+  AppAuthenticatedLeadsRoute: AppAuthenticatedLeadsRoute,
+  AppAuthenticatedProfileRoute: AppAuthenticatedProfileRoute,
+  AppAuthenticatedSetPasswordRoute: AppAuthenticatedSetPasswordRoute,
+  AppAuthenticatedCloserCalendarRoute: AppAuthenticatedCloserCalendarRoute,
+  AppAuthenticatedCloserCommissionsRoute:
+    AppAuthenticatedCloserCommissionsRoute,
+  AppAuthenticatedTrainingModuleIdRoute: AppAuthenticatedTrainingModuleIdRoute,
+  AppAuthenticatedCloserIndexRoute: AppAuthenticatedCloserIndexRoute,
+  AppAuthenticatedTrainingIndexRoute: AppAuthenticatedTrainingIndexRoute,
 }
 
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+const AppAuthenticatedRouteRouteWithChildren =
+  AppAuthenticatedRouteRoute._addFileChildren(
+    AppAuthenticatedRouteRouteChildren,
+  )
+
+interface AppRouteRouteChildren {
+  AppAuthenticatedRouteRoute: typeof AppAuthenticatedRouteRouteWithChildren
+  AppAuthRoute: typeof AppAuthRoute
+}
+
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAuthenticatedRouteRoute: AppAuthenticatedRouteRouteWithChildren,
+  AppAuthRoute: AppAuthRoute,
+}
+
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AppRouteRoute: AppRouteRouteWithChildren,
   ApplyRoute: ApplyRoute,
   AuthRoute: AuthRoute,
   PrivacyRoute: PrivacyRoute,

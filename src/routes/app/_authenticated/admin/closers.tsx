@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { Trash2, Plus, Save, UserPlus, KeyRound } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/admin/closers")({
+export const Route = createFileRoute("/app/_authenticated/admin/closers")({
   component: ClosersPage,
 });
 

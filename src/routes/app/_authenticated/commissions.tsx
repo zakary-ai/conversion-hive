@@ -7,7 +7,7 @@ import { DollarSign } from "lucide-react";
 
 const opts = queryOptions({ queryKey: ["my-commissions"], queryFn: () => listMyCommissions() });
 
-export const Route = createFileRoute("/_authenticated/commissions")({
+export const Route = createFileRoute("/app/_authenticated/commissions")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
   component: CommissionsPage,
 });

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { listAvailableSlots } from "@/lib/api/cl.functions";
-import { meQueryOptions } from "@/routes/_authenticated/route";
+import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

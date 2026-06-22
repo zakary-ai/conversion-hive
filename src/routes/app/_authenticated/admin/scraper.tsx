@@ -58,7 +58,7 @@ const settersOpts = (range: SetterRange) => queryOptions({
 const runsOpts = queryOptions({ queryKey: ["scraper-runs"], queryFn: () => listScraperRuns() });
 
 
-export const Route = createFileRoute("/_authenticated/admin/scraper")({
+export const Route = createFileRoute("/app/_authenticated/admin/scraper")({
   loader: ({ context }) => Promise.all([
     context.queryClient.ensureQueryData(settingsOpts),
     context.queryClient.ensureQueryData(settersOpts("day")),

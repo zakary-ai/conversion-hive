@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 const modOpts = queryOptions({ queryKey: ["modules"], queryFn: () => listModules() });
 
-export const Route = createFileRoute("/_authenticated/admin/quizzes")({
+export const Route = createFileRoute("/app/_authenticated/admin/quizzes")({
   loader: ({ context }) => context.queryClient.ensureQueryData(modOpts),
   component: AdminQuizzes,
 });

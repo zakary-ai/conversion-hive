@@ -16,14 +16,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { SlotPicker } from "@/components/slot-picker";
 import { CALL_SCRIPTS, OBJECTIONS, SMS_TEMPLATES, fillTemplate } from "@/lib/script-templates";
-import { meQueryOptions } from "@/routes/_authenticated/route";
+import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { toast } from "sonner";
 
 const opts = queryOptions({ queryKey: ["my-leads"], queryFn: () => listMyLeads() });
 const STATUSES = ["New","Contacted","No Answer","Interested","Booked","Not Interested","Follow Up","Call Again","Call Back"] as const;
 type Lead = Awaited<ReturnType<typeof listMyLeads>>[number];
 
-export const Route = createFileRoute("/_authenticated/leads")({
+export const Route = createFileRoute("/app/_authenticated/leads")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
   component: LeadsPage,
 });

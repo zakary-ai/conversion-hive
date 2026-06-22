@@ -13,7 +13,7 @@ import { ApplicationDetailDialog } from "@/components/application-detail-dialog"
 import { ApplicationsPanel, appsOpts } from "@/components/admin/applications-panel";
 import { B2cCalendarPanel } from "@/components/admin/b2c-calendar-panel";
 
-export const Route = createFileRoute("/_authenticated/admin/bookings")({
+export const Route = createFileRoute("/app/_authenticated/admin/bookings")({
   loader: ({ context }) => context.queryClient.ensureQueryData(appsOpts),
   component: BookingsPage,
 });

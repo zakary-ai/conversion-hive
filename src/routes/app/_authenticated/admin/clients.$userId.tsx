@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 type Range = "day" | "week" | "month" | "90d" | "all";
 
-export const Route = createFileRoute("/_authenticated/admin/clients/$userId")({
+export const Route = createFileRoute("/app/_authenticated/admin/clients/$userId")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(opts(params.userId, "all")),
   component: SetterDetailPage,
 });
@@ -77,7 +77,7 @@ function SetterDetailPage() {
       <PageHeader
         title={data.profile?.full_name || data.profile?.email || "Setter"}
         description={data.profile?.email ?? undefined}
-        action={<Button variant="ghost" asChild><Link to="/admin/clients">← All setters</Link></Button>}
+        action={<Button variant="ghost" asChild><Link to="/app/admin/clients">← All setters</Link></Button>}
       />
 
       <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">

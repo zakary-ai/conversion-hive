@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listCloserBookings } from "@/lib/api/b2c.functions";
-import { meQueryOptions } from "@/routes/_authenticated/route";
+import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +11,10 @@ import { Mail, Phone, Video, CalendarClock, ClipboardCheck } from "lucide-react"
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 
-export const Route = createFileRoute("/_authenticated/closer/calendar")({
+export const Route = createFileRoute("/app/_authenticated/closer/calendar")({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQueryOptions);
-    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/dashboard" });
+    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/dashboard" });
   },
   component: CloserCalendar,
 });

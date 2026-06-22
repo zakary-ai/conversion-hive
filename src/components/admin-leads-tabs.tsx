@@ -2,8 +2,8 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { to: "/admin/leads", label: "Leads" },
-  { to: "/admin/scraper", label: "Scraper" },
+  { to: "/app/admin/leads", label: "Leads" },
+  { to: "/app/admin/scraper", label: "Scraper" },
 ] as const;
 
 export function AdminLeadsTabs() {

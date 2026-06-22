@@ -1,15 +1,15 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listMyCloserCommissions } from "@/lib/api/b2c.functions";
-import { meQueryOptions } from "@/routes/_authenticated/route";
+import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, CheckCircle2 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/closer/commissions")({
+export const Route = createFileRoute("/app/_authenticated/closer/commissions")({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQueryOptions);
-    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/dashboard" });
+    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/dashboard" });
   },
   component: CloserCommissions,
 });

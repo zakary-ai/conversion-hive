@@ -7,7 +7,7 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/admin/settings")({
+export const Route = createFileRoute("/app/_authenticated/admin/settings")({
   component: SettingsPage,
 });
 
@@ -20,7 +20,7 @@ function SettingsPage() {
     qc.clear();
     await supabase.auth.signOut();
     toast.success("Signed out");
-    navigate({ to: "/auth", replace: true });
+    navigate({ to: "/app/auth", replace: true });
   };
 
   return (

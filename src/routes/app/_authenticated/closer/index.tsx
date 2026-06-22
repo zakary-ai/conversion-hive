@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listCloserBookings } from "@/lib/api/b2c.functions";
-import { meQueryOptions } from "@/routes/_authenticated/route";
+import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,10 @@ import { CalendarClock, Mail, Phone, Video, ClipboardCheck } from "lucide-react"
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 
-export const Route = createFileRoute("/_authenticated/closer/")({
+export const Route = createFileRoute("/app/_authenticated/closer/")({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQueryOptions);
-    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/dashboard" });
+    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/dashboard" });
   },
   component: CloserHome,
 });

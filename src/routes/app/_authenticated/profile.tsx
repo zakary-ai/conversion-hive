@@ -36,7 +36,7 @@ const TIMEZONES: { value: string; label: string }[] = [
   { value: "Australia/Sydney", label: "Sydney" },
 ];
 
-export const Route = createFileRoute("/_authenticated/profile")({
+export const Route = createFileRoute("/app/_authenticated/profile")({
   component: ProfilePage,
 });
 
@@ -118,7 +118,7 @@ function ProfilePage() {
             onClick={async () => {
               await supabase.auth.signOut();
               toast.success("Signed out");
-              navigate({ to: "/auth", replace: true });
+              navigate({ to: "/app/auth", replace: true });
             }}
           >
             <LogOut className="h-4 w-4 mr-2" /> Sign out
@@ -134,7 +134,7 @@ function ProfilePage() {
               Permanently delete your account and personal profile. This cannot be undone.
             </p>
           </div>
-          <DeleteAccountButton onDeleted={() => navigate({ to: "/auth", replace: true })} />
+          <DeleteAccountButton onDeleted={() => navigate({ to: "/app/auth", replace: true })} />
         </div>
       </Card>
 

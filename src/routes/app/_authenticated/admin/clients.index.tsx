@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 const opts = queryOptions({ queryKey: ["clients"], queryFn: () => listClients() });
 
-export const Route = createFileRoute("/_authenticated/admin/clients/")({
+export const Route = createFileRoute("/app/_authenticated/admin/clients/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
   component: ClientsList,
 });
@@ -65,7 +65,7 @@ function ClientsList() {
             {clients.map((c) => (
               <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                 <td className="p-3 font-medium">
-                  <Link to="/admin/clients/$userId" params={{ userId: c.user_id }} className="hover:text-primary">
+                  <Link to="/app/admin/clients/$userId" params={{ userId: c.user_id }} className="hover:text-primary">
                     {c.full_name || "—"}
                   </Link>
                 </td>
