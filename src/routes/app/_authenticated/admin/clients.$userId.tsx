@@ -587,7 +587,7 @@ function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
                 >
                   <td className="p-3 font-medium">{l.name}</td>
                   <td className="p-3 text-muted-foreground">{l.company ?? "—"}</td>
-                  <td className="p-3"><StatusPill status={l.status} /></td>
+                  <td className="p-3"><div className="flex items-center gap-2 flex-wrap"><StatusPill status={l.status} />{!leadHasRealCall(l.id, calls) && <NoCallBadge />}</div></td>
                 </tr>
               ))}
             </tbody>
