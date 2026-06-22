@@ -234,6 +234,7 @@ export type Database = {
       }
       call_logs: {
         Row: {
+          counted_at: string | null
           created_at: string
           direction: string
           duration_sec: number | null
@@ -253,6 +254,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          counted_at?: string | null
           created_at?: string
           direction?: string
           duration_sec?: number | null
@@ -272,6 +274,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          counted_at?: string | null
           created_at?: string
           direction?: string
           duration_sec?: number | null
