@@ -284,14 +284,17 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
 
   // 7. Scrape across multiple cities if still needed
   let citiesAdvanced = 0;
+  let stopReason: "target_met" | "city_cap" | "rotation_exhausted" | "no_scrape" = "no_scrape";
+  let cursor = cityIndex;
   if (scrapeTarget > 0 && actorId && cityRotation.length > 0) {
     const apifyToken = process.env.APIFY_TOKEN;
     if (!apifyToken) {
       errors.push("APIFY_TOKEN not configured");
+      stopReason = "no_scrape";
     } else {
       let insertedSoFar = 0;
-      let cursor = cityIndex;
-      while (insertedSoFar < scrapeTarget && citiesAdvanced < MAX_CITIES_PER_RUN) {
+      const maxCities = Math.min(MAX_CITIES_PER_RUN, cityRotation.length);
+      while (insertedSoFar < scrapeTarget && citiesAdvanced < maxCities) {
         const city = cityRotation[cursor];
         const cityRun: CityRun = { city, fetched: 0, inserted: 0 };
         try {
@@ -370,14 +373,20 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
             .map((c) => ({ ...c, status: "New" as const, assigned_user_id: null }));
 
           if (toInsert.length > 0) {
-            const { error: insErr } = await supabaseAdmin.from("leads").insert(toInsert);
+            // ON CONFLICT (place_id) DO NOTHING — ignoreDuplicates prevents a racing
+            // duplicate place_id from aborting the entire batch.
+            const { data: inserted, error: insErr } = await supabaseAdmin
+              .from("leads")
+              .upsert(toInsert, { onConflict: "place_id", ignoreDuplicates: true })
+              .select("id");
             if (insErr) {
               cityRun.error = `insert: ${insErr.message}`;
               errors.push(`insert(${city}): ${insErr.message}`);
             } else {
-              cityRun.inserted = toInsert.length;
-              result.inserted += toInsert.length;
-              insertedSoFar += toInsert.length;
+              const insertedCount = inserted?.length ?? 0;
+              cityRun.inserted = insertedCount;
+              result.inserted += insertedCount;
+              insertedSoFar += insertedCount;
             }
           }
         } catch (e) {
@@ -389,16 +398,30 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
         citiesAdvanced += 1;
       }
 
-      // Persist advanced rotation pointer
-      await supabaseAdmin
-        .from("scraper_settings")
-        .update({ city_rotation_index: cursor })
-        .eq("id", (settings as { id: string }).id);
+      if (insertedSoFar >= scrapeTarget) stopReason = "target_met";
+      else if (citiesAdvanced >= MAX_CITIES_PER_RUN) stopReason = "city_cap";
+      else stopReason = "rotation_exhausted";
+
+      // Persist advanced rotation pointer in its own try/catch — a save error
+      // must not abort the run or skip the warning / log step below.
+      try {
+        await supabaseAdmin
+          .from("scraper_settings")
+          .update({ city_rotation_index: cursor })
+          .eq("id", (settings as { id: string }).id);
+      } catch (e) {
+        errors.push(`rotation_save: ${(e as Error).message}`);
+      }
     }
   } else if (scrapeTarget === 0) {
     result.skipped = true;
     result.reason = "pool_covered_demand";
+    stopReason = "no_scrape";
+  } else {
+    // scrapeTarget > 0 but actor or rotation missing
+    stopReason = "no_scrape";
   }
+
 
   // 8. Second distribution pass for freshly inserted leads
   if (result.inserted > 0) {
