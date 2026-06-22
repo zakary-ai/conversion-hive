@@ -67,13 +67,56 @@ function ClientsList() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <PageHeader title="Setters" description={`${clients.length} active`} />
-        <Button onClick={() => { setCreated(null); setOpen(true); }}>
+        <Button onClick={() => { setCreated(null); setOpen(true); }} size="sm" className="shrink-0">
           <UserPlus className="h-4 w-4 mr-2" /> Invite setter
         </Button>
       </div>
-      <Card className="overflow-hidden">
+
+      {/* Mobile: stacked cards */}
+      <div className="space-y-3 md:hidden">
+        {clients.length === 0 && (
+          <Card className="p-6 text-center text-sm text-muted-foreground">No setters yet. Invite one to get started.</Card>
+        )}
+        {clients.map((c) => (
+          <Card key={c.id} className="p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <Link to="/app/admin/clients/$userId" params={{ userId: c.user_id }} className="block font-semibold hover:text-primary truncate">
+                  {c.full_name || "—"}
+                </Link>
+                <div className="text-xs text-muted-foreground truncate">{c.email}</div>
+                {c.company_name && <div className="text-xs text-muted-foreground truncate">{c.company_name}</div>}
+                <div className="text-xs text-muted-foreground mt-1">Joined {new Date(c.created_at).toLocaleDateString()}</div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                disabled={resend.isPending && resend.variables === c.user_id}
+                onClick={() => resend.mutate(c.user_id)}
+              >
+                <Mail className="h-3.5 w-3.5 mr-1.5" />
+                {resend.isPending && resend.variables === c.user_id ? "Sending…" : "Resend"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-destructive hover:text-destructive shrink-0"
+                onClick={() => setToDelete({ user_id: c.user_id, name: c.full_name || c.email || "this setter" })}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop: table */}
+      <Card className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
             <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Email</th><th className="text-left p-3 hidden md:table-cell">Company</th><th className="text-left p-3">Joined</th><th className="text-right p-3">Actions</th></tr>
@@ -116,6 +159,7 @@ function ClientsList() {
           </tbody>
         </table>
       </Card>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
