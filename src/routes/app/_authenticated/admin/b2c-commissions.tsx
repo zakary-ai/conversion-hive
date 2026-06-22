@@ -477,10 +477,55 @@ function DealRow({ row }: { row: Row }) {
           {computed != null ? <>Computed: <span className="text-foreground">{money(computed)}</span></> : "Pick a percentage to compute"}
           {useOverride && override && <span className="ml-2">· Override active</span>}
         </div>
-        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
-          {save.isPending ? "Saving…" : "Save"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <DeleteCommissionButton bookingId={row.id} name={row.applicant_name} />
+          <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
       </div>
     </Card>
   );
 }
+
+function DeleteCommissionButton({ bookingId, name }: { bookingId: string; name: string }) {
+  const qc = useQueryClient();
+  const del = useMutation({
+    mutationFn: () => clearBookingOutcome({ data: { booking_id: bookingId } }),
+    onSuccess: () => {
+      toast.success("Commission removed");
+      qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
+      qc.invalidateQueries({ queryKey: ["closer-payouts"] });
+      qc.invalidateQueries({ queryKey: ["my-closer-commissions"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+          <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this commission?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This removes the commission and clears the outcome on <strong>{name}</strong>'s booking. The booking itself stays, but it will no longer appear in the commissions list. This can't be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={del.isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={del.isPending}
+            onClick={(e) => { e.preventDefault(); del.mutate(); }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {del.isPending ? "Deleting…" : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
