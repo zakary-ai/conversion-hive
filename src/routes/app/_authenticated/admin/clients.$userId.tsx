@@ -223,39 +223,15 @@ function SetterDetailPage() {
         )}
       </Card>
 
-      <Card className="overflow-hidden">
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <h3 className="font-display font-semibold">Call recordings & transcripts</h3>
-          <span className="text-xs text-muted-foreground">{data.calls?.length ?? 0} calls</span>
-        </div>
-        {(data.calls?.length ?? 0) === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground text-center">No calls yet.</div>
-        ) : (
-          <div className="divide-y divide-border">
-            {data.calls.slice(0, 50).map((c) => (
-              <CallRow key={c.id} call={c} />
-            ))}
-          </div>
-        )}
-      </Card>
+      <TodaysLeadsCard
+        leads={data.leads as SetterLead[]}
+        calls={data.calls as CallRowItem[]}
+      />
 
-      <Card className="overflow-hidden">
-        <div className="p-4 border-b border-border"><h3 className="font-display font-semibold">Leads ({data.leads.length})</h3></div>
-        <table className="w-full text-sm">
-          <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-            <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Company</th><th className="text-left p-3">Status</th></tr>
-          </thead>
-          <tbody>
-            {data.leads.slice(0, 20).map((l) => (
-              <tr key={l.id} className="border-t border-border">
-                <td className="p-3">{l.name}</td>
-                <td className="p-3 text-muted-foreground">{l.company}</td>
-                <td className="p-3"><StatusPill status={l.status} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+      <LeadHistoryCard
+        leads={data.leads as SetterLead[]}
+        calls={data.calls as CallRowItem[]}
+      />
 
       <PayDialog
         commission={payTarget}
