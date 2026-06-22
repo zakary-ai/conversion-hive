@@ -141,6 +141,29 @@ function LeadsPage() {
   );
 }
 
+function RequestMoreLeadsButton({ uncontactedCount }: { uncontactedCount: number }) {
+  const requestFn = useServerFn(requestMoreLeads);
+  const mut = useMutation({
+    mutationFn: () => requestFn({}),
+    onSuccess: (res: { duplicate?: boolean }) => {
+      if (res?.duplicate) toast.info("Request already pending — an admin will see it shortly.");
+      else toast.success("Request sent. An admin will review it.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  if (uncontactedCount > 0) return null;
+  return (
+    <Button
+      onClick={() => mut.mutate()}
+      disabled={mut.isPending}
+      className="bg-primary text-primary-foreground hover:bg-primary/90"
+    >
+      <Phone className="h-4 w-4 mr-1" />
+      {mut.isPending ? "Requesting…" : "Request more leads"}
+    </Button>
+  );
+}
+
 function LeadPipeline({ leads, onOpenLead }: { leads: Lead[]; onOpenLead: (l: Lead) => void }) {
   const { data: appts = [] } = useQuery({
     queryKey: ["my-appointments"],
