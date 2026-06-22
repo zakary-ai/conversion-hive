@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { listClients, inviteClient, resendClientInvite, DEFAULT_CLIENT_PASSWORD } from "@/lib/api/cl.functions";
+import { listClients, inviteClient, resendClientInvite, deleteSetter, DEFAULT_CLIENT_PASSWORD } from "@/lib/api/cl.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { UserPlus, Copy, Check, Mail } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { UserPlus, Copy, Check, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const opts = queryOptions({ queryKey: ["clients"], queryFn: () => listClients() });
@@ -41,6 +42,17 @@ function ClientsList() {
   const resend = useMutation({
     mutationFn: (userId: string) => resendClientInvite({ data: { user_id: userId } }),
     onSuccess: (res) => toast.success(`Sign-in link resent to ${res.email}`),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [toDelete, setToDelete] = useState<{ user_id: string; name: string } | null>(null);
+  const del = useMutation({
+    mutationFn: (userId: string) => deleteSetter({ data: { user_id: userId } }),
+    onSuccess: () => {
+      toast.success("Setter deleted");
+      setToDelete(null);
+      qc.invalidateQueries({ queryKey: ["clients"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -79,15 +91,25 @@ function ClientsList() {
                 <td className="p-3 text-muted-foreground hidden md:table-cell">{c.company_name || "—"}</td>
                 <td className="p-3 text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</td>
                 <td className="p-3 text-right">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={resend.isPending && resend.variables === c.user_id}
-                    onClick={() => resend.mutate(c.user_id)}
-                  >
-                    <Mail className="h-3.5 w-3.5 mr-1.5" />
-                    {resend.isPending && resend.variables === c.user_id ? "Sending…" : "Resend invite"}
-                  </Button>
+                  <div className="inline-flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={resend.isPending && resend.variables === c.user_id}
+                      onClick={() => resend.mutate(c.user_id)}
+                    >
+                      <Mail className="h-3.5 w-3.5 mr-1.5" />
+                      {resend.isPending && resend.variables === c.user_id ? "Sending…" : "Resend invite"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setToDelete({ user_id: c.user_id, name: c.full_name || c.email || "this setter" })}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -138,6 +160,27 @@ function ClientsList() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete setter?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes <strong>{toDelete?.name}</strong> and removes their account. Any leads currently assigned to them will be released back to the unassigned pool. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={del.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={del.isPending}
+              onClick={(e) => { e.preventDefault(); if (toDelete) del.mutate(toDelete.user_id); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {del.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
