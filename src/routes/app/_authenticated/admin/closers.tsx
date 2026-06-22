@@ -41,14 +41,14 @@ function ClosersPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:items-center">
+        <div className="min-w-0">
           <h1 className="text-2xl font-display font-semibold">Closers</h1>
           <p className="text-sm text-muted-foreground">Manage the closers who take B2C interview calls.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button><UserPlus className="h-4 w-4 mr-2" /> Invite closer</Button>
+            <Button size="sm" className="shrink-0 sm:size-default"><UserPlus className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Invite closer</span><span className="sr-only sm:hidden">Invite closer</span></Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Invite a closer</DialogTitle></DialogHeader>
