@@ -322,6 +322,8 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
                   </div>
                 </div>
 
+                <LeadCallsPanel leadId={lead.id} />
+
                 <ScriptsPanel lead={lead} />
 
                 <SmsPanel lead={lead} />
