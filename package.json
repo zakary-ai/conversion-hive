@@ -10,9 +10,14 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "ios:setup": "bun install && bun run build && npx cap add ios && npx cap sync ios && npx cap open ios",
+    "assets:generate": "npx capacitor-assets generate --iconBackgroundColor '#0a0a14' --iconBackgroundColorDark '#0a0a14' --splashBackgroundColor '#0a0a14' --splashBackgroundColorDark '#0a0a14'",
+    "ios:setup": "bun install && bun run build && npx cap add ios && bun run assets:generate && npx cap sync ios && npx cap open ios",
     "ios:sync": "bun run build && npx cap sync ios",
-    "ios:open": "npx cap open ios"
+    "ios:open": "npx cap open ios",
+    "android:setup": "bun install && bun run build && npx cap add android && bun run assets:generate && npx cap sync android && npx cap open android",
+    "android:sync": "bun run build && npx cap sync android",
+    "android:open": "npx cap open android",
+    "mobile:sync": "bun run build && npx cap sync"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
