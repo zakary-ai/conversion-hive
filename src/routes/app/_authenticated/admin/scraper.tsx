@@ -378,10 +378,10 @@ function ScraperPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-xs uppercase text-muted-foreground">
-              <tr><th className="text-left p-2">Name</th><th className="text-left p-2">Leads ({setterRange === "day" ? "today" : setterRange === "week" ? "7d" : setterRange === "month" ? "30d" : "90d"})</th><th className="text-left p-2">Daily quota</th><th className="text-left p-2">Enabled</th></tr>
+              <tr><th className="text-left p-2">Name</th><th className="text-left p-2">Leads ({setterRange === "day" ? "today" : setterRange === "week" ? "7d" : setterRange === "month" ? "30d" : "90d"})</th><th className="text-left p-2">Daily quota</th><th className="text-left p-2">Enabled</th><th className="text-left p-2">Add leads</th></tr>
             </thead>
             <tbody>
-              {setters.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-muted-foreground">No setters yet.</td></tr>}
+              {setters.length === 0 && <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">No setters yet.</td></tr>}
 
               {setters.map((s) => (
                 <tr key={s.user_id} className="border-t border-border">
@@ -404,6 +404,14 @@ function ScraperPage() {
                     <Switch
                       checked={s.scraper_enabled}
                       onCheckedChange={(v) => updateSetter.mutate({ user_id: s.user_id, scraper_enabled: v })}
+                    />
+                  </td>
+                  <td className="p-2">
+                    <AddLeadsCell
+                      userId={s.user_id}
+                      defaultCount={s.daily_lead_quota}
+                      pending={addLeads.isPending && addLeads.variables?.user_id === s.user_id}
+                      onAdd={(count) => addLeads.mutate({ user_id: s.user_id, count })}
                     />
                   </td>
                 </tr>
