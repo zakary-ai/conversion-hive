@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking, getPublicBookingWindow } from "@/lib/api/b2c.functions";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ function toDateKey(d: Date, tz: string) {
 }
 
 function ApplyPage() {
+  const pageRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>("form");
   const [appInfo, setAppInfo] = useState<{ id: string; token: string } | null>(null);
   const [form, setForm] = useState({
@@ -76,8 +77,26 @@ function ApplyPage() {
     form.desired_monthly_income &&
     form.credit_score_range;
 
+  const scrollToApply = useCallback(() => {
+    const scroller = pageRef.current;
+    const target = document.getElementById("apply");
+    if (!target) return;
+
+    if (scroller) {
+      scroller.scrollTo({ top: target.offsetTop, behavior: "smooth" });
+    } else {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    window.history.replaceState(null, "", "#apply");
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hash !== "#apply") return;
+    requestAnimationFrame(scrollToApply);
+  }, [scrollToApply]);
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div ref={pageRef} className="mobile-app-scroll h-dvh min-h-screen overflow-y-auto overflow-x-hidden bg-background text-foreground">
       <section className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-background" />
         <div className="relative max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
@@ -88,8 +107,8 @@ function ApplyPage() {
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             We're looking for driven sales people, or those looking to get into the sales industry. Training is included — you bring the hunger, we'll give you the skills.
           </p>
-          <Button size="lg" className="mt-8" asChild>
-            <a href="#apply">Apply now</a>
+          <Button size="lg" className="mt-8" type="button" onClick={scrollToApply}>
+            Apply now
           </Button>
         </div>
       </section>
