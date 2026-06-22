@@ -728,17 +728,19 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
     // Create Google Calendar event titled "<Closer name> with <Lead name>"
     const eventTitle = `${closer.full_name} with ${booking.applicant_name}`;
     const descLines = [
-      `Lead: ${booking.applicant_name}`,
+      `Applicant: ${booking.applicant_name}`,
       booking.applicant_email ? `Email: ${booking.applicant_email}` : "",
       booking.applicant_phone ? `Phone: ${booking.applicant_phone}` : "",
       zoom.join_url ? `\nZoom: ${zoom.join_url}` : "",
     ].filter(Boolean).join("\n");
+    const attendees = [closer.email as string];
+    if (booking.applicant_email) attendees.push(booking.applicant_email as string);
     const calEventId = await gcalCreateEvent({
       summary: eventTitle,
       description: descLines,
       startISO: booking.slot_start as string,
       endISO: booking.slot_end as string,
-      attendees: [closer.email as string],
+      attendees,
     });
 
     const { error: uerr } = await supabaseAdmin.from("closer_bookings").update({
