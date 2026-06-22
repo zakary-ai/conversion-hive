@@ -1104,6 +1104,170 @@ export const resendClientInvite = createServerFn({ method: "POST" })
     return { ok: true, email: profile.email };
   });
 
+// ---------- Admin: list admins ----------
+export const listAdmins = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: adminRoles, error } = await supabaseAdmin
+      .from("user_roles").select("user_id, created_at").eq("role", "admin");
+    if (error) throw new Error(error.message);
+    const ids = (adminRoles ?? []).map((r) => r.user_id);
+    if (ids.length === 0) return [];
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles").select("user_id, full_name, email").in("user_id", ids);
+    const byId = new Map((profiles ?? []).map((p) => [p.user_id, p]));
+    return (adminRoles ?? []).map((r) => {
+      const p = byId.get(r.user_id);
+      return {
+        user_id: r.user_id,
+        full_name: p?.full_name ?? "",
+        email: p?.email ?? "",
+        created_at: r.created_at,
+        is_self: r.user_id === context.userId,
+      };
+    });
+  });
+
+// ---------- Admin: invite admin ----------
+export const inviteAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    email: z.string().email().max(200),
+    full_name: z.string().min(1).max(120),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Check if a user with this email already exists in profiles
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles").select("user_id").ilike("email", data.email).maybeSingle();
+
+    let targetUserId: string;
+
+    if (existingProfile?.user_id) {
+      targetUserId = existingProfile.user_id;
+      // Reset password so emailed credentials work
+      await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
+        password: DEFAULT_CLIENT_PASSWORD,
+      });
+      await supabaseAdmin.from("profiles")
+        .update({ must_change_password: true, full_name: data.full_name })
+        .eq("user_id", targetUserId);
+    } else {
+      const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+        email: data.email,
+        password: DEFAULT_CLIENT_PASSWORD,
+        email_confirm: true,
+        user_metadata: { full_name: data.full_name },
+      });
+      if (error) throw new Error(error.message);
+      const newUserId = created.user?.id;
+      if (!newUserId) throw new Error("Failed to create user");
+      targetUserId = newUserId;
+      await supabaseAdmin.from("profiles").update({
+        full_name: data.full_name,
+        must_change_password: true,
+      }).eq("user_id", targetUserId);
+    }
+
+    // Grant admin role (idempotent via unique (user_id, role))
+    await supabaseAdmin.from("user_roles")
+      .upsert({ user_id: targetUserId, role: "admin" }, { onConflict: "user_id,role" });
+
+    try {
+      const { sendTransactional } = await import("@/lib/email/transactional.server");
+      await sendTransactional({
+        templateName: "admin-invite",
+        recipientEmail: data.email,
+        idempotencyKey: `admin-invite-${targetUserId}-${Date.now()}`,
+        templateData: {
+          fullName: data.full_name,
+          email: data.email,
+          password: DEFAULT_CLIENT_PASSWORD,
+          loginUrl: "https://conversionlab.space/app/auth",
+        },
+      });
+    } catch (e) {
+      console.error("Failed to send admin invite email", e);
+    }
+
+    return {
+      ok: true,
+      email: data.email,
+      default_password: DEFAULT_CLIENT_PASSWORD,
+    };
+  });
+
+// ---------- Admin: resend admin invite ----------
+export const resendAdminInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ user_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile, error: pErr } = await supabaseAdmin
+      .from("profiles").select("user_id, full_name, email").eq("user_id", data.user_id).maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!profile?.email) throw new Error("Admin not found");
+
+    await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+      password: DEFAULT_CLIENT_PASSWORD,
+    });
+    await supabaseAdmin.from("profiles")
+      .update({ must_change_password: true })
+      .eq("user_id", data.user_id);
+
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    const result = await sendTransactional({
+      templateName: "admin-invite",
+      recipientEmail: profile.email,
+      idempotencyKey: `admin-invite-resend-${data.user_id}-${Date.now()}`,
+      templateData: {
+        fullName: profile.full_name ?? "",
+        email: profile.email,
+        password: DEFAULT_CLIENT_PASSWORD,
+        loginUrl: "https://conversionlab.space/app/auth",
+      },
+    });
+    if (!result.ok) throw new Error(`Failed to send invite (${result.reason ?? "unknown"})`);
+    return { ok: true, email: profile.email };
+  });
+
+// ---------- Admin: revoke admin ----------
+export const revokeAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ user_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
+    if (data.user_id === context.userId) throw new Error("You cannot revoke your own admin access");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count } = await supabaseAdmin
+      .from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
+    if ((count ?? 0) <= 1) throw new Error("Cannot revoke the last remaining admin");
+
+    const { error } = await supabaseAdmin.from("user_roles")
+      .delete().eq("user_id", data.user_id).eq("role", "admin");
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
+
 export const changeMyPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
