@@ -1154,6 +1154,32 @@ export const resendClientInvite = createServerFn({ method: "POST" })
     return { ok: true, email: profile.email };
   });
 
+// ---------- Admin: delete setter ----------
+export const deleteSetter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ user_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Admin only");
+    if (data.user_id === context.userId) throw new Error("You can't delete yourself");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Release any leads assigned to this setter back to the unassigned pool
+    await supabaseAdmin.from("leads")
+      .update({ assigned_user_id: null })
+      .eq("assigned_user_id", data.user_id);
+
+    // Clean up role + profile rows (auth user delete should cascade, but be explicit)
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id);
+    await supabaseAdmin.from("profiles").delete().eq("user_id", data.user_id);
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Admin: list admins ----------
 export const listAdmins = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
