@@ -102,6 +102,7 @@ function AdminsList() {
                 <td className="p-3 font-medium">
                   {a.full_name || "—"}
                   {a.is_self && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                  {a.is_super_admin && <span className="ml-2 text-xs text-primary">(super admin)</span>}
                 </td>
                 <td className="p-3 text-muted-foreground">{a.email || "—"}</td>
                 <td className="p-3 text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</td>
@@ -116,7 +117,7 @@ function AdminsList() {
                       <Mail className="h-3.5 w-3.5 mr-1.5" />
                       {resend.isPending && resend.variables === a.user_id ? "Sending…" : "Resend invite"}
                     </Button>
-                    {!a.is_self && (
+                    {!a.is_self && !a.is_super_admin && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -131,6 +132,9 @@ function AdminsList() {
                         <ShieldOff className="h-3.5 w-3.5 mr-1.5" />
                         {revoke.isPending && revoke.variables === a.user_id ? "Revoking…" : "Revoke"}
                       </Button>
+                    )}
+                    {a.is_super_admin && (
+                      <span className="text-xs text-muted-foreground self-center">Super admin</span>
                     )}
                   </div>
                 </td>
