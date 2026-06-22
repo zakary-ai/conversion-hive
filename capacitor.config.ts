@@ -10,8 +10,8 @@ const config: CapacitorConfig = {
   appName: "Conversion Lab",
   webDir: "dist",
   server: {
-    // Point the native shell at the published Lovable URL.
-    url: "https://conversion-hive.lovable.app",
+    // Point the native shell at the production custom domain.
+    url: "https://conversionlab.space",
     cleartext: false,
     androidScheme: "https",
     iosScheme: "https",
