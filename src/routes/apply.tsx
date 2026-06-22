@@ -88,29 +88,19 @@ function ApplyPage() {
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             We're looking for driven sales people, or those looking to get into the sales industry. Training is included — you bring the hunger, we'll give you the skills.
           </p>
-          <a href="#apply">
-            <Button size="lg" className="mt-8">Apply now</Button>
-          </a>
+          <Button
+            size="lg"
+            className="mt-8"
+            onClick={() => {
+              document.getElementById("apply")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            Apply now
+          </Button>
         </div>
       </section>
 
-      <section className="max-w-5xl mx-auto px-6 py-16 grid md:grid-cols-3 gap-6">
-        {[
-          { icon: GraduationCap, title: "Training Included", body: "Hands-on coaching in high-ticket sales, objection handling, and closing frameworks." },
-          { icon: CalendarCheck, title: "Appointment Setting", body: "The more appointments you set the more bonuses you will make." },
-          { icon: DollarSign, title: "Earn Commission", body: "Performance-based pay with top reps clearing 5-figures per month." },
-        ].map((f) => (
-          <Card key={f.title} className="p-6 bg-card border-border">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mb-4">
-              <f.icon className="h-5 w-5" />
-            </div>
-            <h3 className="font-display text-lg font-semibold tracking-tight">{f.title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
-          </Card>
-        ))}
-      </section>
-
-      <section id="apply" className="max-w-2xl mx-auto px-6 pb-24">
+      <section id="apply" className="max-w-2xl mx-auto px-6 pt-16 pb-12 scroll-mt-8">
         {step === "form" && (
           <Card className="p-8 bg-card border-border">
             <div className="text-center mb-6">
@@ -194,6 +184,22 @@ function ApplyPage() {
             </p>
           </Card>
         )}
+      </section>
+
+      <section className="max-w-5xl mx-auto px-6 pb-24 pt-4 grid md:grid-cols-3 gap-6">
+        {[
+          { icon: GraduationCap, title: "Training Included", body: "Hands-on coaching in high-ticket sales, objection handling, and closing frameworks." },
+          { icon: CalendarCheck, title: "Appointment Setting", body: "The more appointments you set the more bonuses you will make." },
+          { icon: DollarSign, title: "Earn Commission", body: "Performance-based pay with top reps clearing 5-figures per month." },
+        ].map((f) => (
+          <Card key={f.title} className="p-6 bg-card border-border">
+            <div className="h-10 w-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mb-4">
+              <f.icon className="h-5 w-5" />
+            </div>
+            <h3 className="font-display text-lg font-semibold tracking-tight">{f.title}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
+          </Card>
+        ))}
       </section>
     </div>
   );
