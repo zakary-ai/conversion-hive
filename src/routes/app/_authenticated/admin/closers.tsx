@@ -79,12 +79,9 @@ type CloserRow = {
   full_name: string;
   email: string;
   active: boolean;
-  zoom_account_id: string | null;
-  zoom_client_id: string | null;
-  zoom_client_secret: string | null;
 };
 
-function CloserRow({ closer }: { closer: CloserRow }) {
+function CloserRow({ closer, hasZoom }: { closer: CloserRow; hasZoom: boolean }) {
   const qc = useQueryClient();
   const [editAvail, setEditAvail] = useState(false);
   const [editZoom, setEditZoom] = useState(false);
@@ -103,7 +100,6 @@ function CloserRow({ closer }: { closer: CloserRow }) {
     onSuccess: () => toast.success(`Invite re-sent to ${closer.email}`),
     onError: (e: Error) => toast.error(e.message),
   });
-  const hasZoom = !!(closer.zoom_account_id && closer.zoom_client_id && closer.zoom_client_secret);
   return (
     <Card className="p-4 flex items-center justify-between gap-4 flex-wrap">
       <div className="min-w-0">
