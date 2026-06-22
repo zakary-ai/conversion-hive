@@ -826,6 +826,36 @@ export const bulkDeleteLeads = createServerFn({ method: "POST" })
     return { ok: true, count: data.ids.length };
   });
 
+export const getLeadDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ lead_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: lead, error } = await context.supabase
+      .from("leads")
+      .select("*")
+      .eq("id", data.lead_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!lead) throw new Error("Lead not found");
+    const { data: calls } = await context.supabase
+      .from("call_logs")
+      .select("*")
+      .eq("lead_id", data.lead_id)
+      .order("created_at", { ascending: false });
+    let setter: { user_id: string; full_name: string | null; email: string | null } | null = null;
+    if (lead.assigned_user_id) {
+      const { data: prof } = await context.supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .eq("user_id", lead.assigned_user_id)
+        .maybeSingle();
+      if (prof) setter = prof as typeof setter;
+    }
+    return { lead, calls: calls ?? [], setter };
+  });
+
+
+
 
 // ---------- Commissions ----------
 export const listMyCommissions = createServerFn({ method: "GET" })
