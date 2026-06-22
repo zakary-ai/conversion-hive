@@ -849,7 +849,7 @@ export const getLeadDetail = createServerFn({ method: "GET" })
         .select("user_id, full_name, email")
         .eq("user_id", lead.assigned_user_id)
         .maybeSingle();
-      if (prof) setter = prof as typeof setter;
+      if (prof) setter = prof as { user_id: string; full_name: string | null; email: string | null };
     }
     return { lead, calls: calls ?? [], setter };
   });
