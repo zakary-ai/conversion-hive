@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video } from "lucide-react";
 import { toast } from "sonner";
 import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
 
