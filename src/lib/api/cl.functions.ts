@@ -1008,7 +1008,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
         lost: bookings.filter((a) => a.outcome === "lost").length,
         pending: bookings.filter((a) => !a.outcome).length,
         leadsCount: leadsInRange.length,
-        dials: callsInRange.length,
+        dials: (callsInRange as Array<{ counted_at: string | null }>).filter((c) => c.counted_at).length,
       },
     };
   });
