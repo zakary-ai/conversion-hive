@@ -25,7 +25,7 @@ const Email = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes,
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>Your call is confirmed — Zoom link inside</Preview>
+      <Preview>Your interview is confirmed — Zoom link inside</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={card}>
