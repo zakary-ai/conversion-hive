@@ -653,6 +653,8 @@ function LeadHistoryCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
   );
 }
 
+function SetterLeadDetailDialog({
+  lead,
   calls,
   onClose,
 }: {
