@@ -1034,15 +1034,22 @@ export const inviteClient = createServerFn({ method: "POST" })
       must_change_password: true,
     }).eq("user_id", newUserId);
 
-    // Best-effort: send Supabase's built-in invite/magic-link email so they get notified.
-    // Falls back silently if email infra isn't configured.
+    // Send branded invite email with sign-in link and credentials
     try {
-      await supabaseAdmin.auth.admin.generateLink({
-        type: "magiclink",
-        email: data.email,
+      const { sendTransactional } = await import("@/lib/email/transactional.server");
+      await sendTransactional({
+        templateName: "setter-invite",
+        recipientEmail: data.email,
+        idempotencyKey: `setter-invite-${newUserId}-${Date.now()}`,
+        templateData: {
+          fullName: data.full_name,
+          email: data.email,
+          password: DEFAULT_CLIENT_PASSWORD,
+          loginUrl: "https://conversionlab.space/app/auth",
+        },
       });
-    } catch {
-      // ignore
+    } catch (e) {
+      console.error("Failed to send setter invite email", e);
     }
 
     return {
@@ -1050,6 +1057,51 @@ export const inviteClient = createServerFn({ method: "POST" })
       email: data.email,
       default_password: DEFAULT_CLIENT_PASSWORD,
     };
+  });
+
+// ---------- Admin: resend setter invite ----------
+export const resendClientInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ user_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) {
+      throw new Error("Admin only");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: profile, error: pErr } = await supabaseAdmin
+      .from("profiles")
+      .select("user_id, full_name, email, must_change_password")
+      .eq("user_id", data.user_id)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!profile?.email) throw new Error("Setter not found");
+
+    // Reset password to default and require change so the emailed credentials work
+    await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+      password: DEFAULT_CLIENT_PASSWORD,
+    });
+    await supabaseAdmin.from("profiles")
+      .update({ must_change_password: true })
+      .eq("user_id", data.user_id);
+
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    const result = await sendTransactional({
+      templateName: "setter-invite",
+      recipientEmail: profile.email,
+      idempotencyKey: `setter-invite-resend-${data.user_id}-${Date.now()}`,
+      templateData: {
+        fullName: profile.full_name ?? "",
+        email: profile.email,
+        password: DEFAULT_CLIENT_PASSWORD,
+        loginUrl: "https://conversionlab.space/app/auth",
+      },
+    });
+    if (!result.ok) throw new Error(`Failed to send invite (${result.reason ?? "unknown"})`);
+    return { ok: true, email: profile.email };
   });
 
 export const changeMyPassword = createServerFn({ method: "POST" })
