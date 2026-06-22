@@ -105,7 +105,7 @@ function ClientsList() {
                       size="sm"
                       variant="outline"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => setToDelete({ user_id: c.user_id, name: c.full_name || c.email })}
+                      onClick={() => setToDelete({ user_id: c.user_id, name: c.full_name || c.email || "this setter" })}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
