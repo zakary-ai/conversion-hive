@@ -91,15 +91,25 @@ function ClientsList() {
                 <td className="p-3 text-muted-foreground hidden md:table-cell">{c.company_name || "—"}</td>
                 <td className="p-3 text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</td>
                 <td className="p-3 text-right">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={resend.isPending && resend.variables === c.user_id}
-                    onClick={() => resend.mutate(c.user_id)}
-                  >
-                    <Mail className="h-3.5 w-3.5 mr-1.5" />
-                    {resend.isPending && resend.variables === c.user_id ? "Sending…" : "Resend invite"}
-                  </Button>
+                  <div className="inline-flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={resend.isPending && resend.variables === c.user_id}
+                      onClick={() => resend.mutate(c.user_id)}
+                    >
+                      <Mail className="h-3.5 w-3.5 mr-1.5" />
+                      {resend.isPending && resend.variables === c.user_id ? "Sending…" : "Resend invite"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setToDelete({ user_id: c.user_id, name: c.full_name || c.email })}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
