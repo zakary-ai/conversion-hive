@@ -102,6 +102,7 @@ function AdminsList() {
                 <td className="p-3 font-medium">
                   {a.full_name || "—"}
                   {a.is_self && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                  {a.is_super_admin && <span className="ml-2 text-xs text-primary">(super admin)</span>}
                 </td>
                 <td className="p-3 text-muted-foreground">{a.email || "—"}</td>
                 <td className="p-3 text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</td>
