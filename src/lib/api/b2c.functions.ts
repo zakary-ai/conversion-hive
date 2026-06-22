@@ -477,10 +477,73 @@ export const updateCloser = createServerFn({ method: "POST" })
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { id, ...patch } = data;
-    const { error } = await context.supabase.from("closers").update(patch).eq("id", id);
-    if (error) throw new Error(error.message);
+    const { id, zoom_account_id, zoom_client_id, zoom_client_secret, ...rest } = data;
+    const closerPatch: { full_name?: string; active?: boolean } = {};
+    if (rest.full_name !== undefined) closerPatch.full_name = rest.full_name;
+    if (rest.active !== undefined) closerPatch.active = rest.active;
+    if (Object.keys(closerPatch).length > 0) {
+      const { error } = await context.supabase.from("closers").update(closerPatch).eq("id", id);
+      if (error) throw new Error(error.message);
+    }
+    const hasZoomField =
+      zoom_account_id !== undefined || zoom_client_id !== undefined || zoom_client_secret !== undefined;
+    if (hasZoomField) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const allCleared =
+        zoom_account_id === null && zoom_client_id === null && zoom_client_secret === null;
+      if (allCleared) {
+        await supabaseAdmin.from("closer_zoom_credentials").delete().eq("closer_id", id);
+      } else {
+        const upsert: {
+          closer_id: string;
+          zoom_account_id?: string | null;
+          zoom_client_id?: string | null;
+          zoom_client_secret?: string | null;
+          updated_at: string;
+        } = { closer_id: id, updated_at: new Date().toISOString() };
+        if (zoom_account_id !== undefined) upsert.zoom_account_id = zoom_account_id;
+        if (zoom_client_id !== undefined) upsert.zoom_client_id = zoom_client_id;
+        if (zoom_client_secret !== undefined) upsert.zoom_client_secret = zoom_client_secret;
+        const { error } = await supabaseAdmin
+          .from("closer_zoom_credentials")
+          .upsert(upsert, { onConflict: "closer_id" });
+        if (error) throw new Error(error.message);
+      }
+    }
     return { ok: true };
+  });
+
+export const getCloserZoomCreds = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ closer_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("closer_zoom_credentials")
+      .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+      .eq("closer_id", data.closer_id)
+      .maybeSingle();
+    return {
+      zoom_account_id: (row?.zoom_account_id as string | null) ?? null,
+      zoom_client_id: (row?.zoom_client_id as string | null) ?? null,
+      zoom_client_secret: (row?.zoom_client_secret as string | null) ?? null,
+    };
+  });
+
+export const listClosersZoomStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("closer_zoom_credentials")
+      .select("closer_id, zoom_account_id, zoom_client_id, zoom_client_secret");
+    const map: Record<string, boolean> = {};
+    for (const r of data ?? []) {
+      map[r.closer_id as string] = !!(r.zoom_account_id && r.zoom_client_id && r.zoom_client_secret);
+    }
+    return map;
   });
 
 export const deleteCloser = createServerFn({ method: "POST" })
