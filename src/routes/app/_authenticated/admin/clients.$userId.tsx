@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { getClientDetail, addCommission, setCommissionPaid } from "@/lib/api/cl.functions";
+import { getClientDetail, addCommission, setCommissionPaid, backfillSetterCallArtifacts } from "@/lib/api/cl.functions";
 
 import { PageHeader, StatCard, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
