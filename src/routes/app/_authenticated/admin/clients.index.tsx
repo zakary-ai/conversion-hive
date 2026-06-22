@@ -45,6 +45,17 @@ function ClientsList() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [toDelete, setToDelete] = useState<{ user_id: string; name: string } | null>(null);
+  const del = useMutation({
+    mutationFn: (userId: string) => deleteSetter({ data: { user_id: userId } }),
+    onSuccess: () => {
+      toast.success("Setter deleted");
+      setToDelete(null);
+      qc.invalidateQueries({ queryKey: ["clients"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const copyCreds = async () => {
     if (!created) return;
     await navigator.clipboard.writeText(
