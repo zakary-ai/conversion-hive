@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { listMyLeads, updateLead, createAppointment, listMyAppointments } from "@/lib/api/cl.functions";
+import { requestMoreLeads } from "@/lib/api/lead-requests.functions";
 import { startBridgeCall, listCallsForLead } from "@/lib/api/calls.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
@@ -48,7 +50,10 @@ function LeadsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <PageHeader title="My leads" description={`${visibleLeads.length} active · up to 75 per day`} />
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <PageHeader title="My leads" description={`${visibleLeads.length} active · up to 75 per day`} />
+        <RequestMoreLeadsButton uncontactedCount={visibleLeads.filter((l) => l.status === "New").length} />
+      </div>
 
       <Tabs defaultValue="leads" className="space-y-4">
         <TabsList>
@@ -133,6 +138,29 @@ function LeadsPage() {
 
       <LeadDrawer lead={open} onClose={() => setOpen(null)} />
     </div>
+  );
+}
+
+function RequestMoreLeadsButton({ uncontactedCount }: { uncontactedCount: number }) {
+  const requestFn = useServerFn(requestMoreLeads);
+  const mut = useMutation({
+    mutationFn: () => requestFn({}),
+    onSuccess: (res: { duplicate?: boolean }) => {
+      if (res?.duplicate) toast.info("Request already pending — an admin will see it shortly.");
+      else toast.success("Request sent. An admin will review it.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  if (uncontactedCount > 0) return null;
+  return (
+    <Button
+      onClick={() => mut.mutate()}
+      disabled={mut.isPending}
+      className="bg-primary text-primary-foreground hover:bg-primary/90"
+    >
+      <Phone className="h-4 w-4 mr-1" />
+      {mut.isPending ? "Requesting…" : "Request more leads"}
+    </Button>
   );
 }
 
