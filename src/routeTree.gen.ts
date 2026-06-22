@@ -47,6 +47,7 @@ import { Route as AppAuthenticatedAdminClosersRouteImport } from './routes/app/_
 import { Route as AppAuthenticatedAdminBookingsRouteImport } from './routes/app/_authenticated/admin/bookings'
 import { Route as AppAuthenticatedAdminB2cCommissionsRouteImport } from './routes/app/_authenticated/admin/b2c-commissions'
 import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/app/_authenticated/admin/applications'
+import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
 import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
@@ -265,6 +266,12 @@ const AppAuthenticatedAdminApplicationsRoute =
     path: '/applications',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
+const ApiPublicHooksSendCallRemindersRoute =
+  ApiPublicHooksSendCallRemindersRouteImport.update({
+    id: '/api/public/hooks/send-call-reminders',
+    path: '/api/public/hooks/send-call-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRunScraperRoute =
   ApiPublicHooksRunScraperRouteImport.update({
     id: '/api/public/hooks/run-scraper',
@@ -310,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
+  '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
@@ -352,6 +360,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
+  '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
@@ -397,6 +406,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
+  '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/app/_authenticated/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/_authenticated/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/_authenticated/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
+    | '/api/public/hooks/send-call-reminders'
     | '/app/admin/applications'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
+    | '/api/public/hooks/send-call-reminders'
     | '/app/admin/applications'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
@@ -528,6 +540,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
+    | '/api/public/hooks/send-call-reminders'
     | '/app/_authenticated/admin/applications'
     | '/app/_authenticated/admin/b2c-commissions'
     | '/app/_authenticated/admin/bookings'
@@ -564,6 +577,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
+  ApiPublicHooksSendCallRemindersRoute: typeof ApiPublicHooksSendCallRemindersRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -837,6 +851,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAdminApplicationsRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
+    '/api/public/hooks/send-call-reminders': {
+      id: '/api/public/hooks/send-call-reminders'
+      path: '/api/public/hooks/send-call-reminders'
+      fullPath: '/api/public/hooks/send-call-reminders'
+      preLoaderRoute: typeof ApiPublicHooksSendCallRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/run-scraper': {
       id: '/api/public/hooks/run-scraper'
       path: '/api/public/hooks/run-scraper'
@@ -974,6 +995,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
+  ApiPublicHooksSendCallRemindersRoute: ApiPublicHooksSendCallRemindersRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
