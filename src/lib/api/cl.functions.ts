@@ -276,24 +276,51 @@ export const updateLead = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    // When the setter marks an outcome status for the lead, count the most
-    // recent dial as a "real" dial. Dials without a follow-up status mark
-    // don't count toward the setter's stats.
-    if (data.status !== undefined) {
-      const { data: recent } = await context.supabase
+    // Every outcome counts as a dial. If a real call log exists for this lead
+    // that hasn't been counted yet, mark it counted. Otherwise insert a
+    // synthetic "manual_outcome" row so the dial still counts — those rows
+    // are flagged in the UI as outcomes without an attached call.
+    if (data.status !== undefined && data.status !== "New") {
+      const { data: existingCounted } = await context.supabase
         .from("call_logs")
         .select("id")
         .eq("lead_id", data.id)
         .eq("user_id", context.userId)
-        .is("counted_at", null)
-        .order("started_at", { ascending: false })
+        .not("counted_at", "is", null)
         .limit(1)
         .maybeSingle();
-      if (recent?.id) {
-        await context.supabase
+      if (!existingCounted?.id) {
+        const { data: recent } = await context.supabase
           .from("call_logs")
-          .update({ counted_at: new Date().toISOString() })
-          .eq("id", recent.id);
+          .select("id")
+          .eq("lead_id", data.id)
+          .eq("user_id", context.userId)
+          .is("counted_at", null)
+          .order("started_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const nowIso = new Date().toISOString();
+        if (recent?.id) {
+          await context.supabase
+            .from("call_logs")
+            .update({ counted_at: nowIso })
+            .eq("id", recent.id);
+        } else {
+          const { data: leadRow } = await context.supabase
+            .from("leads")
+            .select("phone")
+            .eq("id", data.id)
+            .maybeSingle();
+          await context.supabase.from("call_logs").insert({
+            user_id: context.userId,
+            lead_id: data.id,
+            direction: "outgoing",
+            status: "manual_outcome",
+            to_number: leadRow?.phone ?? null,
+            started_at: nowIso,
+            counted_at: nowIso,
+          });
+        }
       }
     }
     return { ok: true };
