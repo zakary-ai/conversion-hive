@@ -33,6 +33,10 @@ export type PipelineResult = {
   cities: CityRun[];
   perSetter: Array<{ user_id: string; name: string | null; needed: number; assigned: number; shortfall: number }>;
   errors: string[];
+  quotaMet?: boolean;
+  unfilled?: number;
+  stopReason?: "target_met" | "city_cap" | "rotation_exhausted" | "no_scrape";
+  warnings?: string[];
 };
 
 const KITCHEN_RE = /kitchen\s+(remodel|renovat)/i;
