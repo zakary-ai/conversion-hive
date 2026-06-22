@@ -1460,3 +1460,140 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Admin: backfill OpenPhone artifacts for a setter ----------
+// Iterates every call_logs row for the setter that has no openphone_call_id,
+// queries OpenPhone for the matching call by destination phone + time,
+// then pulls in the recording, transcript and summary.
+export const backfillSetterCallArtifacts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    user_id: z.string().uuid(),
+    since_days: z.number().int().min(1).max(60).default(7),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId, _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const key = process.env.OPENPHONE_API_KEY;
+    if (!key) throw new Error("OPENPHONE_API_KEY not configured");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const opGet = async (path: string): Promise<unknown | null> => {
+      try {
+        const r = await fetch(`https://api.openphone.com${path}`, { headers: { Authorization: key } });
+        if (!r.ok) return null;
+        return await r.json();
+      } catch { return null; }
+    };
+
+    // Look up the setter's OpenPhone user id by email
+    const { data: profile } = await supabaseAdmin
+      .from("profiles").select("email").eq("user_id", data.user_id).maybeSingle();
+    if (!profile?.email) throw new Error("Setter has no email");
+    const setterEmail = profile.email.toLowerCase();
+
+    type OpUser = { id: string; email?: string };
+    type OpPhone = { id: string; users?: OpUser[] };
+    const phones = (await opGet("/v1/phone-numbers")) as { data?: OpPhone[] } | null;
+    let opUserId: string | null = null;
+    let phoneNumberId: string | null = null;
+    for (const p of phones?.data ?? []) {
+      const match = (p.users ?? []).find((u) => (u.email ?? "").toLowerCase() === setterEmail);
+      if (match) { opUserId = match.id; phoneNumberId = p.id; break; }
+    }
+    if (!opUserId || !phoneNumberId) {
+      throw new Error("Could not find this setter in OpenPhone (no matching user/phone-number).");
+    }
+
+    const sinceIso = new Date(Date.now() - data.since_days * 86400_000).toISOString();
+    const { data: rows } = await supabaseAdmin
+      .from("call_logs")
+      .select("id, to_number, started_at")
+      .eq("user_id", data.user_id)
+      .is("openphone_call_id", null)
+      .gte("started_at", sinceIso)
+      .order("started_at", { ascending: false });
+
+    let scanned = 0, adopted = 0, withRec = 0, withTx = 0, withSum = 0;
+
+    type OpCall = {
+      id: string; status?: string; direction?: string; duration?: number;
+      createdAt?: string; answeredAt?: string; completedAt?: string;
+      participants?: string[];
+    };
+    type Dialogue = { identifier?: string; userId?: string; content?: string; text?: string };
+
+    for (const row of rows ?? []) {
+      scanned++;
+      const to = row.to_number;
+      if (!to) continue;
+      const list = (await opGet(
+        `/v1/calls?phoneNumberId=${phoneNumberId}&userId=${opUserId}&participants[]=${encodeURIComponent(to)}&maxResults=20`,
+      )) as { data?: OpCall[] } | null;
+      const calls = list?.data ?? [];
+      if (calls.length === 0) continue;
+
+      const target = new Date(row.started_at ?? new Date().toISOString()).getTime();
+      let best = calls[0];
+      let bestDiff = Math.abs(new Date(best.createdAt ?? 0).getTime() - target);
+      for (const c of calls) {
+        const d = Math.abs(new Date(c.createdAt ?? 0).getTime() - target);
+        if (d < bestDiff) { best = c; bestDiff = d; }
+      }
+      if (bestDiff > 10 * 60_000) continue;
+
+      const callId = best.id;
+      const patch: Database["public"]["Tables"]["call_logs"]["Update"] = {
+        openphone_call_id: callId,
+        status: best.status ?? null,
+        direction: best.direction ?? "outbound",
+      };
+      if (typeof best.duration === "number") patch.duration_sec = best.duration;
+      if (best.answeredAt) patch.started_at = best.answeredAt;
+      if (best.completedAt) patch.ended_at = best.completedAt;
+      const fromNum = (best.participants ?? []).find((p) => p !== to) ?? null;
+      if (fromNum) patch.from_number = fromNum;
+      adopted++;
+
+      const rec = (await opGet(`/v1/call-recordings/${encodeURIComponent(callId)}`)) as
+        { data?: Array<{ url?: string; media?: Array<{ url?: string }> }> } | null;
+      const recUrl = rec?.data?.[0]?.url || rec?.data?.[0]?.media?.[0]?.url;
+      if (recUrl) { patch.recording_url = recUrl; withRec++; }
+
+      const tx = (await opGet(`/v1/call-transcripts/${encodeURIComponent(callId)}`)) as
+        { data?: { status?: string; dialogue?: Dialogue[]; text?: string; transcript?: string } } | null;
+      if (tx?.data) {
+        const d = tx.data;
+        let t: string | null = null;
+        if (Array.isArray(d.dialogue) && d.dialogue.length) {
+          t = d.dialogue.map((x) => `${x.identifier || x.userId || "Speaker"}: ${x.content || x.text || ""}`.trim())
+            .filter(Boolean).join("\n");
+        } else if (typeof d.transcript === "string") t = d.transcript;
+        else if (typeof d.text === "string") t = d.text;
+        if (t) { patch.transcript = t; withTx++; }
+        if (d.status) patch.transcript_status = d.status;
+      }
+
+      const sum = (await opGet(`/v1/call-summaries/${encodeURIComponent(callId)}`)) as
+        { data?: { summary?: string | string[]; nextSteps?: string[] } } | null;
+      if (sum?.data) {
+        const d = sum.data;
+        const parts: string[] = [];
+        if (Array.isArray(d.summary)) parts.push(d.summary.join("\n"));
+        else if (typeof d.summary === "string") parts.push(d.summary);
+        if (Array.isArray(d.nextSteps) && d.nextSteps.length) {
+          parts.push("Next steps:\n- " + d.nextSteps.join("\n- "));
+        }
+        if (parts.length) { patch.summary = parts.join("\n\n"); withSum++; }
+      }
+
+      await supabaseAdmin.from("call_logs").update(patch).eq("id", row.id);
+    }
+
+    return { scanned, adopted, withRec, withTx, withSum };
+  });
+
