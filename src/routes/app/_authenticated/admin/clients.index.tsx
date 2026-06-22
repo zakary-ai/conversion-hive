@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { listClients, inviteClient, DEFAULT_CLIENT_PASSWORD } from "@/lib/api/cl.functions";
+import { listClients, inviteClient, resendClientInvite, DEFAULT_CLIENT_PASSWORD } from "@/lib/api/cl.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { UserPlus, Copy, Check } from "lucide-react";
+import { UserPlus, Copy, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 const opts = queryOptions({ queryKey: ["clients"], queryFn: () => listClients() });
@@ -38,6 +38,12 @@ function ClientsList() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const resend = useMutation({
+    mutationFn: (userId: string) => resendClientInvite({ data: { user_id: userId } }),
+    onSuccess: (res) => toast.success(`Sign-in link resent to ${res.email}`),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const copyCreds = async () => {
     if (!created) return;
     await navigator.clipboard.writeText(
@@ -58,10 +64,10 @@ function ClientsList() {
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-            <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Email</th><th className="text-left p-3 hidden md:table-cell">Company</th><th className="text-left p-3">Joined</th></tr>
+            <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Email</th><th className="text-left p-3 hidden md:table-cell">Company</th><th className="text-left p-3">Joined</th><th className="text-right p-3">Actions</th></tr>
           </thead>
           <tbody>
-            {clients.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No setters yet. Invite one to get started.</td></tr>}
+            {clients.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No setters yet. Invite one to get started.</td></tr>}
             {clients.map((c) => (
               <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                 <td className="p-3 font-medium">
@@ -72,6 +78,17 @@ function ClientsList() {
                 <td className="p-3 text-muted-foreground">{c.email}</td>
                 <td className="p-3 text-muted-foreground hidden md:table-cell">{c.company_name || "—"}</td>
                 <td className="p-3 text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</td>
+                <td className="p-3 text-right">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={resend.isPending && resend.variables === c.user_id}
+                    onClick={() => resend.mutate(c.user_id)}
+                  >
+                    <Mail className="h-3.5 w-3.5 mr-1.5" />
+                    {resend.isPending && resend.variables === c.user_id ? "Sending…" : "Resend invite"}
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
