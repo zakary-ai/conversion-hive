@@ -81,12 +81,13 @@ export function B2cCalendarPanel() {
   });
 
   // Weekly availability
-  const { data: existing = [] } = useQuery({
+  const { data: existing } = useQuery({
     queryKey: ["b2c-availability"],
     queryFn: () => listB2cAvailability(),
   });
   const [byDay, setByDay] = useState<Record<number, Rule[]>>({});
   useEffect(() => {
+    if (!existing) return;
     const next: Record<number, Rule[]> = {};
     for (const r of existing) {
       (next[r.day_of_week] ??= []).push({
@@ -108,6 +109,9 @@ export function B2cCalendarPanel() {
     onSuccess: () => {
       toast.success("Availability saved");
       qc.invalidateQueries({ queryKey: ["b2c-availability"] });
+      qc.invalidateQueries({ queryKey: ["closer-slots"] });
+      qc.invalidateQueries({ queryKey: ["bookings-for-date"] });
+      qc.invalidateQueries({ queryKey: ["public-booking-window"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
