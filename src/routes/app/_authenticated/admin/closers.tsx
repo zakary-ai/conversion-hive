@@ -24,6 +24,7 @@ const fromTime = (s: string) => { const [h,m] = s.split(":").map(Number); return
 function ClosersPage() {
   const qc = useQueryClient();
   const { data: closers = [] } = useQuery({ queryKey: ["closers"], queryFn: () => listClosers() });
+  const { data: zoomStatus = {} } = useQuery({ queryKey: ["closers-zoom-status"], queryFn: () => listClosersZoomStatus() });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "" });
 
