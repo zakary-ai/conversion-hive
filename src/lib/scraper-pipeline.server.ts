@@ -150,12 +150,13 @@ async function distributeRoundRobin(
     if (placedThisLap === 0) break;
   }
 
+  const nowIso = new Date().toISOString();
   for (const s of setters) {
     const ids = buckets.get(s.user_id) ?? [];
     if (ids.length === 0) continue;
     const { error } = await supabaseAdmin
       .from("leads")
-      .update({ assigned_user_id: s.user_id })
+      .update({ assigned_user_id: s.user_id, assigned_at: nowIso })
       .in("id", ids);
     if (error) {
       errors.push(`assign(${s.user_id}): ${error.message}`);
