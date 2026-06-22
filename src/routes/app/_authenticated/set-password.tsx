@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { changeMyPassword } from "@/lib/api/cl.functions";
+import { changeMyPassword, getMe } from "@/lib/api/cl.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,8 +28,12 @@ function SetPasswordPage() {
     try {
       await changeMyPassword({ data: { new_password: pw } });
       await qc.invalidateQueries({ queryKey: ["me"] });
+      const me = await qc.fetchQuery({ queryKey: ["me"], queryFn: () => getMe() });
       toast.success("Password updated");
-      navigate({ to: "/" });
+      navigate({
+        to: me.isAdmin ? "/app/admin" : me.isCloser ? "/app/closer" : "/app/dashboard",
+        replace: true,
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update password");
     } finally {
