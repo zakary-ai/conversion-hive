@@ -116,7 +116,7 @@ function AdminsList() {
                       <Mail className="h-3.5 w-3.5 mr-1.5" />
                       {resend.isPending && resend.variables === a.user_id ? "Sending…" : "Resend invite"}
                     </Button>
-                    {!a.is_self && (
+                    {!a.is_self && !a.is_super_admin && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -131,6 +131,9 @@ function AdminsList() {
                         <ShieldOff className="h-3.5 w-3.5 mr-1.5" />
                         {revoke.isPending && revoke.variables === a.user_id ? "Revoking…" : "Revoke"}
                       </Button>
+                    )}
+                    {a.is_super_admin && (
+                      <span className="text-xs text-muted-foreground self-center">Super admin</span>
                     )}
                   </div>
                 </td>
