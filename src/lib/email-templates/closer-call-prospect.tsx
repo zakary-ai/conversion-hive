@@ -31,7 +31,7 @@ const Email = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes,
           <Section style={card}>
             <Heading style={heading}>You're booked{name ? `, ${name}` : ''} 🎉</Heading>
             <Text style={muted}>
-              Thanks for applying. Your sales call{closerName ? ` with ${closerName}` : ''} is confirmed.
+              Thanks for applying. Your interview{closerName ? ` with ${closerName}` : ''} is confirmed.
             </Text>
             <Text style={detail}><strong>When:</strong> {when}</Text>
             {durationMinutes ? <Text style={detail}><strong>Duration:</strong> {durationMinutes} minutes</Text> : null}
