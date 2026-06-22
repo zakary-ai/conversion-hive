@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listCloserBookings, listClosers, assignCloserToBooking, unassignCloser, cancelCloserBooking } from "@/lib/api/b2c.functions";
+import { listCloserBookings, listClosers, assignCloserToBooking, unassignCloser, cancelCloserBooking, deleteCloserBooking } from "@/lib/api/b2c.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { CalendarClock, Mail, Phone, Video, X } from "lucide-react";
+import { CalendarClock, Mail, Phone, Video, X, Trash2 } from "lucide-react";
+
 import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
 import { ApplicationsPanel, appsOpts } from "@/components/admin/applications-panel";
 import { B2cCalendarPanel } from "@/components/admin/b2c-calendar-panel";
