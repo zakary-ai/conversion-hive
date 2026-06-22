@@ -505,12 +505,23 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
               Closer: <span className="text-foreground">{booking.closers.full_name}</span>
             </div>
           )}
+          {booking.zoom_join_url && (
+            <a
+              href={booking.zoom_join_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-primary inline-flex items-center gap-1 mt-1"
+            >
+              <Video className="h-3 w-3" /> Join Zoom
+            </a>
+          )}
           <div className="mt-1">
             <Badge variant="outline" className="text-[10px] uppercase">
               {booking.status.replace(/_/g, " ")}
             </Badge>
           </div>
         </div>
+
         <div className="flex items-center gap-2">
           {booking.status === "pending_assignment" && (
             <Select onValueChange={(id) => assign.mutate(id)}>
