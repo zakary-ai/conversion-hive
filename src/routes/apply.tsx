@@ -185,6 +185,22 @@ function ApplyPage() {
           </Card>
         )}
       </section>
+
+      <section className="max-w-5xl mx-auto px-6 pb-24 pt-4 grid md:grid-cols-3 gap-6">
+        {[
+          { icon: GraduationCap, title: "Training Included", body: "Hands-on coaching in high-ticket sales, objection handling, and closing frameworks." },
+          { icon: CalendarCheck, title: "Appointment Setting", body: "The more appointments you set the more bonuses you will make." },
+          { icon: DollarSign, title: "Earn Commission", body: "Performance-based pay with top reps clearing 5-figures per month." },
+        ].map((f) => (
+          <Card key={f.title} className="p-6 bg-card border-border">
+            <div className="h-10 w-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mb-4">
+              <f.icon className="h-5 w-5" />
+            </div>
+            <h3 className="font-display text-lg font-semibold tracking-tight">{f.title}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
+          </Card>
+        ))}
+      </section>
     </div>
   );
 }
