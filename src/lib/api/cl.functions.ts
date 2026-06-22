@@ -965,7 +965,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
       supabase.from("modules").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase.from("appointments").select("*").eq("user_id", data.user_id).order("scheduled_at", { ascending: false }),
       supabase.from("call_logs")
-        .select("id, lead_id, started_at, created_at, ended_at, duration_sec, status, direction, to_number, from_number, recording_url, transcript, transcript_status, summary, leads:lead_id(name, company)")
+        .select("id, lead_id, started_at, created_at, ended_at, duration_sec, status, direction, to_number, from_number, recording_url, transcript, transcript_status, summary, counted_at, leads:lead_id(name, company)")
         .eq("user_id", data.user_id)
         .order("created_at", { ascending: false })
         .limit(200),
