@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video } from "lucide-react";
 import { toast } from "sonner";
 import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
 
@@ -373,7 +373,9 @@ type DayBooking = {
   applicant_name: string;
   applicant_email: string;
   applicant_phone: string | null;
+  zoom_join_url?: string | null;
   closers?: { full_name: string; email: string } | null;
+
 };
 type CloserOpt = { id: string; full_name: string; active: boolean };
 
@@ -503,12 +505,23 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
               Closer: <span className="text-foreground">{booking.closers.full_name}</span>
             </div>
           )}
+          {booking.zoom_join_url && (
+            <a
+              href={booking.zoom_join_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-primary inline-flex items-center gap-1 mt-1"
+            >
+              <Video className="h-3 w-3" /> Join Zoom
+            </a>
+          )}
           <div className="mt-1">
             <Badge variant="outline" className="text-[10px] uppercase">
               {booking.status.replace(/_/g, " ")}
             </Badge>
           </div>
         </div>
+
         <div className="flex items-center gap-2">
           {booking.status === "pending_assignment" && (
             <Select onValueChange={(id) => assign.mutate(id)}>
