@@ -241,6 +241,9 @@ function BookingStep({ appId, token, onBooked }: { appId: string; token: string;
     queryKey: ["public-closer-slots", dateKey, tz],
     queryFn: () => listCloserSlotsForDate({ data: { date: dateKey!, tz } }),
     enabled: !!dateKey,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
 
