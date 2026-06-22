@@ -83,6 +83,7 @@
 
 @layer base {
   * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; }
   html, body {
     background-color: var(--color-background);
     color: var(--color-foreground);
