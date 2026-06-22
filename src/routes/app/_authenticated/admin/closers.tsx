@@ -242,9 +242,20 @@ function useStateSyncToByDay(
 
 function CloserZoomCreds({ closer, onDone }: { closer: CloserRow; onDone: () => void }) {
   const qc = useQueryClient();
-  const [accountId, setAccountId] = useState(closer.zoom_account_id ?? "");
-  const [clientId, setClientId] = useState(closer.zoom_client_id ?? "");
-  const [clientSecret, setClientSecret] = useState(closer.zoom_client_secret ?? "");
+  const { data: creds } = useQuery({
+    queryKey: ["closer-zoom-creds", closer.id],
+    queryFn: () => getCloserZoomCreds({ data: { closer_id: closer.id } }),
+  });
+  const [accountId, setAccountId] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  useEffect(() => {
+    if (creds) {
+      setAccountId(creds.zoom_account_id ?? "");
+      setClientId(creds.zoom_client_id ?? "");
+      setClientSecret(creds.zoom_client_secret ?? "");
+    }
+  }, [creds]);
 
   const save = useMutation({
     mutationFn: () => updateCloser({
@@ -257,7 +268,8 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRow; onDone: () => 
     }),
     onSuccess: () => {
       toast.success("Zoom credentials saved");
-      qc.invalidateQueries({ queryKey: ["closers"] });
+      qc.invalidateQueries({ queryKey: ["closers-zoom-status"] });
+      qc.invalidateQueries({ queryKey: ["closer-zoom-creds", closer.id] });
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -269,7 +281,8 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRow; onDone: () => 
     }),
     onSuccess: () => {
       toast.success("Zoom credentials removed");
-      qc.invalidateQueries({ queryKey: ["closers"] });
+      qc.invalidateQueries({ queryKey: ["closers-zoom-status"] });
+      qc.invalidateQueries({ queryKey: ["closer-zoom-creds", closer.id] });
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
