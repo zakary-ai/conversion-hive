@@ -805,6 +805,22 @@ export const cancelCloserBooking = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deleteCloserBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ booking_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: existing } = await context.supabase
+      .from("closer_bookings").select("google_calendar_event_id").eq("id", data.booking_id).maybeSingle();
+    if (existing?.google_calendar_event_id) {
+      try { await gcalDeleteEvent(existing.google_calendar_event_id as string); } catch { /* ignore */ }
+    }
+    const { error } = await context.supabase.from("closer_bookings").delete().eq("id", data.booking_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 // ---------- Admin: get full application by id ----------
 export const getApplicationById = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
