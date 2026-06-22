@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone, ChevronDown, Mail, Building2, Search, CalendarIcon } from "lucide-react";
+import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone, ChevronDown, Mail, Building2, Search, CalendarIcon, AlertTriangle } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -498,6 +498,26 @@ function matchesQuery(l: SetterLead, q: string) {
   );
 }
 
+// A lead has a "real" call if any call_logs row for it is not a manual_outcome marker.
+function leadHasRealCall(leadId: string, calls: CallRowItem[]) {
+  return calls.some(
+    (c) =>
+      (c as { lead_id?: string | null }).lead_id === leadId &&
+      c.status !== "manual_outcome",
+  );
+}
+
+function NoCallBadge() {
+  return (
+    <span
+      title="Outcome marked without an attached call"
+      className="inline-flex items-center gap-1 rounded-full bg-warning/15 text-warning px-2 py-0.5 text-[10px] font-medium"
+    >
+      <AlertTriangle className="h-3 w-3" /> No call
+    </span>
+  );
+}
+
 function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRowItem[] }) {
   const [tab, setTab] = useState<"uncontacted" | "contacted">("uncontacted");
   const [openLead, setOpenLead] = useState<SetterLead | null>(null);
@@ -567,7 +587,7 @@ function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
                 >
                   <td className="p-3 font-medium">{l.name}</td>
                   <td className="p-3 text-muted-foreground">{l.company ?? "—"}</td>
-                  <td className="p-3"><StatusPill status={l.status} /></td>
+                  <td className="p-3"><div className="flex items-center gap-2 flex-wrap"><StatusPill status={l.status} />{!leadHasRealCall(l.id, calls) && <NoCallBadge />}</div></td>
                 </tr>
               ))}
             </tbody>
@@ -659,7 +679,7 @@ function LeadHistoryCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
                 >
                   <td className="p-3 font-medium">{l.name}</td>
                   <td className="p-3 text-muted-foreground">{l.company ?? "—"}</td>
-                  <td className="p-3"><StatusPill status={l.status} /></td>
+                  <td className="p-3"><div className="flex items-center gap-2 flex-wrap"><StatusPill status={l.status} />{!leadHasRealCall(l.id, calls) && <NoCallBadge />}</div></td>
                 </tr>
               ))}
             </tbody>
@@ -686,6 +706,7 @@ function SetterLeadDetailDialog({
   onClose: () => void;
 }) {
   const leadCalls = lead ? calls.filter((c) => (c as { lead_id?: string | null }).lead_id === lead.id) : [];
+  const realCalls = leadCalls.filter((c) => c.status !== "manual_outcome");
   return (
     <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -695,6 +716,7 @@ function SetterLeadDetailDialog({
               <DialogTitle className="flex items-center gap-2 flex-wrap">
                 <span>{lead.name}</span>
                 <StatusPill status={lead.status} />
+                {realCalls.length === 0 && <NoCallBadge />}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 text-sm">
