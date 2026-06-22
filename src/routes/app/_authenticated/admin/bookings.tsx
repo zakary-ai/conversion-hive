@@ -121,6 +121,12 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
     mutationFn: () => cancelCloserBooking({ data: { booking_id: booking.id } }),
     onSuccess: () => { toast.success("Cancelled"); qc.invalidateQueries({ queryKey: ["closer-bookings"] }); },
   });
+  const del = useMutation({
+    mutationFn: () => deleteCloserBooking({ data: { booking_id: booking.id } }),
+    onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["closer-bookings"] }); qc.invalidateQueries({ queryKey: ["bookings-for-date"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const [openAppId, setOpenAppId] = useState<string | null>(null);
 
