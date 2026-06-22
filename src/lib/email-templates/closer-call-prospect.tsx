@@ -56,7 +56,7 @@ const Email = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes,
 
 export const template = {
   component: Email,
-  subject: 'Your sales call is confirmed — Zoom link inside',
+  subject: 'Your interview is confirmed — Zoom link inside',
   displayName: 'Closer call — prospect confirmation',
   previewData: {
     name: 'Alex',
