@@ -68,7 +68,7 @@ function ClosersPage() {
         {closers.length === 0 && (
           <Card className="p-8 text-center text-sm text-muted-foreground">No closers yet. Invite one to get started.</Card>
         )}
-        {closers.map((c) => <CloserRow key={c.id} closer={c} />)}
+        {closers.map((c) => <CloserRow key={c.id} closer={c} hasZoom={!!zoomStatus[c.id]} />)}
       </div>
     </div>
   );
