@@ -88,14 +88,8 @@ function ApplyPage() {
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             We're looking for driven sales people, or those looking to get into the sales industry. Training is included — you bring the hunger, we'll give you the skills.
           </p>
-          <Button
-            size="lg"
-            className="mt-8"
-            onClick={() => {
-              document.getElementById("apply")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          >
-            Apply now
+          <Button size="lg" className="mt-8" asChild>
+            <a href="#apply">Apply now</a>
           </Button>
         </div>
       </section>
