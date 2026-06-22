@@ -670,7 +670,7 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
       description: descLines,
       startISO: booking.slot_start as string,
       endISO: booking.slot_end as string,
-      attendees: [closer.email as string, booking.applicant_email as string],
+      attendees: [closer.email as string],
     });
 
     const { error: uerr } = await supabaseAdmin.from("closer_bookings").update({
