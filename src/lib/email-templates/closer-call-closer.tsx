@@ -58,7 +58,7 @@ const Email = ({ closerName, applicantName, applicantEmail, applicantPhone, sche
 
 export const template = {
   component: Email,
-  subject: 'New sales call assigned — Zoom link inside',
+  subject: 'New interview assigned — Zoom link inside',
   displayName: 'Closer call — closer notification',
   previewData: {
     closerName: 'Jamie',
