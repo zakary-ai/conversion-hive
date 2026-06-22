@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { getClientDetail, addCommission, setCommissionPaid } from "@/lib/api/cl.functions";
+import { getClientDetail, addCommission, setCommissionPaid, backfillSetterCallArtifacts } from "@/lib/api/cl.functions";
 
 import { PageHeader, StatCard, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
@@ -79,7 +79,12 @@ function SetterDetailPage() {
       <PageHeader
         title={data.profile?.full_name || data.profile?.email || "Setter"}
         description={data.profile?.email ?? undefined}
-        action={<Button variant="ghost" asChild><Link to="/app/admin/clients">← All setters</Link></Button>}
+        action={
+          <div className="flex items-center gap-2">
+            <BackfillButton userId={userId} />
+            <Button variant="ghost" asChild><Link to="/app/admin/clients">← All setters</Link></Button>
+          </div>
+        }
       />
 
       <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">
@@ -407,7 +412,25 @@ function PayDialog({ commission, userId, onClose }: { commission: Commission | n
   );
 }
 
+function BackfillButton({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const m = useMutation({
+    mutationFn: () => backfillSetterCallArtifacts({ data: { user_id: userId, since_days: 14 } }),
+    onSuccess: (r) => {
+      toast.success(`Backfilled: ${r.adopted} linked, ${r.withRec} recordings, ${r.withTx} transcripts.`);
+      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Button variant="outline" size="sm" onClick={() => m.mutate()} disabled={m.isPending}>
+      {m.isPending ? "Pulling…" : "Pull recordings"}
+    </Button>
+  );
+}
+
 // ---------- Today's Leads + history sections ----------
+
 
 type SetterLead = {
   id: string;
