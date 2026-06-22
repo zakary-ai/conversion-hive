@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { listMyLeads, updateLead, createAppointment, listMyAppointments } from "@/lib/api/cl.functions";
-import { startBridgeCall } from "@/lib/api/calls.functions";
+import { startBridgeCall, listCallsForLead } from "@/lib/api/calls.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -322,6 +322,8 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
                   </div>
                 </div>
 
+                <LeadCallsPanel leadId={lead.id} />
+
                 <ScriptsPanel lead={lead} />
 
                 <SmsPanel lead={lead} />
@@ -403,6 +405,63 @@ function CallButton({ leadId, ariaLabel, variant = "round", onCalled }: { leadId
     >
       <Phone className="h-5 w-5" />
     </button>
+  );
+}
+
+function LeadCallsPanel({ leadId }: { leadId: string }) {
+  const { data: calls = [], isLoading } = useQuery({
+    queryKey: ["lead-calls", leadId],
+    queryFn: () => listCallsForLead({ data: { lead_id: leadId } }),
+    refetchInterval: 30_000,
+  });
+  if (isLoading) return null;
+  if (calls.length === 0) return null;
+  return (
+    <details className="group" open>
+      <summary className="cursor-pointer text-xs uppercase tracking-widest text-muted-foreground">
+        Calls ({calls.length})
+      </summary>
+      <div className="mt-2 space-y-3 max-h-96 overflow-y-auto pr-1">
+        {calls.map((c) => {
+          const when = c.started_at || c.created_at;
+          const duration = c.duration_sec ? `${Math.floor(c.duration_sec / 60)}m ${c.duration_sec % 60}s` : null;
+          return (
+            <div key={c.id} className="rounded-lg border border-border p-3 text-sm space-y-2">
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>{new Date(when).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                <span>
+                  {duration ? duration : (c.status ?? "—")}
+                  {c.counted_at ? " · counted" : ""}
+                </span>
+              </div>
+              {c.recording_url ? (
+                <audio controls preload="none" src={c.recording_url} className="w-full" />
+              ) : (
+                <div className="text-xs text-muted-foreground">Recording not available yet.</div>
+              )}
+              {c.summary && (
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Summary</div>
+                  <div className="whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-2 text-xs">{c.summary}</div>
+                </div>
+              )}
+              {c.transcript ? (
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                    Transcript{c.transcript_status && c.transcript_status !== "completed" ? ` · ${c.transcript_status}` : ""}
+                  </div>
+                  <div className="whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-2 text-xs max-h-48 overflow-y-auto">
+                    {c.transcript}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">Transcript not available yet.</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </details>
   );
 }
 

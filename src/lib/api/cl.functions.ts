@@ -275,6 +275,27 @@ export const updateLead = createServerFn({ method: "POST" })
     if (data.contacted === false) patch.contacted_at = null;
     const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    // When the setter marks an outcome status for the lead, count the most
+    // recent dial as a "real" dial. Dials without a follow-up status mark
+    // don't count toward the setter's stats.
+    if (data.status !== undefined) {
+      const { data: recent } = await context.supabase
+        .from("call_logs")
+        .select("id")
+        .eq("lead_id", data.id)
+        .eq("user_id", context.userId)
+        .is("counted_at", null)
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (recent?.id) {
+        await context.supabase
+          .from("call_logs")
+          .update({ counted_at: new Date().toISOString() })
+          .eq("id", recent.id);
+      }
+    }
     return { ok: true };
   });
 
@@ -944,7 +965,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
       supabase.from("modules").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase.from("appointments").select("*").eq("user_id", data.user_id).order("scheduled_at", { ascending: false }),
       supabase.from("call_logs")
-        .select("id, lead_id, started_at, created_at, ended_at, duration_sec, status, direction, to_number, from_number, recording_url, transcript, transcript_status, summary, leads:lead_id(name, company)")
+        .select("id, lead_id, started_at, created_at, ended_at, duration_sec, status, direction, to_number, from_number, recording_url, transcript, transcript_status, summary, counted_at, leads:lead_id(name, company)")
         .eq("user_id", data.user_id)
         .order("created_at", { ascending: false })
         .limit(200),
@@ -987,7 +1008,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
         lost: bookings.filter((a) => a.outcome === "lost").length,
         pending: bookings.filter((a) => !a.outcome).length,
         leadsCount: leadsInRange.length,
-        dials: callsInRange.length,
+        dials: (callsInRange as Array<{ counted_at: string | null }>).filter((c) => c.counted_at).length,
       },
     };
   });
