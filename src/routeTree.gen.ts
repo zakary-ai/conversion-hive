@@ -13,7 +13,9 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
+import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AppAuthRouteImport } from './routes/app/auth'
@@ -70,9 +72,19 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApplyRoute = ApplyRouteImport.update({
   id: '/apply',
   path: '/apply',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -86,14 +98,13 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAuthRoute = AppAuthRouteImport.update({
-  id: '/app/auth',
-  path: '/app/auth',
-  getParentRoute: () => rootRouteImport,
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppAuthenticatedRouteRoute = AppAuthenticatedRouteRouteImport.update({
-  id: '/app/_authenticated',
-  path: '/app',
-  getParentRoute: () => rootRouteImport,
+  id: '/_authenticated',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
@@ -280,12 +291,13 @@ const AppAuthenticatedAdminClientsUserIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/apply': typeof ApplyRoute
+  '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
-  '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/app/auth': typeof AppAuthRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
@@ -322,12 +334,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/apply': typeof ApplyRoute
+  '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
-  '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/app/auth': typeof AppAuthRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/calendar': typeof AppAuthenticatedCalendarRoute
@@ -364,7 +377,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteRouteWithChildren
   '/apply': typeof ApplyRoute
+  '/auth': typeof AuthRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -408,12 +423,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
     | '/apply'
+    | '/auth'
     | '/privacy'
     | '/support'
     | '/terms'
     | '/unsubscribe'
-    | '/app'
     | '/app/auth'
     | '/email/unsubscribe'
     | '/app/admin'
@@ -450,12 +466,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app'
     | '/apply'
+    | '/auth'
     | '/privacy'
     | '/support'
     | '/terms'
     | '/unsubscribe'
-    | '/app'
     | '/app/auth'
     | '/email/unsubscribe'
     | '/app/calendar'
@@ -491,7 +508,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/app'
     | '/apply'
+    | '/auth'
     | '/privacy'
     | '/support'
     | '/terms'
@@ -534,13 +553,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRouteRoute: typeof AppRouteRouteWithChildren
   ApplyRoute: typeof ApplyRoute
+  AuthRoute: typeof AuthRoute
   PrivacyRoute: typeof PrivacyRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
-  AppAuthenticatedRouteRoute: typeof AppAuthenticatedRouteRouteWithChildren
-  AppAuthRoute: typeof AppAuthRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
@@ -580,11 +599,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/apply': {
       id: '/apply'
       path: '/apply'
       fullPath: '/apply'
       preLoaderRoute: typeof ApplyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -603,17 +636,17 @@ declare module '@tanstack/react-router' {
     }
     '/app/auth': {
       id: '/app/auth'
-      path: '/app/auth'
+      path: '/auth'
       fullPath: '/app/auth'
       preLoaderRoute: typeof AppAuthRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/app/_authenticated': {
       id: '/app/_authenticated'
-      path: '/app'
+      path: ''
       fullPath: '/app'
       preLoaderRoute: typeof AppAuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -914,15 +947,29 @@ const AppAuthenticatedRouteRouteWithChildren =
     AppAuthenticatedRouteRouteChildren,
   )
 
+interface AppRouteRouteChildren {
+  AppAuthenticatedRouteRoute: typeof AppAuthenticatedRouteRouteWithChildren
+  AppAuthRoute: typeof AppAuthRoute
+}
+
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAuthenticatedRouteRoute: AppAuthenticatedRouteRouteWithChildren,
+  AppAuthRoute: AppAuthRoute,
+}
+
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRouteRoute: AppRouteRouteWithChildren,
   ApplyRoute: ApplyRoute,
+  AuthRoute: AuthRoute,
   PrivacyRoute: PrivacyRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
-  AppAuthenticatedRouteRoute: AppAuthenticatedRouteRouteWithChildren,
-  AppAuthRoute: AppAuthRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,

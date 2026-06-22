@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listMyCloserCommissions } from "@/lib/api/b2c.functions";
-import { meQueryOptions } from "@/routes/_authenticated/route";
+import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, CheckCircle2 } from "lucide-react";
