@@ -475,6 +475,38 @@ export type Database = {
           },
         ]
       }
+      closer_zoom_credentials: {
+        Row: {
+          closer_id: string
+          updated_at: string
+          zoom_account_id: string | null
+          zoom_client_id: string | null
+          zoom_client_secret: string | null
+        }
+        Insert: {
+          closer_id: string
+          updated_at?: string
+          zoom_account_id?: string | null
+          zoom_client_id?: string | null
+          zoom_client_secret?: string | null
+        }
+        Update: {
+          closer_id?: string
+          updated_at?: string
+          zoom_account_id?: string | null
+          zoom_client_id?: string | null
+          zoom_client_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "closer_zoom_credentials_closer_id_fkey"
+            columns: ["closer_id"]
+            isOneToOne: true
+            referencedRelation: "closers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       closers: {
         Row: {
           active: boolean
@@ -484,9 +516,6 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string | null
-          zoom_account_id: string | null
-          zoom_client_id: string | null
-          zoom_client_secret: string | null
         }
         Insert: {
           active?: boolean
@@ -496,9 +525,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string | null
-          zoom_account_id?: string | null
-          zoom_client_id?: string | null
-          zoom_client_secret?: string | null
         }
         Update: {
           active?: boolean
@@ -508,9 +534,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string | null
-          zoom_account_id?: string | null
-          zoom_client_id?: string | null
-          zoom_client_secret?: string | null
         }
         Relationships: []
       }

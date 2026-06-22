@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listClosers, createCloser, updateCloser, deleteCloser, listCloserAvailability, replaceCloserAvailability, resendCloserInvite } from "@/lib/api/b2c.functions";
+import { listClosers, createCloser, updateCloser, deleteCloser, listCloserAvailability, replaceCloserAvailability, resendCloserInvite, getCloserZoomCreds, listClosersZoomStatus } from "@/lib/api/b2c.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ const fromTime = (s: string) => { const [h,m] = s.split(":").map(Number); return
 function ClosersPage() {
   const qc = useQueryClient();
   const { data: closers = [] } = useQuery({ queryKey: ["closers"], queryFn: () => listClosers() });
+  const { data: zoomStatus = {} } = useQuery({ queryKey: ["closers-zoom-status"], queryFn: () => listClosersZoomStatus() });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "" });
 
@@ -67,7 +68,7 @@ function ClosersPage() {
         {closers.length === 0 && (
           <Card className="p-8 text-center text-sm text-muted-foreground">No closers yet. Invite one to get started.</Card>
         )}
-        {closers.map((c) => <CloserRow key={c.id} closer={c} />)}
+        {closers.map((c) => <CloserRow key={c.id} closer={c} hasZoom={!!zoomStatus[c.id]} />)}
       </div>
     </div>
   );
@@ -78,12 +79,9 @@ type CloserRow = {
   full_name: string;
   email: string;
   active: boolean;
-  zoom_account_id: string | null;
-  zoom_client_id: string | null;
-  zoom_client_secret: string | null;
 };
 
-function CloserRow({ closer }: { closer: CloserRow }) {
+function CloserRow({ closer, hasZoom }: { closer: CloserRow; hasZoom: boolean }) {
   const qc = useQueryClient();
   const [editAvail, setEditAvail] = useState(false);
   const [editZoom, setEditZoom] = useState(false);
@@ -102,7 +100,6 @@ function CloserRow({ closer }: { closer: CloserRow }) {
     onSuccess: () => toast.success(`Invite re-sent to ${closer.email}`),
     onError: (e: Error) => toast.error(e.message),
   });
-  const hasZoom = !!(closer.zoom_account_id && closer.zoom_client_id && closer.zoom_client_secret);
   return (
     <Card className="p-4 flex items-center justify-between gap-4 flex-wrap">
       <div className="min-w-0">
@@ -245,9 +242,20 @@ function useStateSyncToByDay(
 
 function CloserZoomCreds({ closer, onDone }: { closer: CloserRow; onDone: () => void }) {
   const qc = useQueryClient();
-  const [accountId, setAccountId] = useState(closer.zoom_account_id ?? "");
-  const [clientId, setClientId] = useState(closer.zoom_client_id ?? "");
-  const [clientSecret, setClientSecret] = useState(closer.zoom_client_secret ?? "");
+  const { data: creds } = useQuery({
+    queryKey: ["closer-zoom-creds", closer.id],
+    queryFn: () => getCloserZoomCreds({ data: { closer_id: closer.id } }),
+  });
+  const [accountId, setAccountId] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  useEffect(() => {
+    if (creds) {
+      setAccountId(creds.zoom_account_id ?? "");
+      setClientId(creds.zoom_client_id ?? "");
+      setClientSecret(creds.zoom_client_secret ?? "");
+    }
+  }, [creds]);
 
   const save = useMutation({
     mutationFn: () => updateCloser({
@@ -260,7 +268,8 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRow; onDone: () => 
     }),
     onSuccess: () => {
       toast.success("Zoom credentials saved");
-      qc.invalidateQueries({ queryKey: ["closers"] });
+      qc.invalidateQueries({ queryKey: ["closers-zoom-status"] });
+      qc.invalidateQueries({ queryKey: ["closer-zoom-creds", closer.id] });
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -272,7 +281,8 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRow; onDone: () => 
     }),
     onSuccess: () => {
       toast.success("Zoom credentials removed");
-      qc.invalidateQueries({ queryKey: ["closers"] });
+      qc.invalidateQueries({ queryKey: ["closers-zoom-status"] });
+      qc.invalidateQueries({ queryKey: ["closer-zoom-creds", closer.id] });
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
