@@ -101,9 +101,9 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRow; hasZoom: boolean })
     onError: (e: Error) => toast.error(e.message),
   });
   return (
-    <Card className="p-4 flex items-center justify-between gap-4 flex-wrap">
+    <Card className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="min-w-0">
-        <div className="font-medium">{closer.full_name}</div>
+        <div className="font-medium truncate">{closer.full_name}</div>
         <div className="text-xs text-muted-foreground truncate">{closer.email}</div>
         <div className="text-xs mt-1">
           <span className={hasZoom ? "text-emerald-600" : "text-amber-600"}>
@@ -111,7 +111,7 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRow; hasZoom: boolean })
           </span>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 text-xs">
           <span className="text-muted-foreground">Active</span>
           <Switch checked={closer.active} onCheckedChange={(v) => toggle.mutate(v)} />
@@ -136,7 +136,7 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRow; hasZoom: boolean })
         <Button size="sm" variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>
           {resend.isPending ? "Sending…" : "Resend invite"}
         </Button>
-        <Button size="icon" variant="ghost" onClick={() => del.mutate()}>
+        <Button size="icon" variant="ghost" onClick={() => del.mutate()} aria-label="Remove closer">
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
