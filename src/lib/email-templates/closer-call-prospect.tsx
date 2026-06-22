@@ -25,13 +25,13 @@ const Email = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes,
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>Your call is confirmed — Zoom link inside</Preview>
+      <Preview>Your interview is confirmed — Zoom link inside</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={card}>
             <Heading style={heading}>You're booked{name ? `, ${name}` : ''} 🎉</Heading>
             <Text style={muted}>
-              Thanks for applying. Your sales call{closerName ? ` with ${closerName}` : ''} is confirmed.
+              Thanks for applying. Your interview{closerName ? ` with ${closerName}` : ''} is confirmed.
             </Text>
             <Text style={detail}><strong>When:</strong> {when}</Text>
             {durationMinutes ? <Text style={detail}><strong>Duration:</strong> {durationMinutes} minutes</Text> : null}
@@ -56,7 +56,7 @@ const Email = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes,
 
 export const template = {
   component: Email,
-  subject: 'Your sales call is confirmed — Zoom link inside',
+  subject: 'Your interview is confirmed — Zoom link inside',
   displayName: 'Closer call — prospect confirmation',
   previewData: {
     name: 'Alex',

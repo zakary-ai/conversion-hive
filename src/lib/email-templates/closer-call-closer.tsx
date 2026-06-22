@@ -32,7 +32,7 @@ const Email = ({ closerName, applicantName, applicantEmail, applicantPhone, sche
         <Container style={container}>
           <Section style={card}>
             <Heading style={heading}>New call assigned{closerName ? `, ${closerName}` : ''}</Heading>
-            <Text style={muted}>You've been assigned a new sales call. Details below.</Text>
+            <Text style={muted}>You've been assigned a new interview. Details below.</Text>
             {applicantName ? <Text style={detail}><strong>Lead:</strong> {applicantName}</Text> : null}
             {applicantEmail ? <Text style={detail}><strong>Email:</strong> {applicantEmail}</Text> : null}
             {applicantPhone ? <Text style={detail}><strong>Phone:</strong> {applicantPhone}</Text> : null}
@@ -58,7 +58,7 @@ const Email = ({ closerName, applicantName, applicantEmail, applicantPhone, sche
 
 export const template = {
   component: Email,
-  subject: 'New sales call assigned — Zoom link inside',
+  subject: 'New interview assigned — Zoom link inside',
   displayName: 'Closer call — closer notification',
   previewData: {
     closerName: 'Jamie',
