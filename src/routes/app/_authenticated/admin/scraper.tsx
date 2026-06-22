@@ -9,6 +9,7 @@ import {
   runScraperNow,
   listScraperRuns,
   skipNextCity,
+  assignLeadsToSetter,
 } from "@/lib/api/scraper.functions";
 
 import { PageHeader } from "@/components/ui-bits";
@@ -158,6 +159,17 @@ function ScraperPage() {
   const updateSetter = useMutation({
     mutationFn: (v: { user_id: string; scraper_enabled?: boolean; daily_lead_quota?: number }) => updateSetterScraperConfig({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["scraper-setters"] }),
+  });
+
+  const addLeads = useMutation({
+    mutationFn: (v: { user_id: string; count: number }) => assignLeadsToSetter({ data: v }),
+    onSuccess: (r) => {
+      if (r.assigned === 0) toast.error("No unassigned leads available in the pool");
+      else if (r.assigned < r.requested) toast.success(`Assigned ${r.assigned} of ${r.requested} (pool exhausted)`);
+      else toast.success(`Assigned ${r.assigned} leads`);
+      qc.invalidateQueries({ queryKey: ["scraper-setters"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const runNow = useMutation({
@@ -366,10 +378,10 @@ function ScraperPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-xs uppercase text-muted-foreground">
-              <tr><th className="text-left p-2">Name</th><th className="text-left p-2">Leads ({setterRange === "day" ? "today" : setterRange === "week" ? "7d" : setterRange === "month" ? "30d" : "90d"})</th><th className="text-left p-2">Daily quota</th><th className="text-left p-2">Enabled</th></tr>
+              <tr><th className="text-left p-2">Name</th><th className="text-left p-2">Leads ({setterRange === "day" ? "today" : setterRange === "week" ? "7d" : setterRange === "month" ? "30d" : "90d"})</th><th className="text-left p-2">Daily quota</th><th className="text-left p-2">Enabled</th><th className="text-left p-2">Add leads</th></tr>
             </thead>
             <tbody>
-              {setters.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-muted-foreground">No setters yet.</td></tr>}
+              {setters.length === 0 && <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">No setters yet.</td></tr>}
 
               {setters.map((s) => (
                 <tr key={s.user_id} className="border-t border-border">
@@ -392,6 +404,14 @@ function ScraperPage() {
                     <Switch
                       checked={s.scraper_enabled}
                       onCheckedChange={(v) => updateSetter.mutate({ user_id: s.user_id, scraper_enabled: v })}
+                    />
+                  </td>
+                  <td className="p-2">
+                    <AddLeadsCell
+                      userId={s.user_id}
+                      defaultCount={s.daily_lead_quota}
+                      pending={addLeads.isPending && addLeads.variables?.user_id === s.user_id}
+                      onAdd={(count) => addLeads.mutate({ user_id: s.user_id, count })}
                     />
                   </td>
                 </tr>
@@ -439,6 +459,26 @@ function ScraperPage() {
           })}
         </div>
       </Card>
+    </div>
+  );
+}
+
+function AddLeadsCell({ userId: _userId, defaultCount, pending, onAdd }: { userId: string; defaultCount: number; pending: boolean; onAdd: (count: number) => void }) {
+  const [count, setCount] = useState<number>(Math.max(1, defaultCount || 25));
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        type="number"
+        min={1}
+        max={500}
+        value={count}
+        onChange={(e) => setCount(Math.max(1, Math.min(500, Number(e.target.value) || 0)))}
+        className="w-20"
+      />
+      <Button size="sm" variant="outline" disabled={pending || count < 1} onClick={() => onAdd(count)}>
+        {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
+        Add
+      </Button>
     </div>
   );
 }

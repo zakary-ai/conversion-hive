@@ -140,3 +140,33 @@ export const listScraperRuns = createServerFn({ method: "GET" })
       .limit(50);
     return data ?? [];
   });
+
+// Assign N unassigned leads from the pool to a specific setter.
+export const assignLeadsToSetter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    user_id: z.string().uuid(),
+    count: z.number().int().min(1).max(500),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: pool, error: pErr } = await supabaseAdmin
+      .from("leads")
+      .select("id")
+      .eq("status", "New")
+      .eq("retired", false)
+      .eq("do_not_contact", false)
+      .is("assigned_user_id", null)
+      .order("created_at", { ascending: true })
+      .limit(data.count);
+    if (pErr) throw new Error(pErr.message);
+    const ids = (pool ?? []).map((r) => r.id as string);
+    if (ids.length === 0) return { ok: true, assigned: 0, requested: data.count };
+    const { error: aErr } = await supabaseAdmin
+      .from("leads")
+      .update({ assigned_user_id: data.user_id })
+      .in("id", ids);
+    if (aErr) throw new Error(aErr.message);
+    return { ok: true, assigned: ids.length, requested: data.count };
+  });
