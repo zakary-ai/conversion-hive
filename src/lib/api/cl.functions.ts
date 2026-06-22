@@ -275,6 +275,27 @@ export const updateLead = createServerFn({ method: "POST" })
     if (data.contacted === false) patch.contacted_at = null;
     const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    // When the setter marks an outcome status for the lead, count the most
+    // recent dial as a "real" dial. Dials without a follow-up status mark
+    // don't count toward the setter's stats.
+    if (data.status !== undefined) {
+      const { data: recent } = await context.supabase
+        .from("call_logs")
+        .select("id")
+        .eq("lead_id", data.id)
+        .eq("user_id", context.userId)
+        .is("counted_at", null)
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (recent?.id) {
+        await context.supabase
+          .from("call_logs")
+          .update({ counted_at: new Date().toISOString() })
+          .eq("id", recent.id);
+      }
+    }
     return { ok: true };
   });
 
