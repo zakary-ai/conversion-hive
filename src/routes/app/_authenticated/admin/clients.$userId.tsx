@@ -137,7 +137,7 @@ function SetterDetailPage() {
         </Card>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h3 className="font-display font-semibold">Booking history</h3>
           <span className="text-xs text-muted-foreground">{data.stats.bookings} total</span>
@@ -176,7 +176,7 @@ function SetterDetailPage() {
         )}
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
           <h3 className="font-display font-semibold">Commission history</h3>
           <div className="text-xs text-muted-foreground">
@@ -538,7 +538,7 @@ function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
 
   return (
     <>
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
           <h3 className="font-display font-semibold">Today's Leads ({list.length})</h3>
           <div className="flex items-center gap-2">
@@ -628,7 +628,7 @@ function LeadHistoryCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
 
   return (
     <>
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
           <h3 className="font-display font-semibold">Lead history ({dayLeads.length})</h3>
           <div className="flex items-center gap-2">

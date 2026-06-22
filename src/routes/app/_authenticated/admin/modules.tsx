@@ -72,7 +72,7 @@ function AdminModules() {
         </div>
       } />
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <div className="grid grid-cols-[40px_80px_1fr_80px_140px] gap-2 px-3 py-2 bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
           <div></div><div>Order</div><div>Title</div><div>Active</div><div></div>
         </div>

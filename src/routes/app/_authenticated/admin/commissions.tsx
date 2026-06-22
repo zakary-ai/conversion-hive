@@ -74,7 +74,7 @@ function AdminCommissions() {
         <Button onClick={() => add.mutate()} disabled={!userId || !amount || add.isPending} className="mt-3">Add commission</Button>
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <div className="p-4 border-b border-border"><h3 className="font-display font-semibold">All entries</h3></div>
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">

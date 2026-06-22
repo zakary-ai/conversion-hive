@@ -43,7 +43,7 @@ function CommissionsPage() {
       </div>
 
       {/* Tablet+ : table */}
-      <Card className="hidden overflow-hidden sm:block">
+      <Card className="hidden overflow-x-auto sm:block">
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
             <tr><th className="text-left p-3">Date</th><th className="text-left p-3">Amount</th><th className="text-left p-3">Note</th></tr>

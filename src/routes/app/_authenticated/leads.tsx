@@ -100,7 +100,7 @@ function LeadsPage() {
           </div>
 
           {/* Desktop table */}
-          <Card className="overflow-hidden hidden md:block">
+          <Card className="overflow-x-auto hidden md:block">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
