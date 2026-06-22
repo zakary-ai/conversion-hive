@@ -443,6 +443,31 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
     };
   });
 
+  // 9b. Quota-fill assessment (separate from status)
+  let remainingCapacity = 0;
+  for (const v of capacity.values()) remainingCapacity += Math.max(0, v);
+  const quotaMet = remainingCapacity === 0;
+  result.stopReason = stopReason;
+  if (quotaMet) {
+    result.quotaMet = true;
+  } else {
+    result.quotaMet = false;
+    result.unfilled = remainingCapacity;
+    const inserted = result.inserted;
+    const citiesUsed = result.cities.length;
+    let msg: string;
+    if (stopReason === "city_cap") {
+      msg = `Quota short by ${remainingCapacity}: scraped ${citiesUsed}/${MAX_CITIES_PER_RUN} cities (hit city cap), ${inserted} new leads inserted. Raise MAX_CITIES_PER_RUN or add more cities to the rotation.`;
+    } else if (stopReason === "rotation_exhausted") {
+      msg = `Quota short by ${remainingCapacity}: ran out of cities in rotation (${citiesUsed} scraped), ${inserted} inserted. Add more cities to the rotation.`;
+    } else if (stopReason === "no_scrape") {
+      msg = `Quota short by ${remainingCapacity}: scraper not configured (missing Apify actor, APIFY_TOKEN, or city rotation).`;
+    } else {
+      msg = `Quota short by ${remainingCapacity}: pool exhausted before all setters filled (${inserted} inserted across ${citiesUsed} cities). Add more cities or lower a setter's quota.`;
+    }
+    result.warnings = [msg];
+  }
+
   // 10. Log
   const status = result.skipped
     ? "skipped"
