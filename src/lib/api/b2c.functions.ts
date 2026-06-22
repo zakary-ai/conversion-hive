@@ -458,7 +458,7 @@ async function sendCloserInviteEmail(input: {
         closerName: input.fullName,
         email: input.email,
         password: input.password,
-        loginUrl: "https://conversionlab.space/auth",
+        loginUrl: "https://conversionlab.space/app/auth",
       },
     });
   } catch (e) {

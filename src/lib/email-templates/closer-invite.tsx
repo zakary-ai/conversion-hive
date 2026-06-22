@@ -49,6 +49,6 @@ export const template = {
     closerName: 'Jamie',
     email: 'jamie@example.com',
     password: 'ConversionLab1095!',
-    loginUrl: 'https://conversionlab.space/auth',
+    loginUrl: 'https://conversionlab.space/app/auth',
   },
 } satisfies TemplateEntry
