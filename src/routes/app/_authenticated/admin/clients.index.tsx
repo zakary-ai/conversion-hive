@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { listClients, inviteClient, resendClientInvite, DEFAULT_CLIENT_PASSWORD } from "@/lib/api/cl.functions";
+import { listClients, inviteClient, resendClientInvite, deleteSetter, DEFAULT_CLIENT_PASSWORD } from "@/lib/api/cl.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { UserPlus, Copy, Check, Mail } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { UserPlus, Copy, Check, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const opts = queryOptions({ queryKey: ["clients"], queryFn: () => listClients() });
