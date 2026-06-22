@@ -412,7 +412,25 @@ function PayDialog({ commission, userId, onClose }: { commission: Commission | n
   );
 }
 
+function BackfillButton({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const m = useMutation({
+    mutationFn: () => backfillSetterCallArtifacts({ data: { user_id: userId, since_days: 14 } }),
+    onSuccess: (r) => {
+      toast.success(`Backfilled: ${r.adopted} linked, ${r.withRec} recordings, ${r.withTx} transcripts.`);
+      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Button variant="outline" size="sm" onClick={() => m.mutate()} disabled={m.isPending}>
+      {m.isPending ? "Pulling…" : "Pull recordings"}
+    </Button>
+  );
+}
+
 // ---------- Today's Leads + history sections ----------
+
 
 type SetterLead = {
   id: string;
