@@ -436,6 +436,15 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
       invalidate();
     },
   });
+  const del = useMutation({
+    mutationFn: () => deleteCloserBooking({ data: { booking_id: booking.id } }),
+    onSuccess: () => {
+      toast.success("Deleted");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const [openAppId, setOpenAppId] = useState<string | null>(null);
   const dt = new Date(booking.slot_start);
