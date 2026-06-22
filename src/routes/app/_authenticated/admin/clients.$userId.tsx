@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone, ChevronDown } from "lucide-react";
+import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone, ChevronDown, Mail, Building2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -223,39 +223,15 @@ function SetterDetailPage() {
         )}
       </Card>
 
-      <Card className="overflow-hidden">
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <h3 className="font-display font-semibold">Call recordings & transcripts</h3>
-          <span className="text-xs text-muted-foreground">{data.calls?.length ?? 0} calls</span>
-        </div>
-        {(data.calls?.length ?? 0) === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground text-center">No calls yet.</div>
-        ) : (
-          <div className="divide-y divide-border">
-            {data.calls.slice(0, 50).map((c) => (
-              <CallRow key={c.id} call={c} />
-            ))}
-          </div>
-        )}
-      </Card>
+      <TodaysLeadsCard
+        leads={data.leads as SetterLead[]}
+        calls={data.calls as CallRowItem[]}
+      />
 
-      <Card className="overflow-hidden">
-        <div className="p-4 border-b border-border"><h3 className="font-display font-semibold">Leads ({data.leads.length})</h3></div>
-        <table className="w-full text-sm">
-          <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-            <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Company</th><th className="text-left p-3">Status</th></tr>
-          </thead>
-          <tbody>
-            {data.leads.slice(0, 20).map((l) => (
-              <tr key={l.id} className="border-t border-border">
-                <td className="p-3">{l.name}</td>
-                <td className="p-3 text-muted-foreground">{l.company}</td>
-                <td className="p-3"><StatusPill status={l.status} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+      <LeadHistoryCard
+        leads={data.leads as SetterLead[]}
+        calls={data.calls as CallRowItem[]}
+      />
 
       <PayDialog
         commission={payTarget}
@@ -423,6 +399,284 @@ function PayDialog({ commission, userId, onClose }: { commission: Commission | n
               </Button>
             </DialogFooter>
           </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------- Today's Leads + history sections ----------
+
+type SetterLead = {
+  id: string;
+  name: string;
+  company: string | null;
+  phone: string | null;
+  email: string | null;
+  source: string | null;
+  status: string;
+  notes: string | null;
+  contacted_at: string | null;
+  created_at: string;
+  callback_at: string | null;
+  last_status_change_at: string;
+  do_not_contact: boolean;
+};
+
+function startOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function endOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRowItem[] }) {
+  const [tab, setTab] = useState<"uncontacted" | "contacted">("uncontacted");
+  const [openLead, setOpenLead] = useState<SetterLead | null>(null);
+
+  const todayStart = startOfDay(new Date()).getTime();
+  const todayEnd = endOfDay(new Date()).getTime();
+
+  // Uncontacted today = assigned, status "New", not retired
+  const uncontacted = leads.filter(
+    (l) => l.status === "New" && !l.contacted_at,
+  );
+
+  // Contacted today = last status change today AND status != New
+  const contacted = leads.filter((l) => {
+    if (l.status === "New") return false;
+    const t = new Date(l.last_status_change_at).getTime();
+    return t >= todayStart && t <= todayEnd;
+  });
+
+  const list = tab === "uncontacted" ? uncontacted : contacted;
+
+  return (
+    <>
+      <Card className="overflow-hidden">
+        <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
+          <h3 className="font-display font-semibold">Today's Leads ({list.length})</h3>
+          <div className="inline-flex h-8 items-center rounded-lg bg-muted p-1 text-xs">
+            <button
+              onClick={() => setTab("uncontacted")}
+              className={cn(
+                "px-3 h-6 rounded-md transition-colors",
+                tab === "uncontacted" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Uncontacted ({uncontacted.length})
+            </button>
+            <button
+              onClick={() => setTab("contacted")}
+              className={cn(
+                "px-3 h-6 rounded-md transition-colors",
+                tab === "contacted" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Contacted ({contacted.length})
+            </button>
+          </div>
+        </div>
+        {list.length === 0 ? (
+          <div className="p-6 text-sm text-muted-foreground text-center">
+            No {tab} leads today.
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="text-left p-3">Name</th>
+                <th className="text-left p-3">Company</th>
+                <th className="text-left p-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((l) => (
+                <tr
+                  key={l.id}
+                  className="border-t border-border cursor-pointer hover:bg-muted/30"
+                  onClick={() => setOpenLead(l)}
+                >
+                  <td className="p-3 font-medium">{l.name}</td>
+                  <td className="p-3 text-muted-foreground">{l.company ?? "—"}</td>
+                  <td className="p-3"><StatusPill status={l.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      <SetterLeadDetailDialog
+        lead={openLead}
+        calls={calls}
+        onClose={() => setOpenLead(null)}
+      />
+    </>
+  );
+}
+
+function LeadHistoryCard({ leads, calls }: { leads: SetterLead[]; calls: CallRowItem[] }) {
+  const [date, setDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [openLead, setOpenLead] = useState<SetterLead | null>(null);
+
+  const dayStart = startOfDay(new Date(date + "T00:00:00")).getTime();
+  const dayEnd = endOfDay(new Date(date + "T00:00:00")).getTime();
+
+  const dayLeads = leads.filter((l) => {
+    const t = new Date(l.last_status_change_at).getTime();
+    return t >= dayStart && t <= dayEnd && l.status !== "New";
+  });
+
+  return (
+    <>
+      <Card className="overflow-hidden">
+        <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
+          <h3 className="font-display font-semibold">Lead history ({dayLeads.length})</h3>
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            max={new Date().toISOString().slice(0, 10)}
+            className="h-8 w-auto text-xs"
+          />
+        </div>
+        {dayLeads.length === 0 ? (
+          <div className="p-6 text-sm text-muted-foreground text-center">No leads worked on this day.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="text-left p-3">Name</th>
+                <th className="text-left p-3">Company</th>
+                <th className="text-left p-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dayLeads.map((l) => (
+                <tr
+                  key={l.id}
+                  className="border-t border-border cursor-pointer hover:bg-muted/30"
+                  onClick={() => setOpenLead(l)}
+                >
+                  <td className="p-3 font-medium">{l.name}</td>
+                  <td className="p-3 text-muted-foreground">{l.company ?? "—"}</td>
+                  <td className="p-3"><StatusPill status={l.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      <SetterLeadDetailDialog
+        lead={openLead}
+        calls={calls}
+        onClose={() => setOpenLead(null)}
+      />
+    </>
+  );
+}
+
+function SetterLeadDetailDialog({
+  lead,
+  calls,
+  onClose,
+}: {
+  lead: SetterLead | null;
+  calls: CallRowItem[];
+  onClose: () => void;
+}) {
+  const leadCalls = lead ? calls.filter((c) => (c as { lead_id?: string | null }).lead_id === lead.id) : [];
+  return (
+    <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        {lead && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 flex-wrap">
+                <span>{lead.name}</span>
+                <StatusPill status={lead.status} />
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {lead.company && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Building2 className="h-4 w-4" /> {lead.company}
+                  </div>
+                )}
+                {lead.phone && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="h-4 w-4" /> {lead.phone}
+                  </div>
+                )}
+                {lead.email && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4" /> {lead.email}
+                  </div>
+                )}
+                {lead.source && (
+                  <div className="text-muted-foreground text-xs uppercase tracking-wider">
+                    Source: <span className="normal-case text-foreground">{lead.source}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-md border border-border p-2">
+                  <div className="uppercase tracking-wider text-muted-foreground">Created</div>
+                  <div>{fmtDateTime(lead.created_at)}</div>
+                </div>
+                <div className="rounded-md border border-border p-2">
+                  <div className="uppercase tracking-wider text-muted-foreground">Last update</div>
+                  <div>{fmtDateTime(lead.last_status_change_at)}</div>
+                </div>
+                {lead.contacted_at && (
+                  <div className="rounded-md border border-border p-2">
+                    <div className="uppercase tracking-wider text-muted-foreground">Contacted</div>
+                    <div>{fmtDateTime(lead.contacted_at)}</div>
+                  </div>
+                )}
+                {lead.callback_at && (
+                  <div className="rounded-md border border-border p-2">
+                    <div className="uppercase tracking-wider text-muted-foreground">Callback</div>
+                    <div>{fmtDateTime(lead.callback_at)}</div>
+                  </div>
+                )}
+              </div>
+
+              {lead.notes && (
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Notes</div>
+                  <div className="text-sm whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-3">{lead.notes}</div>
+                </div>
+              )}
+
+              <div className="border-t border-border pt-3">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                  Call recordings & transcripts ({leadCalls.length})
+                </div>
+                {leadCalls.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No calls yet for this lead.</div>
+                ) : (
+                  <div className="divide-y divide-border rounded-md border border-border">
+                    {leadCalls.map((c) => (
+                      <CallRow key={c.id} call={c} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
         )}
       </DialogContent>
     </Dialog>
