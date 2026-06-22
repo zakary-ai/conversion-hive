@@ -3,6 +3,8 @@ import { template as closerCallProspect } from './closer-call-prospect'
 import { template as closerCallProspectReminder } from './closer-call-prospect-reminder'
 import { template as closerCallCloser } from './closer-call-closer'
 import { template as closerInvite } from './closer-invite'
+import { template as setterInvite } from './setter-invite'
+
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -18,4 +20,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'closer-call-prospect-reminder': closerCallProspectReminder,
   'closer-call-closer': closerCallCloser,
   'closer-invite': closerInvite,
+  'setter-invite': setterInvite,
 }
