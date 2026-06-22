@@ -10,7 +10,20 @@ import {
   assignCloserToBooking,
   unassignCloser,
   cancelCloserBooking,
+  deleteCloserBooking,
 } from "@/lib/api/b2c.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -423,6 +436,15 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
       invalidate();
     },
   });
+  const del = useMutation({
+    mutationFn: () => deleteCloserBooking({ data: { booking_id: booking.id } }),
+    onSuccess: () => {
+      toast.success("Deleted");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const [openAppId, setOpenAppId] = useState<string | null>(null);
   const dt = new Date(booking.slot_start);
@@ -493,11 +515,37 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
             </Button>
           )}
           {(booking.status === "pending_assignment" || booking.status === "assigned") && (
-            <Button size="icon" variant="ghost" onClick={() => cancel.mutate()}>
+            <Button size="icon" variant="ghost" onClick={() => cancel.mutate()} title="Cancel">
               <X className="h-4 w-4" />
             </Button>
           )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" title="Delete">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this booking?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently removes the booking for <strong>{booking.applicant_name}</strong> and deletes the Google Calendar event. This can't be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={del.isPending}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={del.isPending}
+                  onClick={(e) => { e.preventDefault(); del.mutate(); }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {del.isPending ? "Deleting…" : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
+
       </div>
       <ApplicationDetailDialog
         applicationId={openAppId}
