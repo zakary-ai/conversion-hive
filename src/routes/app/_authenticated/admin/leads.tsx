@@ -21,7 +21,7 @@ const STATUSES = ["New","Contacted","No Answer","Interested","Booked","Not Inter
 type Status = typeof STATUSES[number];
 type Lead = Awaited<ReturnType<typeof listAllLeads>>[number];
 
-export const Route = createFileRoute("/_authenticated/admin/leads")({
+export const Route = createFileRoute("/app/_authenticated/admin/leads")({
   loader: ({ context }) => Promise.all([
     context.queryClient.ensureQueryData(leadsOpts),
     context.queryClient.ensureQueryData(clientsOpts),

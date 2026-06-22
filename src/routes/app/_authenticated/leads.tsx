@@ -23,7 +23,7 @@ const opts = queryOptions({ queryKey: ["my-leads"], queryFn: () => listMyLeads()
 const STATUSES = ["New","Contacted","No Answer","Interested","Booked","Not Interested","Follow Up","Call Again","Call Back"] as const;
 type Lead = Awaited<ReturnType<typeof listMyLeads>>[number];
 
-export const Route = createFileRoute("/_authenticated/leads")({
+export const Route = createFileRoute("/app/_authenticated/leads")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
   component: LeadsPage,
 });

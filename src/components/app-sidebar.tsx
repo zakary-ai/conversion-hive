@@ -12,38 +12,38 @@ import {
 import logo from "@/assets/logo.png";
 
 const clientItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Leads", url: "/leads", icon: Briefcase },
-  { title: "Calendar", url: "/calendar", icon: CalendarIcon },
-  { title: "Training", url: "/training", icon: GraduationCap },
-  { title: "Commissions", url: "/commissions", icon: DollarSign },
-  { title: "Profile", url: "/profile", icon: UserCog },
+  { title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard },
+  { title: "Leads", url: "/app/leads", icon: Briefcase },
+  { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
+  { title: "Training", url: "/app/training", icon: GraduationCap },
+  { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
 const adminB2BItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Setters", url: "/admin/clients", icon: Users },
-  { title: "Leads", url: "/admin/leads", icon: Briefcase },
-  { title: "Calendar", url: "/calendar", icon: CalendarIcon },
-  { title: "Modules", url: "/admin/modules", icon: BookOpen },
-  { title: "Quizzes", url: "/admin/quizzes", icon: ListChecks },
-  { title: "Commissions", url: "/admin/commissions", icon: DollarSign },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Dashboard", url: "/app/admin", icon: LayoutDashboard },
+  { title: "Setters", url: "/app/admin/clients", icon: Users },
+  { title: "Leads", url: "/app/admin/leads", icon: Briefcase },
+  { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
+  { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
+  { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
+  { title: "Commissions", url: "/app/admin/commissions", icon: DollarSign },
+  { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
 
 const adminB2CItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
-  { title: "Closers", url: "/admin/closers", icon: UserPlus },
-  { title: "Commissions", url: "/admin/b2c-commissions", icon: DollarSign },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Dashboard", url: "/app/admin", icon: LayoutDashboard },
+  { title: "Bookings", url: "/app/admin/bookings", icon: CalendarCheck },
+  { title: "Closers", url: "/app/admin/closers", icon: UserPlus },
+  { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
+  { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
 
 const closerItems = [
-  { title: "Home", url: "/closer", icon: LayoutDashboard },
-  { title: "Calendar", url: "/closer/calendar", icon: CalendarIcon },
-  { title: "Commissions", url: "/closer/commissions", icon: DollarSign },
-  { title: "Profile", url: "/profile", icon: UserCog },
+  { title: "Home", url: "/app/closer", icon: LayoutDashboard },
+  { title: "Calendar", url: "/app/closer/calendar", icon: CalendarIcon },
+  { title: "Commissions", url: "/app/closer/commissions", icon: DollarSign },
+  { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
 
@@ -87,7 +87,7 @@ export function AppSidebar({ isAdmin, isCloser }: { isAdmin: boolean; isCloser?:
   const label = isAdmin ? "Admin" : isCloser ? "Closer" : "Client";
 
   const isActive = (url: string) =>
-    url === "/admin" || url === "/dashboard" || url === "/closer"
+    url === "/app/admin" || url === "/app/dashboard" || url === "/app/closer"
       ? pathname === url
       : pathname === url || pathname.startsWith(url + "/");
 

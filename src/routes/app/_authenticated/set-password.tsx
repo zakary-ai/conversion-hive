@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { KeyRound } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/set-password")({
+export const Route = createFileRoute("/app/_authenticated/set-password")({
   component: SetPasswordPage,
 });
 

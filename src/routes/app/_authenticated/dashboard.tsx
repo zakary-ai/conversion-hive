@@ -15,7 +15,7 @@ const dashboardOpts = queryOptions({
 
 const meOpts = queryOptions({ queryKey: ["me"], queryFn: () => getMe() });
 
-export const Route = createFileRoute("/_authenticated/dashboard")({
+export const Route = createFileRoute("/app/_authenticated/dashboard")({
   loader: ({ context }) => context.queryClient.ensureQueryData(dashboardOpts),
   component: ClientDashboard,
 });
@@ -63,7 +63,7 @@ function ClientDashboard() {
             <GraduationCap className="h-8 w-8 text-primary" />
           </div>
           <Progress value={data.progress} className="h-2" />
-          <Link to="/training" className="inline-flex items-center gap-1 mt-4 text-sm text-primary hover:underline">
+          <Link to="/app/training" className="inline-flex items-center gap-1 mt-4 text-sm text-primary hover:underline">
             Continue training <ArrowRight className="h-3 w-3" />
           </Link>
         </Card>
@@ -71,10 +71,10 @@ function ClientDashboard() {
         <Card className="p-6">
           <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Quick links</div>
           <div className="space-y-2">
-            <QuickLink to="/training" icon={GraduationCap} label="Training modules" />
-            <QuickLink to="/leads" icon={Briefcase} label="My leads" />
-            <QuickLink to="/profile" icon={ListChecks} label="My profile" />
-            <QuickLink to="/commissions" icon={DollarSign} label="View commissions" />
+            <QuickLink to="/app/training" icon={GraduationCap} label="Training modules" />
+            <QuickLink to="/app/leads" icon={Briefcase} label="My leads" />
+            <QuickLink to="/app/profile" icon={ListChecks} label="My profile" />
+            <QuickLink to="/app/commissions" icon={DollarSign} label="View commissions" />
           </div>
         </Card>
       </div>

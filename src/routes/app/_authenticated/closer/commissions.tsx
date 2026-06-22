@@ -6,10 +6,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, CheckCircle2 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/closer/commissions")({
+export const Route = createFileRoute("/app/_authenticated/closer/commissions")({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQueryOptions);
-    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/dashboard" });
+    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/dashboard" });
   },
   component: CloserCommissions,
 });

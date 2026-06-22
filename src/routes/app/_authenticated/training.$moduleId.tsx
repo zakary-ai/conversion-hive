@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
-export const Route = createFileRoute("/_authenticated/training/$moduleId")({
+export const Route = createFileRoute("/app/_authenticated/training/$moduleId")({
   loader: ({ context, params }) =>
     Promise.all([
       context.queryClient.ensureQueryData(mOpts(params.moduleId)),
@@ -185,7 +185,7 @@ function ModulePage() {
   return (
     <div className="space-y-6 max-w-5xl">
       <PageHeader title={m.title} description={`Module ${m.order_index}`} action={
-        <Button variant="ghost" asChild><Link to="/training">← All modules</Link></Button>
+        <Button variant="ghost" asChild><Link to="/app/training">← All modules</Link></Button>
       } />
 
       <VideoPlayer url={m.video_url} title={m.title} />
@@ -290,7 +290,7 @@ function ModulePage() {
         <Button
           variant="outline"
           disabled={!prev}
-          onClick={() => prev && navigate({ to: "/training/$moduleId", params: { moduleId: prev.id } })}
+          onClick={() => prev && navigate({ to: "/app/training/$moduleId", params: { moduleId: prev.id } })}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           {prev ? `Module ${prev.order_index}` : "Previous"}
@@ -298,7 +298,7 @@ function ModulePage() {
         <Button
           variant="outline"
           disabled={!next}
-          onClick={() => next && navigate({ to: "/training/$moduleId", params: { moduleId: next.id } })}
+          onClick={() => next && navigate({ to: "/app/training/$moduleId", params: { moduleId: next.id } })}
         >
           {next ? `Module ${next.order_index}` : "Next"}
           <ChevronRight className="h-4 w-4 ml-1" />

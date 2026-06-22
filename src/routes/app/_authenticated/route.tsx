@@ -15,11 +15,11 @@ export const meQueryOptions = queryOptions({
   queryFn: async () => getMe(),
 });
 
-export const Route = createFileRoute("/_authenticated")({
+export const Route = createFileRoute("/app/_authenticated")({
   ssr: false,
   beforeLoad: async ({ context }) => {
     const { data } = await supabase.auth.getSession();
-    if (!data.session) throw redirect({ to: "/auth" });
+    if (!data.session) throw redirect({ to: "/app/auth" });
     await context.queryClient.ensureQueryData(meQueryOptions);
   },
   component: AuthenticatedLayout,
@@ -33,8 +33,8 @@ function AuthenticatedLayout() {
   // Force first-login password change for setters/closers (and any user the admin flagged).
   // Admins are exempt — they already chose their own password.
   useEffect(() => {
-    if (me.mustChangePassword && location.pathname !== "/set-password") {
-      navigate({ to: "/set-password", replace: true });
+    if (me.mustChangePassword && location.pathname !== "/app/set-password") {
+      navigate({ to: "/app/set-password", replace: true });
     }
   }, [me.mustChangePassword, location.pathname, navigate]);
 

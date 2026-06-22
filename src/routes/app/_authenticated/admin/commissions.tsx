@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 const clientsOpts = queryOptions({ queryKey: ["clients"], queryFn: () => listClients() });
 
-export const Route = createFileRoute("/_authenticated/admin/commissions")({
+export const Route = createFileRoute("/app/_authenticated/admin/commissions")({
   loader: ({ context }) => context.queryClient.ensureQueryData(clientsOpts),
   component: AdminCommissions,
 });

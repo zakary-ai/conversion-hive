@@ -9,7 +9,7 @@ import { Play, CheckCircle2 } from "lucide-react";
 
 const opts = queryOptions({ queryKey: ["modules"], queryFn: () => listModules() });
 
-export const Route = createFileRoute("/_authenticated/training/")({
+export const Route = createFileRoute("/app/_authenticated/training/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
   component: TrainingList,
 });
@@ -36,7 +36,7 @@ function TrainingList() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {modules.map((m) => (
-            <Link key={m.id} to="/training/$moduleId" params={{ moduleId: m.id }}>
+            <Link key={m.id} to="/app/training/$moduleId" params={{ moduleId: m.id }}>
               <Card className="p-5 h-full hover:border-primary/50 transition-colors group">
                 <div className="flex items-center justify-between mb-3">
                   <Badge variant="secondary" className="font-mono">#{String(m.order_index).padStart(2,"0")}</Badge>

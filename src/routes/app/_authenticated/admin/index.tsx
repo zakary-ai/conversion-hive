@@ -14,7 +14,7 @@ import { useAdminChannel } from "@/components/app-sidebar";
 const opts = queryOptions({ queryKey: ["admin-dashboard"], queryFn: () => getAdminDashboard() });
 const b2cStatsOpts = queryOptions({ queryKey: ["b2c-admin-stats"], queryFn: () => getB2cAdminStats() });
 
-export const Route = createFileRoute("/_authenticated/admin/")({
+export const Route = createFileRoute("/app/_authenticated/admin/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
   component: AdminDashboard,
 });

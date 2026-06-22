@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 
-export const Route = createFileRoute("/auth")({
+export const Route = createFileRoute("/app/auth")({
   head: () => ({ meta: [{ title: "Sign in — Conversion Lab" }] }),
   component: AuthPage,
 });
@@ -28,7 +28,7 @@ function AuthPage() {
         .select("role")
         .eq("user_id", data.session.user.id);
       const isAdmin = (roles ?? []).some((r) => r.role === "admin");
-      if (active) navigate({ to: isAdmin ? "/admin" : "/dashboard" });
+      if (active) navigate({ to: isAdmin ? "/app/admin" : "/app/dashboard" });
     });
     return () => {
       active = false;
@@ -51,7 +51,7 @@ function AuthPage() {
     toast.success("Welcome back");
     const isAdmin = (roles ?? []).some((r) => r.role === "admin");
     const isCloser = (roles ?? []).some((r) => r.role === "closer");
-    navigate({ to: isAdmin ? "/admin" : isCloser ? "/closer" : "/dashboard" });
+    navigate({ to: isAdmin ? "/app/admin" : isCloser ? "/app/closer" : "/app/dashboard" });
   };
 
   return (

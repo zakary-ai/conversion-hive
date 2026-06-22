@@ -19,7 +19,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 const opts = queryOptions({ queryKey: ["modules"], queryFn: () => listModules() });
 
-export const Route = createFileRoute("/_authenticated/admin/modules")({
+export const Route = createFileRoute("/app/_authenticated/admin/modules")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
   component: AdminModules,
 });

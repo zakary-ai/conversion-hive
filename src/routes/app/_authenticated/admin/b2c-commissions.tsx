@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { DollarSign, Percent, Trash2 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/admin/b2c-commissions")({
+export const Route = createFileRoute("/app/_authenticated/admin/b2c-commissions")({
   component: B2cCommissionsPage,
 });
 

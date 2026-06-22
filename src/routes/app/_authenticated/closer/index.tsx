@@ -10,10 +10,10 @@ import { CalendarClock, Mail, Phone, Video, ClipboardCheck } from "lucide-react"
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 
-export const Route = createFileRoute("/_authenticated/closer/")({
+export const Route = createFileRoute("/app/_authenticated/closer/")({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQueryOptions);
-    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/dashboard" });
+    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/dashboard" });
   },
   component: CloserHome,
 });

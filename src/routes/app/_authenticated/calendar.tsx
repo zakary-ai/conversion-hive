@@ -21,7 +21,7 @@ const allOpts = queryOptions({ queryKey: ["all-appointments"], queryFn: () => li
 
 type Appt = Awaited<ReturnType<typeof listMyAppointments>>[number];
 
-export const Route = createFileRoute("/_authenticated/calendar")({
+export const Route = createFileRoute("/app/_authenticated/calendar")({
   loader: ({ context }) => context.queryClient.ensureQueryData(meOpts),
   component: CalendarPage,
 });
