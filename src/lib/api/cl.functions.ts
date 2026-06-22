@@ -1034,6 +1034,35 @@ export const inviteClient = createServerFn({ method: "POST" })
       must_change_password: true,
     }).eq("user_id", newUserId);
 
+    // Seed the new setter's account with leads from the unassigned pool
+    // up to their daily quota (default 75) so they have work waiting on first sign-in.
+    try {
+      const { data: prof } = await supabaseAdmin
+        .from("profiles")
+        .select("daily_lead_quota")
+        .eq("user_id", newUserId)
+        .maybeSingle();
+      const quota = Math.max(0, Math.min(500, ((prof as { daily_lead_quota?: number } | null)?.daily_lead_quota ?? 75) | 0));
+      if (quota > 0) {
+        const { data: pool } = await supabaseAdmin
+          .from("leads")
+          .select("id")
+          .eq("status", "New")
+          .eq("retired", false)
+          .eq("do_not_contact", false)
+          .is("assigned_user_id", null)
+          .order("created_at", { ascending: true })
+          .limit(quota);
+        const ids = (pool ?? []).map((r) => r.id as string);
+        if (ids.length > 0) {
+          await supabaseAdmin.from("leads").update({ assigned_user_id: newUserId }).in("id", ids);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to seed leads for new setter", e);
+    }
+
+
     // Send branded invite email with sign-in link and credentials
     try {
       const { sendTransactional } = await import("@/lib/email/transactional.server");
