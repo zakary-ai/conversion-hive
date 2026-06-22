@@ -180,9 +180,33 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
             <Button size="sm" variant="outline" onClick={() => unassign.mutate()}>Reassign</Button>
           )}
           {(booking.status === "pending_assignment" || booking.status === "assigned") && (
-            <Button size="icon" variant="ghost" onClick={() => cancel.mutate()}><X className="h-4 w-4" /></Button>
+            <Button size="icon" variant="ghost" onClick={() => cancel.mutate()} title="Cancel"><X className="h-4 w-4" /></Button>
           )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" title="Delete"><Trash2 className="h-4 w-4" /></Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this booking?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently removes the booking for <strong>{booking.applicant_name}</strong> and deletes the Google Calendar event. This can't be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={del.isPending}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={del.isPending}
+                  onClick={(e) => { e.preventDefault(); del.mutate(); }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {del.isPending ? "Deleting…" : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
+
       </div>
       <ApplicationDetailDialog
         applicationId={openAppId}
