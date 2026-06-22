@@ -688,6 +688,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          place_id: string | null
           retired: boolean
           source: string | null
           status: Database["public"]["Enums"]["lead_status"]
@@ -705,6 +706,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          place_id?: string | null
           retired?: boolean
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
@@ -722,6 +724,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          place_id?: string | null
           retired?: boolean
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
