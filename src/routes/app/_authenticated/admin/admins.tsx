@@ -83,7 +83,7 @@ function AdminsList() {
           <ShieldPlus className="h-4 w-4 mr-2" /> Invite admin
         </Button>
       </div>
-      <Card className="overflow-hidden">
+      <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
