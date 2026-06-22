@@ -436,56 +436,95 @@ function endOfDay(d: Date) {
   return x;
 }
 
+function SearchPopover({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className={cn("h-8 w-8", value && "text-primary")}>
+          <Search className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-2">
+        <Input
+          autoFocus
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder ?? "Search…"}
+          className="h-8 text-sm"
+        />
+        {value && (
+          <Button variant="ghost" size="sm" className="w-full mt-2 h-7 text-xs" onClick={() => onChange("")}>
+            Clear
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function matchesQuery(l: SetterLead, q: string) {
+  if (!q) return true;
+  const s = q.toLowerCase();
+  return (
+    l.name.toLowerCase().includes(s) ||
+    (l.company ?? "").toLowerCase().includes(s) ||
+    (l.email ?? "").toLowerCase().includes(s) ||
+    (l.phone ?? "").toLowerCase().includes(s) ||
+    l.status.toLowerCase().includes(s)
+  );
+}
+
 function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRowItem[] }) {
   const [tab, setTab] = useState<"uncontacted" | "contacted">("uncontacted");
   const [openLead, setOpenLead] = useState<SetterLead | null>(null);
+  const [query, setQuery] = useState("");
 
   const todayStart = startOfDay(new Date()).getTime();
   const todayEnd = endOfDay(new Date()).getTime();
 
-  // Uncontacted today = assigned, status "New", not retired
-  const uncontacted = leads.filter(
-    (l) => l.status === "New" && !l.contacted_at,
-  );
-
-  // Contacted today = last status change today AND status != New
+  const uncontacted = leads.filter((l) => l.status === "New" && !l.contacted_at);
   const contacted = leads.filter((l) => {
     if (l.status === "New") return false;
     const t = new Date(l.last_status_change_at).getTime();
     return t >= todayStart && t <= todayEnd;
   });
 
-  const list = tab === "uncontacted" ? uncontacted : contacted;
+  const base = tab === "uncontacted" ? uncontacted : contacted;
+  const list = base.filter((l) => matchesQuery(l, query));
 
   return (
     <>
       <Card className="overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
           <h3 className="font-display font-semibold">Today's Leads ({list.length})</h3>
-          <div className="inline-flex h-8 items-center rounded-lg bg-muted p-1 text-xs">
-            <button
-              onClick={() => setTab("uncontacted")}
-              className={cn(
-                "px-3 h-6 rounded-md transition-colors",
-                tab === "uncontacted" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Uncontacted ({uncontacted.length})
-            </button>
-            <button
-              onClick={() => setTab("contacted")}
-              className={cn(
-                "px-3 h-6 rounded-md transition-colors",
-                tab === "contacted" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Contacted ({contacted.length})
-            </button>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex h-8 items-center rounded-lg bg-muted p-1 text-xs">
+              <button
+                onClick={() => setTab("uncontacted")}
+                className={cn(
+                  "px-3 h-6 rounded-md transition-colors",
+                  tab === "uncontacted" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Uncontacted ({uncontacted.length})
+              </button>
+              <button
+                onClick={() => setTab("contacted")}
+                className={cn(
+                  "px-3 h-6 rounded-md transition-colors",
+                  tab === "contacted" ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Contacted ({contacted.length})
+              </button>
+            </div>
+            <SearchPopover value={query} onChange={setQuery} placeholder="Search today's leads…" />
           </div>
         </div>
         {list.length === 0 ? (
           <div className="p-6 text-sm text-muted-foreground text-center">
-            No {tab} leads today.
+            {query ? "No matches." : `No ${tab} leads today.`}
           </div>
         ) : (
           <table className="w-full text-sm">
@@ -523,36 +562,62 @@ function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
 }
 
 function LeadHistoryCard({ leads, calls }: { leads: SetterLead[]; calls: CallRowItem[] }) {
-  const [date, setDate] = useState<string>(() => {
+  const [date, setDate] = useState<Date>(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
+    return d;
   });
+  const [calOpen, setCalOpen] = useState(false);
   const [openLead, setOpenLead] = useState<SetterLead | null>(null);
+  const [query, setQuery] = useState("");
 
-  const dayStart = startOfDay(new Date(date + "T00:00:00")).getTime();
-  const dayEnd = endOfDay(new Date(date + "T00:00:00")).getTime();
+  const dayStart = startOfDay(date).getTime();
+  const dayEnd = endOfDay(date).getTime();
 
-  const dayLeads = leads.filter((l) => {
-    const t = new Date(l.last_status_change_at).getTime();
-    return t >= dayStart && t <= dayEnd && l.status !== "New";
-  });
+  const dayLeads = leads
+    .filter((l) => {
+      const t = new Date(l.last_status_change_at).getTime();
+      return t >= dayStart && t <= dayEnd && l.status !== "New";
+    })
+    .filter((l) => matchesQuery(l, query));
+
+  const dateLabel = date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
   return (
     <>
       <Card className="overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
           <h3 className="font-display font-semibold">Lead history ({dayLeads.length})</h3>
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            max={new Date().toISOString().slice(0, 10)}
-            className="h-8 w-auto text-xs"
-          />
+          <div className="flex items-center gap-2">
+            <Popover open={calOpen} onOpenChange={setCalOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-2">
+                  <CalendarIcon className="h-3.5 w-3.5" /> {dateLabel}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(d) => {
+                    if (d) {
+                      setDate(d);
+                      setCalOpen(false);
+                    }
+                  }}
+                  disabled={(d) => d > new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            <SearchPopover value={query} onChange={setQuery} placeholder="Search history…" />
+          </div>
         </div>
         {dayLeads.length === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground text-center">No leads worked on this day.</div>
+          <div className="p-6 text-sm text-muted-foreground text-center">
+            {query ? "No matches." : "No leads worked on this day."}
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
@@ -588,8 +653,6 @@ function LeadHistoryCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
   );
 }
 
-function SetterLeadDetailDialog({
-  lead,
   calls,
   onClose,
 }: {
