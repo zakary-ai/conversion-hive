@@ -968,6 +968,29 @@ export const updateBookingCommission = createServerFn({ method: "POST" })
     return { ok: true, commission_amount: commissionAmount };
   });
 
+// ---------- Admin: clear a booking's outcome/commission (remove from commissions list) ----------
+export const clearBookingOutcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ booking_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any).update({
+      outcome: null,
+      outcome_at: null,
+      deal_amount: null,
+      deposit_amount: null,
+      follow_up_amount: null,
+      commission_percent: null,
+      commission_amount: null,
+      outcome_notes: null,
+    }).eq("id", data.booking_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 // ---------- Closer: list my commissions from B2C bookings ----------
 export const listMyCloserCommissions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
