@@ -33,6 +33,10 @@ export type PipelineResult = {
   cities: CityRun[];
   perSetter: Array<{ user_id: string; name: string | null; needed: number; assigned: number; shortfall: number }>;
   errors: string[];
+  quotaMet?: boolean;
+  unfilled?: number;
+  stopReason?: "target_met" | "city_cap" | "rotation_exhausted" | "no_scrape";
+  warnings?: string[];
 };
 
 const KITCHEN_RE = /kitchen\s+(remodel|renovat)/i;
@@ -60,26 +64,23 @@ async function callApify(actorId: string, input: Record<string, unknown>, token:
   return data as RawLead[];
 }
 
-function startOfTodayET(): string {
-  // Approximate "today" in ET. Server runs UTC; ET = UTC-5 (standard) / UTC-4 (DST).
-  // Use America/New_York via Intl to compute the midnight boundary.
+// Returns the UTC ISO string corresponding to 00:00:00 America/New_York "today".
+// DST-aware via Intl (no fixed offset).
+export function startOfTodayET(): string {
   const now = new Date();
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
   });
-  const parts = Object.fromEntries(fmt.formatToParts(now).filter(p => p.type !== "literal").map(p => [p.type, p.value]));
-  // Compute the offset between UTC and ET right now (in minutes)
+  const parts = Object.fromEntries(fmt.formatToParts(now).filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
   const etAsUtc = Date.UTC(
     Number(parts.year), Number(parts.month) - 1, Number(parts.day),
     Number(parts.hour), Number(parts.minute), Number(parts.second),
   );
   const offsetMs = etAsUtc - now.getTime();
-  // ET midnight (start of day) expressed in UTC:
   const etMidnightAsUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
-  const utcMs = etMidnightAsUtc - offsetMs;
-  return new Date(utcMs).toISOString();
+  return new Date(etMidnightAsUtc - offsetMs).toISOString();
 }
 
 async function loadLeadsTodayByUser(userIds: string[]): Promise<Map<string, number>> {
@@ -89,7 +90,7 @@ async function loadLeadsTodayByUser(userIds: string[]): Promise<Map<string, numb
   const { data } = await supabaseAdmin
     .from("leads")
     .select("assigned_user_id")
-    .gte("created_at", since)
+    .gte("assigned_at", since)
     .in("assigned_user_id", userIds);
   for (const r of data ?? []) {
     const u = r.assigned_user_id as string | null;
@@ -153,12 +154,13 @@ async function distributeRoundRobin(
     if (placedThisLap === 0) break;
   }
 
+  const nowIso = new Date().toISOString();
   for (const s of setters) {
     const ids = buckets.get(s.user_id) ?? [];
     if (ids.length === 0) continue;
     const { error } = await supabaseAdmin
       .from("leads")
-      .update({ assigned_user_id: s.user_id })
+      .update({ assigned_user_id: s.user_id, assigned_at: nowIso })
       .in("id", ids);
     if (error) {
       errors.push(`assign(${s.user_id}): ${error.message}`);
@@ -282,14 +284,17 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
 
   // 7. Scrape across multiple cities if still needed
   let citiesAdvanced = 0;
+  let stopReason: "target_met" | "city_cap" | "rotation_exhausted" | "no_scrape" = "no_scrape";
+  let cursor = cityIndex;
   if (scrapeTarget > 0 && actorId && cityRotation.length > 0) {
     const apifyToken = process.env.APIFY_TOKEN;
     if (!apifyToken) {
       errors.push("APIFY_TOKEN not configured");
+      stopReason = "no_scrape";
     } else {
       let insertedSoFar = 0;
-      let cursor = cityIndex;
-      while (insertedSoFar < scrapeTarget && citiesAdvanced < MAX_CITIES_PER_RUN) {
+      const maxCities = Math.min(MAX_CITIES_PER_RUN, cityRotation.length);
+      while (insertedSoFar < scrapeTarget && citiesAdvanced < maxCities) {
         const city = cityRotation[cursor];
         const cityRun: CityRun = { city, fetched: 0, inserted: 0 };
         try {
@@ -368,14 +373,20 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
             .map((c) => ({ ...c, status: "New" as const, assigned_user_id: null }));
 
           if (toInsert.length > 0) {
-            const { error: insErr } = await supabaseAdmin.from("leads").insert(toInsert);
+            // ON CONFLICT (place_id) DO NOTHING — ignoreDuplicates prevents a racing
+            // duplicate place_id from aborting the entire batch.
+            const { data: inserted, error: insErr } = await supabaseAdmin
+              .from("leads")
+              .upsert(toInsert, { onConflict: "place_id", ignoreDuplicates: true })
+              .select("id");
             if (insErr) {
               cityRun.error = `insert: ${insErr.message}`;
               errors.push(`insert(${city}): ${insErr.message}`);
             } else {
-              cityRun.inserted = toInsert.length;
-              result.inserted += toInsert.length;
-              insertedSoFar += toInsert.length;
+              const insertedCount = inserted?.length ?? 0;
+              cityRun.inserted = insertedCount;
+              result.inserted += insertedCount;
+              insertedSoFar += insertedCount;
             }
           }
         } catch (e) {
@@ -387,16 +398,30 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
         citiesAdvanced += 1;
       }
 
-      // Persist advanced rotation pointer
-      await supabaseAdmin
-        .from("scraper_settings")
-        .update({ city_rotation_index: cursor })
-        .eq("id", (settings as { id: string }).id);
+      if (insertedSoFar >= scrapeTarget) stopReason = "target_met";
+      else if (citiesAdvanced >= MAX_CITIES_PER_RUN) stopReason = "city_cap";
+      else stopReason = "rotation_exhausted";
+
+      // Persist advanced rotation pointer in its own try/catch — a save error
+      // must not abort the run or skip the warning / log step below.
+      try {
+        await supabaseAdmin
+          .from("scraper_settings")
+          .update({ city_rotation_index: cursor })
+          .eq("id", (settings as { id: string }).id);
+      } catch (e) {
+        errors.push(`rotation_save: ${(e as Error).message}`);
+      }
     }
   } else if (scrapeTarget === 0) {
     result.skipped = true;
     result.reason = "pool_covered_demand";
+    stopReason = "no_scrape";
+  } else {
+    // scrapeTarget > 0 but actor or rotation missing
+    stopReason = "no_scrape";
   }
+
 
   // 8. Second distribution pass for freshly inserted leads
   if (result.inserted > 0) {
@@ -417,6 +442,31 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
       shortfall: Math.max(0, need - assigned),
     };
   });
+
+  // 9b. Quota-fill assessment (separate from status)
+  let remainingCapacity = 0;
+  for (const v of capacity.values()) remainingCapacity += Math.max(0, v);
+  const quotaMet = remainingCapacity === 0;
+  result.stopReason = stopReason;
+  if (quotaMet) {
+    result.quotaMet = true;
+  } else {
+    result.quotaMet = false;
+    result.unfilled = remainingCapacity;
+    const inserted = result.inserted;
+    const citiesUsed = result.cities.length;
+    let msg: string;
+    if (stopReason === "city_cap") {
+      msg = `Quota short by ${remainingCapacity}: scraped ${citiesUsed}/${MAX_CITIES_PER_RUN} cities (hit city cap), ${inserted} new leads inserted. Raise MAX_CITIES_PER_RUN or add more cities to the rotation.`;
+    } else if (stopReason === "rotation_exhausted") {
+      msg = `Quota short by ${remainingCapacity}: ran out of cities in rotation (${citiesUsed} scraped), ${inserted} inserted. Add more cities to the rotation.`;
+    } else if (stopReason === "no_scrape") {
+      msg = `Quota short by ${remainingCapacity}: scraper not configured (missing Apify actor, APIFY_TOKEN, or city rotation).`;
+    } else {
+      msg = `Quota short by ${remainingCapacity}: pool exhausted before all setters filled (${inserted} inserted across ${citiesUsed} cities). Add more cities or lower a setter's quota.`;
+    }
+    result.warnings = [msg];
+  }
 
   // 10. Log
   const status = result.skipped

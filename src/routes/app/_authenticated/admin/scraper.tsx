@@ -438,11 +438,21 @@ function ScraperPage() {
               skipped: "bg-muted text-muted-foreground",
             };
             const badge = statusStyles[r.status as string] ?? "bg-muted text-muted-foreground";
+            const quotaMet = d.quotaMet as boolean | undefined;
+            const warnings = (d.warnings as string[] | undefined) ?? [];
             return (
               <details key={r.id} className="text-xs border border-border rounded">
                 <summary className="cursor-pointer p-2 flex flex-wrap items-center gap-2 list-none">
                   <span className="text-muted-foreground">{new Date(r.ran_at).toLocaleString()}</span>
                   <span className={`font-mono px-1.5 py-0.5 rounded ${badge}`}>{r.status}</span>
+                  {quotaMet === false && (
+                    <span
+                      className="font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      title={warnings[0] ?? "Quota not met"}
+                    >
+                      ⚠️ quota
+                    </span>
+                  )}
                   {city && <span className="text-muted-foreground">· {city}</span>}
                   <span className="ml-auto flex gap-3 text-muted-foreground">
                     <span>fetched {fetched}</span>

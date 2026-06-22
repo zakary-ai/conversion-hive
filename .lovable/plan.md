@@ -1,81 +1,54 @@
-# Daily Scraper Engine — Targeted Changes
+# Scraper pipeline corrections
 
-Scope: `src/lib/scraper-pipeline.server.ts` (core logic) + one small migration to support `placeId` dedupe. UI, recycle setting, field map, and scrape toggles stay untouched.
-
-## 1. Demand sizing (scale to enabled setters)
-
-In `runScraperPipeline`, after loading enabled setters and computing each setter's "leads-today" count (leads assigned to them with `created_at` ≥ start of today ET — matching how the Setters table already shows "leads today"):
-
-- `requiredToday = Σ max(0, setter.daily_lead_quota − setter.leads_today)`
-- `availablePool = COUNT(leads WHERE status='New' AND retired=false AND do_not_contact=false AND assigned_user_id IS NULL)` (recycled No-Answer leads already become eligible because the existing recycle step flips them back to `New`, unassigned — keep that step as-is, run it first).
-- `shortfall = max(0, requiredToday − availablePool)`
-- `scrapeTarget = Math.ceil(shortfall * 1.2)`
-
-If `scrapeTarget === 0`, skip Apify entirely, still run distribution, log status `skipped`.
-
-## 2. Multi-city rotation in one run
-
-Replace the current "pick one city, advance by one" block with a loop:
-
-- Start at `city_rotation_index`, walk the rotation array with wrap-around.
-- For each city: set `apifyInput.locationQuery = city`, call Apify with `maxItems` / `maxCrawledPlacesPerSearch` = `batch_size`, run the category filter + placeId dedupe + insert, and tally `newlyInserted`.
-- After each city, advance the pointer (persist at the end of the run — single UPDATE to `city_rotation_index`).
-- Stop when `newlyInserted ≥ scrapeTarget` OR 8 cities have been scraped in this run.
-- Log every city attempted in `details.cities = [{city, fetched, inserted}, ...]`.
-
-## 3. Category filter + placeId dedupe
-
-Before insert, in addition to existing name/phone normalization:
-
-- Read `categoryName` from the raw row (independent of field_map, which targets `company`). Keep only rows where `/kitchen\s+(remodel|renovat)/i` matches.
-- Read `placeId` from the raw row. Drop rows without one. Dedupe within the batch by placeId AND against DB by placeId (new `place_id` column, unique index).
-- Phone/email dedupe stays as a secondary guard.
-- Update default `apify_input.searchStringsArray` (and any other search-term key currently used) so a fresh install seeds `"kitchen remodeler"` instead of `"Kitchen Remodel"`. Existing rows in `scraper_settings` are not overwritten — admins can edit through the existing UI.
-
-Migration (separate, runs first):
+## 1. Migration
 
 ```sql
-ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS place_id text;
-CREATE UNIQUE INDEX IF NOT EXISTS leads_place_id_key ON public.leads (place_id) WHERE place_id IS NOT NULL;
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS assigned_at timestamptz;
+CREATE INDEX IF NOT EXISTS leads_assigned_user_assigned_at_idx
+  ON public.leads (assigned_user_id, assigned_at)
+  WHERE assigned_user_id IS NOT NULL;
+
+-- Convert partial unique index to plain unique index so ON CONFLICT (place_id) works.
+DROP INDEX IF EXISTS leads_place_id_key;
+CREATE UNIQUE INDEX IF NOT EXISTS leads_place_id_key ON public.leads (place_id);
 ```
 
-No GRANT / RLS changes needed (column on existing table).
+No grant/RLS changes.
 
-## 4. Round-robin distribution to every enabled setter
+## 2. `src/lib/scraper-pipeline.server.ts`
 
-Replace the current sequential `distributePool` (which drains the pool for setter A before touching B) with a round-robin pass:
+- Replace `startOfTodayET()` with a real `Intl`-based "America/New_York" start-of-day → UTC ISO converter (DST-aware). Export it for reuse.
+- `loadLeadsTodayByUser` queries `assigned_at >= since` (was `created_at`).
+- `distributeRoundRobin` writes `{ assigned_user_id, assigned_at: new Date().toISOString() }`. Lead status untouched.
+- Insert path: `.upsert(toInsert, { onConflict: "place_id", ignoreDuplicates: true }).select("id")` so a duplicate `place_id` can't abort the batch. `inserted` count = returned rows length.
+- City loop: each city's Apify call + filter + DB dedupe + insert wrapped in `try/catch` → push `cityRun.error`, append to `errors`, continue. `city_rotation_index` UPDATE happens once after the loop in its own try/catch.
+- Track `stopReason`:
+  - `target_met` — `insertedSoFar >= scrapeTarget`
+  - `city_cap` — `citiesAdvanced >= MAX_CITIES_PER_RUN` and target unmet
+  - `rotation_exhausted` — `citiesAdvanced >= cityRotation.length` and target unmet
+  - `no_scrape` — `scrapeTarget === 0` or actor/token missing
+- After final distribution, `remainingCapacity = Σ capacity.values()` (capacity map is mutated by both distribute passes).
+- Details payload:
+  - `quotaMet = remainingCapacity === 0`
+  - When `!quotaMet`: add `unfilled: remainingCapacity` and `warnings: string[]` composed from `stopReason` + counts:
+    - city_cap: `"Quota short by N: scraped 8/8 cities (hit city cap), M new leads inserted. Raise MAX_CITIES_PER_RUN or add more cities."`
+    - rotation_exhausted: `"Quota short by N: ran out of cities in rotation (K scraped), M inserted. Add more cities to the rotation."`
+    - no_scrape: `"Quota short by N: scraper not configured (no actor or APIFY_TOKEN)."`
+    - target_met (rare): `"Quota short by N: pool exhausted before all setters filled. Add more cities or lower a setter's quota."`
+  - When `quotaMet`: set `quotaMet: true`, omit `warnings`.
+- Existing `status` mapping (success/partial/failed/skipped) unchanged.
 
-- Build `capacity[setter] = max(0, daily_quota − leads_today)` for every enabled setter.
-- Pull oldest-first eligible pool leads in one query.
-- Walk the pool, assigning leads in a rotating order across setters until either the pool is exhausted or every setter's capacity reaches 0. Only set `assigned_user_id` — do NOT introduce a new `'assigned'` status (the existing setter UI treats `status='New'` + `assigned_user_id=me` as the active queue; changing status would break it). `assigned_at` is implicit via `last_status_change_at` only triggering on status change, so we'll skip a dedicated timestamp.
-- Run distribution twice: once before scraping (drain existing pool) and once after (place freshly inserted leads). The capacity map is decremented in place so reruns the same day can never exceed quota.
+## 3. `src/lib/api/scraper.functions.ts`
 
-## 5. Run log
+`listScraperSetters` "day" range filters by `assigned_at >= startOfTodayET()` (count by `assigned_user_id`). Week/month/90d keep `created_at`. Import TZ helper from pipeline module.
 
-`scraper_runs.details` payload becomes:
+## 4. `src/routes/app/_authenticated/admin/scraper.tsx`
 
-```json
-{
-  "requiredToday": 225,
-  "availablePool": 40,
-  "shortfall": 185,
-  "scrapeTarget": 222,
-  "cities": [{"city": "...", "fetched": 200, "inserted": 47}, ...],
-  "fetched": 800,
-  "inserted": 188,
-  "distributed": 225,
-  "perSetter": [{"user_id": "...", "name": "...", "needed": 75, "assigned": 75}, ...]
-}
-```
+Recent runs row: when `d.quotaMet === false`, render a small ⚠️ amber badge after the status pill with `title={(d.warnings as string[])?.[0] ?? "Quota not met"}`. Expanded `<pre>` already shows full details. No other UI changes.
 
-`status` = `skipped` when `scrapeTarget === 0`, `success` when no errors, `partial` if some city errored but leads were distributed, `failed` otherwise.
+## Files
 
-## Files touched
-
-- `supabase/migrations/<new>.sql` — add `place_id` column + unique partial index.
-- `src/lib/scraper-pipeline.server.ts` — rewrite demand sizing, city loop, category filter, placeId dedupe, round-robin distribute, richer run log.
-- `src/lib/api/scraper.functions.ts` — no signature changes; `listScraperSetters` already returns `current_new` for the day so the UI keeps working.
-
-## Out of scope (explicitly unchanged)
-
-UI layout, recycle_days setting, scrape-option toggles, field_map shape, 8 AM EST cron, manual "Run now" / "Add leads" buttons, Recent-runs table columns.
+- `supabase/migrations/<new>.sql`
+- `src/lib/scraper-pipeline.server.ts`
+- `src/lib/api/scraper.functions.ts`
+- `src/routes/app/_authenticated/admin/scraper.tsx`

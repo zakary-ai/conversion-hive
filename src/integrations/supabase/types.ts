@@ -676,6 +676,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          assigned_at: string | null
           assigned_user_id: string | null
           callback_at: string | null
           company: string | null
@@ -694,6 +695,7 @@ export type Database = {
           status: Database["public"]["Enums"]["lead_status"]
         }
         Insert: {
+          assigned_at?: string | null
           assigned_user_id?: string | null
           callback_at?: string | null
           company?: string | null
@@ -712,6 +714,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["lead_status"]
         }
         Update: {
+          assigned_at?: string | null
           assigned_user_id?: string | null
           callback_at?: string | null
           company?: string | null
