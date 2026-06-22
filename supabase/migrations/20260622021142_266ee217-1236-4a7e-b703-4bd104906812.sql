@@ -1,0 +1,1 @@
+ALTER TABLE public.closer_bookings ADD COLUMN IF NOT EXISTS reminder_sent_at timestamptz;

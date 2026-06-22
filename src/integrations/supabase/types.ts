@@ -355,6 +355,7 @@ export type Database = {
           outcome: string | null
           outcome_at: string | null
           outcome_notes: string | null
+          reminder_sent_at: string | null
           slot_end: string
           slot_start: string
           status: string
@@ -381,6 +382,7 @@ export type Database = {
           outcome?: string | null
           outcome_at?: string | null
           outcome_notes?: string | null
+          reminder_sent_at?: string | null
           slot_end: string
           slot_start: string
           status?: string
@@ -407,6 +409,7 @@ export type Database = {
           outcome?: string | null
           outcome_at?: string | null
           outcome_notes?: string | null
+          reminder_sent_at?: string | null
           slot_end?: string
           slot_start?: string
           status?: string
