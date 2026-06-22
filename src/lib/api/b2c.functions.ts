@@ -752,7 +752,7 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
     }).eq("id", data.booking_id);
     if (uerr) throw new Error(uerr.message);
 
-    void sendCloserBookingEmails({
+    await sendCloserBookingEmails({
       bookingId: data.booking_id,
       applicantName: booking.applicant_name as string,
       applicantEmail: (booking.applicant_email as string | null) ?? null,
