@@ -9,9 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { CalendarClock, Mail, Phone, Video, X, Trash2 } from "lucide-react";
+import { CalendarClock, Mail, Phone, Video, X, Trash2, ClipboardCheck, CalendarRange } from "lucide-react";
 
 import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
+import { OutcomeDialog } from "@/components/closer-outcome-dialog";
+import { BookingRescheduleDialog } from "@/components/booking-reschedule-dialog";
+
 import { ApplicationsPanel, appsOpts } from "@/components/admin/applications-panel";
 import { B2cCalendarPanel } from "@/components/admin/b2c-calendar-panel";
 
@@ -129,9 +132,12 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
 
 
   const [openAppId, setOpenAppId] = useState<string | null>(null);
+  const [outcomeOpen, setOutcomeOpen] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
 
   const dt = new Date(booking.slot_start);
   const label = dt.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
 
   return (
     <Card className="p-4">
@@ -179,9 +185,20 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
           {booking.status === "assigned" && (
             <Button size="sm" variant="outline" onClick={() => unassign.mutate()}>Reassign</Button>
           )}
+          {(booking.status === "pending_assignment" || booking.status === "assigned" || booking.status === "completed") && (
+            <Button size="icon" variant="ghost" onClick={() => setRescheduleOpen(true)} title="Reschedule">
+              <CalendarRange className="h-4 w-4" />
+            </Button>
+          )}
+          {(booking.status === "assigned" || booking.status === "completed") && (
+            <Button size="icon" variant="ghost" onClick={() => setOutcomeOpen(true)} title="Set outcome">
+              <ClipboardCheck className="h-4 w-4" />
+            </Button>
+          )}
           {(booking.status === "pending_assignment" || booking.status === "assigned") && (
             <Button size="icon" variant="ghost" onClick={() => cancel.mutate()} title="Cancel"><X className="h-4 w-4" /></Button>
           )}
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" title="Delete"><Trash2 className="h-4 w-4" /></Button>
@@ -213,6 +230,20 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
         open={!!openAppId}
         onOpenChange={(v) => !v && setOpenAppId(null)}
       />
+      <OutcomeDialog
+        bookingId={booking.id}
+        applicationId={booking.application_id}
+        applicantName={booking.applicant_name}
+        open={outcomeOpen}
+        onOpenChange={setOutcomeOpen}
+      />
+      <BookingRescheduleDialog
+        bookingId={booking.id}
+        applicantName={booking.applicant_name}
+        open={rescheduleOpen}
+        onOpenChange={setRescheduleOpen}
+      />
     </Card>
   );
 }
+

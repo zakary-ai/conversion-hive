@@ -820,6 +820,120 @@ export const deleteCloserBooking = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Admin: reschedule a booking to a new slot ----------
+export const rescheduleCloserBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    booking_id: z.string().uuid(),
+    slot_start: z.string().datetime(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: booking, error: berr } = await supabaseAdmin
+      .from("closer_bookings").select("*").eq("id", data.booking_id).single();
+    if (berr || !booking) throw new Error(berr?.message || "Booking not found");
+
+    const { slot_minutes: SLOT } = await getB2cSettingsRow();
+    const start = new Date(data.slot_start);
+    const end = new Date(start.getTime() + SLOT * 60_000);
+
+    // Capacity check — same logic as createCloserBooking
+    const { data: activeClosers } = await supabaseAdmin
+      .from("closers").select("id").eq("active", true);
+    const totalActive = (activeClosers ?? []).length;
+    const { data: same } = await supabaseAdmin
+      .from("closer_bookings").select("id, assigned_closer_id")
+      .eq("slot_start", start.toISOString())
+      .in("status", ["pending_assignment", "assigned"]);
+    const others = (same ?? []).filter((r) => r.id !== data.booking_id);
+    if (totalActive > 0 && others.length >= totalActive) {
+      throw new Error("That time slot is full. Pick another.");
+    }
+    // Same-closer conflict if assigned
+    if (booking.assigned_closer_id) {
+      const closerConflict = others.find((r) => r.assigned_closer_id === booking.assigned_closer_id);
+      if (closerConflict) throw new Error("That closer is already booked at this time.");
+    }
+
+    // Delete the old calendar event (we'll recreate if assigned)
+    if (booking.google_calendar_event_id) {
+      try { await gcalDeleteEvent(booking.google_calendar_event_id as string); } catch { /* ignore */ }
+    }
+
+    let newZoomUrl: string | null = (booking.zoom_join_url as string | null) ?? null;
+    let newZoomId: string | null = (booking.zoom_meeting_id as string | null) ?? null;
+    let newCalId: string | null = null;
+
+    if (booking.assigned_closer_id) {
+      // Recreate Zoom meeting at new time
+      const { data: closer } = await supabaseAdmin
+        .from("closers").select("*").eq("id", booking.assigned_closer_id as string).single();
+      const { data: zoomCreds } = await supabaseAdmin
+        .from("closer_zoom_credentials")
+        .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+        .eq("closer_id", booking.assigned_closer_id as string)
+        .maybeSingle();
+      const zoom = await createZoomMeetingForUser({
+        accountId: (zoomCreds?.zoom_account_id as string | null) ?? null,
+        clientId: (zoomCreds?.zoom_client_id as string | null) ?? null,
+        clientSecret: (zoomCreds?.zoom_client_secret as string | null) ?? null,
+        topic: `${booking.applicant_name} — Interview`,
+        start_time: start.toISOString(),
+        duration: SLOT,
+      });
+      newZoomUrl = zoom.join_url;
+      newZoomId = zoom.meeting_id;
+
+      if (closer) {
+        const eventTitle = `${closer.full_name} with ${booking.applicant_name}`;
+        const descLines = [
+          `Applicant: ${booking.applicant_name}`,
+          booking.applicant_email ? `Email: ${booking.applicant_email}` : "",
+          booking.applicant_phone ? `Phone: ${booking.applicant_phone}` : "",
+          zoom.join_url ? `\nZoom: ${zoom.join_url}` : "",
+        ].filter(Boolean).join("\n");
+        const attendees = [closer.email as string];
+        if (booking.applicant_email) attendees.push(booking.applicant_email as string);
+        newCalId = await gcalCreateEvent({
+          summary: eventTitle,
+          description: descLines,
+          startISO: start.toISOString(),
+          endISO: end.toISOString(),
+          attendees,
+        });
+
+        // Notify both parties of the new time
+        await sendCloserBookingEmails({
+          bookingId: data.booking_id + "-rescheduled-" + start.getTime(),
+          applicantName: booking.applicant_name as string,
+          applicantEmail: (booking.applicant_email as string | null) ?? null,
+          applicantPhone: (booking.applicant_phone as string | null) ?? null,
+          closerName: closer.full_name as string,
+          closerEmail: (closer.email as string | null) ?? null,
+          scheduledAt: start.toISOString(),
+          meetingUrl: zoom.join_url,
+          durationMinutes: SLOT,
+        });
+      }
+    }
+
+    const { error: uerr } = await supabaseAdmin.from("closer_bookings").update({
+      slot_start: start.toISOString(),
+      slot_end: end.toISOString(),
+      zoom_join_url: newZoomUrl,
+      zoom_meeting_id: newZoomId,
+      google_calendar_event_id: newCalId,
+    }).eq("id", data.booking_id);
+    if (uerr) throw new Error(uerr.message);
+
+    return { ok: true };
+  });
+
+
+
+
 
 // ---------- Admin: get full application by id ----------
 export const getApplicationById = createServerFn({ method: "GET" })

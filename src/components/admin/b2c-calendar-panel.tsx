@@ -37,9 +37,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video } from "lucide-react";
+import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video, ClipboardCheck, CalendarRange } from "lucide-react";
 import { toast } from "sonner";
 import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
+import { OutcomeDialog } from "@/components/closer-outcome-dialog";
+import { BookingRescheduleDialog } from "@/components/booking-reschedule-dialog";
+
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -469,8 +472,11 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
 
 
   const [openAppId, setOpenAppId] = useState<string | null>(null);
+  const [outcomeOpen, setOutcomeOpen] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const dt = new Date(booking.slot_start);
   const time = dt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+
 
   return (
     <Card className="p-3">
@@ -547,11 +553,22 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
               Reassign
             </Button>
           )}
+          {(booking.status === "pending_assignment" || booking.status === "assigned" || booking.status === "completed") && (
+            <Button size="icon" variant="ghost" onClick={() => setRescheduleOpen(true)} title="Reschedule">
+              <CalendarRange className="h-4 w-4" />
+            </Button>
+          )}
+          {(booking.status === "assigned" || booking.status === "completed") && (
+            <Button size="icon" variant="ghost" onClick={() => setOutcomeOpen(true)} title="Set outcome">
+              <ClipboardCheck className="h-4 w-4" />
+            </Button>
+          )}
           {(booking.status === "pending_assignment" || booking.status === "assigned") && (
             <Button size="icon" variant="ghost" onClick={() => cancel.mutate()} title="Cancel">
               <X className="h-4 w-4" />
             </Button>
           )}
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" title="Delete">
@@ -585,6 +602,20 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
         open={!!openAppId}
         onOpenChange={(v) => !v && setOpenAppId(null)}
       />
+      <OutcomeDialog
+        bookingId={booking.id}
+        applicationId={booking.application_id}
+        applicantName={booking.applicant_name}
+        open={outcomeOpen}
+        onOpenChange={setOutcomeOpen}
+      />
+      <BookingRescheduleDialog
+        bookingId={booking.id}
+        applicantName={booking.applicant_name}
+        open={rescheduleOpen}
+        onOpenChange={setRescheduleOpen}
+      />
     </Card>
+
   );
 }
