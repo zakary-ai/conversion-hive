@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // ---------- Public: submit application with email + return booking token ----------
 const InvestEnum = z.enum(["Yes", "No", "Maybe"]);
 const CreditEnum = z.enum(["Below 600", "600-650", "650-700", "700-750", "750-800", "800-850"]);
+const ReferrerEnum = z.enum(["Tyler", "Eli", "Bailie", "Lucas"]);
 
 const SubmitSchema = z.object({
   full_name: z.string().trim().min(1).max(200),
@@ -15,6 +16,7 @@ const SubmitSchema = z.object({
   desired_monthly_income: z.string().trim().min(1).max(60),
   open_to_invest: InvestEnum.optional().nullable(),
   credit_score_range: CreditEnum,
+  referred_by: ReferrerEnum.optional().nullable(),
 });
 
 export const submitB2cApplication = createServerFn({ method: "POST" })
