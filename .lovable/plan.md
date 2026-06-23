@@ -1,54 +1,59 @@
-# Scraper pipeline corrections
+## Goal
+Replace the complicated quota/distribution logic with a simple, predictable daily flow:
 
-## 1. Migration
+1. **9:00 AM ET** — scraper runs. It targets **120% of the total leads needed** for all enabled setters (e.g. 5 enabled setters × 150 = 750 needed → scrape ~900).
+2. **9:30 AM ET** — recycle + distribute:
+   - Any leads that were assigned in yesterday's 9:30 AM run and never called (status still "New", no `last_status_change_at` after assignment) get **unassigned back into the pool**.
+   - Every enabled setter gets **exactly 150 fresh leads** from the pool (oldest first).
+3. A single **enable toggle** on the scraper page controls whether the whole thing runs.
 
+Starts tomorrow morning.
+
+## Scraper page changes (`src/routes/app/_authenticated/admin/scraper.tsx`)
+Strip the page down per the request — the master toggle is the only control for the new flow.
+
+- Keep: master enable toggle, Apify actor ID, search terms, location/city rotation, language, max results, scrape options, field mapping, "Run now" button, setters table (read-only stats + per-setter enable toggle).
+- Remove: per-setter "Daily quota" input (hard-coded to 150), "Add leads" manual assign column, recycle-days input (recycling is now the 24-hour cycle), batch-size input (derived from setter count).
+- Update copy: "Daily cron at 9:00 AM ET scrapes 120% of demand. 9:30 AM ET recycles uncalled leads and gives each enabled setter 150 fresh leads."
+
+## Pipeline rewrite (`src/lib/scraper-pipeline.server.ts`)
+Two distinct operations instead of one mixed pipeline:
+
+**`runScraperOnly()`** — called at 9:00 AM:
+- Count enabled setters (`role=client` + `scraper_enabled=true`).
+- `scrapeTarget = ceil(enabledSetters × 150 × 1.2)`.
+- Rotate through cities until that many new leads are inserted (or city cap is hit).
+- Inserts go into the pool (`assigned_user_id = null`). No distribution.
+- Logs to `scraper_runs` with phase `"scrape"`.
+
+**`recycleAndDistribute()`** — called at 9:30 AM:
+- **Recycle:** find all leads where `assigned_user_id IS NOT NULL`, `status='New'`, `retired=false`, and `assigned_at < now() - 23 hours` (covers the 9:30→9:30 window). Set `assigned_user_id=null`, `assigned_at=null`. These were assigned yesterday and never touched (any call/status change would have moved status off "New").
+- **Distribute:** for each enabled setter, assign exactly 150 oldest pool leads. If the pool runs dry, that setter just gets fewer — log it.
+- Logs to `scraper_runs` with phase `"distribute"`.
+
+The existing `runScraperPipeline` (manual "Run now" button) becomes `runScraperOnly()` + immediate `recycleAndDistribute()` back-to-back so the button still does the full end-to-end thing for admins.
+
+## Cron jobs (replace existing `daily-lead-scraper`)
 ```sql
-ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS assigned_at timestamptz;
-CREATE INDEX IF NOT EXISTS leads_assigned_user_assigned_at_idx
-  ON public.leads (assigned_user_id, assigned_at)
-  WHERE assigned_user_id IS NOT NULL;
+SELECT cron.unschedule('daily-lead-scraper');
 
--- Convert partial unique index to plain unique index so ON CONFLICT (place_id) works.
-DROP INDEX IF EXISTS leads_place_id_key;
-CREATE UNIQUE INDEX IF NOT EXISTS leads_place_id_key ON public.leads (place_id);
+-- 9:00 AM ET = 13:00 UTC (winter) / 14:00 UTC (summer).
+-- Run at both 13:00 and 14:00 and let the handler no-op if it already ran today in ET.
+SELECT cron.schedule('daily-scraper-9am-et', '0 13,14 * * *', $$ ... POST /api/public/hooks/run-scraper ... $$);
+SELECT cron.schedule('daily-distribute-930am-et', '30 13,14 * * *', $$ ... POST /api/public/hooks/distribute-leads ... $$);
 ```
+The handlers check "did this phase already run today in ET" via `scraper_runs` and skip if yes — that handles DST cleanly without hard-coding offsets.
 
-No grant/RLS changes.
+## New route
+`src/routes/api/public/hooks/distribute-leads.ts` — mirrors `run-scraper.ts`, calls `recycleAndDistribute()`.
 
-## 2. `src/lib/scraper-pipeline.server.ts`
+## Schema
+No table changes needed. `daily_lead_quota` column stays in `profiles` but is no longer read (hard-coded 150 in code). I'll leave it alone rather than drop it, in case you want quotas back later.
 
-- Replace `startOfTodayET()` with a real `Intl`-based "America/New_York" start-of-day → UTC ISO converter (DST-aware). Export it for reuse.
-- `loadLeadsTodayByUser` queries `assigned_at >= since` (was `created_at`).
-- `distributeRoundRobin` writes `{ assigned_user_id, assigned_at: new Date().toISOString() }`. Lead status untouched.
-- Insert path: `.upsert(toInsert, { onConflict: "place_id", ignoreDuplicates: true }).select("id")` so a duplicate `place_id` can't abort the batch. `inserted` count = returned rows length.
-- City loop: each city's Apify call + filter + DB dedupe + insert wrapped in `try/catch` → push `cityRun.error`, append to `errors`, continue. `city_rotation_index` UPDATE happens once after the loop in its own try/catch.
-- Track `stopReason`:
-  - `target_met` — `insertedSoFar >= scrapeTarget`
-  - `city_cap` — `citiesAdvanced >= MAX_CITIES_PER_RUN` and target unmet
-  - `rotation_exhausted` — `citiesAdvanced >= cityRotation.length` and target unmet
-  - `no_scrape` — `scrapeTarget === 0` or actor/token missing
-- After final distribution, `remainingCapacity = Σ capacity.values()` (capacity map is mutated by both distribute passes).
-- Details payload:
-  - `quotaMet = remainingCapacity === 0`
-  - When `!quotaMet`: add `unfilled: remainingCapacity` and `warnings: string[]` composed from `stopReason` + counts:
-    - city_cap: `"Quota short by N: scraped 8/8 cities (hit city cap), M new leads inserted. Raise MAX_CITIES_PER_RUN or add more cities."`
-    - rotation_exhausted: `"Quota short by N: ran out of cities in rotation (K scraped), M inserted. Add more cities to the rotation."`
-    - no_scrape: `"Quota short by N: scraper not configured (no actor or APIFY_TOKEN)."`
-    - target_met (rare): `"Quota short by N: pool exhausted before all setters filled. Add more cities or lower a setter's quota."`
-  - When `quotaMet`: set `quotaMet: true`, omit `warnings`.
-- Existing `status` mapping (success/partial/failed/skipped) unchanged.
+## What stays the same
+- Apify settings, city rotation, field map, "Run now" button.
+- Per-setter `scraper_enabled` toggle (controls who's in the rotation).
+- `scraper_runs` log table.
 
-## 3. `src/lib/api/scraper.functions.ts`
-
-`listScraperSetters` "day" range filters by `assigned_at >= startOfTodayET()` (count by `assigned_user_id`). Week/month/90d keep `created_at`. Import TZ helper from pipeline module.
-
-## 4. `src/routes/app/_authenticated/admin/scraper.tsx`
-
-Recent runs row: when `d.quotaMet === false`, render a small ⚠️ amber badge after the status pill with `title={(d.warnings as string[])?.[0] ?? "Quota not met"}`. Expanded `<pre>` already shows full details. No other UI changes.
-
-## Files
-
-- `supabase/migrations/<new>.sql`
-- `src/lib/scraper-pipeline.server.ts`
-- `src/lib/api/scraper.functions.ts`
-- `src/routes/app/_authenticated/admin/scraper.tsx`
+## What I will NOT touch unless you say so
+- The 358 leads currently assigned to Will / Lynn — they stay assigned until tomorrow's 9:30 AM recycle picks up any uncalled ones. If you'd rather wipe the slate clean tonight so tomorrow is a fresh start, say the word.
