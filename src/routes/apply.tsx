@@ -49,6 +49,7 @@ function ApplyPage() {
     current_monthly_income: "",
     desired_monthly_income: "",
     credit_score_range: "" as Credit | "",
+    referred_by: "" as Referrer | "",
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +61,7 @@ function ApplyPage() {
       current_monthly_income: form.current_monthly_income,
       desired_monthly_income: form.desired_monthly_income,
       credit_score_range: form.credit_score_range as Credit,
+      referred_by: form.referred_by || null,
     } }),
     onSuccess: (res) => {
       setAppInfo({ id: res.id, token: res.token });
@@ -77,7 +79,8 @@ function ApplyPage() {
     form.email.trim() &&
     form.current_monthly_income &&
     form.desired_monthly_income &&
-    form.credit_score_range;
+    form.credit_score_range &&
+    form.referred_by;
 
   const scrollToApply = useCallback(() => {
     const scroller = pageRef.current;
