@@ -119,7 +119,7 @@ function fmtSummary(o: OpObj | null | undefined): string | null {
 
 async function opGet(path: string, apiKey: string): Promise<unknown | null> {
   try {
-    const res = await fetch(`https://api.openphone.com${path}`, {
+    const res = await fetch(`https://api.quo.com${path}`, {
       headers: { Authorization: apiKey },
     });
     if (!res.ok) return null;
@@ -163,44 +163,50 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
 
     // Look back 14 days
     const sinceIso = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-    const allCalls: OpCall[] = [];
-    for (const p of pool ?? []) {
-      let pageToken: string | undefined = undefined;
-      for (let page = 0; page < 10; page++) {
-        const qs = new URLSearchParams({
-          phoneNumberId: p.openphone_number_id,
-          maxResults: "50",
-          since: sinceIso,
-        });
-        if (pageToken) qs.set("pageToken", pageToken);
-        type ListRes = { data?: OpCall[]; nextPageToken?: string | null };
-        const list = (await opGet(`/v1/calls?${qs.toString()}`, apiKey)) as ListRes | null;
-        if (!list?.data) break;
-        allCalls.push(...list.data);
-        if (!list.nextPageToken) break;
-        pageToken = list.nextPageToken;
-      }
-    }
+    const poolNumbers = pool ?? [];
 
-    // Pull unlinked rows in the same window
+    // Pull unlinked rows in the same window. Quo's call list requires the
+    // external participant phone number, so query per row instead of trying to
+    // list all recent calls for a workspace number.
     const { data: unlinked } = await supabaseAdmin
       .from("call_logs")
       .select("id, to_number, started_at")
       .is("openphone_call_id", null)
-      .gte("started_at", sinceIso);
+      .gte("started_at", sinceIso)
+      .order("started_at", { ascending: false });
 
     const digits10 = (s: string | null | undefined) => (s ?? "").replace(/\D/g, "").slice(-10);
     const usedCallIds = new Set<string>();
     for (const row of unlinked ?? []) {
-      const target = digits10(row.to_number);
+      const targetNumber = normalizeE164(row.to_number ?? "");
+      const target = digits10(targetNumber);
       if (!target) continue;
       const rowTs = row.started_at ? new Date(row.started_at).getTime() : 0;
+      const allCalls: OpCall[] = [];
+      for (const p of poolNumbers) {
+        let pageToken: string | undefined = undefined;
+        for (let page = 0; page < 3; page++) {
+          const qs = new URLSearchParams({
+            phoneNumberId: p.openphone_number_id,
+            maxResults: "50",
+            createdAfter: sinceIso,
+          });
+          qs.append("participants[]", targetNumber);
+          if (pageToken) qs.set("pageToken", pageToken);
+          type ListRes = { data?: OpCall[]; nextPageToken?: string | null };
+          const list = (await opGet(`/v1/calls?${qs.toString()}`, apiKey)) as ListRes | null;
+          if (!list?.data) break;
+          allCalls.push(...list.data);
+          if (!list.nextPageToken) break;
+          pageToken = list.nextPageToken;
+        }
+      }
       // Pick the OpenPhone call with same destination digits and the closest
       // createdAt to our row's started_at, within 30 minutes.
       let best: { call: OpCall; delta: number } | null = null;
       for (const c of allCalls) {
         if (usedCallIds.has(c.id)) continue;
-        const participants = Array.isArray(c.to) ? c.to : c.to ? [c.to] : c.participants ?? [];
+        const participants = c.participants ?? (Array.isArray(c.to) ? c.to : c.to ? [c.to] : []);
         const match = participants.some((p) => digits10(p) === target);
         if (!match) continue;
         const cTs = c.createdAt ? new Date(c.createdAt).getTime() : 0;
@@ -234,7 +240,9 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabaseAdmin
       .from("call_logs")
       .select("id, openphone_call_id, transcript, recording_url, summary")
-      .not("openphone_call_id", "is", null);
+      .not("openphone_call_id", "is", null)
+      .or("recording_url.is.null,transcript.is.null,summary.is.null")
+      .order("started_at", { ascending: false });
     if (error) throw new Error(error.message);
 
     let scanned = 0;
