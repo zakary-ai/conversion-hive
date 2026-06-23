@@ -161,16 +161,8 @@ function ScraperPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["scraper-setters"] }),
   });
 
-  const addLeads = useMutation({
-    mutationFn: (v: { user_id: string; count: number }) => assignLeadsToSetter({ data: v }),
-    onSuccess: (r) => {
-      if (r.assigned === 0) toast.error("No unassigned leads available in the pool");
-      else if (r.assigned < r.requested) toast.success(`Assigned ${r.assigned} of ${r.requested} (pool exhausted)`);
-      else toast.success(`Assigned ${r.assigned} leads`);
-      qc.invalidateQueries({ queryKey: ["scraper-setters"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+
+
 
   const runNow = useMutation({
     mutationFn: () => runScraperNow(),
