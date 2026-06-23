@@ -184,6 +184,17 @@ function ApplyPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Referred by</Label>
+                <Select value={form.referred_by} onValueChange={(v) => set("referred_by", v as Referrer)}>
+                  <SelectTrigger><SelectValue placeholder="Who referred you?" /></SelectTrigger>
+                  <SelectContent>
+                    {REFERRERS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
