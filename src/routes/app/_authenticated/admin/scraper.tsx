@@ -445,22 +445,3 @@ function ScraperPage() {
   );
 }
 
-function AddLeadsCell({ userId: _userId, defaultCount, pending, onAdd }: { userId: string; defaultCount: number; pending: boolean; onAdd: (count: number) => void }) {
-  const [count, setCount] = useState<number>(Math.max(1, defaultCount || 25));
-  return (
-    <div className="flex items-center gap-2">
-      <Input
-        type="number"
-        min={1}
-        max={500}
-        value={count}
-        onChange={(e) => setCount(Math.max(1, Math.min(500, Number(e.target.value) || 0)))}
-        className="w-20"
-      />
-      <Button size="sm" variant="outline" disabled={pending || count < 1} onClick={() => onAdd(count)}>
-        {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
-        Add
-      </Button>
-    </div>
-  );
-}
