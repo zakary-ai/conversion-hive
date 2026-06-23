@@ -51,6 +51,7 @@ import { Route as AppAuthenticatedAdminAdminsRouteImport } from './routes/app/_a
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
+import { Route as ApiPublicHooksDistributeLeadsRouteImport } from './routes/api/public/hooks/distribute-leads'
 import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
 import { Route as AppAuthenticatedAdminClientsUserIdRouteImport } from './routes/app/_authenticated/admin/clients.$userId'
 
@@ -290,6 +291,12 @@ const ApiPublicHooksOpenphoneRoute = ApiPublicHooksOpenphoneRouteImport.update({
   path: '/api/public/hooks/openphone',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksDistributeLeadsRoute =
+  ApiPublicHooksDistributeLeadsRouteImport.update({
+    id: '/api/public/hooks/distribute-leads',
+    path: '/api/public/hooks/distribute-leads',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppAuthenticatedAdminClientsIndexRoute =
   AppAuthenticatedAdminClientsIndexRouteImport.update({
     id: '/clients/',
@@ -322,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/app/profile': typeof AppAuthenticatedProfileRoute
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
@@ -366,6 +374,7 @@ export interface FileRoutesByTo {
   '/app/profile': typeof AppAuthenticatedProfileRoute
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
@@ -413,6 +422,7 @@ export interface FileRoutesById {
   '/app/_authenticated/profile': typeof AppAuthenticatedProfileRoute
   '/app/_authenticated/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
@@ -460,6 +470,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/set-password'
     | '/lovable/email/suppression'
+    | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
@@ -504,6 +515,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/set-password'
     | '/lovable/email/suppression'
+    | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
@@ -550,6 +562,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/profile'
     | '/app/_authenticated/set-password'
     | '/lovable/email/suppression'
+    | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
@@ -588,6 +601,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
   ApiPublicHooksSendCallRemindersRoute: typeof ApiPublicHooksSendCallRemindersRoute
@@ -892,6 +906,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOpenphoneRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/distribute-leads': {
+      id: '/api/public/hooks/distribute-leads'
+      path: '/api/public/hooks/distribute-leads'
+      fullPath: '/api/public/hooks/distribute-leads'
+      preLoaderRoute: typeof ApiPublicHooksDistributeLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/_authenticated/admin/clients/': {
       id: '/app/_authenticated/admin/clients/'
       path: '/clients'
@@ -1015,6 +1036,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
   ApiPublicHooksSendCallRemindersRoute: ApiPublicHooksSendCallRemindersRoute,
