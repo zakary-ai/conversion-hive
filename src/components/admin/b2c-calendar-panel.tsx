@@ -472,8 +472,11 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
 
 
   const [openAppId, setOpenAppId] = useState<string | null>(null);
+  const [outcomeOpen, setOutcomeOpen] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const dt = new Date(booking.slot_start);
   const time = dt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+
 
   return (
     <Card className="p-3">
