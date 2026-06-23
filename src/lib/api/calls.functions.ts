@@ -153,7 +153,7 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
     for (const row of rows ?? []) {
       scanned++;
       const callId = row.openphone_call_id as string;
-      const patch: Record<string, string> = {};
+      const patch: { recording_url?: string; transcript?: string; transcript_status?: string; summary?: string } = {};
 
       if (!row.recording_url) {
         type RecRes = { data?: Array<{ url?: string; media?: Array<{ url?: string }> }> };
