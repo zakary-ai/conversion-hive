@@ -526,22 +526,8 @@ async function runPipelineInner(
     result.warnings = [msg];
   }
 
-  // 10. Log
-  const status = result.skipped
-    ? "skipped"
-    : errors.length === 0
-      ? "success"
-      : result.distributed > 0 || result.inserted > 0
-        ? "partial"
-        : "failed";
-
-  await supabaseAdmin.from("scraper_runs").insert({
-    user_id: opts.triggeredBy,
-    leads_added: result.inserted,
-    status,
-    phase: result.skipped ? "skipped" : "full",
-    details: JSON.parse(JSON.stringify(result)),
-  });
-
+  // Logging is handled by runScraperPipeline's finally block so a thrown
+  // error here still writes a scraper_runs row.
   return result;
 }
+
