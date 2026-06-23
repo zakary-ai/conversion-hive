@@ -132,9 +132,12 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
 
 
   const [openAppId, setOpenAppId] = useState<string | null>(null);
+  const [outcomeOpen, setOutcomeOpen] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
 
   const dt = new Date(booking.slot_start);
   const label = dt.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
 
   return (
     <Card className="p-4">
