@@ -29,6 +29,7 @@ export type Database = {
             | Database["public"]["Enums"]["application_invest"]
             | null
           phone: string
+          referred_by: string | null
           status: Database["public"]["Enums"]["application_status"]
           updated_at: string
           why_remote_sales: string | null
@@ -47,6 +48,7 @@ export type Database = {
             | Database["public"]["Enums"]["application_invest"]
             | null
           phone: string
+          referred_by?: string | null
           status?: Database["public"]["Enums"]["application_status"]
           updated_at?: string
           why_remote_sales?: string | null
@@ -65,6 +67,7 @@ export type Database = {
             | Database["public"]["Enums"]["application_invest"]
             | null
           phone?: string
+          referred_by?: string | null
           status?: Database["public"]["Enums"]["application_status"]
           updated_at?: string
           why_remote_sales?: string | null
