@@ -138,6 +138,99 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    let adopted = 0;
+
+    // ---- Step 1: adopt unlinked call_logs rows by matching against the
+    // OpenPhone /v1/calls list for each pool number. Webhook events for these
+    // rows were missed (signature mismatch, etc), so they have no
+    // openphone_call_id yet.
+    type OpCall = {
+      id: string;
+      direction?: string;
+      from?: string;
+      to?: string | string[];
+      participants?: string[];
+      createdAt?: string;
+      answeredAt?: string;
+      completedAt?: string;
+      duration?: number;
+      status?: string;
+    };
+
+    const { data: pool } = await supabaseAdmin
+      .from("openphone_number_pool")
+      .select("openphone_number_id, phone_e164");
+
+    // Look back 14 days
+    const sinceIso = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    const allCalls: OpCall[] = [];
+    for (const p of pool ?? []) {
+      let pageToken: string | undefined = undefined;
+      for (let page = 0; page < 10; page++) {
+        const qs = new URLSearchParams({
+          phoneNumberId: p.openphone_number_id,
+          maxResults: "50",
+          since: sinceIso,
+        });
+        if (pageToken) qs.set("pageToken", pageToken);
+        type ListRes = { data?: OpCall[]; nextPageToken?: string | null };
+        const list = (await opGet(`/v1/calls?${qs.toString()}`, apiKey)) as ListRes | null;
+        if (!list?.data) break;
+        allCalls.push(...list.data);
+        if (!list.nextPageToken) break;
+        pageToken = list.nextPageToken;
+      }
+    }
+
+    // Pull unlinked rows in the same window
+    const { data: unlinked } = await supabaseAdmin
+      .from("call_logs")
+      .select("id, to_number, started_at")
+      .is("openphone_call_id", null)
+      .gte("started_at", sinceIso);
+
+    const digits10 = (s: string | null | undefined) => (s ?? "").replace(/\D/g, "").slice(-10);
+    const usedCallIds = new Set<string>();
+    for (const row of unlinked ?? []) {
+      const target = digits10(row.to_number);
+      if (!target) continue;
+      const rowTs = row.started_at ? new Date(row.started_at).getTime() : 0;
+      // Pick the OpenPhone call with same destination digits and the closest
+      // createdAt to our row's started_at, within 30 minutes.
+      let best: { call: OpCall; delta: number } | null = null;
+      for (const c of allCalls) {
+        if (usedCallIds.has(c.id)) continue;
+        const participants = Array.isArray(c.to) ? c.to : c.to ? [c.to] : c.participants ?? [];
+        const match = participants.some((p) => digits10(p) === target);
+        if (!match) continue;
+        const cTs = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+        const delta = Math.abs(cTs - rowTs);
+        if (delta > 30 * 60 * 1000) continue;
+        if (!best || delta < best.delta) best = { call: c, delta };
+      }
+      if (best) {
+        usedCallIds.add(best.call.id);
+        const adoptPatch: {
+          openphone_call_id: string;
+          from_number?: string;
+          direction?: string;
+          status?: string;
+          duration_sec?: number;
+          started_at?: string;
+          ended_at?: string;
+        } = { openphone_call_id: best.call.id };
+        if (typeof best.call.from === "string") adoptPatch.from_number = best.call.from;
+        if (typeof best.call.direction === "string") adoptPatch.direction = best.call.direction;
+        if (best.call.status) adoptPatch.status = best.call.status;
+        if (typeof best.call.duration === "number") adoptPatch.duration_sec = best.call.duration;
+        if (best.call.answeredAt) adoptPatch.started_at = best.call.answeredAt;
+        if (best.call.completedAt) adoptPatch.ended_at = best.call.completedAt;
+        await supabaseAdmin.from("call_logs").update(adoptPatch).eq("id", row.id);
+        adopted++;
+      }
+    }
+
+    // ---- Step 2: fetch artifacts for every linked row missing them.
     const { data: rows, error } = await supabaseAdmin
       .from("call_logs")
       .select("id, openphone_call_id, transcript, recording_url, summary")
@@ -194,5 +287,5 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
       }
     }
 
-    return { ok: true, scanned, updated, txFilled, recFilled, sumFilled };
+    return { ok: true, scanned, adopted, updated, txFilled, recFilled, sumFilled };
   });

@@ -33,7 +33,7 @@ function SettingsPage() {
     try {
       const res = await backfill();
       toast.success(
-        `Backfill done: scanned ${res.scanned}, updated ${res.updated} (transcripts +${res.txFilled}, recordings +${res.recFilled}, summaries +${res.sumFilled})`,
+        `Backfill done: adopted ${res.adopted}, scanned ${res.scanned}, updated ${res.updated} (transcripts +${res.txFilled}, recordings +${res.recFilled}, summaries +${res.sumFilled})`,
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Backfill failed");
