@@ -37,13 +37,8 @@ export function ApplicationDetailDialog({
             <Row label="Phone" value={data.phone} />
             <Row label="Current monthly income" value={data.current_monthly_income} />
             <Row label="Desired monthly income" value={data.desired_monthly_income} />
-            <Row label="Open to invest" value={data.open_to_invest} />
             <Row label="Credit score range" value={data.credit_score_range} />
             <Row label="Referred by" value={(data as { referred_by?: string | null }).referred_by ?? null} />
-            <div>
-              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Why remote sales</div>
-              <div className="whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3">{data.why_remote_sales}</div>
-            </div>
             <div className="text-xs text-muted-foreground pt-2 border-t border-border">
               Submitted {new Date(data.created_at as string).toLocaleString()}
             </div>
