@@ -79,3 +79,120 @@ export const listCallsForUser = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
+
+// ---------- Backfill OpenPhone artifacts ----------
+// Admin-only. For every call_logs row that has an openphone_call_id but is
+// missing transcript / recording / summary, fetch the artifacts from
+// OpenPhone's REST API and patch the row.
+type OpDialogue = { identifier?: string; userId?: string; content?: string; text?: string };
+type OpObj = {
+  dialogue?: OpDialogue[];
+  text?: string;
+  transcript?: string;
+  summary?: string | string[];
+  nextSteps?: string[];
+};
+
+function fmtTranscript(o: OpObj | null | undefined): string | null {
+  if (!o) return null;
+  if (Array.isArray(o.dialogue) && o.dialogue.length > 0) {
+    return o.dialogue
+      .map((d) => `${d.identifier || d.userId || "Speaker"}: ${d.content || d.text || ""}`.trim())
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (typeof o.transcript === "string") return o.transcript;
+  if (typeof o.text === "string") return o.text;
+  return null;
+}
+
+function fmtSummary(o: OpObj | null | undefined): string | null {
+  if (!o) return null;
+  const parts: string[] = [];
+  if (Array.isArray(o.summary)) parts.push(o.summary.join("\n"));
+  else if (typeof o.summary === "string") parts.push(o.summary);
+  if (Array.isArray(o.nextSteps) && o.nextSteps.length > 0) {
+    parts.push("Next steps:\n- " + o.nextSteps.join("\n- "));
+  }
+  return parts.length ? parts.join("\n\n") : null;
+}
+
+async function opGet(path: string, apiKey: string): Promise<unknown | null> {
+  try {
+    const res = await fetch(`https://api.openphone.com${path}`, {
+      headers: { Authorization: apiKey },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const apiKey = process.env.OPENPHONE_API_KEY;
+    if (!apiKey) throw new Error("OPENPHONE_API_KEY is not configured");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("call_logs")
+      .select("id, openphone_call_id, transcript, recording_url, summary")
+      .not("openphone_call_id", "is", null);
+    if (error) throw new Error(error.message);
+
+    let scanned = 0;
+    let updated = 0;
+    let txFilled = 0;
+    let recFilled = 0;
+    let sumFilled = 0;
+
+    for (const row of rows ?? []) {
+      scanned++;
+      const callId = row.openphone_call_id as string;
+      const patch: Record<string, string> = {};
+
+      if (!row.recording_url) {
+        type RecRes = { data?: Array<{ url?: string; media?: Array<{ url?: string }> }> };
+        const rec = (await opGet(`/v1/call-recordings/${encodeURIComponent(callId)}`, apiKey)) as RecRes | null;
+        const url = rec?.data?.[0]?.url || rec?.data?.[0]?.media?.[0]?.url;
+        if (url) {
+          patch.recording_url = url;
+          recFilled++;
+        }
+      }
+
+      if (!row.transcript) {
+        type TxRes = { data?: OpObj & { status?: string } };
+        const tx = (await opGet(`/v1/call-transcripts/${encodeURIComponent(callId)}`, apiKey)) as TxRes | null;
+        if (tx?.data) {
+          const t = fmtTranscript(tx.data);
+          if (t) {
+            patch.transcript = t;
+            txFilled++;
+          }
+          if (tx.data.status) patch.transcript_status = tx.data.status;
+        }
+      }
+
+      if (!row.summary) {
+        type SumRes = { data?: OpObj };
+        const sum = (await opGet(`/v1/call-summaries/${encodeURIComponent(callId)}`, apiKey)) as SumRes | null;
+        const s = fmtSummary(sum?.data);
+        if (s) {
+          patch.summary = s;
+          sumFilled++;
+        }
+      }
+
+      if (Object.keys(patch).length > 0) {
+        await supabaseAdmin.from("call_logs").update(patch).eq("id", row.id);
+        updated++;
+      }
+    }
+
+    return { ok: true, scanned, updated, txFilled, recFilled, sumFilled };
+  });
