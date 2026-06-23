@@ -146,24 +146,6 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
         if (secret) {
           const sig = request.headers.get("openphone-signature") || request.headers.get("x-openphone-signature");
           if (!verify(raw, sig, secret)) {
-            // Temporary debug — remove once verified
-            const parts = (sig ?? "").split(";");
-            const sigB64 = parts[parts.length - 1]?.trim() ?? "";
-            const ts = parts.length >= 3 ? parts[parts.length - 2]?.trim() ?? "" : "";
-            const keyBin = Buffer.from(secret, "base64").toString("binary");
-            const computed = createHmac("sha256", keyBin)
-              .update(Buffer.from(`${ts}.${raw}`, "utf8"))
-              .digest("base64");
-            console.log("openphone sig debug", {
-              header: sig,
-              ts,
-              providedB64: sigB64,
-              computedB64: computed,
-              secretLen: secret.length,
-              secretFirst4: secret.slice(0, 4),
-              rawLen: raw.length,
-              rawFirst80: raw.slice(0, 80),
-            });
             return new Response("Invalid signature", { status: 401 });
           }
         }
