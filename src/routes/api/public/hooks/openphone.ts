@@ -11,12 +11,20 @@ import { createHmac, timingSafeEqual } from "crypto";
 
 function verify(rawBody: string, header: string | null, secret: string): boolean {
   if (!header) return false;
+  // Header format: `hmac;<version>;<timestamp>;<base64-signature>`
   const parts = header.split(";");
   const sigB64 = parts[parts.length - 1]?.trim();
   const timestamp = parts.length >= 3 ? parts[parts.length - 2]?.trim() : "";
-  if (!sigB64) return false;
-  const signedPayload = timestamp ? `${timestamp}.${rawBody}` : rawBody;
-  const expected = createHmac("sha256", secret).update(signedPayload).digest();
+  if (!sigB64 || !timestamp) return false;
+
+  // OpenPhone signing key is base64-encoded; HMAC key is the decoded bytes
+  // interpreted as a Latin-1/binary string (per their docs).
+  const keyBinary = Buffer.from(secret, "base64").toString("binary");
+  const signedData = `${timestamp}.${rawBody}`;
+  const expected = createHmac("sha256", keyBinary)
+    .update(Buffer.from(signedData, "utf8"))
+    .digest();
+
   let provided: Buffer;
   try {
     provided = Buffer.from(sigB64, "base64");
