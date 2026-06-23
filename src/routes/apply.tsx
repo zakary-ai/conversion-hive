@@ -27,6 +27,8 @@ const CURRENT_INCOME = ["Under $1,500", "$1,500-$3,000", "$3,000-$5,000", "$5,00
 const DESIRED_INCOME = ["$3,000-$5,000", "$5,000-$8,000", "$8,000-$12,000", "$12,000+"] as const;
 const CREDIT = ["Below 600", "600-650", "650-700", "700-750", "750-800", "800-850"] as const;
 type Credit = typeof CREDIT[number];
+const REFERRERS = ["Tyler", "Eli", "Bailie", "Lucas"] as const;
+type Referrer = typeof REFERRERS[number];
 
 type Step = "form" | "book" | "done";
 
