@@ -230,6 +230,20 @@ function BookingCard({ booking, closers }: { booking: Booking; closers: CloserOp
         open={!!openAppId}
         onOpenChange={(v) => !v && setOpenAppId(null)}
       />
+      <OutcomeDialog
+        bookingId={booking.id}
+        applicationId={booking.application_id}
+        applicantName={booking.applicant_name}
+        open={outcomeOpen}
+        onOpenChange={setOutcomeOpen}
+      />
+      <BookingRescheduleDialog
+        bookingId={booking.id}
+        applicantName={booking.applicant_name}
+        open={rescheduleOpen}
+        onOpenChange={setRescheduleOpen}
+      />
     </Card>
   );
 }
+
