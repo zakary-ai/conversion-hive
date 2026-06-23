@@ -192,6 +192,64 @@ export async function runScraperPipeline(opts: { triggeredBy: string; manual?: b
     errors,
   };
 
+  try {
+    return await runPipelineInner(opts, result, errors);
+  } catch (e) {
+    errors.push(`fatal: ${(e as Error).message}`);
+    // Best-effort distribution so setters still get leads even if scrape blew up.
+    try {
+      const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "client");
+      const clientIds = (roles ?? []).map((r) => r.user_id as string);
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, full_name, scraper_enabled, daily_lead_quota")
+        .in("user_id", clientIds);
+      const setters: Setter[] = (profiles ?? [])
+        .filter((p) => (p as { scraper_enabled?: boolean }).scraper_enabled !== false)
+        .map((p) => ({
+          user_id: p.user_id as string,
+          full_name: (p.full_name as string | null) ?? null,
+          daily_lead_quota: ((p as { daily_lead_quota?: number }).daily_lead_quota as number) ?? 75,
+        }));
+      if (setters.length > 0) {
+        const leadsToday = await loadLeadsTodayByUser(setters.map((s) => s.user_id));
+        const cap = new Map<string, number>();
+        for (const s of setters) cap.set(s.user_id, Math.max(0, s.daily_lead_quota - (leadsToday.get(s.user_id) ?? 0)));
+        const rescue = await distributeRoundRobin(setters, cap, errors);
+        result.distributed += rescue.assignedTotal;
+      }
+    } catch (e2) {
+      errors.push(`rescue_distribute: ${(e2 as Error).message}`);
+    }
+    return result;
+  } finally {
+    try {
+      const status = result.skipped
+        ? "skipped"
+        : errors.length === 0
+          ? "success"
+          : result.distributed > 0 || result.inserted > 0
+            ? "partial"
+            : "failed";
+      await supabaseAdmin.from("scraper_runs").insert({
+        user_id: opts.triggeredBy,
+        leads_added: result.inserted,
+        status,
+        phase: result.skipped ? "skipped" : "full",
+        details: JSON.parse(JSON.stringify(result)),
+      });
+    } catch {
+      // Swallow logging errors so they don't mask the original failure.
+    }
+  }
+}
+
+async function runPipelineInner(
+  opts: { triggeredBy: string; manual?: boolean },
+  result: PipelineResult,
+  errors: string[],
+): Promise<PipelineResult> {
+
   // 1. Settings
   const { data: settings, error: sErr } = await supabaseAdmin
     .from("scraper_settings")
