@@ -27,6 +27,8 @@ const CURRENT_INCOME = ["Under $1,500", "$1,500-$3,000", "$3,000-$5,000", "$5,00
 const DESIRED_INCOME = ["$3,000-$5,000", "$5,000-$8,000", "$8,000-$12,000", "$12,000+"] as const;
 const CREDIT = ["Below 600", "600-650", "650-700", "700-750", "750-800", "800-850"] as const;
 type Credit = typeof CREDIT[number];
+const REFERRERS = ["Tyler", "Eli", "Bailie", "Lucas"] as const;
+type Referrer = typeof REFERRERS[number];
 
 type Step = "form" | "book" | "done";
 
@@ -47,6 +49,7 @@ function ApplyPage() {
     current_monthly_income: "",
     desired_monthly_income: "",
     credit_score_range: "" as Credit | "",
+    referred_by: "" as Referrer | "",
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -58,6 +61,7 @@ function ApplyPage() {
       current_monthly_income: form.current_monthly_income,
       desired_monthly_income: form.desired_monthly_income,
       credit_score_range: form.credit_score_range as Credit,
+      referred_by: form.referred_by || null,
     } }),
     onSuccess: (res) => {
       setAppInfo({ id: res.id, token: res.token });
@@ -75,7 +79,8 @@ function ApplyPage() {
     form.email.trim() &&
     form.current_monthly_income &&
     form.desired_monthly_income &&
-    form.credit_score_range;
+    form.credit_score_range &&
+    form.referred_by;
 
   const scrollToApply = useCallback(() => {
     const scroller = pageRef.current;
@@ -179,6 +184,17 @@ function ApplyPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Referred by</Label>
+                <Select value={form.referred_by} onValueChange={(v) => set("referred_by", v as Referrer)}>
+                  <SelectTrigger><SelectValue placeholder="Who referred you?" /></SelectTrigger>
+                  <SelectContent>
+                    {REFERRERS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
