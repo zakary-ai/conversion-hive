@@ -95,7 +95,7 @@ async function opGet(path: string): Promise<unknown | null> {
   const key = process.env.OPENPHONE_API_KEY;
   if (!key) return null;
   try {
-    const res = await fetch(`https://api.openphone.com${path}`, {
+    const res = await fetch(`https://api.quo.com${path}`, {
       headers: { Authorization: key },
     });
     if (!res.ok) return null;

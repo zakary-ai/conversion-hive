@@ -1553,7 +1553,7 @@ export const backfillSetterCallArtifacts = createServerFn({ method: "POST" })
 
     const opGet = async (path: string): Promise<unknown | null> => {
       try {
-        const r = await fetch(`https://api.openphone.com${path}`, { headers: { Authorization: key } });
+        const r = await fetch(`https://api.quo.com${path}`, { headers: { Authorization: key } });
         if (!r.ok) return null;
         return await r.json();
       } catch { return null; }
