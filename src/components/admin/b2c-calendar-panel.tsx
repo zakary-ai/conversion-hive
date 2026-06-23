@@ -553,11 +553,22 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
               Reassign
             </Button>
           )}
+          {(booking.status === "pending_assignment" || booking.status === "assigned" || booking.status === "completed") && (
+            <Button size="icon" variant="ghost" onClick={() => setRescheduleOpen(true)} title="Reschedule">
+              <CalendarRange className="h-4 w-4" />
+            </Button>
+          )}
+          {(booking.status === "assigned" || booking.status === "completed") && (
+            <Button size="icon" variant="ghost" onClick={() => setOutcomeOpen(true)} title="Set outcome">
+              <ClipboardCheck className="h-4 w-4" />
+            </Button>
+          )}
           {(booking.status === "pending_assignment" || booking.status === "assigned") && (
             <Button size="icon" variant="ghost" onClick={() => cancel.mutate()} title="Cancel">
               <X className="h-4 w-4" />
             </Button>
           )}
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" title="Delete">
