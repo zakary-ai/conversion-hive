@@ -154,6 +154,7 @@ function ApplicationDialog({ app, onClose }: { app: Application | null; onClose:
               <Field label="Desired monthly income" value={app.desired_monthly_income} />
               <Field label="Open to invest" value={app.open_to_invest ?? "—"} />
               <Field label="Credit score range" value={app.credit_score_range} />
+              <Field label="Referred by" value={(app as { referred_by?: string | null }).referred_by ?? "—"} />
             </div>
             <div>
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Why remote sales</Label>
