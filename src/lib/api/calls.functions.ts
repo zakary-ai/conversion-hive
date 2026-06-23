@@ -287,5 +287,5 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
       }
     }
 
-    return { ok: true, scanned, updated, txFilled, recFilled, sumFilled };
+    return { ok: true, scanned, adopted, updated, txFilled, recFilled, sumFilled };
   });
