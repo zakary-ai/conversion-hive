@@ -1,12 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { listCloserBookings } from "@/lib/api/b2c.functions";
+import { listCloserBookings, getCloserStats } from "@/lib/api/b2c.functions";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarClock, Mail, Phone, Video, ClipboardCheck } from "lucide-react";
+import { CalendarClock, Mail, Phone, Video, ClipboardCheck, Target } from "lucide-react";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 
