@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-type Outcome = "not_interested" | "disqualified" | "closed" | "deposit";
+type Outcome = "not_interested" | "disqualified" | "closed" | "deposit" | "no_show";
 type Pct = 10 | 15 | 20;
 
 export function OutcomeDialog({
