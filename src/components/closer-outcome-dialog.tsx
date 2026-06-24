@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-type Outcome = "not_interested" | "disqualified" | "closed" | "deposit";
+type Outcome = "not_interested" | "disqualified" | "closed" | "deposit" | "no_show";
 type Pct = 10 | 15 | 20;
 
 export function OutcomeDialog({
@@ -93,7 +93,7 @@ export function OutcomeDialog({
         <div className="space-y-2">
           <Label>Outcome</Label>
           <div className="grid grid-cols-2 gap-2">
-            {(["not_interested","disqualified","closed","deposit"] as Outcome[]).map((o) => (
+            {(["not_interested","disqualified","closed","deposit","no_show"] as Outcome[]).map((o) => (
               <button
                 key={o}
                 type="button"
