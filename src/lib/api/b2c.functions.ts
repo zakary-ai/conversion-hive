@@ -1032,11 +1032,26 @@ export const listClosedDealsForCommission = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { data, error } = await context.supabase
       .from("closer_bookings")
-      .select("id, applicant_name, applicant_email, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, closers:assigned_closer_id (id, full_name, email)")
+      .select("id, applicant_name, applicant_email, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, commission_status, closers:assigned_closer_id (id, full_name, email)")
       .in("outcome", ["closed", "deposit"])
       .order("outcome_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+// ---------- Admin: approve a closer's commission ----------
+export const approveBookingCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ booking_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any)
+      .update({ commission_status: "approved" })
+      .eq("id", data.booking_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 // ---------- Admin: edit commission on a booking ----------
@@ -1116,7 +1131,7 @@ export const listMyCloserCommissions = createServerFn({ method: "GET" })
     if (!closer) return { rows: [], totals: { closed: 0, deposit: 0, commission: 0 } };
     const { data, error } = await context.supabase
       .from("closer_bookings")
-      .select("id, applicant_name, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount")
+      .select("id, applicant_name, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, commission_status")
       .eq("assigned_closer_id", closer.id)
       .in("outcome", ["closed", "deposit"])
       .order("outcome_at", { ascending: false });
@@ -1124,12 +1139,84 @@ export const listMyCloserCommissions = createServerFn({ method: "GET" })
     const rows = data ?? [];
     const totals = rows.reduce((acc, r) => {
       const c = Number(r.commission_amount ?? 0);
+      const approved = (r.commission_status ?? "pending") === "approved";
       acc.commission += c;
+      if (approved) acc.approved += c; else acc.pending += c;
       if (r.outcome === "closed") acc.closed += Number(r.deal_amount ?? 0);
       if (r.outcome === "deposit") acc.deposit += Number(r.deposit_amount ?? 0) + Number(r.follow_up_amount ?? 0);
       return acc;
-    }, { closed: 0, deposit: 0, commission: 0 });
+    }, { closed: 0, deposit: 0, commission: 0, approved: 0, pending: 0 });
     return { rows, totals };
+  });
+
+// ---------- Closer/Admin: close-rate stats for a closer ----------
+// Only "not_interested", "closed", and "deposit" count toward close-rate denominator.
+// "no_show" and "disqualified" are excluded entirely.
+export const getCloserStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ closer_id: z.string().uuid().optional() }).parse)
+  .handler(async ({ data, context }) => {
+    let closerId = data.closer_id ?? null;
+    if (closerId) {
+      const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+      if (!isAdmin) {
+        const { data: mine } = await context.supabase
+          .from("closers").select("id").eq("user_id", context.userId).maybeSingle();
+        if (!mine || mine.id !== closerId) throw new Error("Forbidden");
+      }
+    } else {
+      const { data: mine } = await context.supabase
+        .from("closers").select("id").eq("user_id", context.userId).maybeSingle();
+      if (!mine) return { closed: 0, deposit: 0, notInterested: 0, qualifiedCalls: 0, totalOutcomes: 0, noShow: 0, disqualified: 0, closeRate: 0 };
+      closerId = mine.id;
+    }
+    const { data: rows, error } = await context.supabase
+      .from("closer_bookings")
+      .select("outcome")
+      .eq("assigned_closer_id", closerId)
+      .not("outcome", "is", null);
+    if (error) throw new Error(error.message);
+    const counts = { closed: 0, deposit: 0, notInterested: 0, noShow: 0, disqualified: 0 };
+    for (const r of rows ?? []) {
+      switch (r.outcome) {
+        case "closed": counts.closed++; break;
+        case "deposit": counts.deposit++; break;
+        case "not_interested": counts.notInterested++; break;
+        case "no_show": counts.noShow++; break;
+        case "disqualified": counts.disqualified++; break;
+      }
+    }
+    const qualifiedCalls = counts.closed + counts.deposit + counts.notInterested;
+    const wins = counts.closed + counts.deposit;
+    const closeRate = qualifiedCalls > 0 ? Math.round((wins / qualifiedCalls) * 1000) / 10 : 0;
+    return {
+      closed: counts.closed,
+      deposit: counts.deposit,
+      notInterested: counts.notInterested,
+      noShow: counts.noShow,
+      disqualified: counts.disqualified,
+      qualifiedCalls,
+      totalOutcomes: (rows ?? []).length,
+      closeRate,
+    };
+  });
+
+// ---------- Admin: full closer detail (info + stats + all bookings/outcomes) ----------
+export const getCloserDetail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ closer_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: closer, error: cerr } = await context.supabase
+      .from("closers").select("id, full_name, email, active").eq("id", data.closer_id).single();
+    if (cerr || !closer) throw new Error(cerr?.message || "Closer not found");
+    const { data: bookings, error: berr } = await context.supabase
+      .from("closer_bookings")
+      .select("id, applicant_name, applicant_email, slot_start, status, outcome, outcome_at, outcome_notes, deal_amount, deposit_amount, follow_up_amount, commission_amount, commission_percent, commission_status")
+      .eq("assigned_closer_id", data.closer_id)
+      .order("slot_start", { ascending: false });
+    if (berr) throw new Error(berr.message);
+    return { closer, bookings: bookings ?? [] };
   });
 
 
