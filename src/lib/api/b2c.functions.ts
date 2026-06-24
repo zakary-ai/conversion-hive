@@ -1128,7 +1128,7 @@ export const listMyCloserCommissions = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data: closer } = await context.supabase
       .from("closers").select("id").eq("user_id", context.userId).maybeSingle();
-    if (!closer) return { rows: [], totals: { closed: 0, deposit: 0, commission: 0 } };
+    if (!closer) return { rows: [], totals: { closed: 0, deposit: 0, commission: 0, approved: 0, pending: 0 } };
     const { data, error } = await context.supabase
       .from("closer_bookings")
       .select("id, applicant_name, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, commission_status")
