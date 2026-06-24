@@ -40,6 +40,7 @@ type Row = {
   follow_up_amount: number | null;
   commission_percent: number | null;
   commission_amount: number | null;
+  commission_status?: string | null;
   closers: { id: string; full_name: string; email: string } | null;
 };
 
