@@ -8,6 +8,7 @@ import {
   recordCloserPayout,
   deleteCloserPayout,
   clearBookingOutcome,
+  approveBookingCommission,
 } from "@/lib/api/b2c.functions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
