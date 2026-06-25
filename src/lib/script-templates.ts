@@ -9,27 +9,27 @@ export type SmsTemplate = { id: string; label: string; body: string };
 export const CALL_SCRIPTS: ScriptTemplate[] = [
   {
     id: "opener",
-    title: "Opener",
+    title: "1. Opener",
     body:
-      "Hey {firstName}, this is {setter} — quick call, not a long one. The reason I'm reaching out is we work with property managers at places like {company} to fill vacant units faster without spending more on ads. Did I catch you at an okay time?",
+      "I was just wondering how much it costs to get a full kitchen remodel?\n\n(they respond)",
   },
   {
-    id: "value",
-    title: "Value pitch (30s)",
+    id: "pivot",
+    title: "2. Pivot",
     body:
-      "We're basically a done-for-you leasing pipeline — we run the ads, qualify the renters, and book the tours straight onto your team's calendar. Most properties we work with see 8–15 extra signed leases a month within the first 60 days. Worth a 15-minute look?",
+      "Ok sounds good, I actually have a few people looking to get their kitchen remodeled, are you looking to take on more work?\n\n(they respond)",
+  },
+  {
+    id: "offer",
+    title: "3. The offer",
+    body:
+      "Ok cool, and if I guaranteed you an additional 20 warm leads in the next 30 days do you feel that would benefit your business?\n\n(they respond)",
   },
   {
     id: "book",
-    title: "Book the call",
+    title: "4. Book the Zoom",
     body:
-      "Cool — easiest way is I get one of our specialists on with you for 15 minutes. They'll walk you through exactly what it'd look like for {company} and you can decide if it's a fit. I've got tomorrow at 10 or 2 — which works better?",
-  },
-  {
-    id: "voicemail",
-    title: "Voicemail",
-    body:
-      "Hey {firstName}, {setter} here — tried you about helping {company} fill vacancies faster without raising your ad spend. Going to shoot you a quick text too. Call me back when you get a sec.",
+      "Ok awesome — to see if working together would be a good fit, I'd like to schedule you for a quick Zoom meeting. What time later today would work best for you?\n\n(they respond)\n\n(book them on the calendar, and wish them good luck)",
   },
 ];
 
