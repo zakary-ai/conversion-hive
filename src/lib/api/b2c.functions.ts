@@ -1379,3 +1379,38 @@ export const listBookingsForDate = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
+
+// ---------- Closer: manually submit a commission for admin approval ----------
+export const submitManualCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    lead_name: z.string().trim().min(1).max(200),
+    deal_amount: z.number().nonnegative(),
+    commission_percent: z.number().min(0).max(100),
+    commission_amount: z.number().nonnegative(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: closer } = await context.supabase
+      .from("closers").select("id").eq("user_id", context.userId).maybeSingle();
+    if (!closer) throw new Error("Not a closer");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const now = new Date();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any).insert({
+      assigned_closer_id: closer.id,
+      applicant_name: data.lead_name,
+      applicant_email: `manual+${closer.id}-${now.getTime()}@conversionlab.space`,
+      slot_start: now.toISOString(),
+      slot_end: now.toISOString(),
+      status: "completed",
+      outcome: "closed",
+      outcome_at: now.toISOString(),
+      outcome_notes: "Manually submitted by closer",
+      deal_amount: data.deal_amount,
+      commission_percent: data.commission_percent,
+      commission_amount: data.commission_amount,
+      commission_status: "pending",
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
