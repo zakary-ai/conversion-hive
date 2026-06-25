@@ -50,6 +50,7 @@ import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/
 import { Route as AppAuthenticatedAdminAdminsRouteImport } from './routes/app/_authenticated/admin/admins'
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
+import { Route as ApiPublicHooksRunDailyCycleRouteImport } from './routes/api/public/hooks/run-daily-cycle'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
 import { Route as ApiPublicHooksDistributeLeadsRouteImport } from './routes/api/public/hooks/distribute-leads'
 import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
@@ -286,6 +287,12 @@ const ApiPublicHooksRunScraperRoute =
     path: '/api/public/hooks/run-scraper',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRunDailyCycleRoute =
+  ApiPublicHooksRunDailyCycleRouteImport.update({
+    id: '/api/public/hooks/run-daily-cycle',
+    path: '/api/public/hooks/run-daily-cycle',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOpenphoneRoute = ApiPublicHooksOpenphoneRouteImport.update({
   id: '/api/public/hooks/openphone',
   path: '/api/public/hooks/openphone',
@@ -331,6 +338,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
+  '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
@@ -376,6 +384,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
+  '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
@@ -424,6 +433,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
+  '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/app/_authenticated/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
+    | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
     | '/app/admin/admins'
@@ -517,6 +528,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
+    | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
     | '/app/admin/admins'
@@ -564,6 +576,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
+    | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
     | '/app/_authenticated/admin/admins'
@@ -603,6 +616,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
+  ApiPublicHooksRunDailyCycleRoute: typeof ApiPublicHooksRunDailyCycleRoute
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
   ApiPublicHooksSendCallRemindersRoute: typeof ApiPublicHooksSendCallRemindersRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -899,6 +913,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRunScraperRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/run-daily-cycle': {
+      id: '/api/public/hooks/run-daily-cycle'
+      path: '/api/public/hooks/run-daily-cycle'
+      fullPath: '/api/public/hooks/run-daily-cycle'
+      preLoaderRoute: typeof ApiPublicHooksRunDailyCycleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/openphone': {
       id: '/api/public/hooks/openphone'
       path: '/api/public/hooks/openphone'
@@ -1038,6 +1059,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
+  ApiPublicHooksRunDailyCycleRoute: ApiPublicHooksRunDailyCycleRoute,
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
   ApiPublicHooksSendCallRemindersRoute: ApiPublicHooksSendCallRemindersRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
@@ -1047,13 +1069,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

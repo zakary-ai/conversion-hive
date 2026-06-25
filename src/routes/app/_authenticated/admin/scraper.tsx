@@ -188,7 +188,7 @@ function ScraperPage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold">Master toggle</h3>
-            <p className="text-sm text-muted-foreground">9:00 AM ET scrapes ~120% of demand. 9:30 AM ET recycles uncalled leads and assigns each enabled setter exactly 150 fresh leads. Only runs when this is on.</p>
+            <p className="text-sm text-muted-foreground">9:00 AM ET recycles uncalled leads, then assigns each enabled setter up to 150 fresh leads from the pool. If the pool runs short, it scrapes the gap (×1.2) and tops them up. Only runs when this is on.</p>
           </div>
           <Switch checked={enabled} onCheckedChange={setEnabled} />
         </div>

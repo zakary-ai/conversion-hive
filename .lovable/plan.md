@@ -1,59 +1,54 @@
 ## Goal
-Replace the complicated quota/distribution logic with a simple, predictable daily flow:
+Flip the daily flow so recycling/distribution runs first, and the scraper only runs if the pool can't satisfy demand.
 
-1. **9:00 AM ET** — scraper runs. It targets **120% of the total leads needed** for all enabled setters (e.g. 5 enabled setters × 150 = 750 needed → scrape ~900).
-2. **9:30 AM ET** — recycle + distribute:
-   - Any leads that were assigned in yesterday's 9:30 AM run and never called (status still "New", no `last_status_change_at` after assignment) get **unassigned back into the pool**.
-   - Every enabled setter gets **exactly 150 fresh leads** from the pool (oldest first).
-3. A single **enable toggle** on the scraper page controls whether the whole thing runs.
+## New daily flow (single 9:00 AM ET run)
 
-Starts tomorrow morning.
+**Phase 1 — Recycle + Distribute (runs first)**
+1. Recycle: unassign any lead where `assigned_user_id IS NOT NULL`, `status='New'`, `retired=false`, `assigned_at < now() - 23h`. (Same logic as today.)
+2. Count enabled setters → `needed = enabledSetters × 150`.
+3. Count available pool leads (unassigned, `status='New'`, not retired, not DNC).
+4. Distribute up to 150 oldest pool leads to each enabled setter (FIFO). Record `shortfall = needed - distributed`.
 
-## Scraper page changes (`src/routes/app/_authenticated/admin/scraper.tsx`)
-Strip the page down per the request — the master toggle is the only control for the new flow.
+**Phase 2 — Scrape (only if shortfall > 0)**
+1. If `shortfall <= 0`, skip scraping entirely — log a `scrape` run with `scraped=0, reason="pool sufficient"`.
+2. Otherwise, `scrapeTarget = ceil(shortfall × 1.2)`. Rotate cities until target hit or city cap reached.
+3. After scraping completes, run **Distribute again** to hand the new leads to setters who came up short in Phase 1 (still capped at 150/setter/day total).
+4. Log to `scraper_runs` with `phase='scrape'`.
 
-- Keep: master enable toggle, Apify actor ID, search terms, location/city rotation, language, max results, scrape options, field mapping, "Run now" button, setters table (read-only stats + per-setter enable toggle).
-- Remove: per-setter "Daily quota" input (hard-coded to 150), "Add leads" manual assign column, recycle-days input (recycling is now the 24-hour cycle), batch-size input (derived from setter count).
-- Update copy: "Daily cron at 9:00 AM ET scrapes 120% of demand. 9:30 AM ET recycles uncalled leads and gives each enabled setter 150 fresh leads."
+## Code changes
 
-## Pipeline rewrite (`src/lib/scraper-pipeline.server.ts`)
-Two distinct operations instead of one mixed pipeline:
+**`src/lib/scraper-pipeline.server.ts`**
+- Keep `runDistributePhase()` but have it return `{ distributedPerSetter: Map<userId, count>, shortfallTotal, perSetterShortfall }`.
+- Change `runScrapePhase()` to accept an explicit `targetCount` parameter instead of computing `enabledSetters × 150 × 1.2` itself. Default behavior stays the same when called manually.
+- New orchestrator `runDailyCycle()`:
+  1. `runDistributePhase()` → get shortfall.
+  2. If shortfall > 0, `runScrapePhase({ targetCount: ceil(shortfall * 1.2) })`, then `runDistributePhase()` again to fill setters that were short.
+  3. If shortfall === 0, log skip and return.
+- Manual "Run now" button switches to `runDailyCycle()` so admins get the same flipped behavior end-to-end.
 
-**`runScraperOnly()`** — called at 9:00 AM:
-- Count enabled setters (`role=client` + `scraper_enabled=true`).
-- `scrapeTarget = ceil(enabledSetters × 150 × 1.2)`.
-- Rotate through cities until that many new leads are inserted (or city cap is hit).
-- Inserts go into the pool (`assigned_user_id = null`). No distribution.
-- Logs to `scraper_runs` with phase `"scrape"`.
+**Cron jobs (replace existing two-job setup)**
+- Unschedule `daily-scraper-9am-et` and `daily-distribute-930am-et`.
+- Schedule a single job at 13:00 and 14:00 UTC (DST cover) hitting one endpoint that runs `runDailyCycle()`.
 
-**`recycleAndDistribute()`** — called at 9:30 AM:
-- **Recycle:** find all leads where `assigned_user_id IS NOT NULL`, `status='New'`, `retired=false`, and `assigned_at < now() - 23 hours` (covers the 9:30→9:30 window). Set `assigned_user_id=null`, `assigned_at=null`. These were assigned yesterday and never touched (any call/status change would have moved status off "New").
-- **Distribute:** for each enabled setter, assign exactly 150 oldest pool leads. If the pool runs dry, that setter just gets fewer — log it.
-- Logs to `scraper_runs` with phase `"distribute"`.
+**Routes**
+- New: `src/routes/api/public/hooks/run-daily-cycle.ts` — calls `runDailyCycle()` with the same `skipIfRanToday` guard against the new `phase='daily'` log entry.
+- Keep `run-scraper.ts` and `distribute-leads.ts` around for now (admin can still trigger them individually), or delete them — say the word.
 
-The existing `runScraperPipeline` (manual "Run now" button) becomes `runScraperOnly()` + immediate `recycleAndDistribute()` back-to-back so the button still does the full end-to-end thing for admins.
+**`scraper_runs` logging**
+- Add new phase value `'daily'` for the orchestrator run summary (totals: recycled, distributed_phase1, scraped, distributed_phase2, final_shortfall).
+- Phase 1 still logs `'distribute'`, phase 2 still logs `'scrape'` so existing history stays consistent.
 
-## Cron jobs (replace existing `daily-lead-scraper`)
-```sql
-SELECT cron.unschedule('daily-lead-scraper');
-
--- 9:00 AM ET = 13:00 UTC (winter) / 14:00 UTC (summer).
--- Run at both 13:00 and 14:00 and let the handler no-op if it already ran today in ET.
-SELECT cron.schedule('daily-scraper-9am-et', '0 13,14 * * *', $$ ... POST /api/public/hooks/run-scraper ... $$);
-SELECT cron.schedule('daily-distribute-930am-et', '30 13,14 * * *', $$ ... POST /api/public/hooks/distribute-leads ... $$);
-```
-The handlers check "did this phase already run today in ET" via `scraper_runs` and skip if yes — that handles DST cleanly without hard-coding offsets.
-
-## New route
-`src/routes/api/public/hooks/distribute-leads.ts` — mirrors `run-scraper.ts`, calls `recycleAndDistribute()`.
-
-## Schema
-No table changes needed. `daily_lead_quota` column stays in `profiles` but is no longer read (hard-coded 150 in code). I'll leave it alone rather than drop it, in case you want quotas back later.
+**Scraper admin page copy update**
+- "Daily cron at 9:00 AM ET recycles uncalled leads, distributes 150/setter from the pool, and only scrapes if the pool runs short (target = shortfall × 1.2)."
 
 ## What stays the same
-- Apify settings, city rotation, field map, "Run now" button.
-- Per-setter `scraper_enabled` toggle (controls who's in the rotation).
-- `scraper_runs` log table.
+- Hardcoded 150/setter/day, 23h recycle window, 9:00 AM ET timing, 20% buffer on scrapes.
+- City rotation, Apify settings, field map, per-setter enable toggle, master enable toggle.
+- "Add leads" manual button and lead-request notifier flow.
 
-## What I will NOT touch unless you say so
-- The 358 leads currently assigned to Will / Lynn — they stay assigned until tomorrow's 9:30 AM recycle picks up any uncalled ones. If you'd rather wipe the slate clean tonight so tomorrow is a fresh start, say the word.
+## What I will NOT touch
+- Existing assigned leads — they stay until tomorrow's recycle picks up uncalled ones.
+- `daily_lead_quota` column on `profiles` (still ignored).
+
+## Open question
+Should the scraper kick in if even **one** setter is short, or only when the total shortfall is above some threshold (e.g. >50 leads)? Default in this plan = any shortfall > 0 triggers a scrape.
