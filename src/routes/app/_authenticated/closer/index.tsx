@@ -61,12 +61,9 @@ function CloserHome() {
         <StatCard label="Today" value={today.length} />
         <StatCard label="Upcoming" value={upcoming.length} />
         <StatCard label="Total assigned" value={rows.length} />
-        <Card className="p-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-              <Target className="h-3 w-3" /> Close rate
-            </div>
-            <RangePicker value={rangeDays} onChange={setRangeDays} />
+        <Card className="p-4 col-span-2 sm:col-span-1">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+            <Target className="h-3 w-3" /> Close rate
           </div>
           <div className="text-3xl font-display font-semibold mt-1 text-success">
             {stats ? `${stats.closeRate}%` : "—"}
@@ -76,6 +73,9 @@ function CloserHome() {
               {stats.closed + stats.deposit}/{stats.qualifiedCalls} qualified
             </div>
           )}
+          <div className="mt-2">
+            <RangePicker value={rangeDays} onChange={setRangeDays} />
+          </div>
         </Card>
       </div>
 
