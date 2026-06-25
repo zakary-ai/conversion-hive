@@ -17,7 +17,7 @@ import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff, Bu
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { SlotPicker } from "@/components/slot-picker";
-import { CALL_SCRIPTS, OBJECTIONS, SMS_TEMPLATES, fillTemplate } from "@/lib/script-templates";
+import { CALL_SCRIPTS, OBJECTIONS, OBJECTION_PRINCIPLES, OBJECTION_GOLDEN_RULE, SMS_TEMPLATES, fillTemplate } from "@/lib/script-templates";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { toast } from "sonner";
 
