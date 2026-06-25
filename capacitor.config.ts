@@ -1,25 +1,20 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
- * Capacitor wraps the published web app in a native iOS/Android WebView.
- * Production web changes ship instantly — only changes to native config
- * or installed plugins require a new App Store / Play Store build.
+ * Capacitor wraps the built web app (dist/) in a native iOS/Android WebView.
+ * We intentionally do NOT set `server.url` — Apple rejects apps that just
+ * load a remote website (Guideline 2.1/4.2), and an external server URL
+ * also causes navigations to bounce out to Safari. The app must run from
+ * the bundled `webDir` so it works offline and behaves like a native app.
  */
 const config: CapacitorConfig = {
   appId: "com.conversionlab.app",
   appName: "Conversion Lab",
   webDir: "dist",
-  server: {
-    // Point the native shell at the production custom domain.
-    url: "https://conversionlab.space",
-    cleartext: false,
-    androidScheme: "https",
-    iosScheme: "https",
-  },
   ios: {
     contentInset: "never",
     backgroundColor: "#0a0a14",
-    limitsNavigationsToAppBoundDomains: false,
+    limitsNavigationsToAppBoundDomains: true,
     scheme: "Conversion Lab",
   },
   android: {
