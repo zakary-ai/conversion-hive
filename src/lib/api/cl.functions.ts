@@ -773,13 +773,38 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Admin leads
+// Admin leads — paginated + server-side filtered so totals can exceed 1000.
 export const listAllLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data } = await context.supabase.from("leads").select("*").order("created_at", { ascending: false });
-    return data ?? [];
+  .inputValidator((data: unknown) =>
+    z.object({
+      page: z.number().int().min(0).default(0),
+      pageSize: z.number().int().min(1).max(200).default(50),
+      search: z.string().max(200).optional().nullable(),
+      status: z.string().max(40).optional().nullable(),
+      clientId: z.string().max(64).optional().nullable(),
+    }).parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const from = data.page * data.pageSize;
+    const to = from + data.pageSize - 1;
+    let q = context.supabase.from("leads").select("*", { count: "exact" });
+    if (data.status && data.status !== "all") q = q.eq("status", data.status);
+    if (data.clientId && data.clientId !== "all") {
+      if (data.clientId === "unassigned") q = q.is("assigned_user_id", null);
+      else q = q.eq("assigned_user_id", data.clientId);
+    }
+    if (data.search && data.search.trim()) {
+      const s = data.search.trim().replace(/[%,]/g, "");
+      q = q.or(`name.ilike.%${s}%,company.ilike.%${s}%,phone.ilike.%${s}%,email.ilike.%${s}%`);
+    }
+    const { data: rows, count, error } = await q
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [], total: count ?? 0 };
   });
+
 
 const LeadInput = z.object({
   assigned_user_id: z.string().uuid().nullable().optional(),
