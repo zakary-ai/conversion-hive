@@ -579,15 +579,57 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
   );
 }
 
+const CALLBACK_TIMEZONES: { value: string; label: string }[] = [
+  { value: "America/New_York", label: "Eastern (ET)" },
+  { value: "America/Chicago", label: "Central (CT)" },
+  { value: "America/Denver", label: "Mountain (MT)" },
+  { value: "America/Phoenix", label: "Arizona (MST)" },
+  { value: "America/Los_Angeles", label: "Pacific (PT)" },
+  { value: "America/Anchorage", label: "Alaska (AKT)" },
+  { value: "Pacific/Honolulu", label: "Hawaii (HT)" },
+];
+
+// Treat the picker's Y/M/D/H/M as wall-clock time in `tz` and return the corresponding UTC instant.
+function zonedWallTimeToUtc(wall: Date, tz: string): Date {
+  const utcGuess = Date.UTC(
+    wall.getFullYear(), wall.getMonth(), wall.getDate(),
+    wall.getHours(), wall.getMinutes(), 0,
+  );
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = dtf.formatToParts(new Date(utcGuess)).reduce<Record<string, string>>((a, p) => {
+    if (p.type !== "literal") a[p.type] = p.value;
+    return a;
+  }, {});
+  const asUTC = Date.UTC(
+    +parts.year, +parts.month - 1, +parts.day,
+    +parts.hour % 24, +parts.minute, +parts.second,
+  );
+  const offset = asUTC - utcGuess;
+  return new Date(utcGuess - offset);
+}
+
+function defaultCallbackTz(): string {
+  try {
+    const browser = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (CALLBACK_TIMEZONES.some((t) => t.value === browser)) return browser;
+  } catch { /* noop */ }
+  return "America/New_York";
+}
+
 function CallbackDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boolean; onClose: () => void; onDone: () => void }) {
   const [when, setWhen] = useState<Date>(defaultDateTime());
+  const [tz, setTz] = useState<string>(defaultCallbackTz());
   const [note, setNote] = useState("");
 
-  useEffect(() => { if (open) { setWhen(defaultDateTime()); setNote(""); } }, [open]);
+  useEffect(() => { if (open) { setWhen(defaultDateTime()); setTz(defaultCallbackTz()); setNote(""); } }, [open]);
 
   const submit = useMutation({
     mutationFn: async () => {
-      const iso = when.toISOString();
+      const iso = zonedWallTimeToUtc(when, tz).toISOString();
       await createAppointment({ data: {
         lead_id: lead.id, type: "callback", scheduled_at: iso,
         name: lead.name, phone: lead.phone, email: lead.email, context: note || null,
@@ -604,6 +646,16 @@ function CallbackDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boo
         <DialogHeader><DialogTitle>Schedule a callback</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <Field label="Call back at"><DateTimePicker value={when} onChange={setWhen} /></Field>
+          <Field label="Time zone">
+            <Select value={tz} onValueChange={setTz}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CALLBACK_TIMEZONES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
           <Field label="Note (optional)"><Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
         </div>
         <DialogFooter>
