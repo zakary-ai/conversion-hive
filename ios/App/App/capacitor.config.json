@@ -2,10 +2,23 @@
   "appId": "com.conversionlab.app",
   "appName": "Conversion Lab",
   "webDir": "dist",
+  "server": {
+    "url": "https://conversionlab.space",
+    "cleartext": false,
+    "androidScheme": "https",
+    "iosScheme": "https",
+    "allowNavigation": [
+      "conversionlab.space",
+      "*.conversionlab.space",
+      "*.lovable.app",
+      "*.supabase.co",
+      "accounts.google.com"
+    ]
+  },
   "ios": {
     "contentInset": "never",
     "backgroundColor": "#0a0a14",
-    "limitsNavigationsToAppBoundDomains": true,
+    "limitsNavigationsToAppBoundDomains": false,
     "scheme": "Conversion Lab"
   }
 }
