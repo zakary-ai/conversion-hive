@@ -99,7 +99,8 @@ function B2cCommissionsPage() {
       if (!r.closers) continue;
       const key = r.closers.id;
       const g = m.get(key) ?? { closer: r.closers, earned: 0, rows: [] };
-      g.earned += Number(r.commission_amount ?? 0);
+      // Only approved commissions count toward what's owed
+      if ((r.commission_status ?? "pending") === "approved") g.earned += Number(r.commission_amount ?? 0);
       g.rows.push(r);
       m.set(key, g);
     }
