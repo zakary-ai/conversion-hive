@@ -43,15 +43,13 @@ const fmtDateTime = (s?: string | null) =>
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffectShim(() => {
+  useEffect(() => {
     const t = setTimeout(() => setV(value), ms);
     return () => clearTimeout(t);
   }, [value, ms]);
   return v;
 }
-// tiny local useEffect alias to avoid extra import churn
-import { useEffect as useEffectShim } from "react";
+
 
 function AdminLeads() {
   const { data: clients } = useSuspenseQuery(clientsOpts);
