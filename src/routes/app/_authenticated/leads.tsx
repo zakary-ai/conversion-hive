@@ -738,6 +738,14 @@ function ScriptsPanel({ lead }: { lead: Lead }) {
             })}
           </TabsContent>
           <TabsContent value="objections" className="mt-3 space-y-2">
+            <div className="rounded-md border border-border bg-muted/10 p-2 space-y-1.5">
+              {OBJECTION_PRINCIPLES.map((p) => (
+                <div key={p.title}>
+                  <div className="text-xs font-semibold">{p.title}</div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">{p.body}</p>
+                </div>
+              ))}
+            </div>
             {OBJECTIONS.map((o) => {
               const filled = fillTemplate(o.response, vars);
               return (
@@ -750,6 +758,10 @@ function ScriptsPanel({ lead }: { lead: Lead }) {
                 </div>
               );
             })}
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-2">
+              <div className="text-xs font-semibold">Golden rule</div>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{OBJECTION_GOLDEN_RULE}</p>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
