@@ -136,7 +136,7 @@ async function alreadyRanToday(phase: "scrape" | "distribute"): Promise<boolean>
 
 // ---------------- SCRAPE PHASE ----------------
 
-export async function runScrapePhase(opts: { triggeredBy: string; manual?: boolean; skipIfRanToday?: boolean }): Promise<ScrapeResult> {
+export async function runScrapePhase(opts: { triggeredBy: string; manual?: boolean; skipIfRanToday?: boolean; targetCount?: number }): Promise<ScrapeResult> {
   const errors: string[] = [];
   const result: ScrapeResult = {
     enabled: false,
