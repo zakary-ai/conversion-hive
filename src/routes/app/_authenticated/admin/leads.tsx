@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 import { listAllLeads, listClients, createLead, adminUpdateLead, deleteLead, bulkDeleteLeads, getLeadDetail } from "@/lib/api/cl.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
