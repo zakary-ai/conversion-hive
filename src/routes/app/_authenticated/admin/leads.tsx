@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 import { listAllLeads, listClients, createLead, adminUpdateLead, deleteLead, bulkDeleteLeads, getLeadDetail } from "@/lib/api/cl.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
@@ -17,15 +18,21 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminLeadsTabs } from "@/components/admin-leads-tabs";
 
-const leadsOpts = queryOptions({ queryKey: ["all-leads"], queryFn: () => listAllLeads() });
+const PAGE_SIZE = 50;
 const clientsOpts = queryOptions({ queryKey: ["clients"], queryFn: () => listClients() });
+const leadsPageOpts = (page: number, search: string, status: string, clientId: string) =>
+  queryOptions({
+    queryKey: ["all-leads", { page, search, status, clientId }],
+    queryFn: () => listAllLeads({ data: { page, pageSize: PAGE_SIZE, search, status, clientId } }),
+  });
 const STATUSES = ["New","Contacted","No Answer","Interested","Booked","Not Interested","Follow Up"] as const;
 type Status = typeof STATUSES[number];
-type Lead = Awaited<ReturnType<typeof listAllLeads>>[number];
+
+type Lead = Awaited<ReturnType<typeof listAllLeads>>["rows"][number];
 
 export const Route = createFileRoute("/app/_authenticated/admin/leads")({
   loader: ({ context }) => Promise.all([
-    context.queryClient.ensureQueryData(leadsOpts),
+    context.queryClient.ensureQueryData(leadsPageOpts(0, "", "all", "all")),
     context.queryClient.ensureQueryData(clientsOpts),
   ]),
   component: AdminLeads,
@@ -34,33 +41,44 @@ export const Route = createFileRoute("/app/_authenticated/admin/leads")({
 const fmtDateTime = (s?: string | null) =>
   s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
+function useDebounced<T>(value: T, ms: number): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return v;
+}
+
+
 function AdminLeads() {
-  const { data: leads } = useSuspenseQuery(leadsOpts);
   const { data: clients } = useSuspenseQuery(clientsOpts);
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
+  const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<Lead | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const debouncedSearch = useDebounced(search, 300);
+  // reset to first page whenever a filter changes
+  useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter, clientFilter]);
+
+  const { data, isFetching } = useSuspenseQuery(leadsPageOpts(page, debouncedSearch, statusFilter, clientFilter));
+  const rows = data.rows;
+  const total = data.total;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   const clientName = (uid: string | null) => uid ? (clients.find((c) => c.user_id === uid)?.full_name ?? clients.find((c) => c.user_id === uid)?.email ?? "—") : "Unassigned";
 
-  const filtered = leads.filter((l) => {
-    if (statusFilter !== "all" && l.status !== statusFilter) return false;
-    if (clientFilter !== "all" && l.assigned_user_id !== clientFilter) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      return (l.name?.toLowerCase().includes(s) || l.company?.toLowerCase().includes(s));
-    }
-    return true;
-  });
+  const invalidateLeads = () => qc.invalidateQueries({ queryKey: ["all-leads"] });
 
   const del = useMutation({
     mutationFn: (id: string) => deleteLead({ data: { id } }),
-    onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["all-leads"] }); },
+    onSuccess: () => { toast.success("Deleted"); invalidateLeads(); },
   });
 
   const bulkDel = useMutation({
@@ -68,7 +86,7 @@ function AdminLeads() {
     onSuccess: (r) => {
       toast.success(`Deleted ${r.count} lead${r.count === 1 ? "" : "s"}`);
       setSelected(new Set());
-      qc.invalidateQueries({ queryKey: ["all-leads"] });
+      invalidateLeads();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -76,30 +94,34 @@ function AdminLeads() {
   const toggleOne = (id: string) => setSelected((s) => {
     const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
   });
-  const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
+  const allPageSelected = rows.length > 0 && rows.every((l) => selected.has(l.id));
   const toggleAll = () => setSelected((s) => {
     const n = new Set(s);
-    if (allFilteredSelected) filtered.forEach((l) => n.delete(l.id));
-    else filtered.forEach((l) => n.add(l.id));
+    if (allPageSelected) rows.forEach((l) => n.delete(l.id));
+    else rows.forEach((l) => n.add(l.id));
     return n;
   });
+
+  const rangeStart = total === 0 ? 0 : page * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(total, (page + 1) * PAGE_SIZE);
 
   return (
     <div className="space-y-6 max-w-7xl">
       <AdminLeadsTabs />
-      <PageHeader title="All leads" description={`${leads.length} total`} action={
+      <PageHeader title="All leads" description={`${total.toLocaleString()} total`} action={
         <Button onClick={() => { setEditing(null); setEditOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add lead</Button>
       } />
 
       <Card className="p-4 flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Search name, company, phone, email…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={clientFilter} onValueChange={setClientFilter}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All clients</SelectItem>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
             {clients.map((c) => <SelectItem key={c.user_id} value={c.user_id}>{c.full_name || c.email}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -139,7 +161,7 @@ function AdminLeads() {
             <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="p-3 w-10">
-                  <Checkbox checked={allFilteredSelected} onCheckedChange={toggleAll} aria-label="Select all" />
+                  <Checkbox checked={allPageSelected} onCheckedChange={toggleAll} aria-label="Select all" />
                 </th>
                 <th className="text-left p-3">Name</th>
                 <th className="text-left p-3 hidden md:table-cell">Client</th>
@@ -149,8 +171,8 @@ function AdminLeads() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No leads.</td></tr>}
-              {filtered.map((l) => (
+              {rows.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No leads.</td></tr>}
+              {rows.map((l) => (
                 <tr
                   key={l.id}
                   className="border-t border-border hover:bg-muted/30 cursor-pointer"
@@ -175,6 +197,16 @@ function AdminLeads() {
             </tbody>
           </table>
         </div>
+        <div className="flex items-center justify-between gap-3 p-3 border-t border-border text-sm">
+          <div className="text-muted-foreground">
+            {isFetching ? <span className="inline-flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin" /> Loading…</span> : <>Showing {rangeStart}–{rangeEnd} of {total.toLocaleString()}</>}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" disabled={page === 0 || isFetching} onClick={() => setPage((p) => Math.max(0, p - 1))}>Previous</Button>
+            <span className="text-xs text-muted-foreground">Page {page + 1} of {totalPages}</span>
+            <Button size="sm" variant="outline" disabled={page + 1 >= totalPages || isFetching} onClick={() => setPage((p) => p + 1)}>Next</Button>
+          </div>
+        </div>
       </Card>
 
       <LeadDialog open={editOpen} onOpenChange={setEditOpen} lead={editing} clients={clients} />
@@ -186,6 +218,7 @@ function AdminLeads() {
     </div>
   );
 }
+
 
 function AdminLeadDetailDialog({
   leadId,
