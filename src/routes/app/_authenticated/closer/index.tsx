@@ -122,6 +122,35 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
+const RANGE_OPTS: { label: string; days: number | null }[] = [
+  { label: "1d", days: 1 },
+  { label: "7d", days: 7 },
+  { label: "30d", days: 30 },
+  { label: "60d", days: 60 },
+  { label: "90d", days: 90 },
+  { label: "All", days: null },
+];
+
+export function RangePicker({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
+      {RANGE_OPTS.map((o) => {
+        const active = o.days === value;
+        return (
+          <button
+            key={o.label}
+            type="button"
+            onClick={() => onChange(o.days)}
+            className={`text-[10px] px-1.5 py-0.5 rounded ${active ? "bg-background text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function CallCard({ b, onOutcome, onPreview }: { b: B; onOutcome: () => void; onPreview: () => void }) {
   const dt = new Date(b.slot_start);
   const label = dt.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
