@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, Save, UserPlus, KeyRound } from "lucide-react";
+import { Trash2, Plus, Save, UserPlus, KeyRound, BarChart3 } from "lucide-react";
+import { CloserDetailDialog } from "@/components/closer-detail-dialog";
 
 export const Route = createFileRoute("/app/_authenticated/admin/closers")({
   component: ClosersPage,
@@ -85,6 +86,7 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRow; hasZoom: boolean })
   const qc = useQueryClient();
   const [editAvail, setEditAvail] = useState(false);
   const [editZoom, setEditZoom] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const toggle = useMutation({
     mutationFn: (active: boolean) => updateCloser({ data: { id: closer.id, active } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["closers"] }),
@@ -102,20 +104,23 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRow; hasZoom: boolean })
   });
   return (
     <Card className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-      <div className="min-w-0">
-        <div className="font-medium truncate">{closer.full_name}</div>
+      <button type="button" onClick={() => setDetailOpen(true)} className="min-w-0 text-left group">
+        <div className="font-medium truncate text-primary group-hover:underline">{closer.full_name}</div>
         <div className="text-xs text-muted-foreground truncate">{closer.email}</div>
         <div className="text-xs mt-1">
           <span className={hasZoom ? "text-emerald-600" : "text-amber-600"}>
             {hasZoom ? "Zoom API connected" : "Zoom API not set"}
           </span>
         </div>
-      </div>
+      </button>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 text-xs">
           <span className="text-muted-foreground">Active</span>
           <Switch checked={closer.active} onCheckedChange={(v) => toggle.mutate(v)} />
         </div>
+        <Button size="sm" variant="outline" onClick={() => setDetailOpen(true)}>
+          <BarChart3 className="h-3.5 w-3.5 mr-1" /> Stats
+        </Button>
         <Dialog open={editZoom} onOpenChange={setEditZoom}>
           <DialogTrigger asChild>
             <Button size="sm" variant="outline"><KeyRound className="h-3.5 w-3.5 mr-1" /> Zoom API</Button>
@@ -140,6 +145,7 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRow; hasZoom: boolean })
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
+      <CloserDetailDialog closerId={closer.id} open={detailOpen} onOpenChange={setDetailOpen} />
     </Card>
   );
 }

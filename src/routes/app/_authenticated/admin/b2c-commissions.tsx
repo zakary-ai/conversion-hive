@@ -8,6 +8,7 @@ import {
   recordCloserPayout,
   deleteCloserPayout,
   clearBookingOutcome,
+  approveBookingCommission,
 } from "@/lib/api/b2c.functions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -39,6 +40,7 @@ type Row = {
   follow_up_amount: number | null;
   commission_percent: number | null;
   commission_amount: number | null;
+  commission_status?: string | null;
   closers: { id: string; full_name: string; email: string } | null;
 };
 
@@ -97,7 +99,8 @@ function B2cCommissionsPage() {
       if (!r.closers) continue;
       const key = r.closers.id;
       const g = m.get(key) ?? { closer: r.closers, earned: 0, rows: [] };
-      g.earned += Number(r.commission_amount ?? 0);
+      // Only approved commissions count toward what's owed
+      if ((r.commission_status ?? "pending") === "approved") g.earned += Number(r.commission_amount ?? 0);
       g.rows.push(r);
       m.set(key, g);
     }
@@ -413,6 +416,19 @@ function DealRow({ row }: { row: Row }) {
   const closerName = row.closers?.full_name ?? "Unassigned";
   const when = row.outcome_at ? new Date(row.outcome_at).toLocaleDateString() : "—";
 
+  const approve = useMutation({
+    mutationFn: () => approveBookingCommission({ data: { booking_id: row.id } }),
+    onSuccess: () => {
+      toast.success("Commission approved");
+      qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
+      qc.invalidateQueries({ queryKey: ["my-closer-commissions"] });
+      qc.invalidateQueries({ queryKey: ["closer-detail"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const isApproved = (row.commission_status ?? "pending") === "approved";
+
   return (
     <Card className="p-4 space-y-3">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -420,6 +436,9 @@ function DealRow({ row }: { row: Row }) {
           <div className="font-medium flex items-center gap-2 flex-wrap">
             <span>{row.applicant_name}</span>
             <Badge variant={row.outcome === "closed" ? "default" : "secondary"} className="capitalize">{row.outcome}</Badge>
+            {isApproved
+              ? <Badge className="text-[10px] bg-success/15 text-success border-success/30">Approved</Badge>
+              : <Badge className="text-[10px] bg-warning/15 text-warning border-warning/30">Pending approval</Badge>}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
             {closerName} · closed {when}
@@ -479,9 +498,14 @@ function DealRow({ row }: { row: Row }) {
         </div>
         <div className="flex items-center gap-2">
           <DeleteCommissionButton bookingId={row.id} name={row.applicant_name} />
-          <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button size="sm" variant="outline" onClick={() => save.mutate()} disabled={save.isPending}>
             {save.isPending ? "Saving…" : "Save"}
           </Button>
+          {!isApproved && (
+            <Button size="sm" onClick={() => approve.mutate()} disabled={approve.isPending}>
+              {approve.isPending ? "Approving…" : "Approve"}
+            </Button>
+          )}
         </div>
       </div>
     </Card>

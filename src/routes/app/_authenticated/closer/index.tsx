@@ -1,12 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { listCloserBookings } from "@/lib/api/b2c.functions";
+import { listCloserBookings, getCloserStats } from "@/lib/api/b2c.functions";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarClock, Mail, Phone, Video, ClipboardCheck } from "lucide-react";
+import { CalendarClock, Mail, Phone, Video, ClipboardCheck, Target } from "lucide-react";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 
@@ -44,6 +44,11 @@ function CloserHome() {
   const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
   const [previewFor, setPreviewFor] = useState<B | null>(null);
 
+  const { data: stats } = useQuery({
+    queryKey: ["my-closer-stats"],
+    queryFn: () => getCloserStats({ data: {} }),
+  });
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
@@ -51,10 +56,23 @@ function CloserHome() {
         <p className="text-sm text-muted-foreground">Your assigned calls live here.</p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Today" value={today.length} />
         <StatCard label="Upcoming" value={upcoming.length} />
         <StatCard label="Total assigned" value={rows.length} />
+        <Card className="p-4">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+            <Target className="h-3 w-3" /> Close rate
+          </div>
+          <div className="text-3xl font-display font-semibold mt-1 text-success">
+            {stats ? `${stats.closeRate}%` : "—"}
+          </div>
+          {stats && (
+            <div className="text-[10px] text-muted-foreground mt-1">
+              {stats.closed + stats.deposit}/{stats.qualifiedCalls} qualified
+            </div>
+          )}
+        </Card>
       </div>
 
       <section>

@@ -350,6 +350,7 @@ export type Database = {
           assigned_closer_id: string | null
           commission_amount: number | null
           commission_percent: number | null
+          commission_status: string
           created_at: string
           deal_amount: number | null
           deposit_amount: number | null
@@ -377,6 +378,7 @@ export type Database = {
           assigned_closer_id?: string | null
           commission_amount?: number | null
           commission_percent?: number | null
+          commission_status?: string
           created_at?: string
           deal_amount?: number | null
           deposit_amount?: number | null
@@ -404,6 +406,7 @@ export type Database = {
           assigned_closer_id?: string | null
           commission_amount?: number | null
           commission_percent?: number | null
+          commission_status?: string
           created_at?: string
           deal_amount?: number | null
           deposit_amount?: number | null
