@@ -189,13 +189,16 @@ export async function runScrapePhase(opts: { triggeredBy: string; manual?: boole
 
     const setters = await loadEnabledSetters();
     result.enabledSetters = setters.length;
-    result.scrapeTarget = Math.ceil(setters.length * LEADS_PER_SETTER * SCRAPE_OVERAGE);
+    result.scrapeTarget = typeof opts.targetCount === "number" && opts.targetCount > 0
+      ? Math.ceil(opts.targetCount)
+      : Math.ceil(setters.length * LEADS_PER_SETTER * SCRAPE_OVERAGE);
 
     if (result.scrapeTarget === 0) {
       result.skipped = true;
-      result.reason = "no_enabled_setters";
+      result.reason = setters.length === 0 ? "no_enabled_setters" : "no_target";
       return result;
     }
+
 
     if (!actorId || cityRotation.length === 0) {
       result.stopReason = "no_scrape";
