@@ -789,7 +789,7 @@ export const listAllLeads = createServerFn({ method: "GET" })
     const from = data.page * data.pageSize;
     const to = from + data.pageSize - 1;
     let q = context.supabase.from("leads").select("*", { count: "exact" });
-    if (data.status && data.status !== "all") q = q.eq("status", data.status);
+    if (data.status && data.status !== "all") q = q.eq("status", data.status as never);
     if (data.clientId && data.clientId !== "all") {
       if (data.clientId === "unassigned") q = q.is("assigned_user_id", null);
       else q = q.eq("assigned_user_id", data.clientId);
