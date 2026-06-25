@@ -40,11 +40,15 @@ export type DistributeResult = {
   recycled: number;
   distributed: number;
   perSetter: Array<{ user_id: string; name: string | null; assigned: number; shortfall: number }>;
+  shortfall: number;
   poolAfter: number;
   errors: string[];
 };
 
-export type PipelineResult = ScrapeResult & DistributeResult;
+export type PipelineResult = ScrapeResult & DistributeResult & {
+  scrapedThisRun: boolean;
+};
+
 
 export const LEADS_PER_SETTER = 150;
 export const SCRAPE_OVERAGE = 1.2;
