@@ -1154,7 +1154,7 @@ export const listMyCloserCommissions = createServerFn({ method: "GET" })
 // "no_show" and "disqualified" are excluded entirely.
 export const getCloserStats = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ closer_id: z.string().uuid().optional() }).parse)
+  .inputValidator(z.object({ closer_id: z.string().uuid().optional(), days: z.number().int().positive().nullable().optional() }).parse)
   .handler(async ({ data, context }) => {
     let closerId = data.closer_id ?? null;
     if (closerId) {
@@ -1170,11 +1170,16 @@ export const getCloserStats = createServerFn({ method: "POST" })
       if (!mine) return { closed: 0, deposit: 0, notInterested: 0, qualifiedCalls: 0, totalOutcomes: 0, noShow: 0, disqualified: 0, closeRate: 0 };
       closerId = mine.id;
     }
-    const { data: rows, error } = await context.supabase
+    let q = context.supabase
       .from("closer_bookings")
-      .select("outcome")
+      .select("outcome,outcome_at")
       .eq("assigned_closer_id", closerId)
       .not("outcome", "is", null);
+    if (data.days) {
+      const cutoff = new Date(Date.now() - data.days * 86400_000).toISOString();
+      q = q.gte("outcome_at", cutoff);
+    }
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const counts = { closed: 0, deposit: 0, notInterested: 0, noShow: 0, disqualified: 0 };
     for (const r of rows ?? []) {
