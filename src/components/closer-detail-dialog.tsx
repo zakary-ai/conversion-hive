@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { getCloserDetail, getCloserStats } from "@/lib/api/b2c.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Target, CheckCircle2, X, Clock } from "lucide-react";
+import { RangePicker } from "@/routes/app/_authenticated/closer/index";
 
 const money = (n: number | null | undefined) =>
   n == null ? "—" : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -17,14 +19,15 @@ export function CloserDetailDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const [rangeDays, setRangeDays] = useState<number | null>(null);
   const { data: detail, isLoading } = useQuery({
     queryKey: ["closer-detail", closerId],
     queryFn: () => getCloserDetail({ data: { closer_id: closerId! } }),
     enabled: !!closerId && open,
   });
   const { data: stats } = useQuery({
-    queryKey: ["closer-stats", closerId],
-    queryFn: () => getCloserStats({ data: { closer_id: closerId! } }),
+    queryKey: ["closer-stats", closerId, rangeDays],
+    queryFn: () => getCloserStats({ data: { closer_id: closerId!, days: rangeDays ?? undefined } }),
     enabled: !!closerId && open,
   });
 
@@ -45,11 +48,17 @@ export function CloserDetailDialog({
         {isLoading && <div className="text-sm text-muted-foreground text-center py-6">Loading…</div>}
 
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Stat icon={<Target className="h-3 w-3" />} label="Close rate" value={`${stats.closeRate}%`} tone="text-success" />
-            <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Wins" value={stats.closed + stats.deposit} tone="text-success" hint={`${stats.closed} closed · ${stats.deposit} deposits`} />
-            <Stat icon={<X className="h-3 w-3" />} label="Not interested" value={stats.notInterested} />
-            <Stat icon={<Clock className="h-3 w-3" />} label="Excluded" value={stats.noShow + stats.disqualified} hint={`${stats.noShow} no-show · ${stats.disqualified} DQ`} />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-xs uppercase tracking-widest text-muted-foreground">Performance</div>
+              <RangePicker value={rangeDays} onChange={setRangeDays} />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Stat icon={<Target className="h-3 w-3" />} label="Close rate" value={`${stats.closeRate}%`} tone="text-success" />
+              <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Wins" value={stats.closed + stats.deposit} tone="text-success" hint={`${stats.closed} closed · ${stats.deposit} deposits`} />
+              <Stat icon={<X className="h-3 w-3" />} label="Not interested" value={stats.notInterested} />
+              <Stat icon={<Clock className="h-3 w-3" />} label="Excluded" value={stats.noShow + stats.disqualified} hint={`${stats.noShow} no-show · ${stats.disqualified} DQ`} />
+            </div>
           </div>
         )}
 

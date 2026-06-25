@@ -44,9 +44,10 @@ function CloserHome() {
   const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
   const [previewFor, setPreviewFor] = useState<B | null>(null);
 
+  const [rangeDays, setRangeDays] = useState<number | null>(null);
   const { data: stats } = useQuery({
-    queryKey: ["my-closer-stats"],
-    queryFn: () => getCloserStats({ data: {} }),
+    queryKey: ["my-closer-stats", rangeDays],
+    queryFn: () => getCloserStats({ data: { days: rangeDays ?? undefined } }),
   });
 
   return (
@@ -61,8 +62,11 @@ function CloserHome() {
         <StatCard label="Upcoming" value={upcoming.length} />
         <StatCard label="Total assigned" value={rows.length} />
         <Card className="p-4">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-            <Target className="h-3 w-3" /> Close rate
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+              <Target className="h-3 w-3" /> Close rate
+            </div>
+            <RangePicker value={rangeDays} onChange={setRangeDays} />
           </div>
           <div className="text-3xl font-display font-semibold mt-1 text-success">
             {stats ? `${stats.closeRate}%` : "—"}
@@ -115,6 +119,35 @@ function StatCard({ label, value }: { label: string; value: number }) {
       <div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div>
       <div className="text-3xl font-display font-semibold mt-1">{value}</div>
     </Card>
+  );
+}
+
+const RANGE_OPTS: { label: string; days: number | null }[] = [
+  { label: "1d", days: 1 },
+  { label: "7d", days: 7 },
+  { label: "30d", days: 30 },
+  { label: "60d", days: 60 },
+  { label: "90d", days: 90 },
+  { label: "All", days: null },
+];
+
+export function RangePicker({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
+      {RANGE_OPTS.map((o) => {
+        const active = o.days === value;
+        return (
+          <button
+            key={o.label}
+            type="button"
+            onClick={() => onChange(o.days)}
+            className={`text-[10px] px-1.5 py-0.5 rounded ${active ? "bg-background text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
