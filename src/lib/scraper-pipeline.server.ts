@@ -349,9 +349,11 @@ export async function runDistributePhase(opts: { triggeredBy: string; manual?: b
     recycled: 0,
     distributed: 0,
     perSetter: [],
+    shortfall: 0,
     poolAfter: 0,
     errors,
   };
+
 
   let skipped = false;
   let skipReason: string | null = null;
