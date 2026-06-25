@@ -1,10 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
+import { Capacitor } from "@capacitor/core";
 
 export const Route = createFileRoute("/")({
   ssr: false,
+  beforeLoad: () => {
+    if (typeof window !== "undefined" && Capacitor.isNativePlatform()) {
+      throw redirect({ to: "/app/auth" });
+    }
+  },
   head: () => ({
     meta: [
       { title: "Conversion Lab — Sales training and lead management" },
