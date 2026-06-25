@@ -417,7 +417,19 @@ function DealRow({ row }: { row: Row }) {
   const when = row.outcome_at ? new Date(row.outcome_at).toLocaleDateString() : "—";
 
   const approve = useMutation({
-    mutationFn: () => approveBookingCommission({ data: { booking_id: row.id } }),
+    mutationFn: async () => {
+      await updateBookingCommission({
+        data: {
+          booking_id: row.id,
+          deal_amount: row.outcome === "closed" ? (parseFloat(deal) || 0) : null,
+          deposit_amount: row.outcome === "deposit" ? (parseFloat(deposit) || 0) : null,
+          follow_up_amount: row.outcome === "deposit" ? (parseFloat(followUp) || 0) : null,
+          commission_percent: pct ? parseFloat(pct) : null,
+          commission_amount: useOverride && override ? parseFloat(override) : undefined,
+        },
+      });
+      return approveBookingCommission({ data: { booking_id: row.id } });
+    },
     onSuccess: () => {
       toast.success("Commission approved");
       qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
