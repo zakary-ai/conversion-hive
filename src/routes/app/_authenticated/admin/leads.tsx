@@ -65,7 +65,7 @@ function AdminLeads() {
 
   const debouncedSearch = useDebounced(search, 300);
   // reset to first page whenever a filter changes
-  useEffectShim(() => { setPage(0); }, [debouncedSearch, statusFilter, clientFilter]);
+  useEffect(() => { setPage(0); }, [debouncedSearch, statusFilter, clientFilter]);
 
   const { data, isFetching } = useSuspenseQuery(leadsPageOpts(page, debouncedSearch, statusFilter, clientFilter));
   const rows = data.rows;
