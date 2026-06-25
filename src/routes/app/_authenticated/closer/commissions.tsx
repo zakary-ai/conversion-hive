@@ -1,10 +1,16 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { listMyCloserCommissions } from "@/lib/api/b2c.functions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { listMyCloserCommissions, submitManualCommission } from "@/lib/api/b2c.functions";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, CheckCircle2, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DollarSign, CheckCircle2, Clock, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/_authenticated/closer/commissions")({
   beforeLoad: async ({ context }) => {
@@ -18,6 +24,8 @@ const money = (n: number | null | undefined) =>
   n == null ? "—" : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function CloserCommissions() {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["my-closer-commissions"],
     queryFn: () => listMyCloserCommissions(),
@@ -27,9 +35,12 @@ function CloserCommissions() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <h1 className="text-2xl font-display font-semibold">My commissions</h1>
-        <p className="text-sm text-muted-foreground">Pending commissions are awaiting admin approval before they're confirmed.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-display font-semibold">My commissions</h1>
+          <p className="text-sm text-muted-foreground">Pending commissions are awaiting admin approval before they're confirmed.</p>
+        </div>
+        <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Submit commission</Button>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-3">
@@ -76,6 +87,8 @@ function CloserCommissions() {
           );
         })}
       </div>
+
+      <ManualCommissionDialog open={open} onOpenChange={setOpen} onSubmitted={() => qc.invalidateQueries({ queryKey: ["my-closer-commissions"] })} />
     </div>
   );
 }
@@ -88,5 +101,90 @@ function StatCard({ label, value, accent }: { label: string; value: string; acce
       </div>
       <div className={`text-2xl font-display font-semibold mt-1 ${accent ?? ""}`}>{value}</div>
     </Card>
+  );
+}
+
+function ManualCommissionDialog({ open, onOpenChange, onSubmitted }: { open: boolean; onOpenChange: (v: boolean) => void; onSubmitted: () => void }) {
+  const [leadName, setLeadName] = useState("");
+  const [dealSize, setDealSize] = useState("");
+  const [pct, setPct] = useState("");
+  const [amount, setAmount] = useState("");
+  const [amountTouched, setAmountTouched] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setLeadName(""); setDealSize(""); setPct(""); setAmount(""); setAmountTouched(false);
+    }
+  }, [open]);
+
+  // auto-fill commission amount from deal × pct until user edits it
+  useEffect(() => {
+    if (amountTouched) return;
+    const d = parseFloat(dealSize);
+    const p = parseFloat(pct);
+    if (!isNaN(d) && !isNaN(p)) {
+      setAmount(((d * p) / 100).toFixed(2));
+    }
+  }, [dealSize, pct, amountTouched]);
+
+  const submit = useMutation({
+    mutationFn: () => submitManualCommission({
+      data: {
+        lead_name: leadName.trim(),
+        deal_amount: parseFloat(dealSize) || 0,
+        commission_percent: parseFloat(pct) || 0,
+        commission_amount: parseFloat(amount) || 0,
+      },
+    }),
+    onSuccess: () => {
+      toast.success("Commission submitted for approval");
+      onSubmitted();
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not submit"),
+  });
+
+  const disabled = !leadName.trim() || !dealSize || !pct || !amount || submit.isPending;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Submit a commission</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label>Lead name</Label>
+            <Input value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder="Jane Doe" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>Deal size ($)</Label>
+              <Input type="number" inputMode="decimal" min="0" step="0.01" value={dealSize} onChange={(e) => setDealSize(e.target.value)} placeholder="0.00" />
+            </div>
+            <div className="space-y-1">
+              <Label>Commission rate (%)</Label>
+              <Input type="number" inputMode="decimal" min="0" max="100" step="0.1" value={pct} onChange={(e) => setPct(e.target.value)} placeholder="10" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label>Commission amount ($)</Label>
+            <Input
+              type="number" inputMode="decimal" min="0" step="0.01"
+              value={amount}
+              onChange={(e) => { setAmount(e.target.value); setAmountTouched(true); }}
+              placeholder="Auto-calculated from deal × rate"
+            />
+            <p className="text-[11px] text-muted-foreground">Auto-fills from deal size × rate — override if needed.</p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => submit.mutate()} disabled={disabled}>
+            {submit.isPending ? "Submitting…" : "Submit for approval"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
