@@ -25,6 +25,8 @@ const leadsPageOpts = (page: number, search: string, status: string, clientId: s
     queryFn: () => listAllLeads({ data: { page, pageSize: PAGE_SIZE, search, status, clientId } }),
   });
 const STATUSES = ["New","Contacted","No Answer","Interested","Booked","Not Interested","Follow Up"] as const;
+type Status = typeof STATUSES[number];
+
 type Lead = Awaited<ReturnType<typeof listAllLeads>>["rows"][number];
 
 export const Route = createFileRoute("/app/_authenticated/admin/leads")({
