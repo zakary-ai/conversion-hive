@@ -438,7 +438,9 @@ export async function runDistributePhase(opts: { triggeredBy: string; manual?: b
       });
     }
 
+    result.shortfall = result.perSetter.reduce((sum, p) => sum + p.shortfall, 0);
     result.poolAfter = await countAvailablePool();
+
   } catch (e) {
     errors.push(`fatal: ${(e as Error).message}`);
   } finally {
