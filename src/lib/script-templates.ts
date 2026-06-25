@@ -33,44 +33,55 @@ export const CALL_SCRIPTS: ScriptTemplate[] = [
   },
 ];
 
-export const OBJECTIONS: ObjectionTemplate[] = [
+// Mindset reminders shown above the objection list.
+export const OBJECTION_PRINCIPLES: { title: string; body: string }[] = [
   {
-    id: "busy",
-    objection: "I'm busy right now",
-    response:
-      "Totally get it — I'll be 60 seconds, and if it's not relevant I'll get off the phone. Fair?",
+    title: "1. Don't react, get curious",
+    body:
+      "Most objections aren't the real issue. Instead of responding immediately, find out why they're saying it. Think: \"What is making them say that?\"",
   },
   {
-    id: "happy",
-    objection: "We're already working with someone",
+    title: "2. Slow down",
+    body:
+      "When an objection comes up, don't rush to answer it. Pause. Ask a question. Let them explain. The more they talk, the easier the objection becomes.",
+  },
+  {
+    title: "3. Understand before responding",
+    body:
+      "Your goal is not to \"beat\" the objection — it's to understand it. A prospect who feels understood is far more likely to continue the conversation.",
+  },
+];
+
+export const OBJECTIONS: ObjectionTemplate[] = [
+  {
+    id: "already-getting-leads",
+    objection: "We're already getting leads.",
     response:
-      "That's great to hear — most of our best clients had someone before us too. We don't replace them, we just fill the gap they're missing. Worth 10 minutes to see if there's overlap?",
+      "What it might mean:\n• They're happy with current results.\n• They're skeptical.\n• They don't see a need right now.\n\nWhat to find out:\n• Are they happy with the quality?\n• Are they happy with the consistency?\n• Do they want to grow further?",
   },
   {
     id: "send-info",
-    objection: "Just send me some info",
+    objection: "Send me some information.",
     response:
-      "Happy to — what's the best email? And honestly, the info only makes sense once I know what {company} is actually trying to fix. Quick 2 questions and I'll send exactly what's relevant?",
+      "What it might mean:\n• They want to end the conversation politely.\n• They don't see the value.\n\nWhat to find out:\n• What information are they actually looking for?\n• What would they want to learn from it?",
   },
   {
     id: "not-interested",
-    objection: "Not interested",
+    objection: "Not interested.",
     response:
-      "Fair enough — can I ask, is it the timing, or the type of service? I don't want to keep bugging you if it's truly not a fit.",
+      "What it might mean:\n• Bad timing.\n• Skepticism.\n• Busy.\n• Had a bad experience before.\n\nWhat to find out:\n• Why aren't they interested?\n• What has their experience been with this before?",
   },
   {
-    id: "price",
-    objection: "How much does it cost?",
+    id: "too-busy",
+    objection: "We're too busy.",
     response:
-      "Good question — it depends on the size of the property and how aggressive you want to go. That's exactly what the 15-min call covers, so I can quote you accurately instead of guessing.",
-  },
-  {
-    id: "decision",
-    objection: "I need to talk to my partner / boss",
-    response:
-      "Makes sense — let's get them on the call too. Worst case they say no, best case you've got a second opinion. When's good for both of you this week?",
+      "What it might mean:\n• They genuinely don't have time.\n• They're brushing you off.\n\nWhat to find out:\n• Are they busy because business is great?\n• Or because operations are overwhelming?",
   },
 ];
+
+// Golden rule callout shown at the bottom of the objections list.
+export const OBJECTION_GOLDEN_RULE =
+  "Every objection should create a question in your head. Instead of thinking \"How do I answer this?\" think \"What do I need to understand about this?\"";
 
 export const SMS_TEMPLATES: SmsTemplate[] = [
   {
