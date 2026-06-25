@@ -48,7 +48,7 @@ function AuthenticatedLayout() {
           <AppSidebar isAdmin={me.isAdmin} isCloser={me.isCloser} />
         </div>
         <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card">
+          <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card pt-[env(safe-area-inset-top)]">
             {/* Mobile: centered title */}
             <div className="flex h-10 items-center justify-between gap-2 px-4 md:hidden">
               <div className="flex items-center gap-2 min-w-0">
