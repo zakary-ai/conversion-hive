@@ -464,10 +464,61 @@ export async function runDistributePhase(opts: { triggeredBy: string; manual?: b
   return result;
 }
 
+// ---------------- DAILY CYCLE — flipped flow ----------------
+// 1. Recycle + distribute from existing pool.
+// 2. If any setter came up short, scrape (target = shortfall × 1.2) then
+//    distribute again to fill the gap.
+
+export async function runDailyCycle(opts: { triggeredBy: string; manual?: boolean; skipIfRanToday?: boolean }): Promise<PipelineResult> {
+  const manual = opts.manual ?? false;
+
+  // Skip guard on the orchestrator itself (manual "Run now" bypasses).
+  if (opts.skipIfRanToday && !manual && (await alreadyRanToday("distribute"))) {
+    return {
+      enabled: false, skipped: true, reason: "already_ran_today",
+      enabledSetters: 0, scrapeTarget: 0, fetched: 0, inserted: 0, cities: [],
+      recycled: 0, distributed: 0, perSetter: [], shortfall: 0, poolAfter: 0,
+      scrapedThisRun: false, errors: [],
+    };
+  }
+
+  // Phase 1: recycle + distribute from existing pool.
+  const dist1 = await runDistributePhase({ triggeredBy: opts.triggeredBy, manual });
+
+  let scrape: ScrapeResult = {
+    enabled: false, skipped: true, reason: "no_shortfall",
+    enabledSetters: dist1.perSetter.length, scrapeTarget: 0,
+    fetched: 0, inserted: 0, cities: [], errors: [],
+  };
+  let dist2: DistributeResult | null = null;
+
+  // Phase 2: only scrape if there's a shortfall.
+  if (dist1.shortfall > 0) {
+    const target = Math.ceil(dist1.shortfall * SCRAPE_OVERAGE);
+    scrape = await runScrapePhase({ triggeredBy: opts.triggeredBy, manual: true, targetCount: target });
+
+    if (scrape.inserted > 0) {
+      // Second distribution pass to top up setters that came up short.
+      dist2 = await runDistributePhase({ triggeredBy: opts.triggeredBy, manual: true });
+    }
+  }
+
+  const finalDist = dist2 ?? dist1;
+  return {
+    ...scrape,
+    recycled: dist1.recycled,
+    distributed: dist1.distributed + (dist2?.distributed ?? 0),
+    perSetter: finalDist.perSetter,
+    shortfall: finalDist.shortfall,
+    poolAfter: finalDist.poolAfter,
+    scrapedThisRun: scrape.inserted > 0 || (scrape.fetched > 0),
+    errors: [...dist1.errors, ...scrape.errors, ...(dist2?.errors ?? [])],
+  };
+}
+
 // ---------------- MANUAL "Run now" — full end-to-end ----------------
 
 export async function runScraperPipeline(opts: { triggeredBy: string; manual?: boolean }): Promise<PipelineResult> {
-  const scrape = await runScrapePhase({ triggeredBy: opts.triggeredBy, manual: opts.manual ?? true });
-  const distribute = await runDistributePhase({ triggeredBy: opts.triggeredBy, manual: opts.manual ?? true });
-  return { ...scrape, ...distribute, errors: [...scrape.errors, ...distribute.errors] };
+  return runDailyCycle({ triggeredBy: opts.triggeredBy, manual: opts.manual ?? true });
 }
+
