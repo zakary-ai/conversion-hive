@@ -344,25 +344,34 @@ const AppointmentInput = z.object({
   context: z.string().max(5000).optional().nullable(),
 });
 
-async function getZoomAccessToken() {
-  const accountId = process.env.ZOOM_ACCOUNT_ID;
-  const clientId = process.env.ZOOM_CLIENT_ID;
-  const clientSecret = process.env.ZOOM_CLIENT_SECRET;
-  if (!accountId || !clientId || !clientSecret) return null;
-  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+// ---------- Per-closer Zoom (B2B routing) ----------
+async function getCloserZoomAccessToken(creds: {
+  accountId: string | null;
+  clientId: string | null;
+  clientSecret: string | null;
+}): Promise<string | null> {
+  if (!creds.accountId || !creds.clientId || !creds.clientSecret) return null;
+  const basic = Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString("base64");
   const res = await fetch(
-    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${accountId}`,
+    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${creds.accountId}`,
     { method: "POST", headers: { Authorization: `Basic ${basic}` } },
   );
   if (!res.ok) return null;
-  const json = (await res.json()) as { access_token?: string };
-  return json.access_token ?? null;
+  const j = (await res.json()) as { access_token?: string };
+  return j.access_token ?? null;
 }
 
-async function createZoomMeeting(input: { topic: string; start_time: string; duration: number }) {
+async function createZoomMeetingOnCloserAccount(input: {
+  accountId: string | null;
+  clientId: string | null;
+  clientSecret: string | null;
+  topic: string;
+  start_time: string;
+  duration: number;
+}): Promise<string | null> {
   try {
-    const token = await getZoomAccessToken();
-    if (!token) return fallbackZoomUrl();
+    const token = await getCloserZoomAccessToken(input);
+    if (!token) return null;
     const res = await fetch("https://api.zoom.us/v2/users/me/meetings", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -374,32 +383,57 @@ async function createZoomMeeting(input: { topic: string; start_time: string; dur
         settings: { join_before_host: true, waiting_room: false },
       }),
     });
-    if (!res.ok) return fallbackZoomUrl();
-    const json = (await res.json()) as { join_url?: string };
-    return json.join_url ?? fallbackZoomUrl();
+    if (!res.ok) return null;
+    const j = (await res.json()) as { join_url?: string };
+    return j.join_url ?? null;
   } catch {
-    return fallbackZoomUrl();
+    return null;
   }
 }
 
-function fallbackZoomUrl() {
-  const id = Math.floor(1_000_000_000 + Math.random() * 9_000_000_000).toString();
-  const pwd = Math.random().toString(36).slice(2, 12);
-  return `https://zoom.us/j/${id}?pwd=${pwd}`;
-}
-
-// ---------- Booking settings (slot duration) ----------
-async function getSlotMinutes(): Promise<number> {
+// ---------- B2B booking settings ----------
+async function getB2bSettingsRow(): Promise<{ slot_minutes: number; days_out: number }> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => { eq: (c: string, v: number) => { maybeSingle: () => Promise<{ data: { slot_minutes: number } | null }> } } } })
-      .from("booking_settings").select("slot_minutes").eq("id", 1).maybeSingle();
-    return data?.slot_minutes ?? 30;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabaseAdmin.from("b2b_settings") as any)
+      .select("slot_minutes, days_out").eq("id", 1).maybeSingle();
+    return {
+      slot_minutes: (data?.slot_minutes as number | undefined) ?? 30,
+      days_out: (data?.days_out as number | undefined) ?? 14,
+    };
   } catch {
-    return 30;
+    return { slot_minutes: 30, days_out: 14 };
   }
 }
 
+async function getSlotMinutes(): Promise<number> {
+  const s = await getB2bSettingsRow();
+  return s.slot_minutes;
+}
+
+export const getB2bSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => getB2bSettingsRow());
+
+export const updateB2bSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    slot_minutes: z.union([z.literal(15), z.literal(30), z.literal(45), z.literal(60), z.literal(90), z.literal(120)]),
+    days_out: z.number().int().min(1).max(180),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("b2b_settings") as any)
+      .upsert({ id: 1, slot_minutes: data.slot_minutes, days_out: data.days_out, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Back-compat shims so older callers keep working
 export const getBookingSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => ({ slot_minutes: await getSlotMinutes() }));
@@ -413,8 +447,10 @@ export const updateBookingSettings = createServerFn({ method: "POST" })
     const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
     if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await (supabaseAdmin as never as { from: (t: string) => { upsert: (r: unknown, o: { onConflict: string }) => Promise<{ error: { message: string } | null }> } })
-      .from("booking_settings").upsert({ id: 1, slot_minutes: data.slot_minutes }, { onConflict: "id" });
+    const current = await getB2bSettingsRow();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("b2b_settings") as any)
+      .upsert({ id: 1, slot_minutes: data.slot_minutes, days_out: current.days_out, updated_at: new Date().toISOString() }, { onConflict: "id" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -426,6 +462,7 @@ async function sendBookingConfirmationEmail(input: {
   scheduledAt: string;
   meetingUrl: string | null;
   durationMinutes: number;
+  idempotencySuffix?: string;
 }) {
   try {
     const { sendTransactional } = await import("@/lib/email/transactional.server");
@@ -440,7 +477,7 @@ async function sendBookingConfirmationEmail(input: {
     await sendTransactional({
       templateName: "booking-confirmation",
       recipientEmail: input.recipientEmail,
-      idempotencyKey: `booking-confirm-${input.appointmentId}`,
+      idempotencyKey: `booking-confirm-${input.appointmentId}${input.idempotencySuffix ? `-${input.idempotencySuffix}` : ""}`,
       templateData: {
         name: input.leadName,
         scheduledAt: input.scheduledAt,
@@ -454,54 +491,33 @@ async function sendBookingConfirmationEmail(input: {
   }
 }
 
+// B2B bookings created by setters land as pending_assignment.
+// Zoom + lead email happen when an admin assigns a closer.
 export const createAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(AppointmentInput.parse)
   .handler(async ({ data, context }) => {
-    const slotMinutes = await getSlotMinutes();
     if (data.type === "booking") {
+      // Light collision check at exact slot to avoid duplicate setter taps.
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const newStart = new Date(data.scheduled_at).getTime();
-      const newEnd = newStart + slotMinutes * 60_000;
-      const windowStart = new Date(newStart - slotMinutes * 60_000 + 1).toISOString();
-      const windowEnd = new Date(newEnd - 1).toISOString();
-      const { data: nearby } = await supabaseAdmin.from("appointments")
-        .select("scheduled_at")
+      const { data: same } = await supabaseAdmin.from("appointments")
+        .select("id")
         .eq("type", "booking")
-        .gte("scheduled_at", windowStart)
-        .lte("scheduled_at", windowEnd);
-      const clash = (nearby ?? []).some((row) => {
-        const t = new Date(row.scheduled_at).getTime();
-        return t < newEnd && t + slotMinutes * 60_000 > newStart;
-      });
-      if (clash) throw new Error("That time slot was just taken. Please pick another.");
+        .eq("scheduled_at", data.scheduled_at)
+        .eq("user_id", context.userId);
+      if ((same ?? []).length > 0) {
+        throw new Error("You already booked this slot. Pick another time.");
+      }
     }
-    let meeting_url: string | null = null;
-    if (data.type === "booking") {
-      meeting_url = await createZoomMeeting({
-        topic: data.name,
-        start_time: data.scheduled_at,
-        duration: slotMinutes,
-      });
-    }
+    const status = data.type === "booking" ? "pending_assignment" : "scheduled";
     const { error, data: row } = await context.supabase.from("appointments")
-      .insert({ ...data, user_id: context.userId, meeting_url }).select().single();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert({ ...data, user_id: context.userId, status, meeting_url: null } as any).select().single();
     if (error) throw new Error(error.message);
-
-    if (data.type === "booking" && data.email && row) {
-      void sendBookingConfirmationEmail({
-        appointmentId: row.id,
-        recipientEmail: data.email,
-        leadName: data.name,
-        scheduledAt: data.scheduled_at,
-        meetingUrl: meeting_url,
-        durationMinutes: slotMinutes,
-      });
-    }
     return row;
   });
 
-// ---------- Availability (admin Calendly-style) ----------
+// ---------- Availability (admin-managed B2B global window) ----------
 const AvailabilityRule = z.object({
   day_of_week: z.number().int().min(0).max(6),
   start_minute: z.number().int().min(0).max(1439),
@@ -536,7 +552,6 @@ export const replaceAvailabilityRules = createServerFn({ method: "POST" })
 // Helpers for timezone math
 const EST_TZ = "America/New_York";
 function zonedDateKey(d: Date, tz: string) {
-  // en-CA gives yyyy-mm-dd
   const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
   return fmt.format(d);
 }
@@ -544,7 +559,6 @@ function zonedDayOfWeek(d: Date, tz: string) {
   const name = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short" }).format(d);
   return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(name);
 }
-// Convert a wall-clock date (year/month/day/hour/min) in `tz` to a UTC Date instant.
 function zonedWallToUTC(y: number, m: number, d: number, hh: number, mm: number, tz: string) {
   const guess = new Date(Date.UTC(y, m - 1, d, hh, mm, 0));
   const fmt = new Intl.DateTimeFormat("en-US", {
@@ -559,6 +573,9 @@ function zonedWallToUTC(y: number, m: number, d: number, hh: number, mm: number,
   return new Date(guess.getTime() - offset);
 }
 
+// B2B slots: a slot is offered when it falls inside the global B2B window AND
+// at least one b2b_active closer with a B2B-track rule is free at that time,
+// minus any pending (unassigned) bookings already sitting on that exact slot.
 export const listAvailableSlots = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
@@ -568,58 +585,99 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const viewerTz = data.tz || EST_TZ;
     const [vy, vm, vd] = data.date.split("-").map(Number);
-
-    // Determine the UTC window covering the viewer's selected date.
     const viewerDayStart = zonedWallToUTC(vy, vm, vd, 0, 0, viewerTz);
     const viewerDayEnd = zonedWallToUTC(vy, vm, vd + 1, 0, 0, viewerTz);
 
-    // The viewer's day can span up to 2 EST calendar days. Iterate both.
+    const { slot_minutes: SLOT, days_out } = await getB2bSettingsRow();
+    if (viewerDayStart.getTime() > Date.now() + days_out * 24 * 60 * 60 * 1000) return [] as string[];
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Global B2B window
+    const { data: globalRules } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => Promise<{ data: Array<{ day_of_week: number; start_minute: number; end_minute: number }> | null }> } })
+      .from("availability_rules").select("day_of_week, start_minute, end_minute");
+
+    if (!globalRules || globalRules.length === 0) return [] as string[];
+
+    // B2B-active closers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: closers } = await (supabaseAdmin.from("closers") as any)
+      .select("id").eq("active", true).eq("b2b_active", true);
+    const closerIds = ((closers ?? []) as Array<{ id: string }>).map((c) => c.id);
+    if (closerIds.length === 0) return [] as string[];
+
+    // Their B2B availability
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: closerRulesRaw } = await (supabaseAdmin.from("closer_availability_rules") as any)
+      .select("closer_id, day_of_week, start_minute, end_minute")
+      .eq("track", "b2b")
+      .in("closer_id", closerIds);
+    const closerRules = (closerRulesRaw ?? []) as Array<{ closer_id: string; day_of_week: number; start_minute: number; end_minute: number }>;
+
+    // Existing appointments overlapping the viewer window
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: bookings } = await (supabaseAdmin.from("appointments") as any)
+      .select("scheduled_at, assigned_closer_id, status")
+      .eq("type", "booking")
+      .gte("scheduled_at", new Date(viewerDayStart.getTime() - SLOT * 60_000).toISOString())
+      .lt("scheduled_at", new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString());
+    const allBookings = (bookings ?? []) as Array<{ scheduled_at: string; assigned_closer_id: string | null; status: string | null }>;
+
+    // Viewer day can span 2 EST calendar days
     const estDates = new Set<string>();
     estDates.add(zonedDateKey(viewerDayStart, EST_TZ));
     estDates.add(zonedDateKey(new Date(viewerDayEnd.getTime() - 1), EST_TZ));
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Fetch all rules once (small table)
-    const { data: allRules } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => Promise<{ data: Array<{ day_of_week: number; start_minute: number; end_minute: number }> | null }> } })
-      .from("availability_rules").select("day_of_week, start_minute, end_minute");
-
-    const slotMinutes = await getSlotMinutes();
-    const { data: bookings } = await supabaseAdmin.from("appointments")
-      .select("scheduled_at")
-      .eq("type", "booking")
-      .gte("scheduled_at", new Date(viewerDayStart.getTime() - slotMinutes * 60_000).toISOString())
-      .lt("scheduled_at", new Date(viewerDayEnd.getTime() + slotMinutes * 60_000).toISOString());
-
-    const takenRanges = (bookings ?? []).map((b) => {
-      const start = new Date(b.scheduled_at).getTime();
-      return [start, start + slotMinutes * 60_000] as const;
-    });
-    const overlapsTaken = (start: number, end: number) =>
-      takenRanges.some(([s, e]) => s < end && e > start);
     const now = Date.now();
-    const slots: string[] = [];
+    const slotMs = SLOT * 60_000;
+    const found = new Set<string>();
 
-    for (const estDateKey of estDates) {
-      const [ey, em, ed] = estDateKey.split("-").map(Number);
+    for (const estKey of estDates) {
+      const [ey, em, ed] = estKey.split("-").map(Number);
       const probe = zonedWallToUTC(ey, em, ed, 12, 0, EST_TZ);
       const dow = zonedDayOfWeek(probe, EST_TZ);
-      const rules = (allRules ?? []).filter((r) => r.day_of_week === dow);
+      const globalWindows = globalRules.filter((r) => r.day_of_week === dow);
+      if (globalWindows.length === 0) continue;
 
-      for (const r of rules) {
-        for (let mm = r.start_minute; mm + slotMinutes <= r.end_minute; mm += slotMinutes) {
+      for (const w of globalWindows) {
+        for (let mm = w.start_minute; mm + SLOT <= w.end_minute; mm += SLOT) {
           const slot = zonedWallToUTC(ey, em, ed, Math.floor(mm / 60), mm % 60, EST_TZ);
           const t = slot.getTime();
           if (t < now) continue;
           if (t < viewerDayStart.getTime() || t >= viewerDayEnd.getTime()) continue;
-          if (overlapsTaken(t, t + slotMinutes * 60_000)) continue;
-          slots.push(slot.toISOString());
+
+          const slotEnd = t + slotMs;
+          let availableClosers = 0;
+          for (const cid of closerIds) {
+            const cRules = closerRules.filter((r) => r.closer_id === cid && r.day_of_week === dow);
+            const covers = cRules.some((r) => r.start_minute <= mm && r.end_minute >= mm + SLOT);
+            if (!covers) continue;
+            const conflict = allBookings.some((b) => {
+              if (b.assigned_closer_id !== cid) return false;
+              if (b.status === "cancelled") return false;
+              const bs = new Date(b.scheduled_at).getTime();
+              return bs < slotEnd && bs + slotMs > t;
+            });
+            if (!conflict) availableClosers += 1;
+          }
+
+          // Reserve capacity for pending (unassigned) bookings already sitting on this slot
+          const pendingAtSlot = allBookings.filter((b) =>
+            b.assigned_closer_id == null
+            && b.status === "pending_assignment"
+            && new Date(b.scheduled_at).getTime() === t
+          ).length;
+
+          if (availableClosers - pendingAtSlot > 0) {
+            found.add(slot.toISOString());
+          }
         }
       }
     }
-    slots.sort();
-    return Array.from(new Set(slots));
+
+    return Array.from(found).sort();
   });
+
 
 export const listMyAppointments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -650,20 +708,212 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ id: z.string().uuid(), scheduled_at: z.string().datetime() }).parse)
   .handler(async ({ data, context }) => {
-    const { data: appt, error: aerr } = await context.supabase
-      .from("appointments").select("id, type").eq("id", data.id).single();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: appt, error: aerr } = await (context.supabase.from("appointments") as any)
+      .select("id, type, name, email, assigned_closer_id, status").eq("id", data.id).single();
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
+
+    const slotMinutes = await getSlotMinutes();
     if (appt.type === "booking") {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: clash } = await supabaseAdmin.from("appointments")
-        .select("id").eq("type", "booking").eq("scheduled_at", data.scheduled_at).neq("id", data.id).limit(1);
-      if ((clash ?? []).length > 0) throw new Error("That time slot was just taken. Please pick another.");
+        .select("id, assigned_closer_id, status")
+        .eq("type", "booking")
+        .eq("scheduled_at", data.scheduled_at)
+        .neq("id", data.id);
+      // Same-closer conflict if currently assigned
+      if (appt.assigned_closer_id) {
+        const c = (clash ?? []).find((r) =>
+          (r as { assigned_closer_id?: string | null; status?: string | null }).assigned_closer_id === appt.assigned_closer_id
+          && (r as { status?: string | null }).status !== "cancelled"
+        );
+        if (c) throw new Error("That closer is already booked at this time.");
+      }
     }
-    const { error } = await context.supabase.from("appointments")
-      .update({ scheduled_at: data.scheduled_at, status: "scheduled" }).eq("id", data.id);
+
+    let newMeetingUrl: string | null | undefined = undefined;
+    if (appt.type === "booking" && appt.assigned_closer_id) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: creds } = await supabaseAdmin
+        .from("closer_zoom_credentials")
+        .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+        .eq("closer_id", appt.assigned_closer_id)
+        .maybeSingle();
+      newMeetingUrl = await createZoomMeetingOnCloserAccount({
+        accountId: (creds?.zoom_account_id as string | null) ?? null,
+        clientId: (creds?.zoom_client_id as string | null) ?? null,
+        clientSecret: (creds?.zoom_client_secret as string | null) ?? null,
+        topic: `${appt.name} — Sales Call`,
+        start_time: data.scheduled_at,
+        duration: slotMinutes,
+      });
+    }
+
+    const patch: Record<string, unknown> = { scheduled_at: data.scheduled_at };
+    if (appt.type === "booking") {
+      patch.status = appt.assigned_closer_id ? "assigned" : "pending_assignment";
+    } else {
+      patch.status = "scheduled";
+    }
+    if (newMeetingUrl !== undefined) patch.meeting_url = newMeetingUrl;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (context.supabase.from("appointments") as any).update(patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    if (appt.type === "booking" && appt.assigned_closer_id && appt.email) {
+      void sendBookingConfirmationEmail({
+        appointmentId: data.id,
+        recipientEmail: appt.email,
+        leadName: appt.name,
+        scheduledAt: data.scheduled_at,
+        meetingUrl: newMeetingUrl ?? null,
+        durationMinutes: slotMinutes,
+        idempotencySuffix: `reschedule-${Date.now()}`,
+      });
+    }
+    return { ok: true };
+  });
+
+// ---------- B2B admin: assign closer, day list, cancel ----------
+export const listB2bBookingsForDate = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    tz: z.string().max(60).optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const tz = data.tz || EST_TZ;
+    const [y, m, d] = data.date.split("-").map(Number);
+    const start = zonedWallToUTC(y, m, d, 0, 0, tz);
+    const end = zonedWallToUTC(y, m, d + 1, 0, 0, tz);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rows, error } = await (context.supabase.from("appointments") as any)
+      .select("*, closers:assigned_closer_id (id, full_name, email)")
+      .eq("type", "booking")
+      .gte("scheduled_at", start.toISOString())
+      .lt("scheduled_at", end.toISOString())
+      .order("scheduled_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const listB2bBookings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (context.supabase.from("appointments") as any)
+      .select("*, closers:assigned_closer_id (id, full_name, email)")
+      .eq("type", "booking")
+      .order("scheduled_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const assignB2bCloser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    appointment_id: z.string().uuid(),
+    closer_id: z.string().uuid(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: appt, error: aerr } = await (supabaseAdmin.from("appointments") as any)
+      .select("*").eq("id", data.appointment_id).single();
+    if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
+    if (appt.type !== "booking") throw new Error("Only bookings can be assigned");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: closer, error: cerr } = await (supabaseAdmin.from("closers") as any)
+      .select("id, full_name, email, b2b_active, active").eq("id", data.closer_id).single();
+    if (cerr || !closer) throw new Error(cerr?.message || "Closer not found");
+    if (!closer.b2b_active || !closer.active) throw new Error("That closer is not marked as a B2B closer.");
+
+    // Same-closer conflict
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: conflict } = await (supabaseAdmin.from("appointments") as any)
+      .select("id")
+      .eq("type", "booking")
+      .eq("scheduled_at", appt.scheduled_at)
+      .eq("assigned_closer_id", data.closer_id)
+      .neq("id", data.appointment_id);
+    if ((conflict ?? []).length > 0) throw new Error("That closer is already booked at this time.");
+
+    const slotMinutes = await getSlotMinutes();
+    const { data: creds } = await supabaseAdmin
+      .from("closer_zoom_credentials")
+      .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+      .eq("closer_id", data.closer_id)
+      .maybeSingle();
+    const meetingUrl = await createZoomMeetingOnCloserAccount({
+      accountId: (creds?.zoom_account_id as string | null) ?? null,
+      clientId: (creds?.zoom_client_id as string | null) ?? null,
+      clientSecret: (creds?.zoom_client_secret as string | null) ?? null,
+      topic: `${appt.name} — Sales Call`,
+      start_time: appt.scheduled_at as string,
+      duration: slotMinutes,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: uerr } = await (supabaseAdmin.from("appointments") as any).update({
+      assigned_closer_id: data.closer_id,
+      status: "assigned",
+      meeting_url: meetingUrl,
+    }).eq("id", data.appointment_id);
+    if (uerr) throw new Error(uerr.message);
+
+    if (appt.email) {
+      void sendBookingConfirmationEmail({
+        appointmentId: data.appointment_id,
+        recipientEmail: appt.email as string,
+        leadName: appt.name as string,
+        scheduledAt: appt.scheduled_at as string,
+        meetingUrl,
+        durationMinutes: slotMinutes,
+      });
+    }
+
+    return { ok: true, meeting_url: meetingUrl };
+  });
+
+export const unassignB2bCloser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ appointment_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (context.supabase.from("appointments") as any).update({
+      assigned_closer_id: null,
+      status: "pending_assignment",
+      meeting_url: null,
+    }).eq("id", data.appointment_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const cancelB2bBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ appointment_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (context.supabase.from("appointments") as any).update({
+      status: "cancelled",
+    }).eq("id", data.appointment_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 export const cancelAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

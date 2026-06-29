@@ -76,6 +76,7 @@ export type Database = {
       }
       appointments: {
         Row: {
+          assigned_closer_id: string | null
           commission_amount: number | null
           context: string | null
           created_at: string
@@ -97,6 +98,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assigned_closer_id?: string | null
           commission_amount?: number | null
           context?: string | null
           created_at?: string
@@ -118,6 +120,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assigned_closer_id?: string | null
           commission_amount?: number | null
           context?: string | null
           created_at?: string
@@ -139,6 +142,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "appointments_assigned_closer_id_fkey"
+            columns: ["assigned_closer_id"]
+            isOneToOne: false
+            referencedRelation: "closers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "appointments_lead_id_fkey"
             columns: ["lead_id"]
@@ -169,6 +179,27 @@ export type Database = {
           end_minute?: number
           id?: string
           start_minute?: number
+        }
+        Relationships: []
+      }
+      b2b_settings: {
+        Row: {
+          days_out: number
+          id: number
+          slot_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          days_out?: number
+          id?: number
+          slot_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          days_out?: number
+          id?: number
+          slot_minutes?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -314,6 +345,7 @@ export type Database = {
           end_minute: number
           id: string
           start_minute: number
+          track: string
         }
         Insert: {
           closer_id: string
@@ -322,6 +354,7 @@ export type Database = {
           end_minute: number
           id?: string
           start_minute: number
+          track?: string
         }
         Update: {
           closer_id?: string
@@ -330,6 +363,7 @@ export type Database = {
           end_minute?: number
           id?: string
           start_minute?: number
+          track?: string
         }
         Relationships: [
           {
@@ -519,6 +553,7 @@ export type Database = {
       closers: {
         Row: {
           active: boolean
+          b2b_active: boolean
           created_at: string
           email: string
           full_name: string
@@ -528,6 +563,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          b2b_active?: boolean
           created_at?: string
           email: string
           full_name: string
@@ -537,6 +573,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          b2b_active?: boolean
           created_at?: string
           email?: string
           full_name?: string

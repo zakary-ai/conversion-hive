@@ -473,6 +473,7 @@ export const updateCloser = createServerFn({ method: "POST" })
     id: z.string().uuid(),
     full_name: z.string().trim().min(1).max(200).optional(),
     active: z.boolean().optional(),
+    b2b_active: z.boolean().optional(),
     zoom_account_id: z.string().trim().max(200).nullable().optional(),
     zoom_client_id: z.string().trim().max(200).nullable().optional(),
     zoom_client_secret: z.string().trim().max(500).nullable().optional(),
@@ -480,11 +481,13 @@ export const updateCloser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { id, zoom_account_id, zoom_client_id, zoom_client_secret, ...rest } = data;
-    const closerPatch: { full_name?: string; active?: boolean } = {};
+    const closerPatch: { full_name?: string; active?: boolean; b2b_active?: boolean } = {};
     if (rest.full_name !== undefined) closerPatch.full_name = rest.full_name;
     if (rest.active !== undefined) closerPatch.active = rest.active;
+    if (rest.b2b_active !== undefined) closerPatch.b2b_active = rest.b2b_active;
     if (Object.keys(closerPatch).length > 0) {
-      const { error } = await context.supabase.from("closers").update(closerPatch).eq("id", id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (context.supabase.from("closers") as any).update(closerPatch).eq("id", id);
       if (error) throw new Error(error.message);
     }
     const hasZoomField =
@@ -514,6 +517,7 @@ export const updateCloser = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
 
 export const getCloserZoomCreds = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -565,14 +569,22 @@ const CloserAvailRule = z.object({
   end_minute: z.number().int().min(1).max(1440),
 });
 
+const TrackEnum = z.enum(["b2c", "b2b"]).default("b2c");
+
 export const listCloserAvailability = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ closer_id: z.string().uuid() }).parse)
+  .inputValidator(z.object({
+    closer_id: z.string().uuid(),
+    track: TrackEnum.optional(),
+  }).parse)
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase
-      .from("closer_availability_rules")
-      .select("id, day_of_week, start_minute, end_minute")
+    const track = data.track ?? "b2c";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rows, error } = await (context.supabase
+      .from("closer_availability_rules") as any)
+      .select("id, day_of_week, start_minute, end_minute, track")
       .eq("closer_id", data.closer_id)
+      .eq("track", track)
       .order("day_of_week");
     if (error) throw new Error(error.message);
     return rows ?? [];
@@ -583,8 +595,10 @@ export const replaceCloserAvailability = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     closer_id: z.string().uuid(),
     rules: z.array(CloserAvailRule).max(100),
+    track: TrackEnum.optional(),
   }).parse)
   .handler(async ({ data, context }) => {
+    const track = data.track ?? "b2c";
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Permission: admin OR own row
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
@@ -593,16 +607,20 @@ export const replaceCloserAvailability = createServerFn({ method: "POST" })
         .from("closers").select("id").eq("id", data.closer_id).eq("user_id", context.userId).maybeSingle();
       if (!c) throw new Error("Forbidden");
     }
-    const del = await supabaseAdmin.from("closer_availability_rules").delete().eq("closer_id", data.closer_id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const del = await (supabaseAdmin.from("closer_availability_rules") as any)
+      .delete().eq("closer_id", data.closer_id).eq("track", track);
     if (del.error) throw new Error(del.error.message);
     if (data.rules.length > 0) {
-      const ins = await supabaseAdmin.from("closer_availability_rules").insert(
-        data.rules.map((r) => ({ ...r, closer_id: data.closer_id })),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ins = await (supabaseAdmin.from("closer_availability_rules") as any).insert(
+        data.rules.map((r) => ({ ...r, closer_id: data.closer_id, track })),
       );
       if (ins.error) throw new Error(ins.error.message);
     }
     return { ok: true };
   });
+
 
 // ---------- Bookings ----------
 export const listCloserBookings = createServerFn({ method: "GET" })
