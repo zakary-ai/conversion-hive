@@ -473,6 +473,7 @@ export const updateCloser = createServerFn({ method: "POST" })
     id: z.string().uuid(),
     full_name: z.string().trim().min(1).max(200).optional(),
     active: z.boolean().optional(),
+    b2b_active: z.boolean().optional(),
     zoom_account_id: z.string().trim().max(200).nullable().optional(),
     zoom_client_id: z.string().trim().max(200).nullable().optional(),
     zoom_client_secret: z.string().trim().max(500).nullable().optional(),
@@ -480,11 +481,13 @@ export const updateCloser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { id, zoom_account_id, zoom_client_id, zoom_client_secret, ...rest } = data;
-    const closerPatch: { full_name?: string; active?: boolean } = {};
+    const closerPatch: { full_name?: string; active?: boolean; b2b_active?: boolean } = {};
     if (rest.full_name !== undefined) closerPatch.full_name = rest.full_name;
     if (rest.active !== undefined) closerPatch.active = rest.active;
+    if (rest.b2b_active !== undefined) closerPatch.b2b_active = rest.b2b_active;
     if (Object.keys(closerPatch).length > 0) {
-      const { error } = await context.supabase.from("closers").update(closerPatch).eq("id", id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (context.supabase.from("closers") as any).update(closerPatch).eq("id", id);
       if (error) throw new Error(error.message);
     }
     const hasZoomField =
@@ -514,6 +517,7 @@ export const updateCloser = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
 
 export const getCloserZoomCreds = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
