@@ -38,8 +38,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video } from "lucide-react";
+import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { EmailPreviewDialog } from "./email-preview-dialog";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -169,6 +170,7 @@ export function B2bCalendarPanel() {
   // Date picker for bookings
   const [selected, setSelected] = useState<Date | undefined>(new Date());
   const [availabilityOpen, setAvailabilityOpen] = useState<boolean>(false);
+  const [emailPreviewOpen, setEmailPreviewOpen] = useState<boolean>(false);
 
   const selectedKey = useMemo(() => (selected ? dateKey(selected) : null), [selected]);
   const { data: dayBookings = [] } = useQuery({
@@ -343,15 +345,20 @@ export function B2bCalendarPanel() {
             />
           </div>
           <div className="text-center md:text-left">
-            <h3 className="font-display font-semibold mb-2">
-              {selected
-                ? selected.toLocaleDateString(undefined, {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  })
-                : "Select a date"}
-            </h3>
+            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+              <h3 className="font-display font-semibold">
+                {selected
+                  ? selected.toLocaleDateString(undefined, {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "Select a date"}
+              </h3>
+              <Button size="sm" variant="outline" onClick={() => setEmailPreviewOpen(true)}>
+                <Eye className="h-4 w-4 mr-1" /> Preview confirmation email
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground mb-3">
               B2B bookings on this day. Assign a closer to send Zoom + email to the lead.
             </p>
@@ -360,6 +367,7 @@ export function B2bCalendarPanel() {
         </div>
       </Card>
 
+      <EmailPreviewDialog open={emailPreviewOpen} onOpenChange={setEmailPreviewOpen} />
     </div>
   );
 }
@@ -391,8 +399,8 @@ function DayBookingList({
       </div>
     );
   }
-  const unassigned = bookings.filter((b) => b.status === "pending_assignment");
-  const others = bookings.filter((b) => b.status !== "pending_assignment");
+  const unassigned = bookings.filter((b) => !b.assigned_closer_id && b.status !== "cancelled");
+  const others = bookings.filter((b) => !!b.assigned_closer_id || b.status === "cancelled");
   return (
     <div className="space-y-4">
       {unassigned.length > 0 && (
