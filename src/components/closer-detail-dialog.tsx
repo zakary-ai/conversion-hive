@@ -103,7 +103,9 @@ export function CloserDetailDialog({
           <Section title={`Upcoming / not yet logged (${filteredUpcoming.length})`}>
             {filteredUpcoming.length === 0
               ? <Empty>Nothing upcoming.</Empty>
-              : filteredUpcoming.map((b) => <UpcomingRow key={b.id} b={b} />)}
+              : filteredUpcoming.map((b) => (
+                  <UpcomingRow key={b.id} b={b} onLog={() => setOutcomeTarget({ id: b.id, name: b.applicant_name })} />
+                ))}
           </Section>
         ) : null}
 
@@ -111,16 +113,24 @@ export function CloserDetailDialog({
           <Section title={`Outcomes (${filteredOutcomes.length})`}>
             {filteredOutcomes.length === 0
               ? <Empty>No outcomes logged yet.</Empty>
-              : filteredOutcomes.map((b) => <OutcomeRow key={b.id} b={b} />)}
+              : filteredOutcomes.map((b) => (
+                  <OutcomeRow key={b.id} b={b} onEdit={() => setOutcomeTarget({ id: b.id, name: b.applicant_name })} />
+                ))}
           </Section>
         ) : null}
       </DialogContent>
+      <OutcomeDialog
+        bookingId={outcomeTarget?.id ?? ""}
+        applicationId={null}
+        applicantName={outcomeTarget?.name ?? ""}
+        open={!!outcomeTarget}
+        onOpenChange={(v) => { if (!v) setOutcomeTarget(null); }}
+      />
     </Dialog>
   );
 }
 
-function UpcomingRow({ b }: { b: { id: string; applicant_name: string; applicant_email: string; slot_start: string; status: string } }) {
-  const [open, setOpen] = useState(false);
+function UpcomingRow({ b, onLog }: { b: { id: string; applicant_name: string; applicant_email: string; slot_start: string; status: string }; onLog: () => void }) {
   return (
     <Card className="p-3 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
@@ -129,11 +139,10 @@ function UpcomingRow({ b }: { b: { id: string; applicant_name: string; applicant
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         <Badge variant="secondary" className="text-[10px] capitalize">{b.status}</Badge>
-        <Button size="sm" variant="outline" className="h-7 gap-1" onClick={() => setOpen(true)}>
+        <Button size="sm" variant="outline" className="h-7 gap-1" onClick={onLog}>
           <ClipboardCheck className="h-3 w-3" /> Log outcome
         </Button>
       </div>
-      <OutcomeDialog bookingId={b.id} applicationId={null} applicantName={b.applicant_name} open={open} onOpenChange={setOpen} />
     </Card>
   );
 }
