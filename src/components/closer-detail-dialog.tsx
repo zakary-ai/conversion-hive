@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { RangePicker } from "@/routes/app/_authenticated/closer/index";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 
@@ -33,9 +34,28 @@ export function CloserDetailDialog({
     enabled: !!closerId && open,
   });
 
+  const [activeFilter, setActiveFilter] = useState<"all" | "not-logged" | "not-interested" | "no-show" | "closed">("all");
+
   const bookings = detail?.bookings ?? [];
   const withOutcome = bookings.filter((b) => b.outcome);
   const upcoming = bookings.filter((b) => !b.outcome);
+
+  const filteredUpcoming = activeFilter === "all" || activeFilter === "not-logged" ? upcoming : [];
+  const filteredOutcomes = withOutcome.filter((b) => {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "not-interested") return b.outcome === "not_interested";
+    if (activeFilter === "no-show") return b.outcome === "no_show";
+    if (activeFilter === "closed") return b.outcome === "closed" || b.outcome === "deposit";
+    return false;
+  });
+
+  const filters = [
+    { key: "all" as const, label: "All", count: bookings.length },
+    { key: "not-logged" as const, label: "Not logged", count: upcoming.length },
+    { key: "not-interested" as const, label: "Not interested", count: withOutcome.filter((b) => b.outcome === "not_interested").length },
+    { key: "no-show" as const, label: "No show", count: withOutcome.filter((b) => b.outcome === "no_show").length },
+    { key: "closed" as const, label: "Closed", count: withOutcome.filter((b) => b.outcome === "closed" || b.outcome === "deposit").length },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,17 +84,35 @@ export function CloserDetailDialog({
           </div>
         )}
 
-        <Section title={`Outcomes (${withOutcome.length})`}>
-          {withOutcome.length === 0
-            ? <Empty>No outcomes logged yet.</Empty>
-            : withOutcome.map((b) => <OutcomeRow key={b.id} b={b} />)}
-        </Section>
+        <div className="flex flex-wrap gap-2">
+          {filters.map((f) => (
+            <Button
+              key={f.key}
+              size="sm"
+              variant={activeFilter === f.key ? "default" : "outline"}
+              className={cn("h-7 text-xs", activeFilter === f.key && "bg-primary text-primary-foreground")}
+              onClick={() => setActiveFilter(f.key)}
+            >
+              {f.label} <span className="ml-1 opacity-70">({f.count})</span>
+            </Button>
+          ))}
+        </div>
 
-        <Section title={`Upcoming / not yet logged (${upcoming.length})`}>
-          {upcoming.length === 0
-            ? <Empty>Nothing upcoming.</Empty>
-            : upcoming.map((b) => <UpcomingRow key={b.id} b={b} />)}
-        </Section>
+        {activeFilter === "all" || activeFilter === "not-logged" ? (
+          <Section title={`Upcoming / not yet logged (${filteredUpcoming.length})`}>
+            {filteredUpcoming.length === 0
+              ? <Empty>Nothing upcoming.</Empty>
+              : filteredUpcoming.map((b) => <UpcomingRow key={b.id} b={b} />)}
+          </Section>
+        ) : null}
+
+        {activeFilter === "all" || activeFilter !== "not-logged" ? (
+          <Section title={`Outcomes (${filteredOutcomes.length})`}>
+            {filteredOutcomes.length === 0
+              ? <Empty>No outcomes logged yet.</Empty>
+              : filteredOutcomes.map((b) => <OutcomeRow key={b.id} b={b} />)}
+          </Section>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
