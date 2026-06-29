@@ -12,9 +12,10 @@ import { CalendarClock, CheckCircle2, Phone, Mail, MoreVertical, CalendarDays, X
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
-import { AvailabilityEditor } from "@/components/availability-editor";
+import { B2bCalendarPanel } from "@/components/admin/b2b-calendar-panel";
 import { RescheduleDialog } from "@/components/reschedule-dialog";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
+
 
 const meOpts = queryOptions({ queryKey: ["me"], queryFn: () => getMe() });
 const myOpts = queryOptions({ queryKey: ["my-appointments"], queryFn: () => listMyAppointments() });
