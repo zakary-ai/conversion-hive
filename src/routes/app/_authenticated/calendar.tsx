@@ -11,9 +11,13 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { CalendarClock, CheckCircle2, Phone, Mail, MoreVertical, CalendarDays, XCircle, User, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { CalendarClock, CheckCircle2, Phone, Mail, MoreVertical, CalendarDays, XCircle, User, ExternalLink, Pencil } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 import { AvailabilityEditor } from "@/components/availability-editor";
 import { RescheduleDialog } from "@/components/reschedule-dialog";
+import { EditLeadDialog } from "@/components/edit-lead-dialog";
 
 const meOpts = queryOptions({ queryKey: ["me"], queryFn: () => getMe() });
 const myOpts = queryOptions({ queryKey: ["my-appointments"], queryFn: () => listMyAppointments() });
