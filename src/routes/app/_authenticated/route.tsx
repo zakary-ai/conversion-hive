@@ -20,7 +20,16 @@ export const Route = createFileRoute("/app/_authenticated")({
   beforeLoad: async ({ context }) => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) throw redirect({ to: "/app/auth" });
-    await context.queryClient.ensureQueryData(meQueryOptions);
+    try {
+      await context.queryClient.ensureQueryData(meQueryOptions);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/unauthorized/i.test(msg)) {
+        await supabase.auth.signOut().catch(() => {});
+        throw redirect({ to: "/app/auth" });
+      }
+      throw e;
+    }
   },
   component: AuthenticatedLayout,
 });
