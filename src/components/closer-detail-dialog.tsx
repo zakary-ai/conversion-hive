@@ -138,6 +138,7 @@ type B = {
 };
 
 function OutcomeRow({ b }: { b: B }) {
+  const [editOpen, setEditOpen] = useState(false);
   const base = b.outcome === "closed"
     ? Number(b.deal_amount ?? 0)
     : b.outcome === "deposit"
@@ -162,13 +163,25 @@ function OutcomeRow({ b }: { b: B }) {
           </div>
           {b.outcome_notes && <div className="text-xs mt-1 italic text-muted-foreground">{b.outcome_notes}</div>}
         </div>
-        {showCommission && (
-          <div className="text-right">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Commission</div>
-            <div className={`text-sm font-semibold ${isApproved ? "text-success" : "text-warning"}`}>{money(b.commission_amount)}</div>
-          </div>
-        )}
+        <div className="flex items-start gap-3">
+          {showCommission && (
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Commission</div>
+              <div className={`text-sm font-semibold ${isApproved ? "text-success" : "text-warning"}`}>{money(b.commission_amount)}</div>
+            </div>
+          )}
+          <Button size="sm" variant="outline" className="h-7 gap-1" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-3 w-3" /> Edit
+          </Button>
+        </div>
       </div>
+      <OutcomeDialog
+        bookingId={b.id}
+        applicationId={null}
+        applicantName={b.applicant_name}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
     </Card>
   );
 }
