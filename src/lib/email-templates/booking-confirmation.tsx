@@ -52,7 +52,7 @@ export const BookingConfirmationEmail = ({ name, scheduledLabel, scheduledAt, me
 }
 
 export const template = {
-  component: Email,
+  component: BookingConfirmationEmail,
   subject: 'Your meeting is confirmed — Zoom link inside',
   displayName: 'Booking confirmation',
   previewData: {
