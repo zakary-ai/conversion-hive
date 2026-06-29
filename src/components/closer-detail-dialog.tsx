@@ -34,9 +34,28 @@ export function CloserDetailDialog({
     enabled: !!closerId && open,
   });
 
+  const [activeFilter, setActiveFilter] = useState<"all" | "not-logged" | "not-interested" | "no-show" | "closed">("all");
+
   const bookings = detail?.bookings ?? [];
   const withOutcome = bookings.filter((b) => b.outcome);
   const upcoming = bookings.filter((b) => !b.outcome);
+
+  const filteredUpcoming = activeFilter === "all" || activeFilter === "not-logged" ? upcoming : [];
+  const filteredOutcomes = withOutcome.filter((b) => {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "not-interested") return b.outcome === "not_interested";
+    if (activeFilter === "no-show") return b.outcome === "no_show";
+    if (activeFilter === "closed") return b.outcome === "closed" || b.outcome === "deposit";
+    return false;
+  });
+
+  const filters = [
+    { key: "all" as const, label: "All", count: bookings.length },
+    { key: "not-logged" as const, label: "Not logged", count: upcoming.length },
+    { key: "not-interested" as const, label: "Not interested", count: withOutcome.filter((b) => b.outcome === "not_interested").length },
+    { key: "no-show" as const, label: "No show", count: withOutcome.filter((b) => b.outcome === "no_show").length },
+    { key: "closed" as const, label: "Closed", count: withOutcome.filter((b) => b.outcome === "closed" || b.outcome === "deposit").length },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
