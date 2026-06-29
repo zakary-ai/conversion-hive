@@ -644,7 +644,7 @@ function CallbackDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boo
 
   const submit = useMutation({
     mutationFn: async () => {
-      const iso = zonedWallTimeToUtc(when, tz).toISOString();
+      const iso = when.toISOString();
       await createAppointment({ data: {
         lead_id: lead.id, type: "callback", scheduled_at: iso,
         name: lead.name, phone: lead.phone, email: lead.email, context: note || null,
