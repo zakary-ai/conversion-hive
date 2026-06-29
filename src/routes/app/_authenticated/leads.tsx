@@ -399,20 +399,35 @@ function CallButton({ leadId, ariaLabel, variant = "round", onCalled }: { leadId
       if (res?.dial) {
         const num = encodeURIComponent(res.dial);
         const from = res.from ? `&from=${encodeURIComponent(res.from)}` : "";
-        // Quo (OpenPhone) deep link — opens the Quo app and auto-dials the lead
-        // from the setter's assigned Quo number. Falls back to tel: if Quo isn't installed.
+        // Quo (OpenPhone) deep link — opens the Quo app and auto-dials the lead.
         const quoUrl = `openphone://dial?number=${num}${from}&action=call`;
         const a = document.createElement("a");
         a.href = quoUrl;
         a.click();
-        // Fallback to the device dialer if Quo didn't handle the scheme
-        setTimeout(() => {
-          if (document.hasFocus()) {
-            const t = document.createElement("a");
-            t.href = `tel:${res.dial}`;
-            t.click();
-          }
-        }, 1200);
+
+        const isDesktop =
+          typeof window !== "undefined" &&
+          window.matchMedia?.("(pointer: fine)").matches &&
+          !("ontouchstart" in window);
+
+        if (isDesktop) {
+          // Desktop: copy the number to clipboard and open Quo web in a new
+          // tab as a universal fallback (works even if the Quo desktop app
+          // isn't installed). The deep link above will still pop the desktop
+          // app for users who have it.
+          navigator.clipboard?.writeText(res.dial).catch(() => {});
+          window.open("https://my.openphone.com/", "_blank", "noopener,noreferrer");
+          toast.success("Calling via Quo — number copied to clipboard");
+        } else {
+          // Mobile: fall back to the native dialer if Quo didn't handle the scheme.
+          setTimeout(() => {
+            if (document.hasFocus()) {
+              const t = document.createElement("a");
+              t.href = `tel:${res.dial}`;
+              t.click();
+            }
+          }, 1200);
+        }
       }
     },
     onError: (e: Error) => toast.error(e.message),
