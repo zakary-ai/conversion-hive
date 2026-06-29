@@ -428,28 +428,29 @@ async function sendBookingConfirmationEmail(input: {
   durationMinutes: number;
 }) {
   try {
-    const origin = process.env.LOVABLE_APP_URL || process.env.PUBLIC_APP_URL;
-    if (!origin) return;
-    await fetch(`${origin}/lovable/email/transactional/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.LOVABLE_API_KEY ?? ""}`,
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    let scheduledLabel = input.scheduledAt;
+    try {
+      scheduledLabel = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        weekday: "long", month: "long", day: "numeric", year: "numeric",
+        hour: "numeric", minute: "2-digit", timeZoneName: "short",
+      }).format(new Date(input.scheduledAt));
+    } catch { /* ignore */ }
+    await sendTransactional({
+      templateName: "booking-confirmation",
+      recipientEmail: input.recipientEmail,
+      idempotencyKey: `booking-confirm-${input.appointmentId}`,
+      templateData: {
+        name: input.leadName,
+        scheduledAt: input.scheduledAt,
+        scheduledLabel,
+        meetingUrl: input.meetingUrl,
+        durationMinutes: input.durationMinutes,
       },
-      body: JSON.stringify({
-        templateName: "booking-confirmation",
-        recipientEmail: input.recipientEmail,
-        idempotencyKey: `booking-confirm-${input.appointmentId}`,
-        templateData: {
-          name: input.leadName,
-          scheduledAt: input.scheduledAt,
-          meetingUrl: input.meetingUrl,
-          durationMinutes: input.durationMinutes,
-        },
-      }),
     });
-  } catch {
-    // best-effort; queue/infra may not be configured yet
+  } catch (e) {
+    console.warn("[booking-confirm] send failed", e);
   }
 }
 

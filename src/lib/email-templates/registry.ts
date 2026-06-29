@@ -5,6 +5,7 @@ import { template as closerCallCloser } from './closer-call-closer'
 import { template as closerInvite } from './closer-invite'
 import { template as setterInvite } from './setter-invite'
 import { template as adminInvite } from './admin-invite'
+import { template as bookingConfirmation } from './booking-confirmation'
 
 
 
@@ -24,4 +25,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'closer-invite': closerInvite,
   'setter-invite': setterInvite,
   'admin-invite': adminInvite,
+  'booking-confirmation': bookingConfirmation,
 }
