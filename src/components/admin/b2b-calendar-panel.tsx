@@ -170,6 +170,7 @@ export function B2bCalendarPanel() {
   // Date picker for bookings
   const [selected, setSelected] = useState<Date | undefined>(new Date());
   const [availabilityOpen, setAvailabilityOpen] = useState<boolean>(false);
+  const [emailPreviewOpen, setEmailPreviewOpen] = useState<boolean>(false);
 
   const selectedKey = useMemo(() => (selected ? dateKey(selected) : null), [selected]);
   const { data: dayBookings = [] } = useQuery({
