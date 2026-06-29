@@ -57,9 +57,12 @@ export function DateTimePicker({ value, onChange }: Props) {
             {String(hour12)}:{String(minute).padStart(2, "0")} {period}
           </div>
         </div>
-        <div className="relative h-[160px] overflow-hidden">
-          {/* center selection highlight */}
-          <div className="pointer-events-none absolute inset-x-2 top-1/2 -translate-y-1/2 h-10 rounded-lg bg-muted/60" />
+        <div className="relative h-[200px] overflow-hidden">
+          {/* center selection highlight — row index 2 of 5 visible rows */}
+          <div className="pointer-events-none absolute inset-x-2 top-1/2 -translate-y-1/2 h-10 rounded-lg bg-muted/60 ring-1 ring-border" />
+          {/* fade masks */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-card to-transparent z-10" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-card to-transparent z-10" />
           <div className="grid grid-cols-3 h-full">
             <Wheel items={HOURS} value={hour12} onChange={setHour12} format={(n) => String(n)} />
             <Wheel items={MINUTES} value={minute} onChange={setMinute} format={(n) => String(n).padStart(2, "0")} />
