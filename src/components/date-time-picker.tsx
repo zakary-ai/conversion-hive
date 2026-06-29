@@ -93,26 +93,35 @@ function Wheel<T extends string | number>({
     ref.current.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
   }, [value, items, scrolling]);
 
-  const handleScroll = () => {
+  const settle = () => {
     if (!ref.current) return;
+    const idx = Math.round(ref.current.scrollTop / ITEM_H);
+    const clamped = Math.max(0, Math.min(items.length - 1, idx));
+    ref.current.scrollTo({ top: clamped * ITEM_H, behavior: "auto" });
+    setScrolling(false);
+    const next = items[clamped];
+    if (next !== value) onChange(next);
+  };
+
+  const handleScroll = () => {
     setScrolling(true);
     if (timeout.current) clearTimeout(timeout.current);
-    timeout.current = setTimeout(() => {
-      if (!ref.current) return;
-      const idx = Math.round(ref.current.scrollTop / ITEM_H);
-      const clamped = Math.max(0, Math.min(items.length - 1, idx));
-      ref.current.scrollTo({ top: clamped * ITEM_H, behavior: "smooth" });
-      setScrolling(false);
-      const next = items[clamped];
-      if (next !== value) onChange(next);
-    }, 120);
+    timeout.current = setTimeout(settle, 140);
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    // Claim the wheel event so it doesn't scroll the parent dialog.
+    e.stopPropagation();
+    ref.current.scrollTop += e.deltaY;
   };
 
   return (
     <div
       ref={ref}
       onScroll={handleScroll}
-      className="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar text-center"
+      onWheel={handleWheel}
+      className="h-full overflow-y-scroll overscroll-contain snap-y snap-mandatory no-scrollbar text-center"
       style={{ scrollPaddingTop: ITEM_H * 2 }}
     >
       <div style={{ height: ITEM_H * 2 }} />
