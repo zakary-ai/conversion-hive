@@ -4,8 +4,10 @@ import { getCloserDetail, getCloserStats } from "@/lib/api/b2c.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Target, CheckCircle2, X, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck } from "lucide-react";
 import { RangePicker } from "@/routes/app/_authenticated/closer/index";
+import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 
 const money = (n: number | null | undefined) =>
   n == null ? "—" : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
