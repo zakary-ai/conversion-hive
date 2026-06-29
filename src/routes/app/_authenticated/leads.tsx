@@ -15,8 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff, Building2, Tag, Clock, Video, Ban, TrendingUp, DollarSign, MessageSquare, BookOpen, Copy, Check } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { DateTimePicker } from "@/components/date-time-picker";
 import { SlotPicker } from "@/components/slot-picker";
+import { CallbackSlotPicker } from "@/components/callback-slot-picker";
 import { CALL_SCRIPTS, OBJECTIONS, OBJECTION_PRINCIPLES, OBJECTION_GOLDEN_RULE, SMS_TEMPLATES, fillTemplate } from "@/lib/script-templates";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { toast } from "sonner";
