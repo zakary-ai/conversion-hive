@@ -19,7 +19,7 @@ const detail = { color: '#ffffff', fontSize: '15px', lineHeight: '24px', margin:
 const button = { backgroundColor: '#6366f1', color: '#ffffff', borderRadius: '10px', padding: '12px 20px', textDecoration: 'none', fontWeight: 600, fontSize: '15px', display: 'inline-block' }
 const footer = { color: '#64748b', fontSize: '12px', margin: '20px 0 0', textAlign: 'center' as const }
 
-const Email = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes }: Props) => {
+export const BookingConfirmationEmail = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes }: Props) => {
   const when = scheduledLabel || scheduledAt || 'your scheduled time'
   return (
     <Html lang="en" dir="ltr">
