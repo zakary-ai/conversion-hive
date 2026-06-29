@@ -10,7 +10,7 @@ import {
   unassignB2bCloser,
   cancelB2bBooking,
   deleteAppointment,
-  rescheduleAppointment,
+
 } from "@/lib/api/cl.functions";
 import { listClosers } from "@/lib/api/b2c.functions";
 import {
