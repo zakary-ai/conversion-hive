@@ -250,6 +250,11 @@ function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items
                     <DropdownMenuItem onClick={() => setRescheduleAppt(a)}>
                       <CalendarDays className="mr-2 h-4 w-4" /> Reschedule
                     </DropdownMenuItem>
+                    {a.lead_id && (
+                      <DropdownMenuItem onClick={() => setEditLeadId(a.lead_id)}>
+                        <Pencil className="mr-2 h-4 w-4" /> Edit lead
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
                       onClick={() => {
