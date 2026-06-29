@@ -709,7 +709,7 @@ function SetterLeadDetailDialog({
   const realCalls = leadCalls.filter((c) => c.status !== "manual_outcome");
   return (
     <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         {lead && (
           <>
             <DialogHeader>
