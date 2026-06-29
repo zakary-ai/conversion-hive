@@ -164,6 +164,7 @@ function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items
   const qc = useQueryClient();
   const [openAppt, setOpenAppt] = useState<Appt | null>(null);
   const [rescheduleAppt, setRescheduleAppt] = useState<Appt | null>(null);
+  const [editLeadId, setEditLeadId] = useState<string | null>(null);
   const cancel = useMutation({
     mutationFn: (id: string) => cancelAppointment({ data: { id } }),
     onSuccess: () => {
