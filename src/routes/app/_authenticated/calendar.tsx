@@ -30,7 +30,7 @@ export const Route = createFileRoute("/app/_authenticated/calendar")({
 
 function CalendarPage() {
   const { data: me } = useSuspenseQuery(meOpts);
-  const [tab, setTab] = useState<string>(me.isAdmin ? "all" : "mine");
+  const [tab, setTab] = useState<string>(me.isAdmin ? "availability" : "mine");
   const [filter, setFilter] = useState<"all" | "booking" | "callback">("all");
   const [date, setDate] = useState<Date | undefined>(new Date());
 
@@ -45,20 +45,27 @@ function CalendarPage() {
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <TabsList>
-            {!me.isAdmin && <TabsTrigger value="mine">My calendar</TabsTrigger>}
-            {me.isAdmin && <TabsTrigger value="all">All setters</TabsTrigger>}
-            <TabsTrigger value="history">History</TabsTrigger>
             {me.isAdmin && <TabsTrigger value="availability">Availability</TabsTrigger>}
+            {!me.isAdmin && <TabsTrigger value="mine">My calendar</TabsTrigger>}
+            {me.isAdmin && <TabsTrigger value="all">Calendar</TabsTrigger>}
+            {!me.isAdmin && <TabsTrigger value="history">History</TabsTrigger>}
           </TabsList>
-          <div className="flex gap-1">
-            {(["all","booking","callback"] as const).map((f) => (
-              <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>
-                {f === "all" ? "All" : f === "booking" ? "Bookings" : "Callbacks"}
-              </Button>
-            ))}
-          </div>
+          {tab !== "availability" && (
+            <div className="flex gap-1">
+              {(["all","booking","callback"] as const).map((f) => (
+                <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>
+                  {f === "all" ? "All" : f === "booking" ? "Bookings" : "Callbacks"}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
 
+        {me.isAdmin && (
+          <TabsContent value="availability" className="mt-4">
+            <B2bCalendarPanel />
+          </TabsContent>
+        )}
         {!me.isAdmin && (
           <TabsContent value="mine" className="mt-4">
             <ApptView queryOpts={myOpts} filter={filter} date={date} setDate={setDate} canDelete mode="upcoming" />
@@ -66,23 +73,12 @@ function CalendarPage() {
         )}
         {me.isAdmin && (
           <TabsContent value="all" className="mt-4">
-            <ApptView queryOpts={allOpts} filter={filter} date={date} setDate={setDate} canDelete={false} showOwner mode="upcoming" />
+            <ApptView queryOpts={allOpts} filter={filter} date={date} setDate={setDate} canDelete={false} showOwner mode="all" />
           </TabsContent>
         )}
-        <TabsContent value="history" className="mt-4">
-          <ApptView
-            queryOpts={me.isAdmin ? allOpts : myOpts}
-            filter={filter}
-            date={date}
-            setDate={setDate}
-            canDelete={!me.isAdmin}
-            showOwner={me.isAdmin}
-            mode="past"
-          />
-        </TabsContent>
-        {me.isAdmin && (
-          <TabsContent value="availability" className="mt-4">
-            <B2bCalendarPanel />
+        {!me.isAdmin && (
+          <TabsContent value="history" className="mt-4">
+            <ApptView queryOpts={myOpts} filter={filter} date={date} setDate={setDate} canDelete mode="past" />
           </TabsContent>
         )}
       </Tabs>
