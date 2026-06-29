@@ -367,6 +367,7 @@ export function B2bCalendarPanel() {
         </div>
       </Card>
 
+      <EmailPreviewDialog open={emailPreviewOpen} onOpenChange={setEmailPreviewOpen} />
     </div>
   );
 }
