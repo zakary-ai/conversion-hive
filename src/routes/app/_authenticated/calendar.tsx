@@ -82,7 +82,7 @@ function CalendarPage() {
         </TabsContent>
         {me.isAdmin && (
           <TabsContent value="availability" className="mt-4">
-            <AvailabilityEditor />
+            <B2bCalendarPanel />
           </TabsContent>
         )}
       </Tabs>
