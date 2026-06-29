@@ -23,6 +23,7 @@ export function CloserDetailDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const [rangeDays, setRangeDays] = useState<number | null>(null);
+  const [outcomeTarget, setOutcomeTarget] = useState<{ id: string; name: string } | null>(null);
   const { data: detail, isLoading } = useQuery({
     queryKey: ["closer-detail", closerId],
     queryFn: () => getCloserDetail({ data: { closer_id: closerId! } }),
