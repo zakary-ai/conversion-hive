@@ -345,15 +345,20 @@ export function B2bCalendarPanel() {
             />
           </div>
           <div className="text-center md:text-left">
-            <h3 className="font-display font-semibold mb-2">
-              {selected
-                ? selected.toLocaleDateString(undefined, {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  })
-                : "Select a date"}
-            </h3>
+            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+              <h3 className="font-display font-semibold">
+                {selected
+                  ? selected.toLocaleDateString(undefined, {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "Select a date"}
+              </h3>
+              <Button size="sm" variant="outline" onClick={() => setEmailPreviewOpen(true)}>
+                <Eye className="h-4 w-4 mr-1" /> Preview confirmation email
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground mb-3">
               B2B bookings on this day. Assign a closer to send Zoom + email to the lead.
             </p>
