@@ -391,8 +391,8 @@ function DayBookingList({
       </div>
     );
   }
-  const unassigned = bookings.filter((b) => b.status === "pending_assignment");
-  const others = bookings.filter((b) => b.status !== "pending_assignment");
+  const unassigned = bookings.filter((b) => !b.assigned_closer_id && b.status !== "cancelled");
+  const others = bookings.filter((b) => !!b.assigned_closer_id || b.status === "cancelled");
   return (
     <div className="space-y-4">
       {unassigned.length > 0 && (
