@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { CalendarClock, CheckCircle2, Phone, Mail, MoreVertical, CalendarDays, XCircle, User, ExternalLink } from "lucide-react";
+import { CalendarClock, CheckCircle2, Phone, Mail, MoreVertical, CalendarDays, XCircle, User, ExternalLink, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 import { AvailabilityEditor } from "@/components/availability-editor";
 import { RescheduleDialog } from "@/components/reschedule-dialog";
+import { EditLeadDialog } from "@/components/edit-lead-dialog";
 
 const meOpts = queryOptions({ queryKey: ["me"], queryFn: () => getMe() });
 const myOpts = queryOptions({ queryKey: ["my-appointments"], queryFn: () => listMyAppointments() });
@@ -163,6 +164,7 @@ function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items
   const qc = useQueryClient();
   const [openAppt, setOpenAppt] = useState<Appt | null>(null);
   const [rescheduleAppt, setRescheduleAppt] = useState<Appt | null>(null);
+  const [editLeadId, setEditLeadId] = useState<string | null>(null);
   const cancel = useMutation({
     mutationFn: (id: string) => cancelAppointment({ data: { id } }),
     onSuccess: () => {
@@ -248,6 +250,11 @@ function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items
                     <DropdownMenuItem onClick={() => setRescheduleAppt(a)}>
                       <CalendarDays className="mr-2 h-4 w-4" /> Reschedule
                     </DropdownMenuItem>
+                    {a.lead_id && (
+                      <DropdownMenuItem onClick={() => setEditLeadId(a.lead_id)}>
+                        <Pencil className="mr-2 h-4 w-4" /> Edit lead
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
                       onClick={() => {
@@ -271,6 +278,7 @@ function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items
         currentScheduledAt={rescheduleAppt?.scheduled_at}
         onClose={() => setRescheduleAppt(null)}
       />
+      <EditLeadDialog leadId={editLeadId} onClose={() => setEditLeadId(null)} />
     </>
   );
 }
