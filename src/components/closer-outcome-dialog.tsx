@@ -80,7 +80,7 @@ export function OutcomeDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Call outcome — {applicantName}</DialogTitle>
         </DialogHeader>

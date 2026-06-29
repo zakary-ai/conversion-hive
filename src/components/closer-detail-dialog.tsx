@@ -121,12 +121,12 @@ export function CloserDetailDialog({
 function UpcomingRow({ b }: { b: { id: string; applicant_name: string; applicant_email: string; slot_start: string; status: string } }) {
   const [open, setOpen] = useState(false);
   return (
-    <Card className="p-3 flex items-center justify-between gap-2 text-sm">
+    <Card className="p-3 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <div className="font-medium truncate">{b.applicant_name}</div>
         <div className="text-xs text-muted-foreground truncate">{new Date(b.slot_start).toLocaleString()} · {b.applicant_email}</div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Badge variant="secondary" className="text-[10px] capitalize">{b.status}</Badge>
         <Button size="sm" variant="outline" className="h-7 gap-1" onClick={() => setOpen(true)}>
           <ClipboardCheck className="h-3 w-3" /> Log outcome
