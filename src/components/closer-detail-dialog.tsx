@@ -185,8 +185,7 @@ type B = {
   commission_status: string | null;
 };
 
-function OutcomeRow({ b }: { b: B }) {
-  const [editOpen, setEditOpen] = useState(false);
+function OutcomeRow({ b, onEdit }: { b: B; onEdit: () => void }) {
   const base = b.outcome === "closed"
     ? Number(b.deal_amount ?? 0)
     : b.outcome === "deposit"
@@ -218,18 +217,11 @@ function OutcomeRow({ b }: { b: B }) {
               <div className={`text-sm font-semibold ${isApproved ? "text-success" : "text-warning"}`}>{money(b.commission_amount)}</div>
             </div>
           )}
-          <Button size="sm" variant="outline" className="h-7 gap-1" onClick={() => setEditOpen(true)}>
+          <Button size="sm" variant="outline" className="h-7 gap-1" onClick={onEdit}>
             <Pencil className="h-3 w-3" /> Edit
           </Button>
         </div>
       </div>
-      <OutcomeDialog
-        bookingId={b.id}
-        applicationId={null}
-        applicantName={b.applicant_name}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-      />
     </Card>
   );
 }
