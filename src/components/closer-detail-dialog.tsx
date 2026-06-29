@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { RangePicker } from "@/routes/app/_authenticated/closer/index";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 
