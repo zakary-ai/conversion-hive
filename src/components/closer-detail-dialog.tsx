@@ -84,17 +84,35 @@ export function CloserDetailDialog({
           </div>
         )}
 
-        <Section title={`Outcomes (${withOutcome.length})`}>
-          {withOutcome.length === 0
-            ? <Empty>No outcomes logged yet.</Empty>
-            : withOutcome.map((b) => <OutcomeRow key={b.id} b={b} />)}
-        </Section>
+        <div className="flex flex-wrap gap-2">
+          {filters.map((f) => (
+            <Button
+              key={f.key}
+              size="sm"
+              variant={activeFilter === f.key ? "default" : "outline"}
+              className={cn("h-7 text-xs", activeFilter === f.key && "bg-primary text-primary-foreground")}
+              onClick={() => setActiveFilter(f.key)}
+            >
+              {f.label} <span className="ml-1 opacity-70">({f.count})</span>
+            </Button>
+          ))}
+        </div>
 
-        <Section title={`Upcoming / not yet logged (${upcoming.length})`}>
-          {upcoming.length === 0
-            ? <Empty>Nothing upcoming.</Empty>
-            : upcoming.map((b) => <UpcomingRow key={b.id} b={b} />)}
-        </Section>
+        {activeFilter === "all" || activeFilter === "not-logged" ? (
+          <Section title={`Upcoming / not yet logged (${filteredUpcoming.length})`}>
+            {filteredUpcoming.length === 0
+              ? <Empty>Nothing upcoming.</Empty>
+              : filteredUpcoming.map((b) => <UpcomingRow key={b.id} b={b} />)}
+          </Section>
+        ) : null}
+
+        {activeFilter === "all" || activeFilter !== "not-logged" ? (
+          <Section title={`Outcomes (${filteredOutcomes.length})`}>
+            {filteredOutcomes.length === 0
+              ? <Empty>No outcomes logged yet.</Empty>
+              : filteredOutcomes.map((b) => <OutcomeRow key={b.id} b={b} />)}
+          </Section>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
