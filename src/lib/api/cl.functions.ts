@@ -263,6 +263,9 @@ export const updateLead = createServerFn({ method: "POST" })
     do_not_contact: z.boolean().optional(),
     callback_at: z.string().datetime().nullable().optional(),
     email: z.string().trim().email().max(200).nullable().optional().or(z.literal("").transform(() => null)),
+    name: z.string().trim().min(1).max(200).optional(),
+    phone: z.string().trim().max(50).nullable().optional().or(z.literal("").transform(() => null)),
+    company: z.string().trim().max(200).nullable().optional().or(z.literal("").transform(() => null)),
   }).parse)
   .handler(async ({ data, context }) => {
     const patch: Database["public"]["Tables"]["leads"]["Update"] = {};
@@ -271,10 +274,14 @@ export const updateLead = createServerFn({ method: "POST" })
     if (data.do_not_contact !== undefined) patch.do_not_contact = data.do_not_contact;
     if (data.callback_at !== undefined) patch.callback_at = data.callback_at;
     if (data.email !== undefined) patch.email = data.email;
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.phone !== undefined) patch.phone = data.phone;
+    if (data.company !== undefined) patch.company = data.company;
     if (data.contacted === true) patch.contacted_at = new Date().toISOString();
     if (data.contacted === false) patch.contacted_at = null;
     const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+
 
     // Every outcome counts as a dial. If a real call log exists for this lead
     // that hasn't been counted yet, mark it counted. Otherwise insert a
