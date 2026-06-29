@@ -15,8 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Search, Phone, Mail, CalendarClock, CheckCircle2, XCircle, PhoneOff, Building2, Tag, Clock, Video, Ban, TrendingUp, DollarSign, MessageSquare, BookOpen, Copy, Check } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { DateTimePicker } from "@/components/date-time-picker";
 import { SlotPicker } from "@/components/slot-picker";
+import { CallbackSlotPicker } from "@/components/callback-slot-picker";
 import { CALL_SCRIPTS, OBJECTIONS, OBJECTION_PRINCIPLES, OBJECTION_GOLDEN_RULE, SMS_TEMPLATES, fillTemplate } from "@/lib/script-templates";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { toast } from "sonner";
@@ -644,7 +644,7 @@ function CallbackDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boo
 
   const submit = useMutation({
     mutationFn: async () => {
-      const iso = zonedWallTimeToUtc(when, tz).toISOString();
+      const iso = when.toISOString();
       await createAppointment({ data: {
         lead_id: lead.id, type: "callback", scheduled_at: iso,
         name: lead.name, phone: lead.phone, email: lead.email, context: note || null,
@@ -660,16 +660,8 @@ function CallbackDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boo
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Schedule a callback</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <Field label="Call back at"><DateTimePicker value={when} onChange={setWhen} /></Field>
-          <Field label="Time zone">
-            <Select value={tz} onValueChange={setTz}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CALLBACK_TIMEZONES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Field label="Pick a callback time">
+            <CallbackSlotPicker value={when} onChange={setWhen} tz={tz} onTzChange={setTz} />
           </Field>
           <Field label="Note (optional)"><Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
         </div>
