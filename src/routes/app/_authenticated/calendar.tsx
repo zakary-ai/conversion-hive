@@ -153,8 +153,8 @@ function ApptView({
           <ApptList items={selectedDayAppts} canDelete={canDelete} showOwner={showOwner} empty={mode === "past" ? "No past appointments this day." : "No appointments this day."} compactScroll />
         </div>
         <div className="hidden lg:block">
-          <h3 className="text-sm font-medium mb-2 text-muted-foreground">{mode === "past" ? "Recent history" : "Upcoming"}</h3>
-          <ApptList items={secondary} canDelete={canDelete} showOwner={showOwner} empty={mode === "past" ? "No history yet." : "Nothing scheduled."} />
+          <h3 className="text-sm font-medium mb-2 text-muted-foreground">{mode === "past" ? "Recent history" : mode === "all" ? "All appointments" : "Upcoming"}</h3>
+          <ApptList items={secondary} canDelete={canDelete} showOwner={showOwner} empty={mode === "past" ? "No history yet." : mode === "all" ? "Nothing here yet." : "Nothing scheduled."} />
         </div>
       </div>
     </div>
