@@ -92,11 +92,12 @@ function ApptView({
   queryOpts: typeof myOpts; filter: "all"|"booking"|"callback";
   date: Date | undefined; setDate: (d: Date | undefined) => void;
   canDelete: boolean; showOwner?: boolean;
-  mode: "upcoming" | "past";
+  mode: "upcoming" | "past" | "all";
 }) {
   const { data: appts } = useSuspenseQuery(queryOpts);
   const cutoff = Date.now() - 60 * 60 * 1000;
   const scoped = useMemo(() => {
+    if (mode === "all") return appts;
     return appts.filter((a) => {
       const t = new Date(a.scheduled_at).getTime();
       return mode === "past" ? t < cutoff : t >= cutoff;
@@ -122,6 +123,9 @@ function ApptView({
 
   const secondary = useMemo(() => {
     if (mode === "past") {
+      return [...filtered].sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()).slice(0, 50);
+    }
+    if (mode === "all") {
       return [...filtered].sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()).slice(0, 50);
     }
     return filtered.slice(0, 50);
