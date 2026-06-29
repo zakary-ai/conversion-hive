@@ -278,6 +278,7 @@ function ApptList({ items, canDelete, showOwner, empty, compactScroll }: { items
         currentScheduledAt={rescheduleAppt?.scheduled_at}
         onClose={() => setRescheduleAppt(null)}
       />
+      <EditLeadDialog leadId={editLeadId} onClose={() => setEditLeadId(null)} />
     </>
   );
 }
