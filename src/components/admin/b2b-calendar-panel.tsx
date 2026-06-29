@@ -578,4 +578,3 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
   );
 }
 
-// Silence unused import warnings for fns we may add later (reschedule UI).
