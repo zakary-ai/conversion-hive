@@ -141,7 +141,7 @@ function ApplicationDialog({ app, onClose }: { app: Application | null; onClose:
 
   return (
     <Dialog open={!!app} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{app?.full_name}</DialogTitle>
         </DialogHeader>
