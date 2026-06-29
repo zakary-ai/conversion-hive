@@ -660,16 +660,8 @@ function CallbackDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boo
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Schedule a callback</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <Field label="Call back at"><DateTimePicker value={when} onChange={setWhen} /></Field>
-          <Field label="Time zone">
-            <Select value={tz} onValueChange={setTz}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CALLBACK_TIMEZONES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Field label="Pick a callback time">
+            <CallbackSlotPicker value={when} onChange={setWhen} tz={tz} onTzChange={setTz} />
           </Field>
           <Field label="Note (optional)"><Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
         </div>
