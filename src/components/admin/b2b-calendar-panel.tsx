@@ -12,7 +12,7 @@ import {
   deleteAppointment,
 
 } from "@/lib/api/cl.functions";
-import { listClosers } from "@/lib/api/b2c.functions";
+import { listB2bClosers } from "@/lib/api/b2b-closers.functions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -186,8 +186,8 @@ export function B2bCalendarPanel() {
   });
 
   const { data: closers = [] } = useQuery({
-    queryKey: ["closers"],
-    queryFn: () => listClosers(),
+    queryKey: ["b2b-closers"],
+    queryFn: () => listB2bClosers(),
   });
 
   return (
@@ -381,9 +381,11 @@ type DayBooking = {
   phone: string | null;
   meeting_url?: string | null;
   assigned_closer_id?: string | null;
+  b2b_closer_id?: string | null;
   closers?: { full_name: string; email: string } | null;
+  b2b_closer?: { full_name: string; email: string } | null;
 };
-type CloserOpt = { id: string; full_name: string; active: boolean; b2b_active?: boolean };
+type CloserOpt = { id: string; full_name: string; active: boolean };
 
 function DayBookingList({
   bookings,
@@ -399,8 +401,8 @@ function DayBookingList({
       </div>
     );
   }
-  const unassigned = bookings.filter((b) => !b.assigned_closer_id && b.status !== "cancelled");
-  const others = bookings.filter((b) => !!b.assigned_closer_id || b.status === "cancelled");
+  const unassigned = bookings.filter((b) => !b.b2b_closer_id && !b.assigned_closer_id && b.status !== "cancelled");
+  const others = bookings.filter((b) => !!b.b2b_closer_id || !!b.assigned_closer_id || b.status === "cancelled");
   return (
     <div className="space-y-4">
       {unassigned.length > 0 && (
@@ -478,7 +480,7 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
   const dt = new Date(booking.scheduled_at);
   const time = dt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 
-  const b2bClosers = closers.filter((c) => c.active && c.b2b_active);
+  const b2bClosers = closers.filter((c) => c.active);
 
   return (
     <Card className="p-3">
@@ -500,9 +502,9 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
               </span>
             )}
           </div>
-          {booking.closers && (
+          {(booking.b2b_closer || booking.closers) && (
             <div className="text-xs text-muted-foreground mt-1">
-              Closer: <span className="text-foreground">{booking.closers.full_name}</span>
+              Closer: <span className="text-foreground">{(booking.b2b_closer ?? booking.closers)!.full_name}</span>
             </div>
           )}
           {booking.meeting_url && (

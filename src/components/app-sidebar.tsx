@@ -23,6 +23,7 @@ const clientItems = [
 const adminB2BItems = [
   { title: "Dashboard", url: "/app/admin", icon: LayoutDashboard },
   { title: "Setters", url: "/app/admin/clients", icon: Users },
+  { title: "Closers", url: "/app/admin/b2b-closers", icon: UserPlus },
   { title: "Leads", url: "/app/admin/leads", icon: Briefcase },
   { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },

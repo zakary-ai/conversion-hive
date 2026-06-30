@@ -580,29 +580,28 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
 
     if (!globalRules || globalRules.length === 0) return [] as string[];
 
-    // B2B-active closers
+    // B2B closers (new dedicated pool)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closers } = await (supabaseAdmin.from("closers") as any)
-      .select("id").eq("active", true).eq("b2b_active", true);
+    const { data: closers } = await (supabaseAdmin.from("b2b_closers") as any)
+      .select("id").eq("active", true);
     const closerIds = ((closers ?? []) as Array<{ id: string }>).map((c) => c.id);
     if (closerIds.length === 0) return [] as string[];
 
     // Their B2B availability
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closerRulesRaw } = await (supabaseAdmin.from("closer_availability_rules") as any)
+    const { data: closerRulesRaw } = await (supabaseAdmin.from("b2b_closer_availability_rules") as any)
       .select("closer_id, day_of_week, start_minute, end_minute")
-      .eq("track", "b2b")
       .in("closer_id", closerIds);
     const closerRules = (closerRulesRaw ?? []) as Array<{ closer_id: string; day_of_week: number; start_minute: number; end_minute: number }>;
 
     // Existing appointments overlapping the viewer window
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: bookings } = await (supabaseAdmin.from("appointments") as any)
-      .select("scheduled_at, assigned_closer_id, status")
+      .select("scheduled_at, b2b_closer_id, status")
       .eq("type", "booking")
       .gte("scheduled_at", new Date(viewerDayStart.getTime() - SLOT * 60_000).toISOString())
       .lt("scheduled_at", new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString());
-    const allBookings = (bookings ?? []) as Array<{ scheduled_at: string; assigned_closer_id: string | null; status: string | null }>;
+    const allBookings = (bookings ?? []) as Array<{ scheduled_at: string; b2b_closer_id: string | null; status: string | null }>;
 
     // Viewer day can span 2 EST calendar days
     const estDates = new Set<string>();
@@ -634,7 +633,7 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
             const covers = cRules.some((r) => r.start_minute <= mm && r.end_minute >= mm + SLOT);
             if (!covers) continue;
             const conflict = allBookings.some((b) => {
-              if (b.assigned_closer_id !== cid) return false;
+              if (b.b2b_closer_id !== cid) return false;
               if (b.status === "cancelled") return false;
               const bs = new Date(b.scheduled_at).getTime();
               return bs < slotEnd && bs + slotMs > t;
@@ -644,7 +643,7 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
 
           // Reserve capacity for pending (unassigned) bookings already sitting on this slot
           const pendingAtSlot = allBookings.filter((b) =>
-            b.assigned_closer_id == null
+            b.b2b_closer_id == null
             && b.status === "pending_assignment"
             && new Date(b.scheduled_at).getTime() === t
           ).length;
@@ -691,21 +690,22 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: appt, error: aerr } = await (context.supabase.from("appointments") as any)
-      .select("id, type, name, email, assigned_closer_id, status").eq("id", data.id).single();
+      .select("id, type, name, email, assigned_closer_id, b2b_closer_id, status").eq("id", data.id).single();
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
 
     const slotMinutes = await getSlotMinutes();
     if (appt.type === "booking") {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: clash } = await supabaseAdmin.from("appointments")
-        .select("id, assigned_closer_id, status")
+        .select("id, assigned_closer_id, b2b_closer_id, status")
         .eq("type", "booking")
         .eq("scheduled_at", data.scheduled_at)
         .neq("id", data.id);
-      // Same-closer conflict if currently assigned
-      if (appt.assigned_closer_id) {
+      const currentCloserId = (appt.b2b_closer_id as string | null) ?? (appt.assigned_closer_id as string | null);
+      const closerCol: "b2b_closer_id" | "assigned_closer_id" = appt.b2b_closer_id ? "b2b_closer_id" : "assigned_closer_id";
+      if (currentCloserId) {
         const c = (clash ?? []).find((r) =>
-          (r as { assigned_closer_id?: string | null; status?: string | null }).assigned_closer_id === appt.assigned_closer_id
+          (r as Record<string, string | null>)[closerCol] === currentCloserId
           && (r as { status?: string | null }).status !== "cancelled"
         );
         if (c) throw new Error("That closer is already booked at this time.");
@@ -713,12 +713,14 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
     }
 
     let newMeetingUrl: string | null | undefined = undefined;
-    if (appt.type === "booking" && appt.assigned_closer_id) {
+    const assignedCloserId = (appt.b2b_closer_id as string | null) ?? (appt.assigned_closer_id as string | null);
+    if (appt.type === "booking" && assignedCloserId) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const credsTable = appt.b2b_closer_id ? "b2b_closer_zoom_credentials" : "closer_zoom_credentials";
       const { data: creds } = await supabaseAdmin
-        .from("closer_zoom_credentials")
+        .from(credsTable)
         .select("zoom_account_id, zoom_client_id, zoom_client_secret")
-        .eq("closer_id", appt.assigned_closer_id)
+        .eq("closer_id", assignedCloserId)
         .maybeSingle();
       newMeetingUrl = await createZoomMeetingOnCloserAccount({
         accountId: (creds?.zoom_account_id as string | null) ?? null,
@@ -732,7 +734,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
 
     const patch: Record<string, unknown> = { scheduled_at: data.scheduled_at };
     if (appt.type === "booking") {
-      patch.status = appt.assigned_closer_id ? "assigned" : "pending_assignment";
+      patch.status = assignedCloserId ? "assigned" : "pending_assignment";
     } else {
       patch.status = "scheduled";
     }
@@ -742,7 +744,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
     const { error } = await (context.supabase.from("appointments") as any).update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    if (appt.type === "booking" && appt.assigned_closer_id && appt.email) {
+    if (appt.type === "booking" && assignedCloserId && appt.email) {
       void sendBookingConfirmationEmail({
         appointmentId: data.id,
         recipientEmail: appt.email,
@@ -772,7 +774,7 @@ export const listB2bBookingsForDate = createServerFn({ method: "GET" })
     const end = zonedWallToUTC(y, m, d + 1, 0, 0, tz);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: rows, error } = await (context.supabase.from("appointments") as any)
-      .select("*, closers:assigned_closer_id (id, full_name, email)")
+      .select("*, closers:assigned_closer_id (id, full_name, email), b2b_closer:b2b_closer_id (id, full_name, email)")
       .eq("type", "booking")
       .gte("scheduled_at", start.toISOString())
       .lt("scheduled_at", end.toISOString())
@@ -788,7 +790,7 @@ export const listB2bBookings = createServerFn({ method: "GET" })
     if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (context.supabase.from("appointments") as any)
-      .select("*, closers:assigned_closer_id (id, full_name, email)")
+      .select("*, closers:assigned_closer_id (id, full_name, email), b2b_closer:b2b_closer_id (id, full_name, email)")
       .eq("type", "booking")
       .order("scheduled_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -812,11 +814,12 @@ export const assignB2bCloser = createServerFn({ method: "POST" })
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
     if (appt.type !== "booking") throw new Error("Only bookings can be assigned");
 
+    // Lookup the B2B closer in the dedicated pool
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closer, error: cerr } = await (supabaseAdmin.from("closers") as any)
-      .select("id, full_name, email, b2b_active, active").eq("id", data.closer_id).single();
-    if (cerr || !closer) throw new Error(cerr?.message || "Closer not found");
-    if (!closer.b2b_active || !closer.active) throw new Error("That closer is not marked as a B2B closer.");
+    const { data: closer, error: cerr } = await (supabaseAdmin.from("b2b_closers") as any)
+      .select("id, full_name, email, active").eq("id", data.closer_id).single();
+    if (cerr || !closer) throw new Error(cerr?.message || "B2B closer not found");
+    if (!closer.active) throw new Error("That closer is not active.");
 
     // Same-closer conflict
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -824,13 +827,13 @@ export const assignB2bCloser = createServerFn({ method: "POST" })
       .select("id")
       .eq("type", "booking")
       .eq("scheduled_at", appt.scheduled_at)
-      .eq("assigned_closer_id", data.closer_id)
+      .eq("b2b_closer_id", data.closer_id)
       .neq("id", data.appointment_id);
     if ((conflict ?? []).length > 0) throw new Error("That closer is already booked at this time.");
 
     const slotMinutes = await getSlotMinutes();
     const { data: creds } = await supabaseAdmin
-      .from("closer_zoom_credentials")
+      .from("b2b_closer_zoom_credentials")
       .select("zoom_account_id, zoom_client_id, zoom_client_secret")
       .eq("closer_id", data.closer_id)
       .maybeSingle();
@@ -845,7 +848,8 @@ export const assignB2bCloser = createServerFn({ method: "POST" })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: uerr } = await (supabaseAdmin.from("appointments") as any).update({
-      assigned_closer_id: data.closer_id,
+      b2b_closer_id: data.closer_id,
+      assigned_closer_id: null,
       status: "assigned",
       meeting_url: meetingUrl,
     }).eq("id", data.appointment_id);
@@ -873,6 +877,7 @@ export const unassignB2bCloser = createServerFn({ method: "POST" })
     if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (context.supabase.from("appointments") as any).update({
+      b2b_closer_id: null,
       assigned_closer_id: null,
       status: "pending_assignment",
       meeting_url: null,

@@ -1,41 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listClosers, createCloser, updateCloser, deleteCloser, listCloserAvailability, replaceCloserAvailability, resendCloserInvite, getCloserZoomCreds, listClosersZoomStatus } from "@/lib/api/b2c.functions";
+import {
+  listB2bClosers, createB2bCloser, updateB2bCloser, deleteB2bCloser,
+  listB2bCloserAvailability, replaceB2bCloserAvailability,
+  resendB2bCloserInvite, getB2bCloserZoomCreds, listB2bClosersZoomStatus,
+} from "@/lib/api/b2b-closers.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
 import { toast } from "sonner";
 import { Trash2, Plus, Save, UserPlus, KeyRound, BarChart3 } from "lucide-react";
-import { CloserDetailDialog } from "@/components/closer-detail-dialog";
+import { B2bCloserDetailDialog } from "@/components/admin/b2b-closer-detail-dialog";
 
-export const Route = createFileRoute("/app/_authenticated/admin/closers")({
-  component: ClosersPage,
+export const Route = createFileRoute("/app/_authenticated/admin/b2b-closers")({
+  component: B2bClosersPage,
 });
 
 const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 type Rule = { day_of_week: number; start_minute: number; end_minute: number };
-type Track = "b2c" | "b2b";
 const toTime = (m: number) => `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`;
 const fromTime = (s: string) => { const [h,m] = s.split(":").map(Number); return (h||0)*60+(m||0); };
 
-function ClosersPage() {
+function B2bClosersPage() {
   const qc = useQueryClient();
-  const { data: closers = [] } = useQuery({ queryKey: ["closers"], queryFn: () => listClosers() });
-  const { data: zoomStatus = {} } = useQuery({ queryKey: ["closers-zoom-status"], queryFn: () => listClosersZoomStatus() });
+  const { data: closers = [] } = useQuery({ queryKey: ["b2b-closers"], queryFn: () => listB2bClosers() });
+  const { data: zoomStatus = {} } = useQuery({ queryKey: ["b2b-closers-zoom-status"], queryFn: () => listB2bClosersZoomStatus() });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "" });
 
   const create = useMutation({
-    mutationFn: () => createCloser({ data: form }),
+    mutationFn: () => createB2bCloser({ data: form }),
     onSuccess: (res) => {
-      toast.success(`Closer created. Temp password: ${res.default_password}`, { duration: 15000 });
-      qc.invalidateQueries({ queryKey: ["closers"] });
+      toast.success(`B2B closer invited. Temp password: ${res.default_password}`, { duration: 15000 });
+      qc.invalidateQueries({ queryKey: ["b2b-closers"] });
       setOpen(false);
       setForm({ full_name: "", email: "" });
     },
@@ -46,15 +47,15 @@ function ClosersPage() {
     <div className="space-y-6 max-w-4xl">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:items-center">
         <div className="min-w-0">
-          <h1 className="text-2xl font-display font-semibold">Closers</h1>
-          <p className="text-sm text-muted-foreground">B2C closers. B2B closers are managed in their own section.</p>
+          <h1 className="text-2xl font-display font-semibold">B2B Closers</h1>
+          <p className="text-sm text-muted-foreground">Closers that handle inbound B2B sales calls. Fully separate from the B2C pool.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="shrink-0 sm:size-default"><UserPlus className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Invite closer</span><span className="sr-only sm:hidden">Invite closer</span></Button>
+            <Button size="sm" className="shrink-0 sm:size-default"><UserPlus className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Invite B2B closer</span><span className="sr-only sm:hidden">Invite B2B closer</span></Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Invite a closer</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Invite a B2B closer</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Full name</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
               <div><Label>Login email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
@@ -69,7 +70,7 @@ function ClosersPage() {
 
       <div className="grid gap-3">
         {closers.length === 0 && (
-          <Card className="p-8 text-center text-sm text-muted-foreground">No closers yet. Invite one to get started.</Card>
+          <Card className="p-8 text-center text-sm text-muted-foreground">No B2B closers yet. Invite one to get started.</Card>
         )}
         {closers.map((c) => <CloserRow key={c.id} closer={c as CloserRowT} hasZoom={!!zoomStatus[c.id]} />)}
       </div>
@@ -82,7 +83,6 @@ type CloserRowT = {
   full_name: string;
   email: string;
   active: boolean;
-  b2b_active?: boolean;
 };
 
 function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }) {
@@ -91,19 +91,17 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }
   const [editZoom, setEditZoom] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const toggleActive = useMutation({
-    mutationFn: (active: boolean) => updateCloser({ data: { id: closer.id, active } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["closers"] }),
+    mutationFn: (active: boolean) => updateB2bCloser({ data: { id: closer.id, active } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["b2b-closers"] }),
     onError: (e: Error) => toast.error(e.message),
   });
-  const toggleB2B = null as never;
-  void toggleB2B;
   const del = useMutation({
-    mutationFn: () => deleteCloser({ data: { id: closer.id } }),
-    onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["closers"] }); },
+    mutationFn: () => deleteB2bCloser({ data: { id: closer.id } }),
+    onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["b2b-closers"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   const resend = useMutation({
-    mutationFn: () => resendCloserInvite({ data: { id: closer.id } }),
+    mutationFn: () => resendB2bCloserInvite({ data: { id: closer.id } }),
     onSuccess: () => toast.success(`Invite re-sent to ${closer.email}`),
     onError: (e: Error) => toast.error(e.message),
   });
@@ -138,8 +136,8 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }
         <Dialog open={editAvail} onOpenChange={setEditAvail}>
           <DialogTrigger asChild><Button size="sm" variant="outline">Availability</Button></DialogTrigger>
           <DialogContent className="max-w-xl">
-            <DialogHeader><DialogTitle>{closer.full_name}'s availability</DialogTitle></DialogHeader>
-            <CloserAvail closerId={closer.id} track="b2c" />
+            <DialogHeader><DialogTitle>{closer.full_name}'s B2B availability</DialogTitle></DialogHeader>
+            <CloserAvail closerId={closer.id} />
           </DialogContent>
         </Dialog>
         <Button size="sm" variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>
@@ -149,16 +147,16 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <CloserDetailDialog closerId={closer.id} open={detailOpen} onOpenChange={setDetailOpen} />
+      <B2bCloserDetailDialog closerId={closer.id} open={detailOpen} onOpenChange={setDetailOpen} />
     </Card>
   );
 }
 
-function CloserAvail({ closerId, track }: { closerId: string; track: Track }) {
+function CloserAvail({ closerId }: { closerId: string }) {
   const qc = useQueryClient();
   const { data = [] } = useQuery({
-    queryKey: ["closer-avail", closerId, track],
-    queryFn: () => listCloserAvailability({ data: { closer_id: closerId, track } }),
+    queryKey: ["b2b-closer-avail", closerId],
+    queryFn: () => listB2bCloserAvailability({ data: { closer_id: closerId } }),
   });
   const [byDay, setByDay] = useState<Record<number, Rule[]>>({});
 
@@ -177,12 +175,11 @@ function CloserAvail({ closerId, track }: { closerId: string; track: Track }) {
     mutationFn: () => {
       const rules: Rule[] = [];
       for (const list of Object.values(byDay)) for (const r of list) if (r.end_minute > r.start_minute) rules.push(r);
-      return replaceCloserAvailability({ data: { closer_id: closerId, rules, track } });
+      return replaceB2bCloserAvailability({ data: { closer_id: closerId, rules } });
     },
     onSuccess: () => {
       toast.success("Availability saved");
-      qc.invalidateQueries({ queryKey: ["closer-avail", closerId, track] });
-      qc.invalidateQueries({ queryKey: ["closer-slots"] });
+      qc.invalidateQueries({ queryKey: ["b2b-closer-avail", closerId] });
       qc.invalidateQueries({ queryKey: ["available-slots"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -240,12 +237,11 @@ function CloserAvail({ closerId, track }: { closerId: string; track: Track }) {
   );
 }
 
-
 function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () => void }) {
   const qc = useQueryClient();
   const { data: creds } = useQuery({
-    queryKey: ["closer-zoom-creds", closer.id],
-    queryFn: () => getCloserZoomCreds({ data: { closer_id: closer.id } }),
+    queryKey: ["b2b-closer-zoom-creds", closer.id],
+    queryFn: () => getB2bCloserZoomCreds({ data: { closer_id: closer.id } }),
   });
   const [accountId, setAccountId] = useState("");
   const [clientId, setClientId] = useState("");
@@ -259,7 +255,7 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
   }, [creds]);
 
   const save = useMutation({
-    mutationFn: () => updateCloser({
+    mutationFn: () => updateB2bCloser({
       data: {
         id: closer.id,
         zoom_account_id: accountId.trim() || null,
@@ -269,21 +265,21 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
     }),
     onSuccess: () => {
       toast.success("Zoom credentials saved");
-      qc.invalidateQueries({ queryKey: ["closers-zoom-status"] });
-      qc.invalidateQueries({ queryKey: ["closer-zoom-creds", closer.id] });
+      qc.invalidateQueries({ queryKey: ["b2b-closers-zoom-status"] });
+      qc.invalidateQueries({ queryKey: ["b2b-closer-zoom-creds", closer.id] });
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const clear = useMutation({
-    mutationFn: () => updateCloser({
+    mutationFn: () => updateB2bCloser({
       data: { id: closer.id, zoom_account_id: null, zoom_client_id: null, zoom_client_secret: null },
     }),
     onSuccess: () => {
       toast.success("Zoom credentials removed");
-      qc.invalidateQueries({ queryKey: ["closers-zoom-status"] });
-      qc.invalidateQueries({ queryKey: ["closer-zoom-creds", closer.id] });
+      qc.invalidateQueries({ queryKey: ["b2b-closers-zoom-status"] });
+      qc.invalidateQueries({ queryKey: ["b2b-closer-zoom-creds", closer.id] });
       onDone();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -292,7 +288,7 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        From the closer's Zoom Server-to-Server OAuth app. Meetings for this closer will be created on their own Zoom account (used for both B2C and B2B).
+        From the B2B closer's Zoom Server-to-Server OAuth app. B2B meetings will be created on this account.
       </p>
       <div>
         <Label>Account ID</Label>
