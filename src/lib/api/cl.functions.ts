@@ -433,27 +433,8 @@ export const updateB2bSettings = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Back-compat shims so older callers keep working
-export const getBookingSettings = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async () => ({ slot_minutes: await getSlotMinutes() }));
 
-export const updateBookingSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({
-    slot_minutes: z.union([z.literal(15), z.literal(30), z.literal(45), z.literal(60), z.literal(90), z.literal(120)]),
-  }).parse)
-  .handler(async ({ data, context }) => {
-    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
-    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const current = await getB2bSettingsRow();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabaseAdmin.from("b2b_settings") as any)
-      .upsert({ id: 1, slot_minutes: data.slot_minutes, days_out: current.days_out, updated_at: new Date().toISOString() }, { onConflict: "id" });
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+
 
 async function sendBookingConfirmationEmail(input: {
   appointmentId: string;
