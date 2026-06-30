@@ -44,8 +44,8 @@ export function ScheduledLeadDialog({
   }, [row?.id]);
 
   const closersQ = useQuery({
-    queryKey: ["closers"],
-    queryFn: () => listClosers(),
+    queryKey: channel === "b2b" ? ["b2b-closers"] : ["closers"],
+    queryFn: () => (channel === "b2b" ? listB2bClosers() : listClosers()),
     enabled: !!row,
   });
 
@@ -55,9 +55,7 @@ export function ScheduledLeadDialog({
     enabled: !!row && channel === "b2c" && !!row.application_id,
   });
 
-  const eligibleClosers = (closersQ.data ?? []).filter((c) =>
-    channel === "b2b" ? c.b2b_active && c.active : c.active,
-  );
+  const eligibleClosers = (closersQ.data ?? []).filter((c) => c.active);
 
   const assign = useMutation({
     mutationFn: async () => {
