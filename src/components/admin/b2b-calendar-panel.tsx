@@ -502,9 +502,9 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
               </span>
             )}
           </div>
-          {booking.closers && (
+          {(booking.b2b_closer || booking.closers) && (
             <div className="text-xs text-muted-foreground mt-1">
-              Closer: <span className="text-foreground">{booking.closers.full_name}</span>
+              Closer: <span className="text-foreground">{(booking.b2b_closer ?? booking.closers)!.full_name}</span>
             </div>
           )}
           {booking.meeting_url && (
