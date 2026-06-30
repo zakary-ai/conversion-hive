@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listCloserBookings } from "@/lib/api/b2c.functions";
+import { listMyAppointments } from "@/lib/api/cl.functions";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Phone, Video, CalendarClock, ClipboardCheck } from "lucide-react";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
+import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 
 export const Route = createFileRoute("/app/_authenticated/closer/calendar")({
   beforeLoad: async ({ context }) => {
@@ -29,6 +31,7 @@ type B = {
   applicant_email: string;
   applicant_phone: string | null;
 };
+type Appt = Awaited<ReturnType<typeof listMyAppointments>>[number];
 
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -36,13 +39,18 @@ function sameDay(a: Date, b: Date) {
 
 function CloserCalendar() {
   const { data } = useQuery({ queryKey: ["closer-bookings"], queryFn: () => listCloserBookings() });
+  const { data: apptsRaw = [] } = useQuery({ queryKey: ["my-appointments"], queryFn: () => listMyAppointments() });
   const rows = (data?.rows ?? []) as B[];
+  const b2bAppts = (apptsRaw as Appt[]).filter((a) => a.type === "booking" && a.status !== "cancelled");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [previewFor, setPreviewFor] = useState<B | null>(null);
   const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
+  const [apptFor, setApptFor] = useState<Appt | null>(null);
 
-  const bookedDays = useMemo(() => rows.map((r) => new Date(r.slot_start)), [rows]);
+  const bookedDays = useMemo(() => [...rows.map((r) => new Date(r.slot_start)), ...b2bAppts.map((a) => new Date(a.scheduled_at))], [rows, b2bAppts]);
   const dayBookings = useMemo(() => date ? rows.filter((r) => sameDay(new Date(r.slot_start), date)) : [], [rows, date]);
+  const dayB2bAppts = useMemo(() => date ? b2bAppts.filter((a) => sameDay(new Date(a.scheduled_at), date)) : [], [b2bAppts, date]);
+  const totalDayCalls = dayBookings.length + dayB2bAppts.length;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -65,9 +73,33 @@ function CloserCalendar() {
           <h2 className="text-sm uppercase tracking-widest text-muted-foreground">
             {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "Select a day"}
           </h2>
-          {dayBookings.length === 0 && (
+          {totalDayCalls === 0 && (
             <Card className="p-6 text-center text-sm text-muted-foreground">No calls this day.</Card>
           )}
+          {dayB2bAppts.map((a) => {
+            const time = new Date(a.scheduled_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+            return (
+              <Card key={a.id} className="p-4 flex items-center justify-between gap-3 flex-wrap">
+                <div className="min-w-0 cursor-pointer" onClick={() => setApptFor(a)}>
+                  <div className="font-medium flex items-center gap-2">
+                    <span className="text-primary hover:underline">{a.name}</span>
+                    <Badge variant="secondary" className="text-[10px]">B2B</Badge>
+                    <Badge variant="secondary" className="text-[10px]">{a.status}</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                    <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {time}</span>
+                    {a.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {a.email}</span>}
+                    {a.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {a.phone}</span>}
+                  </div>
+                </div>
+                {a.meeting_url && (
+                  <a href={a.meeting_url} target="_blank" rel="noreferrer">
+                    <Button size="sm" className="gap-1"><Video className="h-3 w-3" /> Join</Button>
+                  </a>
+                )}
+              </Card>
+            );
+          })}
           {dayBookings.map((b) => {
             const time = new Date(b.slot_start).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
             return (
@@ -115,6 +147,7 @@ function CloserCalendar() {
           onOpenChange={(v) => !v && setOutcomeFor(null)}
         />
       )}
+      <AppointmentDetailDialog appt={apptFor} onClose={() => setApptFor(null)} />
     </div>
   );
 }
