@@ -1257,6 +1257,77 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
     };
   });
 
+// ---------- Channel-aware admin overview (B2B/B2C) ----------
+export const getAdminOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ channel: z.enum(["b2b", "b2c"]) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
+    const nowISO = new Date().toISOString();
+    const tsISO = todayStart.toISOString();
+    const teISO = todayEnd.toISOString();
+
+    type Row = { id: string; name: string | null; email: string | null; phone: string | null; scheduled_at: string; meeting_url: string | null; context: string | null };
+
+    if (data.channel === "b2c") {
+      const [scheduled, going, booked, closed, upcoming] = await Promise.all([
+        supabase.from("closer_bookings").select("*").eq("status", "pending_assignment").order("slot_start", { ascending: true }),
+        supabase.from("closer_bookings").select("*").in("status", ["assigned", "completed"])
+          .gte("slot_start", tsISO).lt("slot_start", teISO).order("slot_start", { ascending: true }),
+        supabase.from("closer_bookings").select("*")
+          .gte("created_at", tsISO).lt("created_at", teISO).order("created_at", { ascending: false }),
+        supabase.from("closer_bookings").select("*").in("outcome", ["closed", "deposit"])
+          .gte("outcome_at", tsISO).lt("outcome_at", teISO).order("outcome_at", { ascending: false }),
+        supabase.from("closer_bookings").select("*").in("status", ["pending_assignment", "assigned"])
+          .gte("slot_start", nowISO).order("slot_start", { ascending: true }).limit(25),
+      ]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const map = (r: any): Row => ({
+        id: r.id, name: r.applicant_name, email: r.applicant_email, phone: r.applicant_phone,
+        scheduled_at: r.slot_start, meeting_url: r.zoom_join_url, context: r.notes,
+      });
+      return {
+        scheduledLeads: (scheduled.data ?? []).map(map),
+        callsGoingLiveToday: (going.data ?? []).map(map),
+        callsBookedToday: (booked.data ?? []).map(map),
+        callsClosedToday: (closed.data ?? []).map(map),
+        upcomingCalls: (upcoming.data ?? []).map(map),
+      };
+    }
+
+    const [scheduled, going, booked, closed, upcoming] = await Promise.all([
+      supabase.from("appointments").select("*").eq("type", "booking").eq("status", "pending_assignment")
+        .order("scheduled_at", { ascending: true }),
+      supabase.from("appointments").select("*").eq("type", "booking")
+        .gte("scheduled_at", tsISO).lt("scheduled_at", teISO).order("scheduled_at", { ascending: true }),
+      supabase.from("appointments").select("*").eq("type", "booking")
+        .gte("created_at", tsISO).lt("created_at", teISO).order("created_at", { ascending: false }),
+      supabase.from("appointments").select("*").eq("type", "booking").eq("outcome", "closed")
+        .gte("scheduled_at", tsISO).lt("scheduled_at", teISO).order("scheduled_at", { ascending: false }),
+      supabase.from("appointments").select("*").eq("type", "booking")
+        .gte("scheduled_at", nowISO).order("scheduled_at", { ascending: true }).limit(25),
+    ]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const map = (r: any): Row => ({
+      id: r.id, name: r.name, email: r.email, phone: r.phone,
+      scheduled_at: r.scheduled_at, meeting_url: r.meeting_url, context: r.context,
+    });
+    return {
+      scheduledLeads: (scheduled.data ?? []).map(map),
+      callsGoingLiveToday: (going.data ?? []).map(map),
+      callsBookedToday: (booked.data ?? []).map(map),
+      callsClosedToday: (closed.data ?? []).map(map),
+      upcomingCalls: (upcoming.data ?? []).map(map),
+    };
+  });
+
+
+
 // ---------- Admin clients ----------
 export const listClients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
