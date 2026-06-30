@@ -209,3 +209,32 @@ function CallRow({ row, showTimeOnly, onClick }: { row: Row; showTimeOnly: boole
     </Card>
   );
 }
+
+type OutcomeMeta = { label: string; icon: typeof Video; cls: string };
+
+const OUTCOMES: Record<string, OutcomeMeta> = {
+  closed: { label: "Closed", icon: DollarSign, cls: "bg-success/15 text-success" },
+  deposit: { label: "Deposit", icon: DollarSign, cls: "bg-success/15 text-success" },
+  lost: { label: "Lost", icon: XCircle, cls: "bg-destructive/15 text-destructive" },
+  not_interested: { label: "Not interested", icon: XCircle, cls: "bg-destructive/15 text-destructive" },
+  disqualified: { label: "Disqualified", icon: HelpCircle, cls: "bg-muted text-muted-foreground" },
+  no_show: { label: "No show", icon: UserX, cls: "bg-warning/15 text-warning" },
+};
+
+function OutcomeBadge({ outcome }: { outcome: string | null }) {
+  if (!outcome) {
+    return (
+      <span title="No outcome yet" className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wider bg-muted text-muted-foreground">
+        <CircleDashed className="h-3 w-3" /> Pending
+      </span>
+    );
+  }
+  const meta = OUTCOMES[outcome];
+  if (!meta) return null;
+  const Icon = meta.icon;
+  return (
+    <span title={meta.label} className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wider ${meta.cls}`}>
+      <Icon className="h-3 w-3" /> {meta.label}
+    </span>
+  );
+}
