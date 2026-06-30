@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listCloserBookings, getCloserStats } from "@/lib/api/b2c.functions";
+import { listMyAppointments } from "@/lib/api/cl.functions";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarClock, Mail, Phone, Video, ClipboardCheck, Target } from "lucide-react";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
+import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 
 export const Route = createFileRoute("/app/_authenticated/closer/")({
   beforeLoad: async ({ context }) => {
@@ -28,10 +30,13 @@ type B = {
   applicant_email: string;
   applicant_phone: string | null;
 };
+type Appt = Awaited<ReturnType<typeof listMyAppointments>>[number];
 
 function CloserHome() {
   const { data } = useQuery({ queryKey: ["closer-bookings"], queryFn: () => listCloserBookings() });
+  const { data: apptsRaw = [] } = useQuery({ queryKey: ["my-appointments"], queryFn: () => listMyAppointments() });
   const rows = ((data?.rows ?? []) as B[]).filter((r) => r.status === "assigned");
+  const b2bRows = (apptsRaw as Appt[]).filter((a) => a.type === "booking" && a.status !== "cancelled");
   const now = Date.now();
   const ET_TZ = "America/New_York";
   const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: ET_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -39,10 +44,16 @@ function CloserHome() {
     const k = new Intl.DateTimeFormat("en-CA", { timeZone: ET_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(r.slot_start));
     return k === todayKey;
   });
+  const todayB2b = b2bRows.filter((a) => {
+    const k = new Intl.DateTimeFormat("en-CA", { timeZone: ET_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(a.scheduled_at));
+    return k === todayKey;
+  });
   const upcoming = rows.filter((r) => new Date(r.slot_start).getTime() >= now).slice(0, 10);
+  const upcomingB2b = b2bRows.filter((a) => new Date(a.scheduled_at).getTime() >= now).slice(0, 10);
 
   const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
   const [previewFor, setPreviewFor] = useState<B | null>(null);
+  const [apptFor, setApptFor] = useState<Appt | null>(null);
 
   const [rangeDays, setRangeDays] = useState<number | null>(null);
   const { data: stats } = useQuery({
@@ -58,9 +69,9 @@ function CloserHome() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard label="Today" value={today.length} />
-        <StatCard label="Upcoming" value={upcoming.length} />
-        <StatCard label="Total assigned" value={rows.length} />
+        <StatCard label="Today" value={today.length + todayB2b.length} />
+        <StatCard label="Upcoming" value={upcoming.length + upcomingB2b.length} />
+        <StatCard label="Total assigned" value={rows.length + b2bRows.length} />
         <Card className="p-4 col-span-2 sm:col-span-1">
           <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
             <Target className="h-3 w-3" /> Close rate
@@ -82,7 +93,8 @@ function CloserHome() {
       <section>
         <h2 className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Today</h2>
         <div className="grid gap-2">
-          {today.length === 0 && <Card className="p-6 text-sm text-muted-foreground text-center">No calls today.</Card>}
+          {today.length + todayB2b.length === 0 && <Card className="p-6 text-sm text-muted-foreground text-center">No calls today.</Card>}
+          {todayB2b.map((a) => <AppointmentCard key={a.id} a={a} onOpen={() => setApptFor(a)} />)}
           {today.map((b) => <CallCard key={b.id} b={b} onOutcome={() => setOutcomeFor(b)} onPreview={() => setPreviewFor(b)} />)}
         </div>
       </section>
@@ -90,7 +102,8 @@ function CloserHome() {
       <section>
         <h2 className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Upcoming</h2>
         <div className="grid gap-2">
-          {upcoming.length === 0 && <Card className="p-6 text-sm text-muted-foreground text-center">Nothing booked yet.</Card>}
+          {upcoming.length + upcomingB2b.length === 0 && <Card className="p-6 text-sm text-muted-foreground text-center">Nothing booked yet.</Card>}
+          {upcomingB2b.map((a) => <AppointmentCard key={a.id} a={a} onOpen={() => setApptFor(a)} />)}
           {upcoming.map((b) => <CallCard key={b.id} b={b} onOutcome={() => setOutcomeFor(b)} onPreview={() => setPreviewFor(b)} />)}
         </div>
       </section>
@@ -109,6 +122,7 @@ function CloserHome() {
         open={!!previewFor}
         onOpenChange={(v) => !v && setPreviewFor(null)}
       />
+      <AppointmentDetailDialog appt={apptFor} onClose={() => setApptFor(null)} />
     </div>
   );
 }
@@ -177,6 +191,32 @@ function CallCard({ b, onOutcome, onPreview }: { b: B; onOutcome: () => void; on
           <ClipboardCheck className="h-3 w-3" /> Outcome
         </Button>
       </div>
+    </Card>
+  );
+}
+
+function AppointmentCard({ a, onOpen }: { a: Appt; onOpen: () => void }) {
+  const dt = new Date(a.scheduled_at);
+  const label = dt.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return (
+    <Card className="p-4 flex items-center justify-between gap-3 flex-wrap">
+      <div className="min-w-0 cursor-pointer" onClick={onOpen}>
+        <div className="font-medium flex items-center gap-2">
+          <span className="text-primary hover:underline">{a.name}</span>
+          <Badge variant="secondary" className="text-[10px]">B2B</Badge>
+          <Badge variant="secondary" className="text-[10px]">{a.status}</Badge>
+        </div>
+        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
+          <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {label}</span>
+          {a.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {a.email}</span>}
+          {a.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {a.phone}</span>}
+        </div>
+      </div>
+      {a.meeting_url && (
+        <a href={a.meeting_url} target="_blank" rel="noreferrer">
+          <Button size="sm" className="gap-1"><Video className="h-3 w-3" /> Join</Button>
+        </a>
+      )}
     </Card>
   );
 }
