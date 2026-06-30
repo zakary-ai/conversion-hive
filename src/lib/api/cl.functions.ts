@@ -811,11 +811,12 @@ export const assignB2bCloser = createServerFn({ method: "POST" })
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
     if (appt.type !== "booking") throw new Error("Only bookings can be assigned");
 
+    // Lookup the B2B closer in the dedicated pool
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closer, error: cerr } = await (supabaseAdmin.from("closers") as any)
-      .select("id, full_name, email, b2b_active, active").eq("id", data.closer_id).single();
-    if (cerr || !closer) throw new Error(cerr?.message || "Closer not found");
-    if (!closer.b2b_active || !closer.active) throw new Error("That closer is not marked as a B2B closer.");
+    const { data: closer, error: cerr } = await (supabaseAdmin.from("b2b_closers") as any)
+      .select("id, full_name, email, active").eq("id", data.closer_id).single();
+    if (cerr || !closer) throw new Error(cerr?.message || "B2B closer not found");
+    if (!closer.active) throw new Error("That closer is not active.");
 
     // Same-closer conflict
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -823,13 +824,13 @@ export const assignB2bCloser = createServerFn({ method: "POST" })
       .select("id")
       .eq("type", "booking")
       .eq("scheduled_at", appt.scheduled_at)
-      .eq("assigned_closer_id", data.closer_id)
+      .eq("b2b_closer_id", data.closer_id)
       .neq("id", data.appointment_id);
     if ((conflict ?? []).length > 0) throw new Error("That closer is already booked at this time.");
 
     const slotMinutes = await getSlotMinutes();
     const { data: creds } = await supabaseAdmin
-      .from("closer_zoom_credentials")
+      .from("b2b_closer_zoom_credentials")
       .select("zoom_account_id, zoom_client_id, zoom_client_secret")
       .eq("closer_id", data.closer_id)
       .maybeSingle();
@@ -844,7 +845,8 @@ export const assignB2bCloser = createServerFn({ method: "POST" })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: uerr } = await (supabaseAdmin.from("appointments") as any).update({
-      assigned_closer_id: data.closer_id,
+      b2b_closer_id: data.closer_id,
+      assigned_closer_id: null,
       status: "assigned",
       meeting_url: meetingUrl,
     }).eq("id", data.appointment_id);
@@ -872,6 +874,7 @@ export const unassignB2bCloser = createServerFn({ method: "POST" })
     if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (context.supabase.from("appointments") as any).update({
+      b2b_closer_id: null,
       assigned_closer_id: null,
       status: "pending_assignment",
       meeting_url: null,
