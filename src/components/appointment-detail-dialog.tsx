@@ -40,7 +40,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   const fmt = (s?: string | null) =>
     s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
-  const showOutcome = !!me?.isAdmin && appt?.type === "booking";
+  const showOutcome = !!(me?.isAdmin || me?.isCloser) && appt?.type === "booking";
   const [mode, setMode] = useState<"none" | "closed" | "lost" | "no_show">("none");
   const [deal, setDeal] = useState("");
   const [commission, setCommission] = useState("");
