@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, Mail, Clock, Loader2 } from "lucide-react";
-import { listClosers, assignCloserToBooking } from "@/lib/api/b2c.functions";
-import { assignB2bCloser } from "@/lib/api/cl.functions";
+import { Phone, Mail, Clock, Loader2, CreditCard, DollarSign, Trash2 } from "lucide-react";
+import { listClosers, assignCloserToBooking, deleteCloserBooking, getApplicationById } from "@/lib/api/b2c.functions";
+import { assignB2bCloser, deleteAppointment } from "@/lib/api/cl.functions";
 import { toast } from "sonner";
 
 export type ScheduledLeadRow = {
@@ -15,6 +19,7 @@ export type ScheduledLeadRow = {
   phone: string | null;
   scheduled_at: string;
   context: string | null;
+  application_id?: string | null;
 };
 
 export function ScheduledLeadDialog({
