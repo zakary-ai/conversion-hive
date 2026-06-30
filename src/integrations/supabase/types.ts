@@ -77,6 +77,7 @@ export type Database = {
       appointments: {
         Row: {
           assigned_closer_id: string | null
+          b2b_closer_id: string | null
           commission_amount: number | null
           context: string | null
           created_at: string
@@ -99,6 +100,7 @@ export type Database = {
         }
         Insert: {
           assigned_closer_id?: string | null
+          b2b_closer_id?: string | null
           commission_amount?: number | null
           context?: string | null
           created_at?: string
@@ -121,6 +123,7 @@ export type Database = {
         }
         Update: {
           assigned_closer_id?: string | null
+          b2b_closer_id?: string | null
           commission_amount?: number | null
           context?: string | null
           created_at?: string
@@ -147,6 +150,13 @@ export type Database = {
             columns: ["assigned_closer_id"]
             isOneToOne: false
             referencedRelation: "closers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_b2b_closer_id_fkey"
+            columns: ["b2b_closer_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_closers"
             referencedColumns: ["id"]
           },
           {
@@ -179,6 +189,103 @@ export type Database = {
           end_minute?: number
           id?: string
           start_minute?: number
+        }
+        Relationships: []
+      }
+      b2b_closer_availability_rules: {
+        Row: {
+          closer_id: string
+          created_at: string
+          day_of_week: number
+          end_minute: number
+          id: string
+          start_minute: number
+        }
+        Insert: {
+          closer_id: string
+          created_at?: string
+          day_of_week: number
+          end_minute: number
+          id?: string
+          start_minute: number
+        }
+        Update: {
+          closer_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_minute?: number
+          id?: string
+          start_minute?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_closer_availability_rules_closer_id_fkey"
+            columns: ["closer_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_closers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_closer_zoom_credentials: {
+        Row: {
+          closer_id: string
+          updated_at: string
+          zoom_account_id: string | null
+          zoom_client_id: string | null
+          zoom_client_secret: string | null
+        }
+        Insert: {
+          closer_id: string
+          updated_at?: string
+          zoom_account_id?: string | null
+          zoom_client_id?: string | null
+          zoom_client_secret?: string | null
+        }
+        Update: {
+          closer_id?: string
+          updated_at?: string
+          zoom_account_id?: string | null
+          zoom_client_id?: string | null
+          zoom_client_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_closer_zoom_credentials_closer_id_fkey"
+            columns: ["closer_id"]
+            isOneToOne: true
+            referencedRelation: "b2b_closers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_closers: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
