@@ -24,6 +24,7 @@ type Appt = {
   meeting_url: string | null;
   outcome?: string | null;
   deal_amount?: number | string | null;
+  commission_amount?: number | string | null;
   commission_percent?: number | string | null;
   lost_reason?: string | null;
 };
