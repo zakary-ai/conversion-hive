@@ -662,8 +662,24 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
 export const listMyAppointments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase.from("appointments")
-      .select("*").eq("user_id", context.userId).order("scheduled_at", { ascending: true });
+    const [{ data: closerRows }, { data: b2bCloserRows }] = await Promise.all([
+      context.supabase.from("closers").select("id").eq("user_id", context.userId),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context.supabase.from("b2b_closers") as any).select("id").eq("user_id", context.userId),
+    ]);
+
+    const closerIds = (closerRows ?? []).map((r) => r.id);
+    const b2bCloserIds = ((b2bCloserRows ?? []) as Array<{ id: string }>).map((r) => r.id);
+    const filters = [`user_id.eq.${context.userId}`];
+    if (closerIds.length > 0) filters.push(`assigned_closer_id.in.(${closerIds.join(",")})`);
+    if (b2bCloserIds.length > 0) filters.push(`b2b_closer_id.in.(${b2bCloserIds.join(",")})`);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (context.supabase.from("appointments") as any)
+      .select("*")
+      .or(filters.join(","))
+      .order("scheduled_at", { ascending: true });
+    if (error) throw new Error(error.message);
     return data ?? [];
   });
 
