@@ -771,7 +771,7 @@ export const listB2bBookingsForDate = createServerFn({ method: "GET" })
     const end = zonedWallToUTC(y, m, d + 1, 0, 0, tz);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: rows, error } = await (context.supabase.from("appointments") as any)
-      .select("*, closers:assigned_closer_id (id, full_name, email)")
+      .select("*, closers:assigned_closer_id (id, full_name, email), b2b_closer:b2b_closer_id (id, full_name, email)")
       .eq("type", "booking")
       .gte("scheduled_at", start.toISOString())
       .lt("scheduled_at", end.toISOString())
@@ -787,7 +787,7 @@ export const listB2bBookings = createServerFn({ method: "GET" })
     if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (context.supabase.from("appointments") as any)
-      .select("*, closers:assigned_closer_id (id, full_name, email)")
+      .select("*, closers:assigned_closer_id (id, full_name, email), b2b_closer:b2b_closer_id (id, full_name, email)")
       .eq("type", "booking")
       .order("scheduled_at", { ascending: true });
     if (error) throw new Error(error.message);
