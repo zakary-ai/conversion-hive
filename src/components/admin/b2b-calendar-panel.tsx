@@ -186,8 +186,8 @@ export function B2bCalendarPanel() {
   });
 
   const { data: closers = [] } = useQuery({
-    queryKey: ["closers"],
-    queryFn: () => listClosers(),
+    queryKey: ["b2b-closers"],
+    queryFn: () => listB2bClosers(),
   });
 
   return (
