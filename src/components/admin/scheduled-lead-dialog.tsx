@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, Mail, Clock, Loader2 } from "lucide-react";
-import { listClosers, assignCloserToBooking } from "@/lib/api/b2c.functions";
-import { assignB2bCloser } from "@/lib/api/cl.functions";
+import { Phone, Mail, Clock, Loader2, CreditCard, DollarSign, Trash2 } from "lucide-react";
+import { listClosers, assignCloserToBooking, deleteCloserBooking, getApplicationById } from "@/lib/api/b2c.functions";
+import { assignB2bCloser, deleteAppointment } from "@/lib/api/cl.functions";
 import { toast } from "sonner";
 
 export type ScheduledLeadRow = {
@@ -15,6 +19,7 @@ export type ScheduledLeadRow = {
   phone: string | null;
   scheduled_at: string;
   context: string | null;
+  application_id?: string | null;
 };
 
 export function ScheduledLeadDialog({
@@ -28,15 +33,25 @@ export function ScheduledLeadDialog({
 }) {
   const qc = useQueryClient();
   const [closerId, setCloserId] = useState<string>("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    if (row) setCloserId("");
+    if (row) {
+      setCloserId("");
+      setConfirmDelete(false);
+    }
   }, [row?.id]);
 
   const closersQ = useQuery({
     queryKey: ["closers"],
     queryFn: () => listClosers(),
     enabled: !!row,
+  });
+
+  const appQ = useQuery({
+    queryKey: ["application", row?.application_id],
+    queryFn: () => getApplicationById({ data: { id: row!.application_id! } }),
+    enabled: !!row && channel === "b2c" && !!row.application_id,
   });
 
   const eligibleClosers = (closersQ.data ?? []).filter((c) =>
@@ -62,7 +77,27 @@ export function ScheduledLeadDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const del = useMutation({
+    mutationFn: async () => {
+      if (!row) throw new Error("No booking");
+      if (channel === "b2b") {
+        return deleteAppointment({ data: { id: row.id } });
+      }
+      return deleteCloserBooking({ data: { booking_id: row.id } });
+    },
+    onSuccess: () => {
+      toast.success("Lead deleted");
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+      qc.invalidateQueries({ queryKey: ["b2c-bookings"] });
+      qc.invalidateQueries({ queryKey: ["b2b-bookings"] });
+      setConfirmDelete(false);
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const dt = row ? new Date(row.scheduled_at) : null;
+
 
   return (
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
@@ -94,6 +129,32 @@ export function ScheduledLeadDialog({
               )}
             </div>
 
+            {channel === "b2c" && row.application_id && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm space-y-1.5">
+                <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Application</div>
+                {appQ.isLoading ? (
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+                  </div>
+                ) : appQ.data ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Income now:</span>
+                      <span className="font-medium">{appQ.data.current_monthly_income}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Credit:</span>
+                      <span className="font-medium">{appQ.data.credit_score_range}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-xs text-muted-foreground">Application not found.</div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Assign to closer</label>
               <Select value={closerId} onValueChange={setCloserId} disabled={closersQ.isLoading}>
@@ -119,16 +180,49 @@ export function ScheduledLeadDialog({
               </p>
             </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={() => assign.mutate()} disabled={!closerId || assign.isPending}>
-                {assign.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                Assign closer
+            <div className="flex justify-between items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmDelete(true)}
+                disabled={del.isPending}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4 mr-1" /> Delete lead
               </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={onClose}>Cancel</Button>
+                <Button onClick={() => assign.mutate()} disabled={!closerId || assign.isPending}>
+                  {assign.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  Assign closer
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </DialogContent>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the booking{channel === "b2c" ? " and its calendar event" : ""}. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={del.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); del.mutate(); }}
+              disabled={del.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {del.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
