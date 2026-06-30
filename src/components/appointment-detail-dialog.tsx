@@ -150,7 +150,10 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                             <CheckCircle2 className="h-4 w-4" /> Deal closed
                           </div>
                           <div className="text-sm flex justify-between"><span className="text-muted-foreground">Deal amount</span><span className="font-medium">${Number(appt.deal_amount ?? 0).toFixed(2)}</span></div>
-                          <div className="text-sm flex justify-between"><span className="text-muted-foreground">Setter commission</span><span className="font-medium">${Number(appt.commission_amount ?? 0).toFixed(2)}</span></div>
+                          {appt.commission_percent != null && (
+                            <div className="text-sm flex justify-between"><span className="text-muted-foreground">Commission %</span><span className="font-medium">{Number(appt.commission_percent)}%</span></div>
+                          )}
+                          <div className="text-sm flex justify-between"><span className="text-muted-foreground">Commission</span><span className="font-medium">${Number(appt.commission_amount ?? 0).toFixed(2)}</span></div>
                         </div>
                       )}
                       {appt.outcome === "lost" && (
