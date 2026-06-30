@@ -6,7 +6,7 @@ import { PageHeader, StatCard } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2 } from "lucide-react";
+import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2, DollarSign, XCircle, UserX, HelpCircle, CircleDashed } from "lucide-react";
 import { useAdminChannel, type AdminChannel } from "@/components/app-sidebar";
 import { ScheduledLeadDialog, type ScheduledLeadRow } from "@/components/admin/scheduled-lead-dialog";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
