@@ -216,12 +216,42 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                             <Input id="deal" type="number" min="0" step="0.01" value={deal} onChange={(e) => setDeal(e.target.value)} placeholder="0.00" />
                           </div>
                           <div>
-                            <Label htmlFor="commission" className="text-xs">Setter commission ($)</Label>
-                            <Input id="commission" type="number" min="0" step="0.01" value={commission} onChange={(e) => setCommission(e.target.value)} placeholder="0.00" />
+                            <Label className="text-xs">Commission</Label>
+                            <div className="flex gap-2 mt-1">
+                              {(["10","15","custom"] as const).map((p) => (
+                                <Button
+                                  key={p}
+                                  type="button"
+                                  size="sm"
+                                  variant={pctPreset === p ? "default" : "outline"}
+                                  onClick={() => setPctPreset(p)}
+                                  className="flex-1"
+                                >
+                                  {p === "custom" ? "Custom" : `${p}%`}
+                                </Button>
+                              ))}
+                            </div>
+                            {pctPreset === "custom" && (
+                              <Input
+                                className="mt-2"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                value={customPct}
+                                onChange={(e) => setCustomPct(e.target.value)}
+                                placeholder="Commission %"
+                              />
+                            )}
+                            <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                              <span>Commission owed</span>
+                              <span className="font-medium text-foreground">${computedCommission.toFixed(2)}</span>
+                            </div>
                           </div>
                           <Button onClick={submitClosed} disabled={mutation.isPending} className="w-full">
                             Save closed deal
                           </Button>
+                          <p className="text-[10px] text-muted-foreground text-center">Submitted as pending — an admin will approve it.</p>
                         </div>
                       )}
 
