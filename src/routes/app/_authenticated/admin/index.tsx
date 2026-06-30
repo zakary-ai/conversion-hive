@@ -90,7 +90,13 @@ function AdminDashboard() {
                     key={r.id}
                     row={r}
                     showTimeOnly={false}
-                    onClick={openMetric === "scheduledLeads" ? () => setScheduledLead(r) : undefined}
+                    onClick={
+                      openMetric === "scheduledLeads"
+                        ? () => setScheduledLead(r)
+                        : openMetric === "callsGoingLiveToday"
+                          ? () => setLiveCall(r)
+                          : undefined
+                    }
                   />
                 ))
               )}
@@ -100,6 +106,36 @@ function AdminDashboard() {
       </Dialog>
 
       <ScheduledLeadDialog row={scheduledLead} channel={channel} onClose={() => setScheduledLead(null)} />
+
+      {liveCall && channel === "b2c" && (
+        <OutcomeDialog
+          bookingId={liveCall.id}
+          applicationId={liveCall.application_id}
+          applicantName={liveCall.name ?? "Lead"}
+          open
+          onOpenChange={(o) => { if (!o) setLiveCall(null); }}
+        />
+      )}
+      {liveCall && channel === "b2b" && (
+        <AppointmentDetailDialog
+          appt={{
+            id: liveCall.id,
+            lead_id: liveCall.lead_id,
+            type: liveCall.type ?? "booking",
+            scheduled_at: liveCall.scheduled_at,
+            name: liveCall.name ?? "",
+            phone: liveCall.phone,
+            email: liveCall.email,
+            context: liveCall.context,
+            meeting_url: liveCall.meeting_url,
+            outcome: liveCall.outcome,
+            deal_amount: liveCall.deal_amount,
+            commission_amount: liveCall.commission_amount,
+            lost_reason: liveCall.lost_reason,
+          }}
+          onClose={() => setLiveCall(null)}
+        />
+      )}
     </div>
   );
 }
