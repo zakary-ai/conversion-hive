@@ -1,54 +1,89 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { getAdminDashboard } from "@/lib/api/cl.functions";
-import { getB2cAdminStats } from "@/lib/api/b2c.functions";
+import { getAdminOverview } from "@/lib/api/cl.functions";
 import { PageHeader, StatCard } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2 } from "lucide-react";
-import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
-import { useAdminChannel } from "@/components/app-sidebar";
+import { useAdminChannel, type AdminChannel } from "@/components/app-sidebar";
 
+type Overview = Awaited<ReturnType<typeof getAdminOverview>>;
+type Row = Overview["upcomingCalls"][number];
 
-const opts = queryOptions({ queryKey: ["admin-dashboard"], queryFn: () => getAdminDashboard() });
-const b2cStatsOpts = queryOptions({ queryKey: ["b2c-admin-stats"], queryFn: () => getB2cAdminStats() });
+const overviewOpts = (channel: AdminChannel) =>
+  queryOptions({
+    queryKey: ["admin-overview", channel],
+    queryFn: () => getAdminOverview({ data: { channel } }),
+  });
 
 export const Route = createFileRoute("/app/_authenticated/admin/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(opts),
+  loader: ({ context }) => context.queryClient.ensureQueryData(overviewOpts("b2b")),
   component: AdminDashboard,
 });
 
-type Appt = Awaited<ReturnType<typeof getAdminDashboard>>["upcomingCalls"][number];
+type MetricKey = "scheduledLeads" | "callsGoingLiveToday" | "callsBookedToday" | "callsClosedToday";
+
+const METRIC_LABELS: Record<MetricKey, string> = {
+  scheduledLeads: "Scheduled leads",
+  callsGoingLiveToday: "Calls going live today",
+  callsBookedToday: "Calls booked today",
+  callsClosedToday: "Calls closed today",
+};
 
 function AdminDashboard() {
-  const { data } = useSuspenseQuery(opts);
-  const { data: b2c } = useQuery(b2cStatsOpts);
-  const [openAppt, setOpenAppt] = useState<Appt | null>(null);
+  const [channel] = useAdminChannel();
+  const { data } = useSuspenseQuery(overviewOpts(channel));
+  const [openMetric, setOpenMetric] = useState<MetricKey | null>(null);
+
+  const cards: { key: MetricKey; icon: typeof Users; hint?: string }[] = [
+    { key: "scheduledLeads", icon: Users, hint: "Waiting to be assigned" },
+    { key: "callsGoingLiveToday", icon: Video },
+    { key: "callsBookedToday", icon: CalendarCheck2 },
+    { key: "callsClosedToday", icon: CheckCircle2 },
+  ];
 
   return (
     <div className="space-y-6 max-w-7xl">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <PageHeader title="Admin overview" description="Live metrics across all setters." />
+        <PageHeader title="Admin overview" description={`Live ${channel.toUpperCase()} metrics across all setters.`} />
         <ChannelToggle />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Scheduled leads" value={b2c?.scheduledLeads ?? 0} icon={Users} hint="Waiting to be assigned" />
-        <StatCard label="Calls going live today" value={b2c?.callsGoingLiveToday ?? 0} icon={Video} />
-        <StatCard label="Calls booked today" value={b2c?.callsBookedToday ?? 0} icon={CalendarCheck2} />
-        <StatCard label="Calls closed today" value={b2c?.callsClosedToday ?? 0} icon={CheckCircle2} />
+        {cards.map(({ key, icon, hint }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setOpenMetric(key)}
+            className="text-left rounded-xl transition hover:ring-2 hover:ring-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <StatCard label={METRIC_LABELS[key]} value={data[key].length} icon={icon} hint={hint} />
+          </button>
+        ))}
       </div>
 
       <Section title="Upcoming calls" icon={Clock} empty="No upcoming calls scheduled.">
-        {data.upcomingCalls.map((a) => <CallRow key={a.id} appt={a} showTimeOnly={false} onOpen={setOpenAppt} />)}
+        {data.upcomingCalls.map((a) => <CallRow key={a.id} row={a} showTimeOnly={false} />)}
       </Section>
 
-      <Section title="Calls going live today" icon={Video} empty="Nothing on the schedule for today.">
-        {data.callsGoingLiveToday.map((a) => <CallRow key={a.id} appt={a} showTimeOnly onOpen={setOpenAppt} />)}
-      </Section>
-
-      <AppointmentDetailDialog appt={openAppt} onClose={() => setOpenAppt(null)} />
+      <Dialog open={openMetric !== null} onOpenChange={(o) => !o && setOpenMetric(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{openMetric ? `${METRIC_LABELS[openMetric]} (${data[openMetric].length})` : ""}</DialogTitle>
+          </DialogHeader>
+          {openMetric && (
+            <div className="space-y-2 pt-2">
+              {data[openMetric].length === 0 ? (
+                <Card className="p-6 text-sm text-muted-foreground text-center">Nothing here.</Card>
+              ) : (
+                data[openMetric].map((r) => <CallRow key={r.id} row={r} showTimeOnly={false} />)
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -85,33 +120,30 @@ function Section({ title, icon: Icon, children, empty }: { title: string; icon: 
   );
 }
 
-function CallRow({ appt, showTimeOnly, onOpen }: { appt: Appt; showTimeOnly: boolean; onOpen: (a: Appt) => void }) {
-  const dt = new Date(appt.scheduled_at);
+function CallRow({ row, showTimeOnly }: { row: Row; showTimeOnly: boolean }) {
+  const dt = new Date(row.scheduled_at);
   const when = showTimeOnly
     ? dt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
     : dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   return (
-    <Card
-      className="p-3 flex items-start gap-3 flex-wrap cursor-pointer hover:bg-muted/30 transition-colors"
-      onClick={() => onOpen(appt)}
-    >
+    <Card className="p-3 flex items-start gap-3 flex-wrap">
       <div className="h-10 w-10 rounded-lg bg-success/15 text-success flex items-center justify-center shrink-0">
         <Video className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <div className="font-medium truncate">{appt.name}</div>
+          <div className="font-medium truncate">{row.name ?? "Unnamed"}</div>
           <div className="text-xs text-muted-foreground">{when}</div>
         </div>
         <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-          {appt.phone && <a href={`tel:${appt.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-primary"><Phone className="h-3 w-3" />{appt.phone}</a>}
-          {appt.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{appt.email}</span>}
+          {row.phone && <a href={`tel:${row.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-primary"><Phone className="h-3 w-3" />{row.phone}</a>}
+          {row.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{row.email}</span>}
         </div>
-        {appt.context && <div className="text-xs mt-1 text-muted-foreground">{appt.context}</div>}
+        {row.context && <div className="text-xs mt-1 text-muted-foreground">{row.context}</div>}
       </div>
-      {appt.meeting_url && (
+      {row.meeting_url && (
         <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}>
-          <a href={appt.meeting_url} target="_blank" rel="noreferrer" className="flex items-center gap-1">
+          <a href={row.meeting_url} target="_blank" rel="noreferrer" className="flex items-center gap-1">
             <ExternalLink className="h-3 w-3" /> Join
           </a>
         </Button>
