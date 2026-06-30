@@ -82,15 +82,25 @@ function AdminDashboard() {
               {data[openMetric].length === 0 ? (
                 <Card className="p-6 text-sm text-muted-foreground text-center">Nothing here.</Card>
               ) : (
-                data[openMetric].map((r) => <CallRow key={r.id} row={r} showTimeOnly={false} />)
+                data[openMetric].map((r) => (
+                  <CallRow
+                    key={r.id}
+                    row={r}
+                    showTimeOnly={false}
+                    onClick={openMetric === "scheduledLeads" ? () => setScheduledLead(r) : undefined}
+                  />
+                ))
               )}
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <ScheduledLeadDialog row={scheduledLead} channel={channel} onClose={() => setScheduledLead(null)} />
     </div>
   );
 }
+
 
 function ChannelToggle() {
   const [channel, setChannel] = useAdminChannel();
