@@ -1229,6 +1229,42 @@ export const setCommissionPaid = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const approveCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { error } = await context.supabase.from("commissions").update({
+      status: "approved", approved_at: new Date().toISOString(), approved_by: context.userId,
+    }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    id: z.string().uuid(),
+    amount: z.number().nonnegative().max(100000000).optional(),
+    commission_percent: z.number().nonnegative().max(100).nullable().optional(),
+    deal_amount: z.number().nonnegative().max(100000000).nullable().optional(),
+    note: z.string().max(2000).nullable().optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const patch: Record<string, unknown> = {};
+    if (data.amount !== undefined) patch.amount = data.amount;
+    if (data.commission_percent !== undefined) patch.commission_percent = data.commission_percent;
+    if (data.deal_amount !== undefined) patch.deal_amount = data.deal_amount;
+    if (data.note !== undefined) patch.note = data.note;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await context.supabase.from("commissions").update(patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Client dashboard ----------
 export const getClientDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
