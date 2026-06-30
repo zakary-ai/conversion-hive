@@ -14,7 +14,10 @@ export const Route = createFileRoute("/app/_authenticated/commissions")({
 
 function CommissionsPage() {
   const { data: entries } = useSuspenseQuery(opts);
-  const total = entries.reduce((s, e) => s + Number(e.amount), 0);
+  const approved = entries.filter((e) => (e.status ?? "approved") === "approved");
+  const pending = entries.filter((e) => (e.status ?? "approved") === "pending");
+  const total = approved.reduce((s, e) => s + Number(e.amount), 0);
+  const pendingTotal = pending.reduce((s, e) => s + Number(e.amount), 0);
   const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
   const fmtDate = (s: string) => new Date(s).toLocaleDateString();
 
