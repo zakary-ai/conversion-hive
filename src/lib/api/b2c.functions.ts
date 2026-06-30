@@ -981,7 +981,7 @@ export const getApplicationById = createServerFn({ method: "GET" })
 
 // ---------- Closer: submit call outcome ----------
 const OutcomeEnum = z.enum(["not_interested", "disqualified", "closed", "deposit", "no_show"]);
-const CommissionPctEnum = z.union([z.literal(10), z.literal(15), z.literal(20)]);
+const CommissionPctEnum = z.number().min(0).max(100);
 
 function computeCommission(outcome: string, deal: number | null, deposit: number | null, followUp: number | null, pct: number | null) {
   if (!pct) return null;

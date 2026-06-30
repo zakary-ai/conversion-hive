@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 type Outcome = "not_interested" | "disqualified" | "closed" | "deposit" | "no_show";
-type Pct = 10 | 15 | 20;
+const PRESET_PCTS = [10, 15, 20] as const;
 
 export function OutcomeDialog({
   bookingId,
@@ -31,7 +31,9 @@ export function OutcomeDialog({
   const [depositAmount, setDepositAmount] = useState("");
   const [followUpAmount, setFollowUpAmount] = useState("");
   const [followUpDate, setFollowUpDate] = useState("");
-  const [commissionPct, setCommissionPct] = useState<Pct | null>(null);
+  const [commissionPct, setCommissionPct] = useState<number | null>(null);
+  const [customPct, setCustomPct] = useState("");
+  const [useCustomPct, setUseCustomPct] = useState(false);
   const [notes, setNotes] = useState("");
 
   const { data: app } = useQuery({
@@ -70,7 +72,8 @@ export function OutcomeDialog({
 
   function reset() {
     setOutcome(null); setDealAmount(""); setDepositAmount("");
-    setFollowUpAmount(""); setFollowUpDate(""); setCommissionPct(null); setNotes("");
+    setFollowUpAmount(""); setFollowUpDate(""); setCommissionPct(null);
+    setCustomPct(""); setUseCustomPct(false); setNotes("");
   }
 
   const needsPct = outcome === "closed" || outcome === "deposit";
@@ -138,20 +141,44 @@ export function OutcomeDialog({
         {needsPct && (
           <div className="space-y-2">
             <Label>Commission %</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {([10, 15, 20] as Pct[]).map((p) => (
+            <div className="grid grid-cols-4 gap-2">
+              {PRESET_PCTS.map((p) => (
                 <button
                   key={p}
                   type="button"
-                  onClick={() => setCommissionPct(p)}
+                  onClick={() => { setUseCustomPct(false); setCustomPct(""); setCommissionPct(p); }}
                   className={`rounded-md border px-3 py-2 text-sm font-medium transition ${
-                    commissionPct === p ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted/40"
+                    !useCustomPct && commissionPct === p ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted/40"
                   }`}
                 >
                   {p}%
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => { setUseCustomPct(true); setCommissionPct(null); }}
+                className={`rounded-md border px-3 py-2 text-sm font-medium transition ${
+                  useCustomPct ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted/40"
+                }`}
+              >
+                Custom
+              </button>
             </div>
+            {useCustomPct && (
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={customPct}
+                onChange={(e) => {
+                  setCustomPct(e.target.value);
+                  const n = parseFloat(e.target.value);
+                  setCommissionPct(isFinite(n) && n >= 0 && n <= 100 ? n : null);
+                }}
+                placeholder="Enter % (e.g. 12.5)"
+              />
+            )}
           </div>
         )}
 
