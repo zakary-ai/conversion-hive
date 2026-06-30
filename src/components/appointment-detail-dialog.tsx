@@ -44,25 +44,36 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   const showOutcome = !!(me?.isAdmin || me?.isCloser) && appt?.type === "booking";
   const [mode, setMode] = useState<"none" | "closed" | "lost" | "no_show">("none");
   const [deal, setDeal] = useState("");
-  const [commission, setCommission] = useState("");
+  const [pctPreset, setPctPreset] = useState<"10" | "15" | "custom">("10");
+  const [customPct, setCustomPct] = useState("");
   const [reason, setReason] = useState("");
 
   useEffect(() => {
     if (!appt) return;
     setMode("none");
     setDeal(appt.deal_amount != null ? String(appt.deal_amount) : "");
-    setCommission(appt.commission_amount != null ? String(appt.commission_amount) : "");
+    const existingPct = appt.commission_percent != null ? Number(appt.commission_percent) : null;
+    if (existingPct === 10) { setPctPreset("10"); setCustomPct(""); }
+    else if (existingPct === 15) { setPctPreset("15"); setCustomPct(""); }
+    else if (existingPct != null) { setPctPreset("custom"); setCustomPct(String(existingPct)); }
+    else { setPctPreset("10"); setCustomPct(""); }
     setReason(appt.lost_reason ?? "");
   }, [appt?.id]);
 
+  const pctValue = pctPreset === "custom" ? parseFloat(customPct) : parseFloat(pctPreset);
+  const dealValue = parseFloat(deal);
+  const computedCommission = isFinite(dealValue) && isFinite(pctValue) ? Math.round(dealValue * pctValue) / 100 : 0;
+
   const mutation = useMutation({
-    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "clear" }) =>
+    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_percent: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "clear" }) =>
       setAppointmentOutcome({ data: input }),
     onSuccess: () => {
       toast.success("Updated");
       qc.invalidateQueries({ queryKey: ["my-appointments"] });
       qc.invalidateQueries({ queryKey: ["all-appointments"] });
       qc.invalidateQueries({ queryKey: ["commissions"] });
+      qc.invalidateQueries({ queryKey: ["all-commissions"] });
+      qc.invalidateQueries({ queryKey: ["my-commissions"] });
       qc.invalidateQueries({ queryKey: ["admin-overview"] });
       setMode("none");
     },
@@ -71,10 +82,9 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
 
   const submitClosed = () => {
     const d = parseFloat(deal);
-    const c = parseFloat(commission);
     if (!isFinite(d) || d < 0) return toast.error("Enter a valid deal amount");
-    if (!isFinite(c) || c < 0) return toast.error("Enter a valid commission");
-    mutation.mutate({ id: appt!.id, outcome: "closed", deal_amount: d, commission_amount: c });
+    if (!isFinite(pctValue) || pctValue < 0 || pctValue > 100) return toast.error("Enter a valid commission %");
+    mutation.mutate({ id: appt!.id, outcome: "closed", deal_amount: d, commission_percent: pctValue, commission_amount: computedCommission });
   };
   const submitLost = () => {
     mutation.mutate({ id: appt!.id, outcome: "lost", lost_reason: reason.trim() });
