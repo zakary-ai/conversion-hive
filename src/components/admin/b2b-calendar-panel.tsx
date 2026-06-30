@@ -12,7 +12,7 @@ import {
   deleteAppointment,
 
 } from "@/lib/api/cl.functions";
-import { listClosers } from "@/lib/api/b2c.functions";
+import { listB2bClosers } from "@/lib/api/b2b-closers.functions";
 import {
   AlertDialog,
   AlertDialogAction,
