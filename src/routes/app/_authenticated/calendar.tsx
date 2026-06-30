@@ -94,7 +94,8 @@ function ApptView({
   canDelete: boolean; showOwner?: boolean;
   mode: "upcoming" | "past" | "all";
 }) {
-  const { data: appts } = useSuspenseQuery(queryOpts);
+  const { data: apptsRaw } = useSuspenseQuery(queryOpts);
+  const appts = apptsRaw as Appt[];
   const cutoff = Date.now() - 60 * 60 * 1000;
   const scoped = useMemo(() => {
     if (mode === "all") return appts;

@@ -24,6 +24,7 @@ import { toast } from "sonner";
 const opts = queryOptions({ queryKey: ["my-leads"], queryFn: () => listMyLeads() });
 const STATUSES = ["New","Contacted","No Answer","Interested","Booked","Not Interested","Follow Up","Call Again","Call Back"] as const;
 type Lead = Awaited<ReturnType<typeof listMyLeads>>[number];
+type Appointment = Awaited<ReturnType<typeof listMyAppointments>>[number];
 
 export const Route = createFileRoute("/app/_authenticated/leads")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
@@ -165,10 +166,11 @@ function RequestMoreLeadsButton({ uncontactedCount }: { uncontactedCount: number
 }
 
 function LeadPipeline({ leads, onOpenLead }: { leads: Lead[]; onOpenLead: (l: Lead) => void }) {
-  const { data: appts = [] } = useQuery({
+  const { data: apptsRaw = [] } = useQuery({
     queryKey: ["my-appointments"],
     queryFn: () => listMyAppointments(),
   });
+  const appts = apptsRaw as Appointment[];
   const leadById = new Map(leads.map((l) => [l.id, l]));
   const bookings = appts.filter((a) => a.type === "booking");
 
@@ -235,11 +237,12 @@ function LeadDrawer({ lead, onClose }: { lead: Lead | null; onClose: () => void 
   const [bookOpen, setBookOpen] = useState(false);
   const [callbackOpen, setCallbackOpen] = useState(false);
 
-  const { data: appts = [] } = useQuery({
+  const { data: apptsRaw = [] } = useQuery({
     queryKey: ["my-appointments"],
     queryFn: () => listMyAppointments(),
     enabled: !!lead,
   });
+  const appts = apptsRaw as Appointment[];
   const leadAppts = lead ? appts.filter((a) => a.lead_id === lead.id) : [];
 
   useEffect(() => { if (lead) setNotes(lead.notes ?? ""); }, [lead?.id]);
