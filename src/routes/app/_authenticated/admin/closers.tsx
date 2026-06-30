@@ -47,7 +47,7 @@ function ClosersPage() {
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:items-center">
         <div className="min-w-0">
           <h1 className="text-2xl font-display font-semibold">Closers</h1>
-          <p className="text-sm text-muted-foreground">Manage closers. Toggle B2B to make them eligible for B2B booking routing.</p>
+          <p className="text-sm text-muted-foreground">B2C closers. B2B closers are managed in their own section.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
