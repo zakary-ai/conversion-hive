@@ -134,13 +134,17 @@ function Section({ title, icon: Icon, children, empty }: { title: string; icon: 
   );
 }
 
-function CallRow({ row, showTimeOnly }: { row: Row; showTimeOnly: boolean }) {
+function CallRow({ row, showTimeOnly, onClick }: { row: Row; showTimeOnly: boolean; onClick?: () => void }) {
   const dt = new Date(row.scheduled_at);
   const when = showTimeOnly
     ? dt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
     : dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   return (
-    <Card className="p-3 flex items-start gap-3 flex-wrap">
+    <Card
+      className={`p-3 flex items-start gap-3 flex-wrap ${onClick ? "cursor-pointer hover:bg-muted/40 transition-colors" : ""}`}
+      onClick={onClick}
+    >
+
       <div className="h-10 w-10 rounded-lg bg-success/15 text-success flex items-center justify-center shrink-0">
         <Video className="h-5 w-5" />
       </div>
