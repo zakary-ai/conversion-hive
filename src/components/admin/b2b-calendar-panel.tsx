@@ -480,7 +480,7 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
   const dt = new Date(booking.scheduled_at);
   const time = dt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 
-  const b2bClosers = closers.filter((c) => c.active && c.b2b_active);
+  const b2bClosers = closers.filter((c) => c.active);
 
   return (
     <Card className="p-3">
