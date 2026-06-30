@@ -38,6 +38,8 @@ function AdminDashboard() {
   const [channel] = useAdminChannel();
   const { data } = useSuspenseQuery(overviewOpts(channel));
   const [openMetric, setOpenMetric] = useState<MetricKey | null>(null);
+  const [scheduledLead, setScheduledLead] = useState<ScheduledLeadRow | null>(null);
+
 
   const cards: { key: MetricKey; icon: typeof Users; hint?: string }[] = [
     { key: "scheduledLeads", icon: Users, hint: "Waiting to be assigned" },
