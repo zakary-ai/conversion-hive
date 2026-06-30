@@ -1272,7 +1272,23 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     const tsISO = todayStart.toISOString();
     const teISO = todayEnd.toISOString();
 
-    type Row = { id: string; name: string | null; email: string | null; phone: string | null; scheduled_at: string; meeting_url: string | null; context: string | null };
+    type Row = {
+      id: string;
+      name: string | null;
+      email: string | null;
+      phone: string | null;
+      scheduled_at: string;
+      meeting_url: string | null;
+      context: string | null;
+      // extras for outcome dialogs
+      lead_id: string | null;
+      application_id: string | null;
+      type: string | null;
+      outcome: string | null;
+      deal_amount: number | string | null;
+      commission_amount: number | string | null;
+      lost_reason: string | null;
+    };
 
     if (data.channel === "b2c") {
       const [scheduled, going, booked, closed, upcoming] = await Promise.all([
@@ -1290,6 +1306,9 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       const map = (r: any): Row => ({
         id: r.id, name: r.applicant_name, email: r.applicant_email, phone: r.applicant_phone,
         scheduled_at: r.slot_start, meeting_url: r.zoom_join_url, context: r.notes,
+        lead_id: null, application_id: r.application_id ?? null, type: "b2c_booking",
+        outcome: r.outcome ?? null, deal_amount: r.deal_amount ?? null,
+        commission_amount: r.commission_amount ?? null, lost_reason: null,
       });
       return {
         scheduledLeads: (scheduled.data ?? []).map(map),
@@ -1316,6 +1335,9 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     const map = (r: any): Row => ({
       id: r.id, name: r.name, email: r.email, phone: r.phone,
       scheduled_at: r.scheduled_at, meeting_url: r.meeting_url, context: r.context,
+      lead_id: r.lead_id ?? null, application_id: null, type: r.type ?? "booking",
+      outcome: r.outcome ?? null, deal_amount: r.deal_amount ?? null,
+      commission_amount: r.commission_amount ?? null, lost_reason: r.lost_reason ?? null,
     });
     return {
       scheduledLeads: (scheduled.data ?? []).map(map),

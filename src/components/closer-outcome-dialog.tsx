@@ -61,6 +61,7 @@ export function OutcomeDialog({
       qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
       qc.invalidateQueries({ queryKey: ["my-closer-stats"] });
       qc.invalidateQueries({ queryKey: ["closer-detail"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
       reset();
       onOpenChange(false);
     },
