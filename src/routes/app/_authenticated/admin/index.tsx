@@ -188,9 +188,10 @@ function CallRow({ row, showTimeOnly, onClick }: { row: Row; showTimeOnly: boole
         <Video className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="font-medium truncate">{row.name ?? "Unnamed"}</div>
           <div className="text-xs text-muted-foreground">{when}</div>
+          <OutcomeBadge outcome={row.outcome} />
         </div>
         <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
           {row.phone && <a href={`tel:${row.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-primary"><Phone className="h-3 w-3" />{row.phone}</a>}
