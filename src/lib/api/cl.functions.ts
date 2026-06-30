@@ -664,8 +664,7 @@ export const listMyAppointments = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const [{ data: closerRows }, { data: b2bCloserRows }] = await Promise.all([
       context.supabase.from("closers").select("id").eq("user_id", context.userId),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (context.supabase.from("b2b_closers") as any).select("id").eq("user_id", context.userId),
+      context.supabase.from("b2b_closers").select("id").eq("user_id", context.userId),
     ]);
 
     const closerIds = (closerRows ?? []).map((r) => r.id);
@@ -674,13 +673,12 @@ export const listMyAppointments = createServerFn({ method: "GET" })
     if (closerIds.length > 0) filters.push(`assigned_closer_id.in.(${closerIds.join(",")})`);
     if (b2bCloserIds.length > 0) filters.push(`b2b_closer_id.in.(${b2bCloserIds.join(",")})`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (context.supabase.from("appointments") as any)
+    const { data, error } = await context.supabase.from("appointments")
       .select("*")
       .or(filters.join(","))
       .order("scheduled_at", { ascending: true });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []) as Database["public"]["Tables"]["appointments"]["Row"][];
   });
 
 export const listAllAppointments = createServerFn({ method: "GET" })
