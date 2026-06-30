@@ -33,15 +33,25 @@ export function ScheduledLeadDialog({
 }) {
   const qc = useQueryClient();
   const [closerId, setCloserId] = useState<string>("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    if (row) setCloserId("");
+    if (row) {
+      setCloserId("");
+      setConfirmDelete(false);
+    }
   }, [row?.id]);
 
   const closersQ = useQuery({
     queryKey: ["closers"],
     queryFn: () => listClosers(),
     enabled: !!row,
+  });
+
+  const appQ = useQuery({
+    queryKey: ["application", row?.application_id],
+    queryFn: () => getApplicationById({ data: { id: row!.application_id! } }),
+    enabled: !!row && channel === "b2c" && !!row.application_id,
   });
 
   const eligibleClosers = (closersQ.data ?? []).filter((c) =>
@@ -67,7 +77,27 @@ export function ScheduledLeadDialog({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const del = useMutation({
+    mutationFn: async () => {
+      if (!row) throw new Error("No booking");
+      if (channel === "b2b") {
+        return deleteAppointment({ data: { id: row.id } });
+      }
+      return deleteCloserBooking({ data: { booking_id: row.id } });
+    },
+    onSuccess: () => {
+      toast.success("Lead deleted");
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
+      qc.invalidateQueries({ queryKey: ["b2c-bookings"] });
+      qc.invalidateQueries({ queryKey: ["b2b-bookings"] });
+      setConfirmDelete(false);
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const dt = row ? new Date(row.scheduled_at) : null;
+
 
   return (
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
