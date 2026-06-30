@@ -6,7 +6,7 @@ import { PageHeader, StatCard } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2 } from "lucide-react";
+import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2, DollarSign, XCircle, UserX, HelpCircle, CircleDashed } from "lucide-react";
 import { useAdminChannel, type AdminChannel } from "@/components/app-sidebar";
 import { ScheduledLeadDialog, type ScheduledLeadRow } from "@/components/admin/scheduled-lead-dialog";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
@@ -188,9 +188,10 @@ function CallRow({ row, showTimeOnly, onClick }: { row: Row; showTimeOnly: boole
         <Video className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="font-medium truncate">{row.name ?? "Unnamed"}</div>
           <div className="text-xs text-muted-foreground">{when}</div>
+          <OutcomeBadge outcome={row.outcome} />
         </div>
         <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
           {row.phone && <a href={`tel:${row.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-primary"><Phone className="h-3 w-3" />{row.phone}</a>}
@@ -206,5 +207,34 @@ function CallRow({ row, showTimeOnly, onClick }: { row: Row; showTimeOnly: boole
         </Button>
       )}
     </Card>
+  );
+}
+
+type OutcomeMeta = { label: string; icon: typeof Video; cls: string };
+
+const OUTCOMES: Record<string, OutcomeMeta> = {
+  closed: { label: "Closed", icon: DollarSign, cls: "bg-success/15 text-success" },
+  deposit: { label: "Deposit", icon: DollarSign, cls: "bg-success/15 text-success" },
+  lost: { label: "Lost", icon: XCircle, cls: "bg-destructive/15 text-destructive" },
+  not_interested: { label: "Not interested", icon: XCircle, cls: "bg-destructive/15 text-destructive" },
+  disqualified: { label: "Disqualified", icon: HelpCircle, cls: "bg-muted text-muted-foreground" },
+  no_show: { label: "No show", icon: UserX, cls: "bg-warning/15 text-warning" },
+};
+
+function OutcomeBadge({ outcome }: { outcome: string | null }) {
+  if (!outcome) {
+    return (
+      <span title="No outcome yet" className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wider bg-muted text-muted-foreground">
+        <CircleDashed className="h-3 w-3" /> Pending
+      </span>
+    );
+  }
+  const meta = OUTCOMES[outcome];
+  if (!meta) return null;
+  const Icon = meta.icon;
+  return (
+    <span title={meta.label} className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wider ${meta.cls}`}>
+      <Icon className="h-3 w-3" /> {meta.label}
+    </span>
   );
 }
