@@ -42,7 +42,29 @@ export function B2bCloserDetailDialog({
     enabled: !!closerId && open,
   });
 
-  const appointments: DetailAppt[] = detail?.appointments ?? [];
+  const allAppointments: DetailAppt[] = detail?.appointments ?? [];
+
+  type TimeKey = "1d" | "7d" | "30d" | "60d" | "all";
+  const [timeFilter, setTimeFilter] = useState<TimeKey>("all");
+  const timeOptions: { key: TimeKey; label: string; days: number | null }[] = [
+    { key: "1d", label: "1 day", days: 1 },
+    { key: "7d", label: "7 days", days: 7 },
+    { key: "30d", label: "30 days", days: 30 },
+    { key: "60d", label: "60 days", days: 60 },
+    { key: "all", label: "All time", days: null },
+  ];
+  const cutoffMs = (() => {
+    const opt = timeOptions.find((o) => o.key === timeFilter);
+    if (!opt || opt.days == null) return null;
+    return Date.now() - opt.days * 24 * 60 * 60 * 1000;
+  })();
+  const inWindow = (a: DetailAppt) => {
+    if (cutoffMs == null) return true;
+    const ref = a.outcome_set_at ?? a.scheduled_at;
+    return new Date(ref).getTime() >= cutoffMs;
+  };
+
+  const appointments = allAppointments.filter(inWindow);
   const upcoming = appointments.filter((a) => !a.outcome && a.status !== "cancelled");
   const withOutcome = appointments.filter((a) => !!a.outcome);
 
@@ -87,11 +109,25 @@ export function B2bCloserDetailDialog({
 
         {detail && (
           <>
+            <div className="flex flex-wrap gap-2">
+              {timeOptions.map((t) => (
+                <Button
+                  key={t.key}
+                  size="sm"
+                  variant={timeFilter === t.key ? "default" : "outline"}
+                  className={cn("h-7 text-xs", timeFilter === t.key && "bg-primary text-primary-foreground")}
+                  onClick={() => setTimeFilter(t.key)}
+                >
+                  {t.label}
+                </Button>
+              ))}
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <Stat icon={<Target className="h-3 w-3" />} label="Close rate" value={`${closeRate}%`} tone="text-success" />
-              <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Closed" value={stats.closed} tone="text-success" hint={money(stats.totalDeals)} />
-              <Stat icon={<X className="h-3 w-3" />} label="Lost" value={stats.lost} />
-              <Stat icon={<Clock className="h-3 w-3" />} label="No show" value={stats.noShow} />
+              <Stat icon={<Target className="h-3 w-3" />} label="Close rate" value={`${closeRate}%`} tone="text-success" onClick={() => setActiveFilter("all")} active={activeFilter === "all"} />
+              <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Closed" value={stats.closed} tone="text-success" hint={money(stats.totalDeals)} onClick={() => setActiveFilter("closed")} active={activeFilter === "closed"} />
+              <Stat icon={<X className="h-3 w-3" />} label="Lost" value={stats.lost} onClick={() => setActiveFilter("lost")} active={activeFilter === "lost"} />
+              <Stat icon={<Clock className="h-3 w-3" />} label="No show" value={stats.noShow} onClick={() => setActiveFilter("no-show")} active={activeFilter === "no-show"} />
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -107,6 +143,7 @@ export function B2bCloserDetailDialog({
                 </Button>
               ))}
             </div>
+
 
             {(activeFilter === "all" || activeFilter === "not-logged") && (
               <Section title={`Upcoming / not yet logged (${filteredUpcoming.length})`}>
@@ -201,9 +238,12 @@ function OutcomeRow({ a, onEdit }: { a: DetailAppt; onEdit: () => void }) {
   );
 }
 
-function Stat({ icon, label, value, tone, hint }: { icon: React.ReactNode; label: string; value: string | number; tone?: string; hint?: string }) {
+function Stat({ icon, label, value, tone, hint, onClick, active }: { icon: React.ReactNode; label: string; value: string | number; tone?: string; hint?: string; onClick?: () => void; active?: boolean }) {
   return (
-    <Card className="p-3">
+    <Card
+      className={cn("p-3", onClick && "cursor-pointer transition-colors hover:bg-accent/50", active && "ring-1 ring-primary")}
+      onClick={onClick}
+    >
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">{icon} {label}</div>
       <div className={`text-2xl font-display font-semibold mt-1 ${tone ?? ""}`}>{value}</div>
       {hint && <div className="text-[10px] text-muted-foreground mt-1">{hint}</div>}
