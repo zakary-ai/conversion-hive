@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phone, Mail, Clock, Loader2, CreditCard, DollarSign, Trash2 } from "lucide-react";
 import { listClosers, assignCloserToBooking, deleteCloserBooking, getApplicationById } from "@/lib/api/b2c.functions";
+import { listB2bClosers } from "@/lib/api/b2b-closers.functions";
 import { assignB2bCloser, deleteAppointment } from "@/lib/api/cl.functions";
 import { toast } from "sonner";
 
