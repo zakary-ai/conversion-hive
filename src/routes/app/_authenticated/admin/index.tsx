@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2 } from "lucide-react";
 import { useAdminChannel, type AdminChannel } from "@/components/app-sidebar";
+import { ScheduledLeadDialog, type ScheduledLeadRow } from "@/components/admin/scheduled-lead-dialog";
+
 
 type Overview = Awaited<ReturnType<typeof getAdminOverview>>;
 type Row = Overview["upcomingCalls"][number];
