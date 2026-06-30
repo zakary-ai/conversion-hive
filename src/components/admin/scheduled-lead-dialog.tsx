@@ -163,7 +163,7 @@ export function ScheduledLeadDialog({
                 <SelectContent>
                   {eligibleClosers.length === 0 ? (
                     <div className="p-2 text-xs text-muted-foreground">
-                      No {channel === "b2b" ? "B2B-active" : "active"} closers available.
+                      No active {channel === "b2b" ? "B2B" : "B2C"} closers available.
                     </div>
                   ) : (
                     eligibleClosers.map((c) => (
