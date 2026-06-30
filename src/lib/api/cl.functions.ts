@@ -1254,7 +1254,7 @@ export const updateCommission = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
     if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
-    const patch: Record<string, unknown> = {};
+    const patch: { amount?: number; commission_percent?: number | null; deal_amount?: number | null; note?: string | null } = {};
     if (data.amount !== undefined) patch.amount = data.amount;
     if (data.commission_percent !== undefined) patch.commission_percent = data.commission_percent;
     if (data.deal_amount !== undefined) patch.deal_amount = data.deal_amount;
