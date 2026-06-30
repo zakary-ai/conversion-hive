@@ -633,7 +633,7 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
             const covers = cRules.some((r) => r.start_minute <= mm && r.end_minute >= mm + SLOT);
             if (!covers) continue;
             const conflict = allBookings.some((b) => {
-              if (b.assigned_closer_id !== cid) return false;
+              if (b.b2b_closer_id !== cid) return false;
               if (b.status === "cancelled") return false;
               const bs = new Date(b.scheduled_at).getTime();
               return bs < slotEnd && bs + slotMs > t;
@@ -643,7 +643,7 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
 
           // Reserve capacity for pending (unassigned) bookings already sitting on this slot
           const pendingAtSlot = allBookings.filter((b) =>
-            b.assigned_closer_id == null
+            b.b2b_closer_id == null
             && b.status === "pending_assignment"
             && new Date(b.scheduled_at).getTime() === t
           ).length;
