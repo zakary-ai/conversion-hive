@@ -139,14 +139,7 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }
           <DialogTrigger asChild><Button size="sm" variant="outline">Availability</Button></DialogTrigger>
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>{closer.full_name}'s availability</DialogTitle></DialogHeader>
-            <Tabs defaultValue="b2c">
-              <TabsList>
-                <TabsTrigger value="b2c">B2C hours</TabsTrigger>
-                <TabsTrigger value="b2b">B2B hours</TabsTrigger>
-              </TabsList>
-              <TabsContent value="b2c"><CloserAvail closerId={closer.id} track="b2c" /></TabsContent>
-              <TabsContent value="b2b"><CloserAvail closerId={closer.id} track="b2b" /></TabsContent>
-            </Tabs>
+            <CloserAvail closerId={closer.id} track="b2c" />
           </DialogContent>
         </Dialog>
         <Button size="sm" variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>
