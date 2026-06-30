@@ -129,6 +129,32 @@ export function ScheduledLeadDialog({
               )}
             </div>
 
+            {channel === "b2c" && row.application_id && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm space-y-1.5">
+                <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Application</div>
+                {appQ.isLoading ? (
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading…
+                  </div>
+                ) : appQ.data ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Income now:</span>
+                      <span className="font-medium">{appQ.data.current_monthly_income}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Credit:</span>
+                      <span className="font-medium">{appQ.data.credit_score_range}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-xs text-muted-foreground">Application not found.</div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Assign to closer</label>
               <Select value={closerId} onValueChange={setCloserId} disabled={closersQ.isLoading}>
@@ -154,16 +180,49 @@ export function ScheduledLeadDialog({
               </p>
             </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={() => assign.mutate()} disabled={!closerId || assign.isPending}>
-                {assign.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                Assign closer
+            <div className="flex justify-between items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfirmDelete(true)}
+                disabled={del.isPending}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4 mr-1" /> Delete lead
               </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={onClose}>Cancel</Button>
+                <Button onClick={() => assign.mutate()} disabled={!closerId || assign.isPending}>
+                  {assign.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                  Assign closer
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </DialogContent>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the booking{channel === "b2c" ? " and its calendar event" : ""}. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={del.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); del.mutate(); }}
+              disabled={del.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {del.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
