@@ -950,15 +950,25 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     ]).parse
   )
   .handler(async ({ data, context }) => {
-    // Admin only
-    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
-    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
-    if (!isAdmin) throw new Error("Forbidden");
-
     const { data: appt, error: aerr } = await context.supabase
-      .from("appointments").select("id, user_id, type, name").eq("id", data.id).single();
+      .from("appointments").select("id, user_id, type, name, assigned_closer_id, b2b_closer_id").eq("id", data.id).single();
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
     if (appt.type !== "booking") throw new Error("Outcome only applies to bookings");
+
+    // Allow: admin, owner, assigned B2C closer, or assigned B2B closer
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    let allowed = isAdmin || appt.user_id === context.userId;
+    if (!allowed && appt.assigned_closer_id) {
+      const { data: c } = await context.supabase.from("closers").select("id").eq("id", appt.assigned_closer_id).eq("user_id", context.userId).maybeSingle();
+      if (c) allowed = true;
+    }
+    if (!allowed && appt.b2b_closer_id) {
+      const { data: bc } = await context.supabase.from("b2b_closers").select("id").eq("id", appt.b2b_closer_id).eq("user_id", context.userId).maybeSingle();
+      if (bc) allowed = true;
+    }
+    if (!allowed) throw new Error("Forbidden");
+
 
     if (data.outcome === "clear") {
       const { error } = await context.supabase.from("appointments").update({
