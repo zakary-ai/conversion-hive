@@ -381,9 +381,11 @@ type DayBooking = {
   phone: string | null;
   meeting_url?: string | null;
   assigned_closer_id?: string | null;
+  b2b_closer_id?: string | null;
   closers?: { full_name: string; email: string } | null;
+  b2b_closer?: { full_name: string; email: string } | null;
 };
-type CloserOpt = { id: string; full_name: string; active: boolean; b2b_active?: boolean };
+type CloserOpt = { id: string; full_name: string; active: boolean };
 
 function DayBookingList({
   bookings,
