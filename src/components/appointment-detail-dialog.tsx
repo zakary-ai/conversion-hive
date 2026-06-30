@@ -62,6 +62,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
       qc.invalidateQueries({ queryKey: ["my-appointments"] });
       qc.invalidateQueries({ queryKey: ["all-appointments"] });
       qc.invalidateQueries({ queryKey: ["commissions"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview"] });
       setMode("none");
     },
     onError: (e: Error) => toast.error(e.message),
