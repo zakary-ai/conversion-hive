@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2 } from "lucide-react";
 import { useAdminChannel, type AdminChannel } from "@/components/app-sidebar";
+import { ScheduledLeadDialog, type ScheduledLeadRow } from "@/components/admin/scheduled-lead-dialog";
+
 
 type Overview = Awaited<ReturnType<typeof getAdminOverview>>;
 type Row = Overview["upcomingCalls"][number];
@@ -36,6 +38,8 @@ function AdminDashboard() {
   const [channel] = useAdminChannel();
   const { data } = useSuspenseQuery(overviewOpts(channel));
   const [openMetric, setOpenMetric] = useState<MetricKey | null>(null);
+  const [scheduledLead, setScheduledLead] = useState<ScheduledLeadRow | null>(null);
+
 
   const cards: { key: MetricKey; icon: typeof Users; hint?: string }[] = [
     { key: "scheduledLeads", icon: Users, hint: "Waiting to be assigned" },
@@ -78,15 +82,25 @@ function AdminDashboard() {
               {data[openMetric].length === 0 ? (
                 <Card className="p-6 text-sm text-muted-foreground text-center">Nothing here.</Card>
               ) : (
-                data[openMetric].map((r) => <CallRow key={r.id} row={r} showTimeOnly={false} />)
+                data[openMetric].map((r) => (
+                  <CallRow
+                    key={r.id}
+                    row={r}
+                    showTimeOnly={false}
+                    onClick={openMetric === "scheduledLeads" ? () => setScheduledLead(r) : undefined}
+                  />
+                ))
               )}
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <ScheduledLeadDialog row={scheduledLead} channel={channel} onClose={() => setScheduledLead(null)} />
     </div>
   );
 }
+
 
 function ChannelToggle() {
   const [channel, setChannel] = useAdminChannel();
@@ -120,13 +134,17 @@ function Section({ title, icon: Icon, children, empty }: { title: string; icon: 
   );
 }
 
-function CallRow({ row, showTimeOnly }: { row: Row; showTimeOnly: boolean }) {
+function CallRow({ row, showTimeOnly, onClick }: { row: Row; showTimeOnly: boolean; onClick?: () => void }) {
   const dt = new Date(row.scheduled_at);
   const when = showTimeOnly
     ? dt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
     : dt.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   return (
-    <Card className="p-3 flex items-start gap-3 flex-wrap">
+    <Card
+      className={`p-3 flex items-start gap-3 flex-wrap ${onClick ? "cursor-pointer hover:bg-muted/40 transition-colors" : ""}`}
+      onClick={onClick}
+    >
+
       <div className="h-10 w-10 rounded-lg bg-success/15 text-success flex items-center justify-center shrink-0">
         <Video className="h-5 w-5" />
       </div>
