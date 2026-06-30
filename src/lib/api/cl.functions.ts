@@ -580,29 +580,28 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
 
     if (!globalRules || globalRules.length === 0) return [] as string[];
 
-    // B2B-active closers
+    // B2B closers (new dedicated pool)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closers } = await (supabaseAdmin.from("closers") as any)
-      .select("id").eq("active", true).eq("b2b_active", true);
+    const { data: closers } = await (supabaseAdmin.from("b2b_closers") as any)
+      .select("id").eq("active", true);
     const closerIds = ((closers ?? []) as Array<{ id: string }>).map((c) => c.id);
     if (closerIds.length === 0) return [] as string[];
 
     // Their B2B availability
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closerRulesRaw } = await (supabaseAdmin.from("closer_availability_rules") as any)
+    const { data: closerRulesRaw } = await (supabaseAdmin.from("b2b_closer_availability_rules") as any)
       .select("closer_id, day_of_week, start_minute, end_minute")
-      .eq("track", "b2b")
       .in("closer_id", closerIds);
     const closerRules = (closerRulesRaw ?? []) as Array<{ closer_id: string; day_of_week: number; start_minute: number; end_minute: number }>;
 
     // Existing appointments overlapping the viewer window
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: bookings } = await (supabaseAdmin.from("appointments") as any)
-      .select("scheduled_at, assigned_closer_id, status")
+      .select("scheduled_at, b2b_closer_id, status")
       .eq("type", "booking")
       .gte("scheduled_at", new Date(viewerDayStart.getTime() - SLOT * 60_000).toISOString())
       .lt("scheduled_at", new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString());
-    const allBookings = (bookings ?? []) as Array<{ scheduled_at: string; assigned_closer_id: string | null; status: string | null }>;
+    const allBookings = (bookings ?? []) as Array<{ scheduled_at: string; b2b_closer_id: string | null; status: string | null }>;
 
     // Viewer day can span 2 EST calendar days
     const estDates = new Set<string>();
