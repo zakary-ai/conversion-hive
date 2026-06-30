@@ -95,11 +95,8 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }
     onSuccess: () => qc.invalidateQueries({ queryKey: ["closers"] }),
     onError: (e: Error) => toast.error(e.message),
   });
-  const toggleB2B = useMutation({
-    mutationFn: (b2b_active: boolean) => updateCloser({ data: { id: closer.id, b2b_active } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["closers"] }),
-    onError: (e: Error) => toast.error(e.message),
-  });
+  const toggleB2B = null as never;
+  void toggleB2B;
   const del = useMutation({
     mutationFn: () => deleteCloser({ data: { id: closer.id } }),
     onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["closers"] }); },
@@ -123,12 +120,8 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }
       </button>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">B2C</span>
+          <span className="text-muted-foreground">Active</span>
           <Switch checked={closer.active} onCheckedChange={(v) => toggleActive.mutate(v)} />
-        </div>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">B2B</span>
-          <Switch checked={!!closer.b2b_active} onCheckedChange={(v) => toggleB2B.mutate(v)} />
         </div>
         <Button size="sm" variant="outline" onClick={() => setDetailOpen(true)}>
           <BarChart3 className="h-3.5 w-3.5 mr-1" /> Stats
