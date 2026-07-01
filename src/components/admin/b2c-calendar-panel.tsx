@@ -333,6 +333,7 @@ export function B2cCalendarPanel() {
         )}
       </Card>
 
+      <AdminCloserAvailabilityPanel line="b2c" />
 
       {/* Date → bookings */}
       <Card className="p-4">
