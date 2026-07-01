@@ -1556,6 +1556,8 @@ export const getClientDetail = createServerFn({ method: "GET" })
   .inputValidator(z.object({
     user_id: z.string().uuid(),
     range: z.enum(["day", "week", "month", "90d", "all"]).default("all"),
+    from: z.string().datetime().optional(),
+    to: z.string().datetime().optional(),
   }).parse)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -1581,12 +1583,25 @@ export const getClientDetail = createServerFn({ method: "GET" })
     const allLeads = leads.data ?? [];
     const allCalls = calls.data ?? [];
 
-    const days = data.range === "day" ? 1 : data.range === "week" ? 7 : data.range === "month" ? 30 : data.range === "90d" ? 90 : null;
-    const cutoff = days ? Date.now() - days * 86400_000 : null;
+    // Explicit from/to window overrides range preset.
+    let fromMs: number | null = null;
+    let toMs: number | null = null;
+    if (data.from || data.to) {
+      fromMs = data.from ? new Date(data.from).getTime() : null;
+      toMs = data.to ? new Date(data.to).getTime() : null;
+    } else {
+      const days = data.range === "day" ? 1 : data.range === "week" ? 7 : data.range === "month" ? 30 : data.range === "90d" ? 90 : null;
+      fromMs = days ? Date.now() - days * 86400_000 : null;
+      toMs = null;
+    }
     const inRange = <T extends Record<string, unknown>>(arr: T[], key: string) =>
-      cutoff == null ? arr : arr.filter((r) => {
+      (fromMs == null && toMs == null) ? arr : arr.filter((r) => {
         const v = r[key];
-        return typeof v === "string" && new Date(v).getTime() >= cutoff;
+        if (typeof v !== "string") return false;
+        const t = new Date(v).getTime();
+        if (fromMs != null && t < fromMs) return false;
+        if (toMs != null && t > toMs) return false;
+        return true;
       });
 
     const bookings = inRange(appts.filter((a) => a.type === "booking"), "scheduled_at");
@@ -1609,12 +1624,14 @@ export const getClientDetail = createServerFn({ method: "GET" })
         bookings: bookings.length,
         closed: bookings.filter((a) => a.outcome === "closed").length,
         lost: bookings.filter((a) => a.outcome === "lost").length,
+        no_show: bookings.filter((a) => a.outcome === "no_show").length,
         pending: bookings.filter((a) => !a.outcome).length,
         leadsCount: leadsInRange.length,
         dials: (callsInRange as Array<{ counted_at: string | null }>).filter((c) => c.counted_at).length,
       },
     };
   });
+
 
 
 // ---------- Admin: invite client ----------

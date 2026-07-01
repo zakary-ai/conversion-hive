@@ -1,33 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { getClientDetail, addCommission, setCommissionPaid, backfillSetterCallArtifacts } from "@/lib/api/cl.functions";
+import { useState, useMemo } from "react";
+import { getClientDetail, backfillSetterCallArtifacts } from "@/lib/api/cl.functions";
 
 import { PageHeader, StatCard, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, BadgeCheck, RotateCcw, Phone, ChevronDown, Mail, Building2, Search, CalendarIcon, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, Phone, ChevronDown, Mail, Building2, Search, CalendarIcon, AlertTriangle, UserX } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type Range = "day" | "week" | "month" | "90d" | "all";
-
 export const Route = createFileRoute("/app/_authenticated/admin/clients/$userId")({
-  loader: ({ context, params }) => context.queryClient.ensureQueryData(opts(params.userId, "all")),
+  loader: ({ context, params }) => context.queryClient.ensureQueryData(opts(params.userId, null, null)),
   component: SetterDetailPage,
 });
 
-const opts = (id: string, range: Range) => queryOptions({
-  queryKey: ["client-detail", id, range],
-  queryFn: () => getClientDetail({ data: { user_id: id, range } }),
+const opts = (id: string, from: string | null, to: string | null) => queryOptions({
+  queryKey: ["client-detail", id, from ?? "all", to ?? "all"],
+  queryFn: () => getClientDetail({ data: { user_id: id, range: "all", ...(from ? { from } : {}), ...(to ? { to } : {}) } }),
 });
 
 const fmtDate = (s?: string | null) =>
@@ -36,43 +32,31 @@ const fmtDateTime = (s?: string | null) =>
   s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 const money = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-type Commission = {
-  id: string;
-  amount: number | string;
-  note: string | null;
-  created_at: string;
-  paid_at: string | null;
-  paid_method: string | null;
-};
+function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function endOfDay(d: Date) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
 
-const RANGES: { id: Range; label: string }[] = [
-  { id: "day", label: "Day" },
-  { id: "week", label: "Week" },
-  { id: "month", label: "Month" },
-  { id: "90d", label: "90 days" },
-  { id: "all", label: "All time" },
-];
+type StatKey = "bookings" | "closed" | "lost" | "no_show" | "dials" | "training";
 
 function SetterDetailPage() {
   const { userId } = Route.useParams();
-  const [range, setRange] = useState<Range>("all");
-  const { data } = useSuspenseQuery(opts(userId, range));
-  const qc = useQueryClient();
-  const [amount, setAmount] = useState("");
-  const [note, setNote] = useState("");
-  const [payTarget, setPayTarget] = useState<Commission | null>(null);
-
-  const add = useMutation({
-    mutationFn: () => addCommission({ data: { user_id: userId, amount: parseFloat(amount), note } }),
-    onSuccess: () => {
-      toast.success("Commission added");
-      setAmount(""); setNote("");
-      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
-      qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
-    },
-  });
+  const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
+  const fromIso = dateRange.from ? startOfDay(dateRange.from).toISOString() : null;
+  const toIso = dateRange.to ? endOfDay(dateRange.to).toISOString() : null;
+  const { data } = useSuspenseQuery(opts(userId, fromIso, toIso));
+  const [statOpen, setStatOpen] = useState<StatKey | null>(null);
 
   const progress = data.totalModules ? Math.round((data.completions.length / data.totalModules) * 100) : 0;
+
+  const rangeLabel = dateRange.from && dateRange.to
+    ? `${dateRange.from.toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${dateRange.to.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    : dateRange.from
+    ? dateRange.from.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : "All time";
+
+  const setToday = () => {
+    const d = new Date();
+    setDateRange({ from: d, to: d });
+  };
 
   return (
     <div className="space-y-6 max-w-7xl">
@@ -87,148 +71,32 @@ function SetterDetailPage() {
         }
       />
 
-      <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">
-        {RANGES.map((r) => (
-          <Button
-            key={r.id}
-            size="sm"
-            variant={range === r.id ? "default" : "ghost"}
-            className="h-7 text-xs"
-            onClick={() => setRange(r.id)}
-          >
-            {r.label}
-          </Button>
-        ))}
-      </div>
-
-
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Bookings" value={data.stats.bookings} icon={CalendarClock} />
-        <StatCard label="Closed" value={data.stats.closed} icon={CheckCircle2} />
-        <StatCard label="Lost" value={data.stats.lost} icon={XCircle} />
-        <StatCard label="Dials" value={data.stats.dials} icon={Phone} />
-
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Training" value={`${progress}%`} icon={GraduationCap} />
-        <StatCard label="Total earned" value={money(data.balance)} icon={DollarSign} />
-        <StatCard label="Paid out" value={money(data.paid)} icon={BadgeCheck} />
-        <StatCard label="Unpaid" value={money(data.unpaid)} icon={Clock} />
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-4">
-        <Card className="p-6">
-          <h3 className="font-display font-semibold mb-3">Training progress</h3>
-          <Progress value={progress} className="h-2" />
-          <div className="text-xs text-muted-foreground mt-2">{data.completions.length} of {data.totalModules} modules complete</div>
-        </Card>
-
-        <Card className="p-6">
-          <h3 className="font-display font-semibold mb-3">Add commission</h3>
-          <div className="space-y-2">
-            <Label>Amount ($)</Label>
-            <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
-            <Label>Note</Label>
-            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
-            <Button onClick={() => add.mutate()} disabled={!amount || add.isPending} className="w-full mt-2">Add commission</Button>
-          </div>
-        </Card>
-      </div>
-
-      <Card className="overflow-x-auto">
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <h3 className="font-display font-semibold">Booking history</h3>
-          <span className="text-xs text-muted-foreground">{data.stats.bookings} total</span>
-        </div>
-        {data.stats.bookings === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground text-center">No bookings yet.</div>
-        ) : (
-          <div className="divide-y divide-border">
-            {data.appointments.filter((a) => a.type === "booking").slice(0, 50).map((a) => (
-              <div key={a.id} className="p-3 flex items-center gap-3 text-sm">
-                <div className={cn(
-                  "h-8 w-8 rounded-md flex items-center justify-center shrink-0",
-                  a.outcome === "closed" ? "bg-success/15 text-success" :
-                  a.outcome === "lost" ? "bg-destructive/15 text-destructive" :
-                  "bg-muted text-muted-foreground"
-                )}>
-                  {a.outcome === "closed" ? <CheckCircle2 className="h-4 w-4" /> :
-                   a.outcome === "lost" ? <XCircle className="h-4 w-4" /> :
-                   <Clock className="h-4 w-4" />}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium truncate">{a.name}</div>
-                  <div className="text-xs text-muted-foreground">{fmtDateTime(a.scheduled_at)}</div>
-                </div>
-                <div className="text-right text-xs">
-                  {a.outcome === "closed" && a.deal_amount != null && (
-                    <div className="text-success font-medium">{money(Number(a.deal_amount))}</div>
-                  )}
-                  <div className="uppercase tracking-wider text-muted-foreground">
-                    {a.outcome ?? "pending"}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="flex flex-wrap gap-2 items-center">
+        <Button size="sm" variant={dateRange.from && dateRange.to && dateRange.from.toDateString() === new Date().toDateString() && dateRange.to.toDateString() === new Date().toDateString() ? "default" : "outline"} onClick={setToday}>Today</Button>
+        <DateRangePicker value={dateRange} onChange={setDateRange} label={rangeLabel} />
+        {(dateRange.from || dateRange.to) && (
+          <Button size="sm" variant="ghost" onClick={() => setDateRange({ from: null, to: null })}>Clear</Button>
         )}
-      </Card>
+      </div>
 
-      <Card className="overflow-x-auto">
-        <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
-          <h3 className="font-display font-semibold">Commission history</h3>
-          <div className="text-xs text-muted-foreground">
-            {money(data.unpaid)} unpaid · {money(data.paid)} paid
-          </div>
-        </div>
-        {data.commissions.length === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground text-center">No entries.</div>
-        ) : (
-          <div className="divide-y divide-border">
-            {data.commissions.map((c) => (
-              <div key={c.id} className="p-3 flex items-start gap-3 text-sm">
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium truncate">{c.note || "—"}</div>
-                  <div className="text-xs text-muted-foreground">Earned {fmtDate(c.created_at)}</div>
-                  {c.paid_at && (
-                    <div className="text-xs text-success mt-0.5 flex items-center gap-1">
-                      <BadgeCheck className="h-3 w-3" /> Paid {fmtDate(c.paid_at)} · {c.paid_method}
-                    </div>
-                  )}
-                </div>
-                <div className="text-right shrink-0 space-y-1">
-                  <div className={cn("font-medium", c.paid_at ? "text-muted-foreground line-through" : "text-success")}>
-                    {money(Number(c.amount))}
-                  </div>
-                  {c.paid_at ? (
-                    <UnpayButton id={c.id} userId={userId} />
-                  ) : (
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setPayTarget(c as Commission)}>
-                      Pay
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <ClickableStat label="Bookings" value={data.stats.bookings} icon={CalendarClock} onClick={() => setStatOpen("bookings")} />
+        <ClickableStat label="Closed" value={data.stats.closed} icon={CheckCircle2} onClick={() => setStatOpen("closed")} />
+        <ClickableStat label="Lost/DQ" value={data.stats.lost} icon={XCircle} onClick={() => setStatOpen("lost")} />
+        <ClickableStat label="No Show" value={data.stats.no_show ?? 0} icon={UserX} onClick={() => setStatOpen("no_show")} />
+        <ClickableStat label="Dials" value={data.stats.dials} icon={Phone} onClick={() => setStatOpen("dials")} />
+        <ClickableStat label="Training" value={`${progress}%`} icon={GraduationCap} onClick={() => setStatOpen("training")} />
+      </div>
 
       <Card className="p-6">
-        <h3 className="font-display font-semibold mb-3">Quiz scores</h3>
-        {data.attempts.length === 0 ? <div className="text-sm text-muted-foreground">No attempts yet.</div> : (
-          <div className="space-y-2">
-            {data.attempts.slice(0, 10).map((a) => (
-              <div key={a.id} className="flex justify-between text-sm border-b border-border pb-2 last:border-0">
-                <span>{(a as { modules?: { title?: string } }).modules?.title ?? "Module"}</span>
-                <span className="font-medium">{a.score}% · {fmtDate(a.completed_at)}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <h3 className="font-display font-semibold mb-3">Training progress</h3>
+        <Progress value={progress} className="h-2" />
+        <div className="text-xs text-muted-foreground mt-2">{data.completions.length} of {data.totalModules} modules complete</div>
       </Card>
+
+      <BookingHistoryCard appointments={data.appointments as ApptRow[]} />
+
+      <QuizScoresCard attempts={data.attempts as QuizAttempt[]} />
 
       <TodaysLeadsCard
         leads={data.leads as SetterLead[]}
@@ -240,14 +108,329 @@ function SetterDetailPage() {
         calls={data.calls as CallRowItem[]}
       />
 
-      <PayDialog
-        commission={payTarget}
-        userId={userId}
-        onClose={() => setPayTarget(null)}
+      <StatDetailDialog
+        statKey={statOpen}
+        onClose={() => setStatOpen(null)}
+        appointments={data.appointments as ApptRow[]}
+        calls={data.calls as CallRowItem[]}
+        attempts={data.attempts as QuizAttempt[]}
+        completions={data.completions as { module_id: string; completed_at?: string | null }[]}
+        totalModules={data.totalModules}
       />
     </div>
   );
 }
+
+function ClickableStat({ label, value, icon, onClick }: { label: string; value: number | string; icon: typeof CalendarClock; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="text-left transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-ring rounded-lg">
+      <StatCard label={label} value={value} icon={icon} />
+    </button>
+  );
+}
+
+function DateRangePicker({ value, onChange, label }: { value: { from: Date | null; to: Date | null }; onChange: (v: { from: Date | null; to: Date | null }) => void; label: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <CalendarIcon className="h-4 w-4" /> {label}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-auto p-0">
+        <Calendar
+          mode="range"
+          selected={{ from: value.from ?? undefined, to: value.to ?? undefined }}
+          onSelect={(r) => {
+            onChange({ from: r?.from ?? null, to: r?.to ?? null });
+            if (r?.from && r?.to) setOpen(false);
+          }}
+          numberOfMonths={2}
+          initialFocus
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ---------- Stat detail dialog ----------
+
+type ApptRow = {
+  id: string;
+  name: string;
+  type: string;
+  outcome: string | null;
+  scheduled_at: string;
+  deal_amount: number | string | null;
+  lost_reason: string | null;
+};
+
+type QuizAttempt = {
+  id: string;
+  score: number;
+  completed_at: string;
+  modules?: { title?: string } | null;
+};
+
+function StatDetailDialog({ statKey, onClose, appointments, calls, attempts, completions, totalModules }: {
+  statKey: StatKey | null;
+  onClose: () => void;
+  appointments: ApptRow[];
+  calls: CallRowItem[];
+  attempts: QuizAttempt[];
+  completions: { module_id: string; completed_at?: string | null }[];
+  totalModules: number;
+}) {
+  const bookings = appointments.filter((a) => a.type === "booking");
+  const title = statKey === "bookings" ? "Bookings"
+    : statKey === "closed" ? "Closed"
+    : statKey === "lost" ? "Lost / DQ"
+    : statKey === "no_show" ? "No Show"
+    : statKey === "dials" ? "Dials"
+    : statKey === "training" ? "Training progress"
+    : "";
+
+  const rows = statKey === "bookings" ? bookings
+    : statKey === "closed" ? bookings.filter((a) => a.outcome === "closed")
+    : statKey === "lost" ? bookings.filter((a) => a.outcome === "lost")
+    : statKey === "no_show" ? bookings.filter((a) => a.outcome === "no_show")
+    : [];
+
+  return (
+    <Dialog open={statKey !== null} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        {statKey === "dials" ? (
+          <div className="divide-y divide-border rounded-md border border-border">
+            {calls.length === 0 ? (
+              <div className="p-6 text-sm text-muted-foreground text-center">No calls.</div>
+            ) : calls.map((c) => <CallRow key={c.id} call={c} />)}
+          </div>
+        ) : statKey === "training" ? (
+          <div className="space-y-3 text-sm">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Modules completed</div>
+              <div>{completions.length} of {totalModules}</div>
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Quiz attempts</div>
+              {attempts.length === 0 ? <div className="text-muted-foreground">No attempts yet.</div> : (
+                <div className="divide-y divide-border rounded-md border border-border">
+                  {attempts.map((a) => (
+                    <div key={a.id} className="p-2 flex justify-between">
+                      <span>{a.modules?.title ?? "Module"}</span>
+                      <span className="font-medium">{a.score}% · {fmtDate(a.completed_at)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="p-6 text-sm text-muted-foreground text-center">Nothing to show.</div>
+        ) : (
+          <div className="divide-y divide-border rounded-md border border-border">
+            {rows.map((a) => (
+              <div key={a.id} className="p-3 flex items-center gap-3 text-sm">
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate">{a.name}</div>
+                  <div className="text-xs text-muted-foreground">{fmtDateTime(a.scheduled_at)}</div>
+                  {a.lost_reason && <div className="text-xs text-destructive mt-0.5">{a.lost_reason}</div>}
+                </div>
+                <div className="text-right text-xs">
+                  {a.outcome === "closed" && a.deal_amount != null && (
+                    <div className="text-success font-medium flex items-center gap-1 justify-end">
+                      <DollarSign className="h-3 w-3" />{money(Number(a.deal_amount))}
+                    </div>
+                  )}
+                  <div className="uppercase tracking-wider text-muted-foreground">{a.outcome ?? "pending"}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------- Booking history (calendar) ----------
+
+function BookingHistoryCard({ appointments }: { appointments: ApptRow[] }) {
+  const bookings = useMemo(() => appointments.filter((a) => a.type === "booking"), [appointments]);
+  const [date, setDate] = useState<Date | null>(null);
+  const [calOpen, setCalOpen] = useState(false);
+  const [openAppt, setOpenAppt] = useState<ApptRow | null>(null);
+
+  const filtered = useMemo(() => {
+    if (!date) return bookings.slice(0, 50);
+    const s = startOfDay(date).getTime();
+    const e = endOfDay(date).getTime();
+    return bookings.filter((a) => {
+      const t = new Date(a.scheduled_at).getTime();
+      return t >= s && t <= e;
+    });
+  }, [bookings, date]);
+
+  const dateLabel = date
+    ? date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+    : "All bookings";
+
+  return (
+    <>
+      <Card className="overflow-x-auto">
+        <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
+          <h3 className="font-display font-semibold">Booking history ({filtered.length})</h3>
+          <div className="flex items-center gap-2">
+            <Popover open={calOpen} onOpenChange={setCalOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-2">
+                  <CalendarIcon className="h-3.5 w-3.5" /> {dateLabel}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={date ?? undefined}
+                  onSelect={(d) => {
+                    setDate(d ?? null);
+                    setCalOpen(false);
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            {date && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setDate(null)}>Clear</Button>
+            )}
+          </div>
+        </div>
+        {filtered.length === 0 ? (
+          <div className="p-6 text-sm text-muted-foreground text-center">No bookings for this date.</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {filtered.map((a) => (
+              <button key={a.id} onClick={() => setOpenAppt(a)} className="w-full p-3 flex items-center gap-3 text-sm hover:bg-muted/30 text-left">
+                <div className={cn(
+                  "h-8 w-8 rounded-md flex items-center justify-center shrink-0",
+                  a.outcome === "closed" ? "bg-success/15 text-success" :
+                  a.outcome === "lost" ? "bg-destructive/15 text-destructive" :
+                  a.outcome === "no_show" ? "bg-warning/15 text-warning" :
+                  "bg-muted text-muted-foreground"
+                )}>
+                  {a.outcome === "closed" ? <CheckCircle2 className="h-4 w-4" /> :
+                   a.outcome === "lost" ? <XCircle className="h-4 w-4" /> :
+                   a.outcome === "no_show" ? <UserX className="h-4 w-4" /> :
+                   <Clock className="h-4 w-4" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate">{a.name}</div>
+                  <div className="text-xs text-muted-foreground">{fmtDateTime(a.scheduled_at)}</div>
+                </div>
+                <div className="text-right text-xs">
+                  {a.outcome === "closed" && a.deal_amount != null && (
+                    <div className="text-success font-medium">{money(Number(a.deal_amount))}</div>
+                  )}
+                  <div className="uppercase tracking-wider text-muted-foreground">{a.outcome ?? "pending"}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Dialog open={!!openAppt} onOpenChange={(o) => !o && setOpenAppt(null)}>
+        <DialogContent className="max-w-lg">
+          {openAppt && (
+            <>
+              <DialogHeader><DialogTitle>{openAppt.name}</DialogTitle></DialogHeader>
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-border p-2">
+                    <div className="uppercase tracking-wider text-muted-foreground text-xs">Scheduled</div>
+                    <div>{fmtDateTime(openAppt.scheduled_at)}</div>
+                  </div>
+                  <div className="rounded-md border border-border p-2">
+                    <div className="uppercase tracking-wider text-muted-foreground text-xs">Outcome</div>
+                    <div className="uppercase tracking-wider">{openAppt.outcome ?? "pending"}</div>
+                  </div>
+                  {openAppt.deal_amount != null && (
+                    <div className="rounded-md border border-border p-2">
+                      <div className="uppercase tracking-wider text-muted-foreground text-xs">Deal amount</div>
+                      <div className="text-success font-medium">{money(Number(openAppt.deal_amount))}</div>
+                    </div>
+                  )}
+                </div>
+                {openAppt.lost_reason && (
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Lost reason</div>
+                    <div className="text-sm whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-3">{openAppt.lost_reason}</div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ---------- Quiz scores (collapsible, minimized) ----------
+
+function QuizScoresCard({ attempts }: { attempts: QuizAttempt[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/20">
+          <h3 className="font-display font-semibold">Quiz scores ({attempts.length})</h3>
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="p-4 pt-0">
+            {attempts.length === 0 ? <div className="text-sm text-muted-foreground">No attempts yet.</div> : (
+              <div className="space-y-2">
+                {attempts.slice(0, 10).map((a) => (
+                  <div key={a.id} className="flex justify-between text-sm border-b border-border pb-2 last:border-0">
+                    <span>{a.modules?.title ?? "Module"}</span>
+                    <span className="font-medium">{a.score}% · {fmtDate(a.completed_at)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
+
+// ---------- Backfill ----------
+
+function BackfillButton({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const m = useMutation({
+    mutationFn: () => backfillSetterCallArtifacts({ data: { user_id: userId, since_days: 14 } }),
+    onSuccess: () => {
+      toast.success("Backfill queued");
+      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Button size="sm" variant="outline" onClick={() => m.mutate()} disabled={m.isPending}>
+      {m.isPending ? "Working…" : "Backfill calls"}
+    </Button>
+  );
+}
+
+// ---------- Call row ----------
 
 type CallRowItem = {
   id: string;
@@ -323,114 +506,7 @@ function CallRow({ call }: { call: CallRowItem }) {
   );
 }
 
-function UnpayButton({ id, userId }: { id: string; userId: string }) {
-  const qc = useQueryClient();
-  const m = useMutation({
-    mutationFn: () => setCommissionPaid({ data: { id, paid: false } }),
-    onSuccess: () => {
-      toast.success("Marked unpaid");
-      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  return (
-    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => m.mutate()} disabled={m.isPending}>
-      <RotateCcw className="h-3 w-3 mr-1" /> Unpay
-    </Button>
-  );
-}
-
-const PAY_METHODS = ["Zelle", "Cash App", "Venmo", "PayPal", "Wire", "ACH", "Check", "Cash", "Other"];
-
-function PayDialog({ commission, userId, onClose }: { commission: Commission | null; userId: string; onClose: () => void }) {
-  const qc = useQueryClient();
-  const today = new Date().toISOString().slice(0, 10);
-  const [date, setDate] = useState(today);
-  const [method, setMethod] = useState("Zelle");
-  const [customMethod, setCustomMethod] = useState("");
-
-  const m = useMutation({
-    mutationFn: () => setCommissionPaid({
-      data: {
-        id: commission!.id,
-        paid: true,
-        paid_at: date,
-        paid_method: method === "Other" ? (customMethod.trim() || "Other") : method,
-      },
-    }),
-    onSuccess: () => {
-      toast.success("Marked paid");
-      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
-      onClose();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  return (
-    <Dialog open={!!commission} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Mark commission paid</DialogTitle></DialogHeader>
-        {commission && (
-          <div className="space-y-4">
-            <div className="rounded-md border border-border p-3 text-sm">
-              <div className="text-success font-semibold text-lg">{money(Number(commission.amount))}</div>
-              <div className="text-xs text-muted-foreground">{commission.note || "—"}</div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="paid_at">Date paid</Label>
-              <Input id="paid_at" type="date" value={date} onChange={(e) => setDate(e.target.value)} max={today} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="method">Payment method</Label>
-              <select
-                id="method"
-                value={method}
-                onChange={(e) => setMethod(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                {PAY_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-              {method === "Other" && (
-                <Input
-                  placeholder="Specify method"
-                  value={customMethod}
-                  onChange={(e) => setCustomMethod(e.target.value)}
-                  maxLength={100}
-                />
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={() => m.mutate()} disabled={m.isPending || !date}>
-                {m.isPending ? "Saving…" : "Mark paid"}
-              </Button>
-            </DialogFooter>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function BackfillButton({ userId }: { userId: string }) {
-  const qc = useQueryClient();
-  const m = useMutation({
-    mutationFn: () => backfillSetterCallArtifacts({ data: { user_id: userId, since_days: 14 } }),
-    onSuccess: (r) => {
-      toast.success(`Backfilled: ${r.adopted} linked, ${r.withRec} recordings, ${r.withTx} transcripts.`);
-      qc.invalidateQueries({ queryKey: ["client-detail", userId] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  return (
-    <Button variant="outline" size="sm" onClick={() => m.mutate()} disabled={m.isPending}>
-      {m.isPending ? "Pulling…" : "Pull recordings"}
-    </Button>
-  );
-}
-
 // ---------- Today's Leads + history sections ----------
-
 
 type SetterLead = {
   id: string;
@@ -447,17 +523,6 @@ type SetterLead = {
   last_status_change_at: string;
   do_not_contact: boolean;
 };
-
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-function endOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
-}
 
 function SearchPopover({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   const [open, setOpen] = useState(false);
@@ -498,7 +563,6 @@ function matchesQuery(l: SetterLead, q: string) {
   );
 }
 
-// A lead has a "real" call if any call_logs row for it is not a manual_outcome marker.
 function leadHasRealCall(leadId: string, calls: CallRowItem[]) {
   return calls.some(
     (c) =>
@@ -522,6 +586,7 @@ function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
   const [tab, setTab] = useState<"uncontacted" | "contacted">("uncontacted");
   const [openLead, setOpenLead] = useState<SetterLead | null>(null);
   const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState(false);
 
   const todayStart = startOfDay(new Date()).getTime();
   const todayEnd = endOfDay(new Date()).getTime();
@@ -540,7 +605,10 @@ function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
     <>
       <Card className="overflow-x-auto">
         <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
-          <h3 className="font-display font-semibold">Today's Leads ({list.length})</h3>
+          <button className="flex items-center gap-2 font-display font-semibold" onClick={() => setCollapsed((c) => !c)}>
+            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", collapsed && "-rotate-90")} />
+            Today's Leads ({list.length})
+          </button>
           <div className="flex items-center gap-2">
             <div className="inline-flex h-8 items-center rounded-lg bg-muted p-1 text-xs">
               <button
@@ -565,7 +633,7 @@ function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
             <SearchPopover value={query} onChange={setQuery} placeholder="Search today's leads…" />
           </div>
         </div>
-        {list.length === 0 ? (
+        {!collapsed && (list.length === 0 ? (
           <div className="p-6 text-sm text-muted-foreground text-center">
             {query ? "No matches." : `No ${tab} leads today.`}
           </div>
@@ -592,7 +660,7 @@ function TodaysLeadsCard({ leads, calls }: { leads: SetterLead[]; calls: CallRow
               ))}
             </tbody>
           </table>
-        )}
+        ))}
       </Card>
 
       <SetterLeadDetailDialog
