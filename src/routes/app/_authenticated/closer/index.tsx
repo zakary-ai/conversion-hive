@@ -410,6 +410,3 @@ export function RangePicker({ value, onChange }: { value: number | null; onChang
     </div>
   );
 }
-
-  );
-}
