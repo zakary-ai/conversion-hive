@@ -20,7 +20,10 @@ export type B2BCommissionEntry = {
   created_at: string;
   approved_at: string | null;
   appointment_id: string | null;
+  paid_at: string | null;
+  paid_note: string | null;
 };
+
 
 export type B2BCommissionGroup = {
   key: string;
