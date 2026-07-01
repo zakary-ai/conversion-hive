@@ -4,11 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import {
   listClosedDealsForCommission,
   updateBookingCommission,
-  listCloserPayouts,
-  recordCloserPayout,
-  deleteCloserPayout,
   clearBookingOutcome,
   approveBookingCommission,
+  recordB2cCommissionPayout,
+  undoB2cCommissionPayout,
 } from "@/lib/api/b2c.functions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -19,10 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { DollarSign, Percent, Trash2 } from "lucide-react";
+import { DollarSign, Percent, Trash2, Wallet } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/admin/b2c-commissions")({
   component: B2cCommissionsPage,
@@ -41,11 +41,14 @@ type Row = {
   commission_percent: number | null;
   commission_amount: number | null;
   commission_status?: string | null;
+  commission_paid_at?: string | null;
+  commission_payout_note?: string | null;
   closers: { id: string; full_name: string; email: string } | null;
 };
 
 const money = (n: number | null | undefined) =>
   n == null ? "—" : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtDate = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateString() : "—");
 
 const dealVolume = (r: Row) =>
   Number(r.deal_amount ?? 0) + Number(r.deposit_amount ?? 0) + Number(r.follow_up_amount ?? 0);
@@ -57,10 +60,6 @@ function isUnassigned(r: Row) {
   return !r.closers || r.commission_amount == null || Number(r.commission_amount) <= 0;
 }
 
-type Payout = { id: string; closer_id: string; amount: number; method: string; note: string | null; paid_at: string };
-
-const METHODS = ["Cash", "ACH", "Wire", "PayPal", "Venmo", "Zelle", "Check", "Crypto", "Other"] as const;
-
 function B2cCommissionsPage() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["closed-deals-commission"],
@@ -68,13 +67,8 @@ function B2cCommissionsPage() {
   });
   const rows = data as Row[];
 
-  const { data: payoutsData = [] } = useQuery({
-    queryKey: ["closer-payouts"],
-    queryFn: () => listCloserPayouts(),
-  });
-  const payoutsList = payoutsData as Payout[];
-
   const [range, setRange] = useState<RangeKey>("30d");
+  const [payoutsOpen, setPayoutsOpen] = useState(false);
 
   const inRange = useMemo(() => {
     const days = RANGE_DAYS[range];
@@ -90,34 +84,6 @@ function B2cCommissionsPage() {
   const totalDeals = inRange.reduce((s, r) => s + dealVolume(r), 0);
 
   const unassigned = rows.filter(isUnassigned);
-  const assigned = rows.filter((r) => !isUnassigned(r));
-
-  // Group assigned commissions by closer; subtract recorded payouts
-  const grouped = useMemo(() => {
-    const m = new Map<string, { closer: { id: string; full_name: string; email: string }; earned: number; rows: Row[] }>();
-    for (const r of assigned) {
-      if (!r.closers) continue;
-      const key = r.closers.id;
-      const g = m.get(key) ?? { closer: r.closers, earned: 0, rows: [] };
-      // Only approved commissions count toward what's owed
-      if ((r.commission_status ?? "pending") === "approved") g.earned += Number(r.commission_amount ?? 0);
-      g.rows.push(r);
-      m.set(key, g);
-    }
-    const paidByCloser = new Map<string, { paid: number; payouts: Payout[] }>();
-    for (const p of payoutsList) {
-      const cur = paidByCloser.get(p.closer_id) ?? { paid: 0, payouts: [] };
-      cur.paid += Number(p.amount);
-      cur.payouts.push(p);
-      paidByCloser.set(p.closer_id, cur);
-    }
-    return Array.from(m.values())
-      .map((g) => {
-        const pb = paidByCloser.get(g.closer.id) ?? { paid: 0, payouts: [] };
-        return { ...g, paid: pb.paid, payouts: pb.payouts, owed: g.earned - pb.paid };
-      })
-      .sort((a, b) => b.owed - a.owed);
-  }, [assigned, payoutsList]);
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -126,16 +92,21 @@ function B2cCommissionsPage() {
           <h1 className="text-xl sm:text-2xl font-display font-semibold">Assign Commissions</h1>
           <p className="text-sm text-muted-foreground">Edit deal amount or percentage to recalculate the closer's commission.</p>
         </div>
-        <Select value={range} onValueChange={(v) => setRange(v as RangeKey)}>
-          <SelectTrigger className="w-[130px] sm:w-[160px] shrink-0"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1d">Today</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="60d">Last 60 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
-            <SelectItem value="all">All time</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" onClick={() => setPayoutsOpen(true)}>
+            <Wallet className="h-4 w-4 mr-1" /> Payouts
+          </Button>
+          <Select value={range} onValueChange={(v) => setRange(v as RangeKey)}>
+            <SelectTrigger className="w-[130px] sm:w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1d">Today</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="60d">Last 60 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -154,7 +125,6 @@ function B2cCommissionsPage() {
           <TabsList className="w-full sm:w-auto">
             <TabsTrigger value="history" className="flex-1 sm:flex-none text-xs sm:text-sm">History <Badge variant="secondary" className="ml-1.5">{rows.length}</Badge></TabsTrigger>
             <TabsTrigger value="unassigned" className="flex-1 sm:flex-none text-xs sm:text-sm">Unassigned <Badge variant="secondary" className="ml-1.5">{unassigned.length}</Badge></TabsTrigger>
-            <TabsTrigger value="payouts" className="flex-1 sm:flex-none text-xs sm:text-sm">Payouts <Badge variant="secondary" className="ml-1.5">{grouped.length}</Badge></TabsTrigger>
           </TabsList>
         </div>
 
@@ -173,195 +143,308 @@ function B2cCommissionsPage() {
             unassigned.map((r) => <DealRow key={r.id} row={r} />)
           )}
         </TabsContent>
-
-        <TabsContent value="payouts" className="grid gap-3">
-          {grouped.length === 0 ? (
-            <Card className="p-6 text-center text-sm text-muted-foreground">No payouts yet.</Card>
-          ) : (
-            grouped.map((g) => (
-              <PayoutGroup
-                key={g.closer.id}
-                closer={g.closer}
-                earned={g.earned}
-                paid={g.paid}
-                owed={g.owed}
-                rows={g.rows}
-                payouts={g.payouts}
-              />
-            ))
-          )}
-        </TabsContent>
       </Tabs>
+
+      <PayoutsSheet open={payoutsOpen} onOpenChange={setPayoutsOpen} rows={rows} />
     </div>
   );
 }
 
-function PayoutGroup({
-  closer, earned, paid, owed, rows, payouts,
-}: {
-  closer: { id: string; full_name: string; email: string };
-  earned: number; paid: number; owed: number;
-  rows: Row[]; payouts: Payout[];
-}) {
-  const [open, setOpen] = useState(false);
-  const [payOpen, setPayOpen] = useState(false);
-  return (
-    <Card className="p-4">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="w-full grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left">
-        <div className="min-w-0">
-          <div className="font-medium truncate">{closer.full_name}</div>
-          <div className="text-xs text-muted-foreground truncate">{closer.email} · {rows.length} deal{rows.length === 1 ? "" : "s"}</div>
-        </div>
-        <div className="text-right shrink-0">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">Owed</div>
-          <div className="text-lg sm:text-xl font-semibold text-success">{money(owed)}</div>
-          <div className="text-[10px] text-muted-foreground">Earned {money(earned)} · Paid {money(paid)}</div>
-        </div>
-      </button>
+// ---------- Payouts Sheet (mirrors B2B) ----------
+type PayoutBucket = "unpaid" | "paid";
 
-      {open && (
-        <div className="mt-3 border-t border-border pt-3 space-y-3">
-          <div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Deals</div>
-            <div className="space-y-2">
-              {rows.map((r) => (
-                <div key={r.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-sm">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{r.applicant_name}</div>
-                    <div className="text-xs text-muted-foreground capitalize truncate">
-                      {r.outcome} · {r.outcome_at ? new Date(r.outcome_at).toLocaleDateString() : "—"} · {money(dealVolume(r))}
-                      {r.commission_percent != null && <> · {r.commission_percent}%</>}
-                    </div>
-                  </div>
-                  <div className="text-success font-medium shrink-0">{money(r.commission_amount)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {payouts.length > 0 && (
-            <div>
-              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Payouts</div>
-              <div className="space-y-1">
-                {payouts.map((p) => <PayoutLine key={p.id} payout={p} />)}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="mt-3 flex justify-end">
-        <Button size="sm" onClick={() => setPayOpen(true)}>Record payout</Button>
-      </div>
-
-      <PayoutDialog
-        open={payOpen}
-        onOpenChange={setPayOpen}
-        closer={closer}
-        suggested={owed > 0 ? owed : 0}
-      />
-    </Card>
-  );
-}
-
-function PayoutLine({ payout }: { payout: Payout }) {
+function PayoutsSheet({ open, onOpenChange, rows }: { open: boolean; onOpenChange: (v: boolean) => void; rows: Row[] }) {
   const qc = useQueryClient();
-  const del = useMutation({
-    mutationFn: () => deleteCloserPayout({ data: { id: payout.id } }),
-    onSuccess: () => { toast.success("Payout removed"); qc.invalidateQueries({ queryKey: ["closer-payouts"] }); },
+  const [bucket, setBucket] = useState<PayoutBucket | null>(null);
+  const [recordOpen, setRecordOpen] = useState(false);
+
+  // Only approved+assigned commissions count as "owed" / "paid"
+  const approved = useMemo(
+    () => rows.filter((r) => (r.commission_status ?? "pending") === "approved" && r.closers && Number(r.commission_amount ?? 0) > 0),
+    [rows],
+  );
+  const unpaid = useMemo(() => approved.filter((r) => !r.commission_paid_at), [approved]);
+  const paid = useMemo(() => approved.filter((r) => !!r.commission_paid_at), [approved]);
+
+  const totalUnpaid = unpaid.reduce((s, r) => s + Number(r.commission_amount ?? 0), 0);
+  const totalPaid = paid.reduce((s, r) => s + Number(r.commission_amount ?? 0), 0);
+
+  const groupByCloser = (list: Row[]) => {
+    const m = new Map<string, { closer_id: string; name: string; total: number; rows: Row[] }>();
+    for (const r of list) {
+      if (!r.closers) continue;
+      const g = m.get(r.closers.id) ?? { closer_id: r.closers.id, name: r.closers.full_name, total: 0, rows: [] };
+      g.total += Number(r.commission_amount ?? 0);
+      g.rows.push(r);
+      m.set(r.closers.id, g);
+    }
+    return Array.from(m.values()).sort((a, b) => b.total - a.total);
+  };
+
+  const bucketList = bucket === "unpaid" ? unpaid : bucket === "paid" ? paid : [];
+  const bucketGroups = useMemo(() => groupByCloser(bucketList), [bucketList]);
+
+  const undo = useMutation({
+    mutationFn: (id: string) => undoB2cCommissionPayout({ data: { booking_ids: [id] } }),
+    onSuccess: () => {
+      toast.success("Marked unpaid");
+      qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
+      qc.invalidateQueries({ queryKey: ["my-closer-commissions"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const [payTarget, setPayTarget] = useState<{ closer_id: string; name: string; total: number; ids: string[] } | null>(null);
+  const [payNote, setPayNote] = useState("");
+
+  const payAll = useMutation({
+    mutationFn: (args: { ids: string[]; note: string | null }) => recordB2cCommissionPayout({ data: { booking_ids: args.ids, note: args.note } }),
+    onSuccess: () => {
+      toast.success("Payout recorded");
+      qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
+      qc.invalidateQueries({ queryKey: ["my-closer-commissions"] });
+      setPayTarget(null);
+      setPayNote("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-sm">
-      <div className="min-w-0">
-        <div className="truncate">{payout.method}{payout.note ? ` · ${payout.note}` : ""}</div>
-        <div className="text-xs text-muted-foreground">{new Date(payout.paid_at).toLocaleDateString()}</div>
-      </div>
-      <div className="font-medium shrink-0">{money(payout.amount)}</div>
-      <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => del.mutate()} disabled={del.isPending}>
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
-    </div>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <div className="flex items-center justify-between gap-2">
+              <SheetTitle>Payouts</SheetTitle>
+              <Button size="sm" onClick={() => setRecordOpen(true)} disabled={unpaid.length === 0}>
+                <Wallet className="h-4 w-4 mr-1" /> Record payout
+              </Button>
+            </div>
+          </SheetHeader>
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setBucket(bucket === "unpaid" ? null : "unpaid")} className="text-left">
+                <Card className={`p-3 hover:border-warning/60 transition-colors ${bucket === "unpaid" ? "border-warning/70 ring-1 ring-warning/40" : ""}`}>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Not Paid Out</div>
+                  <div className="text-xl font-semibold text-warning">{money(totalUnpaid)}</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{unpaid.length} entr{unpaid.length === 1 ? "y" : "ies"} · tap to {bucket === "unpaid" ? "hide" : "view"}</div>
+                </Card>
+              </button>
+              <button type="button" onClick={() => setBucket(bucket === "paid" ? null : "paid")} className="text-left">
+                <Card className={`p-3 hover:border-success/60 transition-colors ${bucket === "paid" ? "border-success/70 ring-1 ring-success/40" : ""}`}>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Paid Out</div>
+                  <div className="text-xl font-semibold text-success">{money(totalPaid)}</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{paid.length} entr{paid.length === 1 ? "y" : "ies"} · tap to {bucket === "paid" ? "hide" : "view"}</div>
+                </Card>
+              </button>
+            </div>
+
+            {approved.length === 0 && (
+              <Card className="p-6 text-center text-sm text-muted-foreground">No approved commissions yet.</Card>
+            )}
+
+            {bucket !== null && (
+              <div className="space-y-3">
+                {bucketGroups.length === 0 && (
+                  <Card className="p-6 text-center text-sm text-muted-foreground">Nothing here.</Card>
+                )}
+                {bucketGroups.map((g) => (
+                  <Card key={g.closer_id} className="overflow-hidden">
+                    <div className="p-3 border-b border-border flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{g.name}</div>
+                        <div className="text-[11px] text-muted-foreground">{g.rows.length} entr{g.rows.length === 1 ? "y" : "ies"}</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{bucket === "unpaid" ? "Owed" : "Paid"}</div>
+                          <div className={`font-semibold ${bucket === "unpaid" ? "text-warning" : "text-success"}`}>{money(g.total)}</div>
+                        </div>
+                        {bucket === "unpaid" && (
+                          <Button
+                            size="sm"
+                            onClick={() => { setPayTarget({ closer_id: g.closer_id, name: g.name, total: g.total, ids: g.rows.map((r) => r.id) }); setPayNote(""); }}
+                            disabled={payAll.isPending}
+                          >
+                            <Wallet className="h-3.5 w-3.5 mr-1" /> Pay out
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="divide-y divide-border">
+                      {g.rows.map((r) => (
+                        <div key={r.id} className="p-2 px-3 text-sm flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="truncate text-[13px]">{r.applicant_name} · <span className="capitalize">{r.outcome}</span></div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {fmtDate(r.outcome_at)}
+                              {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
+                              {dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}
+                              {r.commission_paid_at ? ` · paid ${fmtDate(r.commission_paid_at)}` : ""}
+                              {r.commission_payout_note ? ` · ${r.commission_payout_note}` : ""}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className={`font-medium ${bucket === "unpaid" ? "text-warning" : "text-success"}`}>{money(r.commission_amount)}</div>
+                            {bucket === "paid" && (
+                              <Button size="sm" variant="ghost" onClick={() => undo.mutate(r.id)} disabled={undo.isPending}>Undo</Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Dialog open={payTarget !== null} onOpenChange={(o) => { if (!o) { setPayTarget(null); setPayNote(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Pay out {payTarget?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              Marking <span className="font-semibold text-foreground">{money(payTarget?.total ?? 0)}</span> across {payTarget?.ids.length ?? 0} entr{(payTarget?.ids.length ?? 0) === 1 ? "y" : "ies"} as paid.
+            </div>
+            <div>
+              <Label>Note (optional)</Label>
+              <Textarea rows={3} value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="e.g. Venmo, ref #1234" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setPayTarget(null)}>Cancel</Button>
+            <Button
+              onClick={() => payTarget && payAll.mutate({ ids: payTarget.ids, note: payNote || null })}
+              disabled={payAll.isPending}
+            >
+              {payAll.isPending ? "Recording…" : "Confirm payout"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <RecordPayoutDialog
+        open={recordOpen}
+        onOpenChange={setRecordOpen}
+        unpaidGroups={groupByCloser(unpaid)}
+        onDone={() => {
+          qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
+          qc.invalidateQueries({ queryKey: ["my-closer-commissions"] });
+        }}
+      />
+    </>
   );
 }
 
-function PayoutDialog({
-  open, onOpenChange, closer, suggested,
+function RecordPayoutDialog({
+  open,
+  onOpenChange,
+  unpaidGroups,
+  onDone,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  closer: { id: string; full_name: string };
-  suggested: number;
+  unpaidGroups: Array<{ closer_id: string; name: string; total: number; rows: Row[] }>;
+  onDone: () => void;
 }) {
-  const qc = useQueryClient();
-  const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<string>("ACH");
+  const [closerId, setCloserId] = useState<string>("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [note, setNote] = useState("");
 
-  useEffect(() => {
-    if (open) {
-      setAmount(suggested > 0 ? String(suggested.toFixed(2)) : "");
-      setMethod("ACH");
-      setNote("");
-    }
-  }, [open, suggested]);
+  const activeGroup = unpaidGroups.find((g) => g.closer_id === closerId);
 
-  const save = useMutation({
-    mutationFn: () => recordCloserPayout({
-      data: {
-        closer_id: closer.id,
-        amount: parseFloat(amount),
-        method,
-        note: note.trim() || null,
-      },
-    }),
+  const pickCloser = (id: string) => {
+    setCloserId(id);
+    const g = unpaidGroups.find((x) => x.closer_id === id);
+    setSelected(new Set(g?.rows.map((r) => r.id) ?? []));
+  };
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedTotal = activeGroup
+    ? activeGroup.rows.filter((r) => selected.has(r.id)).reduce((s, r) => s + Number(r.commission_amount ?? 0), 0)
+    : 0;
+
+  const submit = useMutation({
+    mutationFn: () => recordB2cCommissionPayout({ data: { booking_ids: Array.from(selected), note: note || null } }),
     onSuccess: () => {
       toast.success("Payout recorded");
-      qc.invalidateQueries({ queryKey: ["closer-payouts"] });
+      setCloserId(""); setSelected(new Set()); setNote("");
+      onDone();
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const amt = parseFloat(amount);
-  const valid = !isNaN(amt) && amt > 0 && method;
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Pay {closer.full_name}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { setCloserId(""); setSelected(new Set()); setNote(""); } onOpenChange(o); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Record a payout</DialogTitle></DialogHeader>
+        <div className="space-y-4">
           <div>
-            <Label className="text-xs">Amount ($)</Label>
-            <Input type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
-            {suggested > 0 && (
-              <button type="button" onClick={() => setAmount(suggested.toFixed(2))} className="text-xs text-primary mt-1">
-                Use full owed amount ({money(suggested)})
-              </button>
-            )}
-          </div>
-          <div>
-            <Label className="text-xs">Method</Label>
-            <Select value={method} onValueChange={setMethod}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Label>Recipient</Label>
+            <Select value={closerId} onValueChange={pickCloser}>
+              <SelectTrigger><SelectValue placeholder="Choose closer" /></SelectTrigger>
               <SelectContent>
-                {METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                {unpaidGroups.map((g) => (
+                  <SelectItem key={g.closer_id} value={g.closer_id}>
+                    {g.name} — {money(g.total)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+
+          {activeGroup && (
+            <div className="rounded-md border border-border divide-y divide-border max-h-64 overflow-y-auto">
+              {activeGroup.rows.map((r) => (
+                <label key={r.id} className="flex items-center gap-2 p-2 px-3 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(r.id)}
+                    onChange={() => toggle(r.id)}
+                    className="h-4 w-4"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-[13px]">{r.applicant_name} · <span className="capitalize">{r.outcome}</span></div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {fmtDate(r.outcome_at)}
+                      {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
+                      {dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}
+                    </div>
+                  </div>
+                  <div className="font-medium text-warning">{money(r.commission_amount)}</div>
+                </label>
+              ))}
+            </div>
+          )}
+
           <div>
-            <Label className="text-xs">Note (optional)</Label>
-            <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Reference, period, etc." />
+            <Label>Note (optional)</Label>
+            <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Venmo, ref #1234" />
           </div>
+
+          {activeGroup && (
+            <div className="text-sm text-muted-foreground">
+              Marking <span className="font-semibold text-foreground">{money(selectedTotal)}</span> as paid to <span className="font-semibold text-foreground">{activeGroup.name}</span>.
+            </div>
+          )}
         </div>
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => save.mutate()} disabled={!valid || save.isPending}>
-            {save.isPending ? "Saving…" : "Record payout"}
+          <Button onClick={() => submit.mutate()} disabled={submit.isPending || selected.size === 0}>
+            {submit.isPending ? "Recording…" : "Record payout"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -440,6 +523,7 @@ function DealRow({ row }: { row: Row }) {
   });
 
   const isApproved = (row.commission_status ?? "pending") === "approved";
+  const isPaid = !!row.commission_paid_at;
 
   return (
     <Card className="p-4 space-y-3">
@@ -451,6 +535,7 @@ function DealRow({ row }: { row: Row }) {
             {isApproved
               ? <Badge className="text-[10px] bg-success/15 text-success border-success/30">Approved</Badge>
               : <Badge className="text-[10px] bg-warning/15 text-warning border-warning/30">Pending approval</Badge>}
+            {isPaid && <Badge className="text-[10px] bg-success/15 text-success border-success/30">Paid</Badge>}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
             {closerName} · closed {when}
@@ -531,7 +616,6 @@ function DeleteCommissionButton({ bookingId, name }: { bookingId: string; name: 
     onSuccess: () => {
       toast.success("Commission removed");
       qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
-      qc.invalidateQueries({ queryKey: ["closer-payouts"] });
       qc.invalidateQueries({ queryKey: ["my-closer-commissions"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -564,4 +648,3 @@ function DeleteCommissionButton({ bookingId, name }: { bookingId: string; name: 
     </AlertDialog>
   );
 }
-
