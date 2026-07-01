@@ -28,7 +28,7 @@ const adminB2BItems = [
   { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
-  { title: "Commissions", url: "/app/admin/commissions", icon: DollarSign },
+  { title: "Commissions", url: "/app/admin/b2b-commissions", icon: DollarSign },
   { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;

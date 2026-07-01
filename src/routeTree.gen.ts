@@ -46,6 +46,7 @@ import { Route as AppAuthenticatedAdminCommissionsRouteImport } from './routes/a
 import { Route as AppAuthenticatedAdminClosersRouteImport } from './routes/app/_authenticated/admin/closers'
 import { Route as AppAuthenticatedAdminBookingsRouteImport } from './routes/app/_authenticated/admin/bookings'
 import { Route as AppAuthenticatedAdminB2cCommissionsRouteImport } from './routes/app/_authenticated/admin/b2c-commissions'
+import { Route as AppAuthenticatedAdminB2bCommissionsRouteImport } from './routes/app/_authenticated/admin/b2b-commissions'
 import { Route as AppAuthenticatedAdminB2bClosersRouteImport } from './routes/app/_authenticated/admin/b2b-closers'
 import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/app/_authenticated/admin/applications'
 import { Route as AppAuthenticatedAdminAdminsRouteImport } from './routes/app/_authenticated/admin/admins'
@@ -264,6 +265,12 @@ const AppAuthenticatedAdminB2cCommissionsRoute =
     path: '/b2c-commissions',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
+const AppAuthenticatedAdminB2bCommissionsRoute =
+  AppAuthenticatedAdminB2bCommissionsRouteImport.update({
+    id: '/b2b-commissions',
+    path: '/b2b-commissions',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
 const AppAuthenticatedAdminB2bClosersRoute =
   AppAuthenticatedAdminB2bClosersRouteImport.update({
     id: '/b2b-closers',
@@ -351,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
+  '/app/admin/b2b-commissions': typeof AppAuthenticatedAdminB2bCommissionsRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
@@ -398,6 +406,7 @@ export interface FileRoutesByTo {
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
+  '/app/admin/b2b-commissions': typeof AppAuthenticatedAdminB2bCommissionsRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
@@ -448,6 +457,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/_authenticated/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/_authenticated/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
+  '/app/_authenticated/admin/b2b-commissions': typeof AppAuthenticatedAdminB2bCommissionsRoute
   '/app/_authenticated/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/_authenticated/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/_authenticated/admin/closers': typeof AppAuthenticatedAdminClosersRoute
@@ -498,6 +508,7 @@ export interface FileRouteTypes {
     | '/app/admin/admins'
     | '/app/admin/applications'
     | '/app/admin/b2b-closers'
+    | '/app/admin/b2b-commissions'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
     | '/app/admin/closers'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/app/admin/admins'
     | '/app/admin/applications'
     | '/app/admin/b2b-closers'
+    | '/app/admin/b2b-commissions'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
     | '/app/admin/closers'
@@ -594,6 +606,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/admins'
     | '/app/_authenticated/admin/applications'
     | '/app/_authenticated/admin/b2b-closers'
+    | '/app/_authenticated/admin/b2b-commissions'
     | '/app/_authenticated/admin/b2c-commissions'
     | '/app/_authenticated/admin/bookings'
     | '/app/_authenticated/admin/closers'
@@ -898,6 +911,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAdminB2cCommissionsRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
+    '/app/_authenticated/admin/b2b-commissions': {
+      id: '/app/_authenticated/admin/b2b-commissions'
+      path: '/b2b-commissions'
+      fullPath: '/app/admin/b2b-commissions'
+      preLoaderRoute: typeof AppAuthenticatedAdminB2bCommissionsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
     '/app/_authenticated/admin/b2b-closers': {
       id: '/app/_authenticated/admin/b2b-closers'
       path: '/b2b-closers'
@@ -975,6 +995,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminAdminsRoute: typeof AppAuthenticatedAdminAdminsRoute
   AppAuthenticatedAdminApplicationsRoute: typeof AppAuthenticatedAdminApplicationsRoute
   AppAuthenticatedAdminB2bClosersRoute: typeof AppAuthenticatedAdminB2bClosersRoute
+  AppAuthenticatedAdminB2bCommissionsRoute: typeof AppAuthenticatedAdminB2bCommissionsRoute
   AppAuthenticatedAdminB2cCommissionsRoute: typeof AppAuthenticatedAdminB2cCommissionsRoute
   AppAuthenticatedAdminBookingsRoute: typeof AppAuthenticatedAdminBookingsRoute
   AppAuthenticatedAdminClosersRoute: typeof AppAuthenticatedAdminClosersRoute
@@ -995,6 +1016,8 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminApplicationsRoute:
       AppAuthenticatedAdminApplicationsRoute,
     AppAuthenticatedAdminB2bClosersRoute: AppAuthenticatedAdminB2bClosersRoute,
+    AppAuthenticatedAdminB2bCommissionsRoute:
+      AppAuthenticatedAdminB2bCommissionsRoute,
     AppAuthenticatedAdminB2cCommissionsRoute:
       AppAuthenticatedAdminB2cCommissionsRoute,
     AppAuthenticatedAdminBookingsRoute: AppAuthenticatedAdminBookingsRoute,
