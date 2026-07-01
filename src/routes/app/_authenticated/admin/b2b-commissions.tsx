@@ -420,9 +420,17 @@ function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenCh
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [payTarget, setPayTarget] = useState<{ user_id: string; name: string; total: number; ids: string[] } | null>(null);
+  const [payNote, setPayNote] = useState("");
+
   const payAll = useMutation({
-    mutationFn: (ids: string[]) => recordPayout({ data: { commission_ids: ids, note: null } }),
-    onSuccess: () => { toast.success("Payout recorded"); qc.invalidateQueries({ queryKey: ["b2b-commissions"] }); },
+    mutationFn: (args: { ids: string[]; note: string | null }) => recordPayout({ data: { commission_ids: args.ids, note: args.note } }),
+    onSuccess: () => {
+      toast.success("Payout recorded");
+      qc.invalidateQueries({ queryKey: ["b2b-commissions"] });
+      setPayTarget(null);
+      setPayNote("");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
