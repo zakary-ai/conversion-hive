@@ -1,13 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { getB2bCloserDetail } from "@/lib/api/b2b-closers.functions";
+import { setAppointmentOutcome } from "@/lib/api/cl.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck, Ban } from "lucide-react";
+import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck, Ban, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
+import { toast } from "sonner";
 
 const money = (n: number | string | null | undefined) =>
   n == null ? "—" : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
