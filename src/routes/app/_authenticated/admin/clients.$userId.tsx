@@ -153,6 +153,13 @@ function SetterDetailPage() {
         <div className="text-xs text-muted-foreground mt-2">{data.completions.length} of {data.totalModules} modules complete</div>
       </Card>
 
+      <CallsGoingLiveCard
+        appointments={data.appointments as ApptRow[]}
+        fromMs={dateRange.from ? startOfDay(dateRange.from).getTime() : null}
+        toMs={dateRange.to ? endOfDay(dateRange.to).getTime() : null}
+        rangeLabel={rangeLabel}
+      />
+
       <BookingHistoryCard appointments={data.appointments as ApptRow[]} />
 
       <QuizScoresCard attempts={data.attempts as QuizAttempt[]} />
@@ -225,6 +232,7 @@ type ApptRow = {
   type: string;
   outcome: string | null;
   scheduled_at: string;
+  created_at: string;
   deal_amount: number | string | null;
   lost_reason: string | null;
 };
@@ -255,7 +263,8 @@ function StatDetailDialog({ statKey, onClose, appointments, calls, attempts, com
     if (toMs != null && t > toMs) return false;
     return true;
   };
-  const bookings = appointments.filter((a) => a.type === "booking" && inWindow(a.scheduled_at));
+  const bookedInWindow = appointments.filter((a) => a.type === "booking" && inWindow(a.created_at));
+  const scheduledInWindow = appointments.filter((a) => a.type === "booking" && inWindow(a.scheduled_at));
   const callsInWindow = calls.filter((c) => inWindow(c.started_at ?? c.created_at));
   const title = statKey === "bookings" ? "Bookings"
     : statKey === "closed" ? "Closed"
@@ -265,10 +274,10 @@ function StatDetailDialog({ statKey, onClose, appointments, calls, attempts, com
     : statKey === "training" ? "Training progress"
     : "";
 
-  const rows = statKey === "bookings" ? bookings
-    : statKey === "closed" ? bookings.filter((a) => a.outcome === "closed")
-    : statKey === "lost" ? bookings.filter((a) => a.outcome === "lost")
-    : statKey === "no_show" ? bookings.filter((a) => a.outcome === "no_show")
+  const rows = statKey === "bookings" ? bookedInWindow
+    : statKey === "closed" ? scheduledInWindow.filter((a) => a.outcome === "closed")
+    : statKey === "lost" ? scheduledInWindow.filter((a) => a.outcome === "lost")
+    : statKey === "no_show" ? scheduledInWindow.filter((a) => a.outcome === "no_show")
     : [];
 
   return (
@@ -446,6 +455,105 @@ function BookingHistoryCard({ appointments }: { appointments: ApptRow[] }) {
                     <div className="text-sm whitespace-pre-wrap rounded-md border border-border bg-muted/20 p-3">{openAppt.lost_reason}</div>
                   </div>
                 )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ---------- Calls going live (bookings scheduled in the current window) ----------
+
+function CallsGoingLiveCard({ appointments, fromMs, toMs, rangeLabel }: {
+  appointments: ApptRow[];
+  fromMs: number | null;
+  toMs: number | null;
+  rangeLabel: string;
+}) {
+  const [openAppt, setOpenAppt] = useState<ApptRow | null>(null);
+  const inWindow = (iso: string | null | undefined) => {
+    if (fromMs == null && toMs == null) return true;
+    if (!iso) return false;
+    const t = new Date(iso).getTime();
+    if (fromMs != null && t < fromMs) return false;
+    if (toMs != null && t > toMs) return false;
+    return true;
+  };
+  const rows = useMemo(
+    () => appointments
+      .filter((a) => a.type === "booking" && inWindow(a.scheduled_at))
+      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appointments, fromMs, toMs],
+  );
+  const now = Date.now();
+
+  return (
+    <>
+      <Card className="overflow-x-auto">
+        <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
+          <h3 className="font-display font-semibold">Calls going live ({rows.length})</h3>
+          <div className="text-xs text-muted-foreground">{rangeLabel}</div>
+        </div>
+        {rows.length === 0 ? (
+          <div className="p-6 text-sm text-muted-foreground text-center">No calls scheduled in this window.</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {rows.map((a) => {
+              const t = new Date(a.scheduled_at).getTime();
+              const isLive = a.outcome == null && Math.abs(t - now) < 30 * 60_000;
+              const isPast = t < now;
+              return (
+                <button key={a.id} onClick={() => setOpenAppt(a)} className="w-full p-3 flex items-center gap-3 text-sm hover:bg-muted/30 text-left">
+                  <div className={cn(
+                    "h-8 w-8 rounded-md flex items-center justify-center shrink-0",
+                    isLive ? "bg-primary/15 text-primary" :
+                    a.outcome === "closed" ? "bg-success/15 text-success" :
+                    a.outcome === "lost" ? "bg-destructive/15 text-destructive" :
+                    a.outcome === "no_show" ? "bg-warning/15 text-warning" :
+                    "bg-muted text-muted-foreground"
+                  )}>
+                    {isLive ? <Phone className="h-4 w-4" /> :
+                     a.outcome === "closed" ? <CheckCircle2 className="h-4 w-4" /> :
+                     a.outcome === "lost" ? <XCircle className="h-4 w-4" /> :
+                     a.outcome === "no_show" ? <UserX className="h-4 w-4" /> :
+                     <CalendarClock className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium truncate">{a.name}</div>
+                    <div className="text-xs text-muted-foreground">{fmtDateTime(a.scheduled_at)}</div>
+                  </div>
+                  <div className="text-right text-xs">
+                    {isLive && <span className="uppercase tracking-wider text-primary font-medium">Live now</span>}
+                    {!isLive && !a.outcome && !isPast && <span className="uppercase tracking-wider text-muted-foreground">Upcoming</span>}
+                    {!isLive && a.outcome && <span className="uppercase tracking-wider text-muted-foreground">{a.outcome}</span>}
+                    {!isLive && !a.outcome && isPast && <span className="uppercase tracking-wider text-muted-foreground">Pending</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      <Dialog open={!!openAppt} onOpenChange={(o) => !o && setOpenAppt(null)}>
+        <DialogContent className="max-w-lg">
+          {openAppt && (
+            <>
+              <DialogHeader><DialogTitle>{openAppt.name}</DialogTitle></DialogHeader>
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-border p-2">
+                    <div className="uppercase tracking-wider text-muted-foreground text-xs">Scheduled</div>
+                    <div>{fmtDateTime(openAppt.scheduled_at)}</div>
+                  </div>
+                  <div className="rounded-md border border-border p-2">
+                    <div className="uppercase tracking-wider text-muted-foreground text-xs">Outcome</div>
+                    <div className="uppercase tracking-wider">{openAppt.outcome ?? "pending"}</div>
+                  </div>
+                </div>
               </div>
             </>
           )}

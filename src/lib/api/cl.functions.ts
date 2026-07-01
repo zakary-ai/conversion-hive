@@ -1604,7 +1604,11 @@ export const getClientDetail = createServerFn({ method: "GET" })
         return true;
       });
 
-    const bookings = inRange(appts.filter((a) => a.type === "booking"), "scheduled_at");
+    const allBookings = appts.filter((a) => a.type === "booking");
+    // Bookings = leads the setter BOOKED within the window (created_at)
+    const bookingsBooked = inRange(allBookings, "created_at");
+    // Calls in the window (by scheduled_at) — used for outcome-based stats and "going live"
+    const bookingsScheduled = inRange(allBookings, "scheduled_at");
     const leadsInRange = inRange(allLeads, "created_at");
     const callsInRange = inRange(allCalls as Record<string, unknown>[], "started_at");
 
@@ -1621,11 +1625,11 @@ export const getClientDetail = createServerFn({ method: "GET" })
       appointments: appts,
       calls: allCalls,
       stats: {
-        bookings: bookings.length,
-        closed: bookings.filter((a) => a.outcome === "closed").length,
-        lost: bookings.filter((a) => a.outcome === "lost").length,
-        no_show: bookings.filter((a) => a.outcome === "no_show").length,
-        pending: bookings.filter((a) => !a.outcome).length,
+        bookings: bookingsBooked.length,
+        closed: bookingsScheduled.filter((a) => a.outcome === "closed").length,
+        lost: bookingsScheduled.filter((a) => a.outcome === "lost").length,
+        no_show: bookingsScheduled.filter((a) => a.outcome === "no_show").length,
+        pending: bookingsScheduled.filter((a) => !a.outcome).length,
         leadsCount: leadsInRange.length,
         dials: (callsInRange as Array<{ counted_at: string | null }>).filter((c) => c.counted_at).length,
       },
