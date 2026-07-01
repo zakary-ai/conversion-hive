@@ -225,6 +225,7 @@ type ApptRow = {
   type: string;
   outcome: string | null;
   scheduled_at: string;
+  created_at: string;
   deal_amount: number | string | null;
   lost_reason: string | null;
 };
