@@ -162,12 +162,24 @@ export function B2bCloserDetailDialog({
               </Section>
             )}
 
+    const clearMutation = useMutation({
+      mutationFn: (id: string) => setAppointmentOutcome({ data: { id, outcome: "clear" } }),
+      onSuccess: () => {
+        toast.success("Outcome cleared");
+        qc.invalidateQueries({ queryKey: ["b2b-closer-detail", closerId] });
+        qc.invalidateQueries({ queryKey: ["my-appointments"] });
+        qc.invalidateQueries({ queryKey: ["all-appointments"] });
+        qc.invalidateQueries({ queryKey: ["b2b-bookings-for-date"] });
+      },
+      onError: (e: Error) => toast.error(e.message),
+    });
+
             {activeFilter !== "not-logged" && (
               <Section title={`Outcomes (${filteredOutcomes.length})`}>
                 {filteredOutcomes.length === 0
                   ? <Empty>No outcomes logged yet.</Empty>
                   : filteredOutcomes.map((a) => (
-                      <OutcomeRow key={a.id} a={a} onEdit={() => setOutcomeTarget(a)} />
+                      <OutcomeRow key={a.id} a={a} onEdit={() => setOutcomeTarget(a)} onClear={() => clearMutation.mutate(a.id)} clearing={clearMutation.isPending} />
                     ))}
               </Section>
             )}
