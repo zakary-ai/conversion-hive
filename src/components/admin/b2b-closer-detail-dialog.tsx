@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck } from "lucide-react";
+import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 
