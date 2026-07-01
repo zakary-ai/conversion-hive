@@ -65,6 +65,10 @@ function CloserHome() {
     queryKey: ["my-closer-stats", rangeDays],
     queryFn: () => getCloserStats({ data: { days: rangeDays ?? undefined } }),
   });
+  const { data: lines } = useQuery({
+    queryKey: ["my-closer-lines"],
+    queryFn: () => getMyCloserLines(),
+  });
 
   return (
     <div className="space-y-6 max-w-4xl">
