@@ -28,18 +28,18 @@ const STEP_MIN = 30;
 
 // Build a UTC Date representing a wall-clock time (y/m/d h:m) in the given tz.
 function wallToUtc(y: number, m: number, d: number, h: number, min: number, tz: string): Date {
-  // Iteratively converge: start from naive UTC, measure the tz offset at that instant, correct.
-  let utc = Date.UTC(y, m - 1, d, h, min);
+  const desired = Date.UTC(y, m - 1, d, h, min);
+  let utc = desired;
   for (let i = 0; i < 3; i++) {
     const parts = new Intl.DateTimeFormat("en-US", {
       timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
       hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
     }).formatToParts(new Date(utc));
     const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
-    const tzWall = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), get("second"));
-    const diff = tzWall - utc;
-    if (diff === 0) break;
-    utc -= diff;
+    const tzWallAsUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), get("second"));
+    const delta = desired - tzWallAsUtc;
+    if (delta === 0) break;
+    utc += delta;
   }
   return new Date(utc);
 }
