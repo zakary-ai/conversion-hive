@@ -150,9 +150,12 @@ function UpcomingRow({ b, onLog }: { b: { id: string; applicant_name: string; ap
   );
 }
 
-function Stat({ icon, label, value, tone, hint }: { icon: React.ReactNode; label: string; value: string | number; tone?: string; hint?: string }) {
+function Stat({ icon, label, value, tone, hint, onClick, active }: { icon: React.ReactNode; label: string; value: string | number; tone?: string; hint?: string; onClick?: () => void; active?: boolean }) {
   return (
-    <Card className="p-3">
+    <Card
+      className={cn("p-3", onClick && "cursor-pointer transition-colors hover:bg-accent/50", active && "ring-1 ring-primary")}
+      onClick={onClick}
+    >
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">{icon} {label}</div>
       <div className={`text-2xl font-display font-semibold mt-1 ${tone ?? ""}`}>{value}</div>
       {hint && <div className="text-[10px] text-muted-foreground mt-1">{hint}</div>}
