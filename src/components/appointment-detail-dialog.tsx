@@ -74,7 +74,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   const computedCommission = isFinite(dealValue) && isFinite(pctValue) ? Math.round(dealValue * pctValue) / 100 : 0;
 
   const mutation = useMutation({
-    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_percent: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "clear" }) =>
+    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_percent: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "disqualified" } | { id: string; outcome: "clear" }) =>
       setAppointmentOutcome({ data: input }),
     onSuccess: () => {
       toast.success("Updated");
