@@ -1,62 +1,75 @@
 
-## Scope
-File: `src/routes/app/_authenticated/admin/clients.$userId.tsx` (the setter detail page, opened from the B2B → Setters tab).
+## Goal
 
-## Changes
+Give each closer (B2B and B2C) a place on their own account to declare weekly availability and free-form notes. Give admins a read/edit view of that same data on the B2B Calendar tab and the B2C Bookings → Calendar tab. This is informational only — it does NOT change any existing scheduling or booking logic.
 
-### 1. Replace Day / Week / Month / 90d / All toggle with Today or Date Range
-- Remove the `RANGES` pill toggle.
-- Add two controls:
-  - "Today" button (quick preset).
-  - Date range picker: a single `Popover` with a `Calendar mode="range"` and a formatted label like `Jun 20 – Jul 1`.
-- Convert `Range` type to `{ from: Date; to: Date }`; default to All time on first load (keeps existing behavior), with Today and custom range as options.
-- Pass the resolved `from`/`to` (ISO) to `getClientDetail`. Server side already supports `range`; we'll extend the payload to also accept `{ from, to }` and filter server-side. (Small addition in `cl.functions.ts` — keep the existing `range` param for backward compat, add optional `from`/`to`.)
+## Why a new table (not existing availability rules)
 
-### 2. Stat tiles — new set, all clickable
-Replace the current two rows of 4 tiles with a single grid of 6 tiles:
-`Bookings · Closed · Lost/DQ · No Show · Dials · Training`
-- Remove: Total earned, Paid out, Unpaid (all commission-related).
-- Lost/DQ = existing `stats.lost` (rename label only).
-- No Show = new stat from `data.appointments` where `outcome === "no_show"` (or equivalent). Add to server aggregate.
-- Training tile keeps `${progress}%`.
-- Each tile becomes a button that opens a modal listing the underlying records:
-  - Bookings → list of appointments (all types "booking") within selected range.
-  - Closed → appointments where outcome = closed.
-  - Lost/DQ → outcome = lost / dq.
-  - No Show → outcome = no_show.
-  - Dials → the `calls` list within range.
-  - Training → list of completed modules + attempts, or link to training progress card.
+The current `availability_rules`, `b2b_closer_availability_rules`, `b2c_availability_rules`, and `closer_availability_rules` tables drive real booking windows. Reusing them would change what leads/setters can book. To keep behavior identical, I'll add a new isolated table used only by this UI.
 
-Modal will be one reusable `StatDetailDialog` that accepts a title and rows; each row shows name/company/date and, for calls, uses the existing `CallRow` component.
+## Data model
 
-### 3. Remove commission UI entirely
-- Delete "Add commission" card (right column of the training/commission grid). Training progress becomes full width.
-- Delete "Commission history" card, `PayDialog`, `UnpayButton`, `PAY_METHODS`, related `useState` (`amount`, `note`, `payTarget`), and the `add`/pay mutations.
-- Remove now-unused imports: `addCommission`, `setCommissionPaid`, `Textarea`, `Label`, `Input` (if fully unused), `DialogFooter`, `BadgeCheck`, `RotateCcw`, `DollarSign`, `Clock` (keep if still used elsewhere), `money` (keep if still used).
+New table `closer_availability_declarations` (one row per closer per business line):
 
-### 4. Booking history → clickable, date-driven
-- Convert the Booking history card header to include a date picker button (single date) matching the existing `LeadHistoryCard` pattern.
-- The list filters to bookings whose `scheduled_at` falls on the selected date.
-- Rows remain clickable → open an appointment detail dialog showing name, company, scheduled time, outcome, deal amount, notes. (Reuse a simple inline dialog; no need for the full `appointment-detail-dialog` component unless it fits.)
+- `closer_user_id` (uuid, FK to auth users)
+- `line` — enum-ish text: `'b2b'` or `'b2c'`
+- `weekly` — jsonb: 7 entries `[{ day, enabled, ranges: [{start_minute, end_minute}] }]`
+- `notes` — text
+- `updated_at`, `updated_by`
+- Unique(`closer_user_id`, `line`)
 
-### 5. Quiz scores — collapsible, start minimized
-- Wrap the Quiz scores card body in `Collapsible` with `defaultOpen={false}`.
-- Header becomes a `CollapsibleTrigger` with a chevron.
+RLS:
+- Closers: read/write their own row for whichever line they belong to.
+- Admins: read/write any row.
+- GRANTs to `authenticated` + `service_role`.
 
-### 6. Today's Leads — add minimize/collapse
-- Wrap `TodaysLeadsCard` content in `Collapsible` with `defaultOpen={true}` (visible by default, but user can minimize).
-- Header row keeps tabs + search; add a chevron toggle. Tabs/search stay visible in the header even when collapsed? → keep it simple: header always visible, only the table collapses.
+Nothing else in the app queries this table, so scheduling is untouched.
 
-## Server-side (`src/lib/api/cl.functions.ts`)
-- `getClientDetail`: accept optional `from` / `to` ISO strings alongside `range`. When provided, filter appointments/leads/calls/commissions by that window.
-- Add `no_show` count to `stats` (count appointments where `outcome = 'no_show'`).
-- No schema changes; no migration needed.
+## Server functions (new `src/lib/api/closer-availability.functions.ts`)
 
-## Out of scope
-- No changes to any other admin tab (B2B Closers, B2B Commissions, etc.).
-- No changes to how commissions are recorded elsewhere — only the UI on this page is removed.
-- No mobile-specific redesign beyond what the existing responsive classes already provide.
+- `getMyAvailabilityDeclaration({ line })` — closer reads own.
+- `saveMyAvailabilityDeclaration({ line, weekly, notes })` — closer upsert own.
+- `listAvailabilityDeclarations({ line })` — admin lists all closers for a line, joined with closer name/email (from `closers` / `b2b_closers`).
+- `adminSaveAvailabilityDeclaration({ closer_user_id, line, weekly, notes })` — admin upsert.
 
-## Confirmations needed
-1. "Delete all commission sections" — confirming this means removing the Total earned / Paid out / Unpaid tiles, Add commission card, and Commission history card from **this setter detail page only**. The global Admin → Commissions page stays. Correct?
-2. For the No Show tile — should it count appointments with outcome exactly `no_show`, or also include a separate status? (I'll use `no_show` unless you say otherwise.)
+All use `requireSupabaseAuth`; admin ones check `has_role(admin)`.
+
+## Shared UI component
+
+`src/components/closer-availability-editor.tsx` — a reusable editor with:
+- The same 7-day / time-range pattern used by `B2bCalendarPanel` (Switch per day, add/remove ranges, `toTime` / `fromTime` helpers, Eastern Time label).
+- A `Textarea` for notes.
+- Props: `weekly`, `notes`, `onChange`, `readOnly?`, `title`, `subtitle`.
+
+## Closer account changes
+
+`src/routes/app/_authenticated/closer/index.tsx`
+- Add a collapsible "My availability & notes" card below the stat grid.
+- Show two sections when the closer belongs to both lines (query `me` roles + closer records): B2B and B2C. If only one, show one.
+- Uses the shared editor + Save button, wired to `saveMyAvailabilityDeclaration`.
+
+## Admin changes
+
+- **B2B** (`src/components/admin/b2b-calendar-panel.tsx`): add a new collapsible "Closer availability (declared)" card near the existing weekly-availability card. Lists all B2B closers via `listAvailabilityDeclarations({ line: 'b2b' })`. Each closer expands into the shared editor in edit mode with a Save button that calls `adminSaveAvailabilityDeclaration`. A small "informational only — does not change booking hours" hint.
+- **B2C** (`src/components/admin/b2c-calendar-panel.tsx`, which renders in the Bookings → Calendar tab): identical card, `line: 'b2c'`, listing B2C closers.
+
+## Non-goals
+
+- No change to `availability_rules`, `b2b_closer_availability_rules`, `b2c_availability_rules`, `closer_availability_rules`, slot generation, booking flow, apply flow, or email.
+- No changes to how closers are assigned to bookings.
+
+## Technical notes
+
+- The `weekly` jsonb has a fixed 7-entry shape; the editor normalizes empty ranges before save.
+- Times stored in minutes-from-midnight, Eastern Time semantics (matches existing panels).
+- Empty state on both closer and admin views: "No availability set yet."
+- No migration data backfill needed (empty rows appear on first save).
+
+## Files touched
+
+- new migration for `closer_availability_declarations` + RLS + GRANTs
+- new `src/lib/api/closer-availability.functions.ts`
+- new `src/components/closer-availability-editor.tsx`
+- edited `src/routes/app/_authenticated/closer/index.tsx`
+- edited `src/components/admin/b2b-calendar-panel.tsx`
+- edited `src/components/admin/b2c-calendar-panel.tsx`
