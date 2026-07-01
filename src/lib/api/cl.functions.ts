@@ -1234,6 +1234,46 @@ export const getAppointmentSetter = createServerFn({ method: "GET" })
     } : null;
   });
 
+// Admin: list all users with the setter (client) role, for attaching to appointments.
+export const listSetters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { data: clientRoles } = await context.supabase.from("user_roles").select("user_id").eq("role", "client");
+    const ids = (clientRoles ?? []).map((r: { user_id: string }) => r.user_id);
+    if (ids.length === 0) return [];
+    const { data: profs } = await context.supabase
+      .from("profiles").select("user_id, full_name, email").in("user_id", ids);
+    return ((profs ?? []) as Array<{ user_id: string; full_name: string | null; email: string | null }>)
+      .map((p) => ({ user_id: p.user_id, name: (p.full_name || p.email || p.user_id.slice(0, 8)) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+// Admin: reassign the setter (creator) on an appointment. Also updates any
+// existing setter commission row on that appointment to the new user.
+export const setAppointmentSetter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid(), user_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+
+    const { error } = await context.supabase
+      .from("appointments").update({ user_id: data.user_id }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    // Update setter commission row if one exists
+    await context.supabase.from("commissions")
+      .update({ user_id: data.user_id })
+      .eq("appointment_id", data.id)
+      .eq("role", "setter");
+    return { ok: true };
+  });
+
+
+
+
 
 
 // ---------- Commissions ----------
