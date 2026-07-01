@@ -38,6 +38,12 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
     enabled: !!appt?.lead_id,
   });
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMe() });
+  const { data: setter } = useQuery({
+    queryKey: ["appt-setter", appt?.id],
+    queryFn: () => getAppointmentSetter({ data: { id: appt!.id } }),
+    enabled: !!appt?.id,
+  });
+
 
   const fmt = (s?: string | null) =>
     s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
