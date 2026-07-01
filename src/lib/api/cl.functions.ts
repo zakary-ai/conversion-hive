@@ -1604,7 +1604,11 @@ export const getClientDetail = createServerFn({ method: "GET" })
         return true;
       });
 
-    const bookings = inRange(appts.filter((a) => a.type === "booking"), "scheduled_at");
+    const allBookings = appts.filter((a) => a.type === "booking");
+    // Bookings = leads the setter BOOKED within the window (created_at)
+    const bookingsBooked = inRange(allBookings, "created_at");
+    // Calls in the window (by scheduled_at) — used for outcome-based stats and "going live"
+    const bookingsScheduled = inRange(allBookings, "scheduled_at");
     const leadsInRange = inRange(allLeads, "created_at");
     const callsInRange = inRange(allCalls as Record<string, unknown>[], "started_at");
 
