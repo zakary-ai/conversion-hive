@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck } from "lucide-react";
+import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RangePicker } from "@/routes/app/_authenticated/closer/index";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
@@ -35,7 +35,7 @@ export function CloserDetailDialog({
     enabled: !!closerId && open,
   });
 
-  const [activeFilter, setActiveFilter] = useState<"all" | "not-logged" | "not-interested" | "no-show" | "closed">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "not-logged" | "not-interested" | "no-show" | "closed" | "dq">("all");
 
   const bookings = detail?.bookings ?? [];
   const withOutcome = bookings.filter((b) => b.outcome);
@@ -47,6 +47,7 @@ export function CloserDetailDialog({
     if (activeFilter === "not-interested") return b.outcome === "not_interested";
     if (activeFilter === "no-show") return b.outcome === "no_show";
     if (activeFilter === "closed") return b.outcome === "closed" || b.outcome === "deposit";
+    if (activeFilter === "dq") return b.outcome === "disqualified";
     return false;
   });
 
@@ -56,6 +57,7 @@ export function CloserDetailDialog({
     { key: "not-interested" as const, label: "Not interested", count: withOutcome.filter((b) => b.outcome === "not_interested").length },
     { key: "no-show" as const, label: "No show", count: withOutcome.filter((b) => b.outcome === "no_show").length },
     { key: "closed" as const, label: "Closed", count: withOutcome.filter((b) => b.outcome === "closed" || b.outcome === "deposit").length },
+    { key: "dq" as const, label: "DQ", count: withOutcome.filter((b) => b.outcome === "disqualified").length },
   ];
 
   return (
@@ -76,11 +78,12 @@ export function CloserDetailDialog({
               <div className="text-xs uppercase tracking-widest text-muted-foreground">Performance</div>
               <RangePicker value={rangeDays} onChange={setRangeDays} />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <Stat icon={<Target className="h-3 w-3" />} label="Close rate" value={`${stats.closeRate}%`} tone="text-success" />
               <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Wins" value={stats.closed + stats.deposit} tone="text-success" hint={`${stats.closed} closed · ${stats.deposit} deposits`} />
               <Stat icon={<X className="h-3 w-3" />} label="Not interested" value={stats.notInterested} />
-              <Stat icon={<Clock className="h-3 w-3" />} label="Excluded" value={stats.noShow + stats.disqualified} hint={`${stats.noShow} no-show · ${stats.disqualified} DQ`} />
+              <Stat icon={<Clock className="h-3 w-3" />} label="No show" value={stats.noShow} />
+              <Stat icon={<Ban className="h-3 w-3" />} label="DQ" value={stats.disqualified} />
             </div>
           </div>
         )}
