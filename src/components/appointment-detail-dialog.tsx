@@ -131,7 +131,12 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 )}
                 <Row icon={Phone} label="Phone" value={appt.phone ? <a href={`tel:${appt.phone}`} className="text-primary font-medium">{appt.phone}</a> : "—"} />
                 <Row icon={Mail} label="Email" value={appt.email || "—"} />
-                {setter && <Row icon={UserCheck} label="Setter" value={setter.name} />}
+                <Row icon={UserCheck} label="Setter" value={
+                  me?.isAdmin ? (
+                    <SetterPicker apptId={appt.id} currentUserId={setter?.user_id ?? null} currentName={setter?.name ?? null} />
+                  ) : (setter?.name ?? "—")
+                } />
+
                 {appt.context && <Row icon={User} label="Context" value={<span className="block whitespace-pre-wrap break-words text-right">{appt.context}</span>} />}
               </div>
 
