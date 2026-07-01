@@ -1,13 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { getB2bCloserDetail } from "@/lib/api/b2b-closers.functions";
+import { setAppointmentOutcome } from "@/lib/api/cl.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck, Ban } from "lucide-react";
+import { Target, CheckCircle2, X, Clock, Pencil, ClipboardCheck, Ban, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
+import { toast } from "sonner";
 
 const money = (n: number | string | null | undefined) =>
   n == null ? "—" : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -35,6 +37,7 @@ export function B2bCloserDetailDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const qc = useQueryClient();
   const [outcomeTarget, setOutcomeTarget] = useState<DetailAppt | null>(null);
   const { data: detail, isLoading } = useQuery({
     queryKey: ["b2b-closer-detail", closerId],
@@ -87,6 +90,18 @@ export function B2bCloserDetailDialog({
     if (activeFilter === "closed") return b.outcome === "closed";
     if (activeFilter === "dq") return b.outcome === "disqualified";
     return false;
+  });
+
+  const clearMutation = useMutation({
+    mutationFn: (id: string) => setAppointmentOutcome({ data: { id, outcome: "clear" } }),
+    onSuccess: () => {
+      toast.success("Outcome cleared");
+      qc.invalidateQueries({ queryKey: ["b2b-closer-detail", closerId] });
+      qc.invalidateQueries({ queryKey: ["my-appointments"] });
+      qc.invalidateQueries({ queryKey: ["all-appointments"] });
+      qc.invalidateQueries({ queryKey: ["b2b-bookings-for-date"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const filters = [
@@ -164,7 +179,7 @@ export function B2bCloserDetailDialog({
                 {filteredOutcomes.length === 0
                   ? <Empty>No outcomes logged yet.</Empty>
                   : filteredOutcomes.map((a) => (
-                      <OutcomeRow key={a.id} a={a} onEdit={() => setOutcomeTarget(a)} />
+                      <OutcomeRow key={a.id} a={a} onEdit={() => setOutcomeTarget(a)} onClear={() => clearMutation.mutate(a.id)} clearing={clearMutation.isPending} />
                     ))}
               </Section>
             )}
@@ -211,7 +226,7 @@ function UpcomingRow({ a, onLog }: { a: DetailAppt; onLog: () => void }) {
   );
 }
 
-function OutcomeRow({ a, onEdit }: { a: DetailAppt; onEdit: () => void }) {
+function OutcomeRow({ a, onEdit, onClear, clearing }: { a: DetailAppt; onEdit: () => void; onClear?: () => void; clearing?: boolean }) {
   return (
     <Card className="p-3">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -226,7 +241,7 @@ function OutcomeRow({ a, onEdit }: { a: DetailAppt; onEdit: () => void }) {
           </div>
           {a.lost_reason && <div className="text-xs mt-1 italic text-muted-foreground">{a.lost_reason}</div>}
         </div>
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2">
           {a.outcome === "closed" && (
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Commission</div>
@@ -236,6 +251,11 @@ function OutcomeRow({ a, onEdit }: { a: DetailAppt; onEdit: () => void }) {
           <Button size="sm" variant="outline" className="h-7 gap-1" onClick={onEdit}>
             <Pencil className="h-3 w-3" /> Edit
           </Button>
+          {onClear && (
+            <Button size="sm" variant="ghost" className="h-7 gap-1 text-destructive hover:text-destructive" onClick={onClear} disabled={clearing}>
+              <Trash2 className="h-3 w-3" /> Delete
+            </Button>
+          )}
         </div>
       </div>
     </Card>
