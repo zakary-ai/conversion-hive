@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getLead, getMe, setAppointmentOutcome, getAppointmentSetter } from "@/lib/api/cl.functions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getLead, getMe, setAppointmentOutcome, getAppointmentSetter, listSetters, setAppointmentSetter } from "@/lib/api/cl.functions";
+
 import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw, UserX, UserCheck } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
