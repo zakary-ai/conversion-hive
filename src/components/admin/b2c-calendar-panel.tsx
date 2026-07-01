@@ -42,6 +42,7 @@ import { toast } from "sonner";
 import { ApplicationDetailDialog } from "@/components/application-detail-dialog";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { BookingRescheduleDialog } from "@/components/booking-reschedule-dialog";
+import { AdminCloserAvailabilityPanel } from "./admin-closer-availability-panel";
 
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
