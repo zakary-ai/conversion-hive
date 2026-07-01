@@ -472,6 +472,8 @@ export type Database = {
           application_id: string | null
           assigned_closer_id: string | null
           commission_amount: number | null
+          commission_paid_at: string | null
+          commission_payout_note: string | null
           commission_percent: number | null
           commission_status: string
           created_at: string
@@ -500,6 +502,8 @@ export type Database = {
           application_id?: string | null
           assigned_closer_id?: string | null
           commission_amount?: number | null
+          commission_paid_at?: string | null
+          commission_payout_note?: string | null
           commission_percent?: number | null
           commission_status?: string
           created_at?: string
@@ -528,6 +532,8 @@ export type Database = {
           application_id?: string | null
           assigned_closer_id?: string | null
           commission_amount?: number | null
+          commission_paid_at?: string | null
+          commission_payout_note?: string | null
           commission_percent?: number | null
           commission_status?: string
           created_at?: string

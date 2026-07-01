@@ -1050,7 +1050,7 @@ export const listClosedDealsForCommission = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { data, error } = await context.supabase
       .from("closer_bookings")
-      .select("id, applicant_name, applicant_email, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, commission_status, closers:assigned_closer_id (id, full_name, email)")
+      .select("id, applicant_name, applicant_email, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, commission_status, commission_paid_at, commission_payout_note, closers:assigned_closer_id (id, full_name, email)")
       .in("outcome", ["closed", "deposit"])
       .order("outcome_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -1321,6 +1321,38 @@ export const deleteCloserPayout = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("closer_payouts").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Admin: mark B2C commissions paid on the booking rows themselves ----------
+export const recordB2cCommissionPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    booking_ids: z.array(z.string().uuid()).min(1),
+    note: z.string().trim().max(500).optional().nullable(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any)
+      .update({ commission_paid_at: new Date().toISOString(), commission_payout_note: data.note ?? null })
+      .in("id", data.booking_ids);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const undoB2cCommissionPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ booking_ids: z.array(z.string().uuid()).min(1) }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any)
+      .update({ commission_paid_at: null, commission_payout_note: null })
+      .in("id", data.booking_ids);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
