@@ -1,0 +1,1 @@
+ALTER TABLE public.closer_bookings ADD COLUMN IF NOT EXISTS commission_paid_at timestamptz, ADD COLUMN IF NOT EXISTS commission_payout_note text;
