@@ -1092,6 +1092,22 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       return { ok: true };
     }
 
+    if (data.outcome === "disqualified") {
+      const { error } = await context.supabase.from("appointments").update({
+        outcome: "disqualified",
+        deal_amount: null,
+        commission_amount: null,
+        lost_reason: null,
+        outcome_set_at: new Date().toISOString(),
+        outcome_set_by: context.userId,
+      }).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
+      await syncLeadStatus("Disqualified");
+      return { ok: true };
+    }
+
+
     // lost
     const { error } = await context.supabase.from("appointments").update({
       outcome: "lost",
