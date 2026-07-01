@@ -444,6 +444,54 @@ export const updateB2bSettings = createServerFn({ method: "POST" })
 
 
 
+const APP_ORIGIN = "https://conversionlab.space";
+
+function formatScheduledLabel(scheduledAt: string, tz: string | null | undefined): string {
+  const effectiveTz = tz && tz.trim() ? tz : "America/New_York";
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: effectiveTz,
+      weekday: "long", month: "long", day: "numeric", year: "numeric",
+      hour: "numeric", minute: "2-digit", timeZoneName: "short",
+    }).format(new Date(scheduledAt));
+  } catch {
+    return scheduledAt;
+  }
+}
+
+function generateConfirmationToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sendBookingReceivedEmail(input: {
+  appointmentId: string;
+  recipientEmail: string;
+  leadName: string;
+  scheduledAt: string;
+  timezone: string | null;
+  durationMinutes: number;
+}) {
+  try {
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    const scheduledLabel = formatScheduledLabel(input.scheduledAt, input.timezone);
+    await sendTransactional({
+      templateName: "booking-received",
+      recipientEmail: input.recipientEmail,
+      idempotencyKey: `booking-received-${input.appointmentId}`,
+      templateData: {
+        name: input.leadName,
+        scheduledAt: input.scheduledAt,
+        scheduledLabel,
+        durationMinutes: input.durationMinutes,
+      },
+    });
+  } catch (e) {
+    console.warn("[booking-received] send failed", e);
+  }
+}
+
 async function sendBookingConfirmationEmail(input: {
   appointmentId: string;
   recipientEmail: string;
@@ -451,18 +499,32 @@ async function sendBookingConfirmationEmail(input: {
   scheduledAt: string;
   meetingUrl: string | null;
   durationMinutes: number;
+  timezone?: string | null;
   idempotencySuffix?: string;
 }) {
   try {
     const { sendTransactional } = await import("@/lib/email/transactional.server");
-    let scheduledLabel = input.scheduledAt;
-    try {
-      scheduledLabel = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/New_York",
-        weekday: "long", month: "long", day: "numeric", year: "numeric",
-        hour: "numeric", minute: "2-digit", timeZoneName: "short",
-      }).format(new Date(input.scheduledAt));
-    } catch { /* ignore */ }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Mint (or reuse) a confirmation token for this appointment.
+    let confirmationToken: string | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (supabaseAdmin.from("appointments") as any)
+      .select("confirmation_token, timezone")
+      .eq("id", input.appointmentId)
+      .maybeSingle();
+    confirmationToken = (existing?.confirmation_token as string | null) ?? null;
+    const storedTz = (existing?.timezone as string | null) ?? null;
+    if (!confirmationToken) {
+      confirmationToken = generateConfirmationToken();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabaseAdmin.from("appointments") as any)
+        .update({ confirmation_token: confirmationToken })
+        .eq("id", input.appointmentId);
+    }
+    const confirmUrl = `${APP_ORIGIN}/confirm-booking?token=${confirmationToken}`;
+
+    const scheduledLabel = formatScheduledLabel(input.scheduledAt, input.timezone ?? storedTz);
     await sendTransactional({
       templateName: "booking-confirmation",
       recipientEmail: input.recipientEmail,
@@ -473,6 +535,7 @@ async function sendBookingConfirmationEmail(input: {
         scheduledLabel,
         meetingUrl: input.meetingUrl,
         durationMinutes: input.durationMinutes,
+        confirmUrl,
       },
     });
   } catch (e) {
@@ -503,6 +566,22 @@ export const createAppointment = createServerFn({ method: "POST" })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .insert({ ...data, user_id: context.userId, status, meeting_url: null } as any).select().single();
     if (error) throw new Error(error.message);
+
+    // Fire "booking received" email as soon as the setter books a B2B call.
+    // The Zoom link comes later when an admin assigns a closer.
+    if (data.type === "booking" && data.email) {
+      const slotMinutes = await getSlotMinutes().catch(() => 30);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      void sendBookingReceivedEmail({
+        appointmentId: (row as any).id as string,
+        recipientEmail: data.email,
+        leadName: data.name,
+        scheduledAt: data.scheduled_at,
+        timezone: data.timezone ?? null,
+        durationMinutes: slotMinutes,
+      });
+    }
+
     return row;
   });
 
