@@ -20,7 +20,10 @@ export type B2BCommissionEntry = {
   created_at: string;
   approved_at: string | null;
   appointment_id: string | null;
+  paid_at: string | null;
+  paid_note: string | null;
 };
+
 
 export type B2BCommissionGroup = {
   key: string;
@@ -54,6 +57,7 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
       deal_amount: number | string | null; status: string | null;
       note: string | null; created_at: string; approved_at: string | null;
       appointment_id: string | null;
+      paid_at: string | null; paid_note: string | null;
     }>;
 
     // Pull relevant appointments (B2B only)
@@ -99,6 +103,8 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
       created_at: r.created_at,
       approved_at: r.approved_at,
       appointment_id: r.appointment_id,
+      paid_at: r.paid_at,
+      paid_note: r.paid_note,
     }));
 
     // Group by appointment_id (fallback to own id for orphans)
@@ -215,3 +221,37 @@ export const addB2BCommission = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, count: inserts.length };
   });
+
+export const recordPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      commission_ids: z.array(z.string().uuid()).min(1),
+      note: z.string().max(2000).optional().nullable(),
+    }).parse
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const { error } = await context.supabase
+      .from("commissions")
+      .update({ paid_at: new Date().toISOString(), paid_by: context.userId, paid_note: data.note ?? null })
+      .in("id", data.commission_ids)
+      .is("paid_at", null)
+      .eq("status", "approved");
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const undoPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ commission_ids: z.array(z.string().uuid()).min(1) }).parse)
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const { error } = await context.supabase
+      .from("commissions")
+      .update({ paid_at: null, paid_by: null, paid_note: null })
+      .in("id", data.commission_ids);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
