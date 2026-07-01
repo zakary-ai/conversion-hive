@@ -687,6 +687,7 @@ export type Database = {
           paid_at: string | null
           paid_by: string | null
           paid_method: string | null
+          role: string | null
           status: string
           user_id: string
         }
@@ -704,6 +705,7 @@ export type Database = {
           paid_at?: string | null
           paid_by?: string | null
           paid_method?: string | null
+          role?: string | null
           status?: string
           user_id: string
         }
@@ -721,6 +723,7 @@ export type Database = {
           paid_at?: string | null
           paid_by?: string | null
           paid_method?: string | null
+          role?: string | null
           status?: string
           user_id?: string
         }
