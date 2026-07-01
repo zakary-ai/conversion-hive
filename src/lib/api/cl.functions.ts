@@ -1071,6 +1071,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
           if (ierr) throw new Error(ierr.message);
         }
       }
+      await syncLeadStatus("Closed");
       return { ok: true };
     }
 
@@ -1086,6 +1087,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
       await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
+      await syncLeadStatus("No Show");
       return { ok: true };
     }
 
@@ -1100,6 +1102,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     }).eq("id", data.id);
     if (error) throw new Error(error.message);
     await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
+    await syncLeadStatus("Lost");
     return { ok: true };
   });
 
