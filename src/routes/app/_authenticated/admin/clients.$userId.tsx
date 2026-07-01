@@ -175,7 +175,10 @@ function SetterDetailPage() {
         attempts={data.attempts as QuizAttempt[]}
         completions={data.completions as { module_id: string; completed_at?: string | null }[]}
         totalModules={data.totalModules}
+        fromMs={dateRange.from ? startOfDay(dateRange.from).getTime() : null}
+        toMs={dateRange.to ? endOfDay(dateRange.to).getTime() : null}
       />
+
     </div>
   );
 }
