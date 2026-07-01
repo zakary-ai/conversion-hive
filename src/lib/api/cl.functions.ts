@@ -279,6 +279,13 @@ export const updateLead = createServerFn({ method: "POST" })
     if (data.company !== undefined) patch.company = data.company;
     if (data.contacted === true) patch.contacted_at = new Date().toISOString();
     if (data.contacted === false) patch.contacted_at = null;
+    // A lead becomes "contacted" only once an outcome is recorded.
+    if (data.status !== undefined && data.status !== "New" && patch.contacted_at === undefined) {
+      patch.contacted_at = new Date().toISOString();
+    }
+    if (data.status === "New" && patch.contacted_at === undefined) {
+      patch.contacted_at = null;
+    }
     const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
 
