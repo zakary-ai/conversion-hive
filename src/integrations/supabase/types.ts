@@ -79,6 +79,8 @@ export type Database = {
           assigned_closer_id: string | null
           b2b_closer_id: string | null
           commission_amount: number | null
+          confirmation_token: string | null
+          confirmed_at: string | null
           context: string | null
           created_at: string
           deal_amount: number | null
@@ -94,6 +96,7 @@ export type Database = {
           phone: string | null
           scheduled_at: string
           status: string
+          timezone: string | null
           type: string
           updated_at: string
           user_id: string
@@ -102,6 +105,8 @@ export type Database = {
           assigned_closer_id?: string | null
           b2b_closer_id?: string | null
           commission_amount?: number | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
           context?: string | null
           created_at?: string
           deal_amount?: number | null
@@ -117,6 +122,7 @@ export type Database = {
           phone?: string | null
           scheduled_at: string
           status?: string
+          timezone?: string | null
           type: string
           updated_at?: string
           user_id: string
@@ -125,6 +131,8 @@ export type Database = {
           assigned_closer_id?: string | null
           b2b_closer_id?: string | null
           commission_amount?: number | null
+          confirmation_token?: string | null
+          confirmed_at?: string | null
           context?: string | null
           created_at?: string
           deal_amount?: number | null
@@ -140,6 +148,7 @@ export type Database = {
           phone?: string | null
           scheduled_at?: string
           status?: string
+          timezone?: string | null
           type?: string
           updated_at?: string
           user_id?: string
