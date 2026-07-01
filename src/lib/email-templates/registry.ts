@@ -27,4 +27,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'setter-invite': setterInvite,
   'admin-invite': adminInvite,
   'booking-confirmation': bookingConfirmation,
+  'booking-received': bookingReceived,
 }
