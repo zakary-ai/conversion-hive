@@ -33,7 +33,7 @@ export const BookingReceivedEmail = ({ name, scheduledLabel, scheduledAt, durati
             <Text style={detail}><strong>When:</strong> {when}</Text>
             {durationMinutes ? <Text style={detail}><strong>Duration:</strong> {durationMinutes} minutes</Text> : null}
             <Text style={{ ...muted, marginTop: '16px' }}>
-              You'll receive another email shortly with your Zoom link once a closer is assigned to your call.
+              You'll receive another email shortly with your Zoom link once an ads specialist has been assigned to your call.
             </Text>
           </Section>
           <Text style={footer}>Talk soon.</Text>
