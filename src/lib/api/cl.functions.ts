@@ -1197,6 +1197,43 @@ export const getLeadDetail = createServerFn({ method: "GET" })
   });
 
 
+// Returns the setter (creator) of an appointment. Accessible to admins, the setter themselves,
+// and the assigned closer (b2c or b2b).
+export const getAppointmentSetter = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: appt } = await context.supabase
+      .from("appointments")
+      .select("user_id, assigned_closer_id, b2b_closer_id")
+      .eq("id", data.id)
+      .single();
+    if (!appt) return null;
+
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    let allowed = isAdmin || appt.user_id === context.userId;
+    if (!allowed && appt.assigned_closer_id) {
+      const { data: c } = await context.supabase.from("closers").select("id").eq("id", appt.assigned_closer_id).eq("user_id", context.userId).maybeSingle();
+      if (c) allowed = true;
+    }
+    if (!allowed && appt.b2b_closer_id) {
+      const { data: bc } = await context.supabase.from("b2b_closers").select("id").eq("id", appt.b2b_closer_id).eq("user_id", context.userId).maybeSingle();
+      if (bc) allowed = true;
+    }
+    if (!allowed) return null;
+
+    const { data: prof } = await context.supabase
+      .from("profiles")
+      .select("user_id, full_name, email")
+      .eq("user_id", appt.user_id)
+      .maybeSingle();
+    return prof ? {
+      user_id: prof.user_id,
+      name: (prof.full_name as string | null) || (prof.email as string | null) || "Setter",
+    } : null;
+  });
+
 
 
 // ---------- Commissions ----------
