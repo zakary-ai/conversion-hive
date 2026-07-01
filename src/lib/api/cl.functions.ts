@@ -554,9 +554,12 @@ function zonedWallToUTC(y: number, m: number, d: number, hh: number, mm: number,
   return new Date(guess.getTime() - offset);
 }
 
-// B2B slots: a slot is offered when it falls inside the global B2B window AND
-// at least one b2b_active closer with a B2B-track rule is free at that time,
-// minus any pending (unassigned) bookings already sitting on that exact slot.
+// B2B slots: a slot is offered when it falls inside the global B2B window
+// (availability_rules) AND at least one active b2b closer is free at that
+// time, minus any pending (unassigned) bookings already sitting on that
+// exact slot. Per-closer weekly rules are intentionally not consulted —
+// the master B2B window is the single source of truth for when the team
+// can be booked.
 export const listAvailableSlots = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
@@ -580,19 +583,13 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
 
     if (!globalRules || globalRules.length === 0) return [] as string[];
 
-    // B2B closers (new dedicated pool)
+    // B2B closers (active pool). Per-closer rules are intentionally ignored.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: closers } = await (supabaseAdmin.from("b2b_closers") as any)
       .select("id").eq("active", true);
     const closerIds = ((closers ?? []) as Array<{ id: string }>).map((c) => c.id);
     if (closerIds.length === 0) return [] as string[];
 
-    // Their B2B availability
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closerRulesRaw } = await (supabaseAdmin.from("b2b_closer_availability_rules") as any)
-      .select("closer_id, day_of_week, start_minute, end_minute")
-      .in("closer_id", closerIds);
-    const closerRules = (closerRulesRaw ?? []) as Array<{ closer_id: string; day_of_week: number; start_minute: number; end_minute: number }>;
 
     // Existing appointments overlapping the viewer window
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
