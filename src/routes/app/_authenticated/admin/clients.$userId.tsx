@@ -256,7 +256,8 @@ function StatDetailDialog({ statKey, onClose, appointments, calls, attempts, com
     if (toMs != null && t > toMs) return false;
     return true;
   };
-  const bookings = appointments.filter((a) => a.type === "booking" && inWindow(a.scheduled_at));
+  const bookedInWindow = appointments.filter((a) => a.type === "booking" && inWindow(a.created_at));
+  const scheduledInWindow = appointments.filter((a) => a.type === "booking" && inWindow(a.scheduled_at));
   const callsInWindow = calls.filter((c) => inWindow(c.started_at ?? c.created_at));
   const title = statKey === "bookings" ? "Bookings"
     : statKey === "closed" ? "Closed"
@@ -266,10 +267,10 @@ function StatDetailDialog({ statKey, onClose, appointments, calls, attempts, com
     : statKey === "training" ? "Training progress"
     : "";
 
-  const rows = statKey === "bookings" ? bookings
-    : statKey === "closed" ? bookings.filter((a) => a.outcome === "closed")
-    : statKey === "lost" ? bookings.filter((a) => a.outcome === "lost")
-    : statKey === "no_show" ? bookings.filter((a) => a.outcome === "no_show")
+  const rows = statKey === "bookings" ? bookedInWindow
+    : statKey === "closed" ? scheduledInWindow.filter((a) => a.outcome === "closed")
+    : statKey === "lost" ? scheduledInWindow.filter((a) => a.outcome === "lost")
+    : statKey === "no_show" ? scheduledInWindow.filter((a) => a.outcome === "no_show")
     : [];
 
   return (
