@@ -30,6 +30,7 @@ type Appt = {
   commission_amount?: number | string | null;
   commission_percent?: number | string | null;
   lost_reason?: string | null;
+  confirmed_at?: string | null;
 };
 
 export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; onClose: () => void }) {
@@ -112,6 +113,13 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 <span className="truncate max-w-full">{appt.name}</span>
                 {lead && <StatusPill status={lead.status} />}
                 <span className="text-xs uppercase tracking-wider text-muted-foreground">{appt.type}</span>
+                {appt.type === "booking" && (
+                  appt.confirmed_at ? (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/15 text-success uppercase tracking-wider">Confirmed</span>
+                  ) : (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-wider">Not confirmed</span>
+                  )
+                )}
                 {appt.outcome === "closed" && (
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/15 text-success uppercase tracking-wider">Closed</span>
                 )}

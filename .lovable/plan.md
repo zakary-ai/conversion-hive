@@ -1,75 +1,68 @@
 
-## Goal
+## Overview
 
-Give each closer (B2B and B2C) a place on their own account to declare weekly availability and free-form notes. Give admins a read/edit view of that same data on the B2B Calendar tab and the B2C Bookings → Calendar tab. This is informational only — it does NOT change any existing scheduling or booking logic.
+Two email changes on the B2B booking flow:
 
-## Why a new table (not existing availability rules)
+1. **New email** — sent right after a setter books a call onto the B2B calendar (before a closer is assigned).
+2. **Edit existing email** — the closer-assigned email (`booking-confirmation`) gets a Loom video block and a "Confirm my booking" button. Clicking the button lands the lead on a public "thanks" page and flips the appointment to confirmed so closers can see the status.
 
-The current `availability_rules`, `b2b_closer_availability_rules`, `b2c_availability_rules`, and `closer_availability_rules` tables drive real booking windows. Reusing them would change what leads/setters can book. To keep behavior identical, I'll add a new isolated table used only by this UI.
+Loom URL: `https://www.loom.com/share/ad9a5d9b3d13417ea1f05e22dcc52799`
 
-## Data model
+Both emails greet the lead by name and show the date/time formatted in the timezone the setter selected during booking.
 
-New table `closer_availability_declarations` (one row per closer per business line):
+## What gets built
 
-- `closer_user_id` (uuid, FK to auth users)
-- `line` — enum-ish text: `'b2b'` or `'b2c'`
-- `weekly` — jsonb: 7 entries `[{ day, enabled, ranges: [{start_minute, end_minute}] }]`
-- `notes` — text
-- `updated_at`, `updated_by`
-- Unique(`closer_user_id`, `line`)
+### 1. New template `booking-received` (setter booked, pre-assignment)
 
-RLS:
-- Closers: read/write their own row for whichever line they belong to.
-- Admins: read/write any row.
-- GRANTs to `authenticated` + `service_role`.
+- File: `src/lib/email-templates/booking-received.tsx`, registered in `registry.ts`.
+- Reuses brand styles from the existing `booking-confirmation` template.
+- Content: greeting with lead's name, "Thanks for booking — here are your details", scheduled time formatted in the selected timezone, duration, and a note that a Zoom link is coming once a closer is assigned. No Zoom or confirm buttons.
 
-Nothing else in the app queries this table, so scheduling is untouched.
+**Trigger:** `createAppointment` in `src/lib/api/cl.functions.ts`. When `data.type === "booking"` and insert succeeds, fire `sendTransactional({ templateName: 'booking-received', ... })`. Idempotency key `booking-received-<appointmentId>`.
 
-## Server functions (new `src/lib/api/closer-availability.functions.ts`)
+### 2. Edit `booking-confirmation` template (closer assigned)
 
-- `getMyAvailabilityDeclaration({ line })` — closer reads own.
-- `saveMyAvailabilityDeclaration({ line, weekly, notes })` — closer upsert own.
-- `listAvailabilityDeclarations({ line })` — admin lists all closers for a line, joined with closer name/email (from `closers` / `b2b_closers`).
-- `adminSaveAvailabilityDeclaration({ closer_user_id, line, weekly, notes })` — admin upsert.
+- Add a Loom card section (thumbnail + play overlay, linked to the Loom URL) below the meeting details. Loom's public thumbnail URL pattern is used so the image renders inline in email clients.
+- Add a second CTA button below "Join Zoom call": **"Confirm my booking"** → `https://conversionlab.space/confirm-booking?token=<token>`.
+- Both emails format the date/time using the appointment's stored timezone (see technical notes) instead of hardcoded EST.
+- Preview data updated so the admin email preview dialog still renders (includes a sample `confirmUrl` and Loom URL).
 
-All use `requireSupabaseAuth`; admin ones check `has_role(admin)`.
+### 3. Confirmation link + token
 
-## Shared UI component
+Migration adds to `public.appointments`:
+- `confirmation_token text` with a unique index (nullable)
+- `confirmed_at timestamptz` (nullable)
 
-`src/components/closer-availability-editor.tsx` — a reusable editor with:
-- The same 7-day / time-range pattern used by `B2bCalendarPanel` (Switch per day, add/remove ranges, `toTime` / `fromTime` helpers, Eastern Time label).
-- A `Textarea` for notes.
-- Props: `weekly`, `notes`, `onChange`, `readOnly?`, `title`, `subtitle`.
+Inside `sendBookingConfirmationEmail`, before rendering: mint a 32-byte hex token (same pattern as unsubscribe tokens), store it on the appointment via `supabaseAdmin`, then pass `confirmUrl` into the template.
 
-## Closer account changes
+### 4. Public confirm route + landing page
 
-`src/routes/app/_authenticated/closer/index.tsx`
-- Add a collapsible "My availability & notes" card below the stat grid.
-- Show two sections when the closer belongs to both lines (query `me` roles + closer records): B2B and B2C. If only one, show one.
-- Uses the shared editor + Save button, wired to `saveMyAvailabilityDeclaration`.
+- `src/routes/api/public/confirm-booking.ts` (POST) — `/api/public/*` bypasses auth. Takes `{ token }`, uses `supabaseAdmin` to look up the appointment; sets `confirmed_at = now()` if not already set. Idempotent. Returns `{ ok, alreadyConfirmed, leadName, scheduledLabel }`.
+- `src/routes/confirm-booking.tsx` — public page that reads `?token=` on mount, POSTs to the API route, then shows one of: "Thanks for confirming your call, <name> — see you on <scheduledLabel>", "You've already confirmed this call", or "This confirmation link is invalid". No auth required.
 
-## Admin changes
+### 5. Show confirmed status to closers
 
-- **B2B** (`src/components/admin/b2b-calendar-panel.tsx`): add a new collapsible "Closer availability (declared)" card near the existing weekly-availability card. Lists all B2B closers via `listAvailabilityDeclarations({ line: 'b2b' })`. Each closer expands into the shared editor in edit mode with a Save button that calls `adminSaveAvailabilityDeclaration`. A small "informational only — does not change booking hours" hint.
-- **B2C** (`src/components/admin/b2c-calendar-panel.tsx`, which renders in the Bookings → Calendar tab): identical card, `line: 'b2c'`, listing B2C closers.
+- Extend closer calendar / appointment queries to select `confirmed_at`.
+- `src/routes/app/_authenticated/closer/calendar.tsx` and `src/components/appointment-detail-dialog.tsx`: render a green "Confirmed" badge when `confirmed_at != null`, muted "Not confirmed" otherwise, on B2B booking rows.
 
-## Non-goals
+## Timezone handling
 
-- No change to `availability_rules`, `b2b_closer_availability_rules`, `b2c_availability_rules`, `closer_availability_rules`, slot generation, booking flow, apply flow, or email.
-- No changes to how closers are assigned to bookings.
+The appointment already carries a timezone chosen at booking time via `callback_slot_picker` / booking flow. For appointments where the field exists (e.g. `timezone` / `booked_timezone` on `appointments`), both emails format `scheduledLabel` with that timezone using `Intl.DateTimeFormat`. If the field is missing on legacy rows, we fall back to `America/New_York` (current behavior). I'll confirm the exact column name during build by reading the schema; if it's not yet stored on `appointments`, I'll add it in the same migration and populate it from the booking payload in `createAppointment`.
 
 ## Technical notes
 
-- The `weekly` jsonb has a fixed 7-entry shape; the editor normalizes empty ranges before save.
-- Times stored in minutes-from-midnight, Eastern Time semantics (matches existing panels).
-- Empty state on both closer and admin views: "No availability set yet."
-- No migration data backfill needed (empty rows appear on first save).
+- Migration adds `confirmation_token` (unique) and `confirmed_at`, plus `timezone text` on `appointments` if not already present. No new RLS: writes happen via `supabaseAdmin` in the public route; reads use existing appointment policies.
+- Confirm route validates the token exists and returns only first-name + scheduled label — no other PII.
+- Idempotent confirm: re-clicking returns `alreadyConfirmed: true`.
+- Loom block is a static `<a><img/></a>` (Loom's public thumbnail) — no `<iframe>`/`<video>` since email clients strip them.
 
 ## Files touched
 
-- new migration for `closer_availability_declarations` + RLS + GRANTs
-- new `src/lib/api/closer-availability.functions.ts`
-- new `src/components/closer-availability-editor.tsx`
-- edited `src/routes/app/_authenticated/closer/index.tsx`
-- edited `src/components/admin/b2b-calendar-panel.tsx`
-- edited `src/components/admin/b2c-calendar-panel.tsx`
+- **new** `src/lib/email-templates/booking-received.tsx`
+- **edit** `src/lib/email-templates/booking-confirmation.tsx` (Loom + confirm button + `confirmUrl` prop + timezone-aware label)
+- **edit** `src/lib/email-templates/registry.ts`
+- **edit** `src/lib/api/cl.functions.ts` (fire new email on booking; mint/store token + pass `confirmUrl` on assignment; use booking timezone)
+- **new** `src/routes/api/public/confirm-booking.ts`
+- **new** `src/routes/confirm-booking.tsx`
+- **edit** closer calendar route + appointment detail dialog (Confirmed badge)
+- **migration** add `confirmation_token`, `confirmed_at` (and `timezone` if missing) on `appointments`
