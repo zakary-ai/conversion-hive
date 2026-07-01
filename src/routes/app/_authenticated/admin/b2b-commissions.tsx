@@ -534,6 +534,30 @@ function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenCh
       </Sheet>
 
 
+      <Dialog open={payTarget !== null} onOpenChange={(o) => { if (!o) { setPayTarget(null); setPayNote(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Pay out {payTarget?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              Marking <span className="font-semibold text-foreground">{money(payTarget?.total ?? 0)}</span> across {payTarget?.ids.length ?? 0} entr{(payTarget?.ids.length ?? 0) === 1 ? "y" : "ies"} as paid.
+            </div>
+            <div>
+              <Label>Note (optional)</Label>
+              <Textarea rows={3} value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="e.g. Venmo, ref #1234" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setPayTarget(null)}>Cancel</Button>
+            <Button
+              onClick={() => payTarget && payAll.mutate({ ids: payTarget.ids, note: payNote || null })}
+              disabled={payAll.isPending}
+            >
+              {payAll.isPending ? "Recording…" : "Confirm payout"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <RecordPayoutDialog
         open={recordOpen}
         onOpenChange={setRecordOpen}
