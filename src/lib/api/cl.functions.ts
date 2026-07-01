@@ -1031,7 +1031,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       // Setter commission row (role='setter') — only if setter differs from the closer
       const setterUserId = appt.user_id as string | null;
       if (setterUserId && setterUserId !== closerUserId) {
-        const { data: existingSetter } = await context.supabase
+        const { data: existingSetter } = await supabaseAdmin
           .from("commissions").select("id, status, commission_percent").eq("appointment_id", data.id).eq("role", "setter").maybeSingle();
         const setterNote = `Setter for: ${appt.name} ($${data.deal_amount.toFixed(2)})`;
         if (existingSetter) {
