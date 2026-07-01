@@ -496,7 +496,7 @@ function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenCh
                         {bucket === "unpaid" && (
                           <Button
                             size="sm"
-                            onClick={() => payAll.mutate(g.rows.map((r) => r.id))}
+                            onClick={() => { setPayTarget({ user_id: g.user_id, name: g.name, total: g.total, ids: g.rows.map((r) => r.id) }); setPayNote(""); }}
                             disabled={payAll.isPending}
                           >
                             <Wallet className="h-3.5 w-3.5 mr-1" /> Pay out
