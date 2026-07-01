@@ -101,6 +101,7 @@ export function SlotPicker({ value, onChange }: Props) {
             <Button type="button" size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
           </div>
         )}
+        {slots.length > 0 && (
           <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto">
             {slots.map((iso) => {
               const d = new Date(iso);
