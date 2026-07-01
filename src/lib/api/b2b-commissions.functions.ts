@@ -57,6 +57,7 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
       deal_amount: number | string | null; status: string | null;
       note: string | null; created_at: string; approved_at: string | null;
       appointment_id: string | null;
+      paid_at: string | null; paid_note: string | null;
     }>;
 
     // Pull relevant appointments (B2B only)
