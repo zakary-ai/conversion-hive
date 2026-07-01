@@ -334,7 +334,56 @@ function Row({ icon: Icon, label, value }: { icon: LucideIcon; label: string; va
     <div className="flex items-center gap-3 px-3 py-2">
       <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
       <div className="text-xs uppercase tracking-wider text-muted-foreground w-28 shrink-0">{label}</div>
-      <div className="text-sm flex-1 min-w-0 truncate text-right">{value}</div>
+      <div className="text-sm flex-1 min-w-0 text-right">{value}</div>
     </div>
   );
+}
+
+function SetterPicker({ apptId, currentUserId, currentName }: { apptId: string; currentUserId: string | null; currentName: string | null }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const { data: setters } = useQuery({
+    queryKey: ["setters-list"],
+    queryFn: () => listSetters(),
+    enabled: editing,
+  });
+  const assign = useMutation({
+    mutationFn: (user_id: string) => setAppointmentSetter({ data: { id: apptId, user_id } }),
+    onSuccess: () => {
+      toast.success("Setter updated");
+      qc.invalidateQueries({ queryKey: ["appt-setter", apptId] });
+      qc.invalidateQueries({ queryKey: ["my-appointments"] });
+      qc.invalidateQueries({ queryKey: ["all-appointments"] });
+      qc.invalidateQueries({ queryKey: ["b2b-commissions"] });
+      setEditing(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (!editing) {
+    return (
+      <span className="inline-flex items-center gap-2 justify-end">
+        <span className="truncate">{currentName ?? "—"}</span>
+        <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setEditing(true)}>
+          {currentUserId ? "Change" : "Attach"}
+        </Button>
+      </span>
+    );
+  }
+
+  return (
+    <div className="inline-flex items-center gap-2 justify-end w-full">
+      <Select onValueChange={(v) => assign.mutate(v)} disabled={assign.isPending}>
+        <SelectTrigger className="h-8 w-[180px]"><SelectValue placeholder="Pick a setter" /></SelectTrigger>
+        <SelectContent>
+          {(setters ?? []).map((s) => (
+            <SelectItem key={s.user_id} value={s.user_id}>{s.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditing(false)}>Cancel</Button>
+    </div>
+  );
+}
+
 }
