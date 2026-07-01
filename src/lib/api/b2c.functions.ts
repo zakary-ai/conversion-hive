@@ -1050,7 +1050,7 @@ export const listClosedDealsForCommission = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { data, error } = await context.supabase
       .from("closer_bookings")
-      .select("id, applicant_name, applicant_email, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, commission_status, closers:assigned_closer_id (id, full_name, email)")
+      .select("id, applicant_name, applicant_email, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, commission_status, commission_paid_at, commission_payout_note, closers:assigned_closer_id (id, full_name, email)")
       .in("outcome", ["closed", "deposit"])
       .order("outcome_at", { ascending: false });
     if (error) throw new Error(error.message);
