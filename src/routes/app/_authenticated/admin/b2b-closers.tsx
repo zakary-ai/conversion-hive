@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listB2bClosers, createB2bCloser, updateB2bCloser, deleteB2bCloser,
-  listB2bCloserAvailability, replaceB2bCloserAvailability,
   resendB2bCloserInvite, getB2bCloserZoomCreds, listB2bClosersZoomStatus,
 } from "@/lib/api/b2b-closers.functions";
 import { Card } from "@/components/ui/card";
@@ -13,17 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, Save, UserPlus, KeyRound, BarChart3 } from "lucide-react";
+import { Trash2, Save, UserPlus, KeyRound, BarChart3 } from "lucide-react";
 import { B2bCloserDetailDialog } from "@/components/admin/b2b-closer-detail-dialog";
 
 export const Route = createFileRoute("/app/_authenticated/admin/b2b-closers")({
   component: B2bClosersPage,
 });
 
-const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-type Rule = { day_of_week: number; start_minute: number; end_minute: number };
-const toTime = (m: number) => `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`;
-const fromTime = (s: string) => { const [h,m] = s.split(":").map(Number); return (h||0)*60+(m||0); };
 
 function B2bClosersPage() {
   const qc = useQueryClient();
