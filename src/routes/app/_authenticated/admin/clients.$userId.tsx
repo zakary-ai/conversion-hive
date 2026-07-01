@@ -32,14 +32,68 @@ const fmtDateTime = (s?: string | null) =>
   s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 const money = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
-function endOfDay(d: Date) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
+// ---------- EST-aware day boundaries ----------
+const NY_TZ = "America/New_York";
+
+// Returns the NY timezone offset (in minutes east of UTC — negative for NY) for the given instant.
+function nyOffsetMinutes(d: Date): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: NY_TZ, hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = Object.fromEntries(dtf.formatToParts(d).map((p) => [p.type, p.value]));
+  const asUTC = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour === 24 ? 0 : +parts.hour, +parts.minute, +parts.second);
+  return (asUTC - d.getTime()) / 60000;
+}
+
+// Get the NY calendar Y/M/D for a given instant.
+function nyDateParts(d: Date): { y: number; m: number; d: number } {
+  const dtf = new Intl.DateTimeFormat("en-CA", { timeZone: NY_TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+  const [y, m, day] = dtf.format(d).split("-").map(Number);
+  return { y, m, d: day };
+}
+
+// Return the UTC instant for NY midnight on the NY calendar date of `d`.
+function startOfDay(d: Date): Date {
+  const p = nyDateParts(d);
+  const guess = new Date(Date.UTC(p.y, p.m - 1, p.d, 12));
+  const off = nyOffsetMinutes(guess);
+  return new Date(Date.UTC(p.y, p.m - 1, p.d, 0, 0, 0, 0) - off * 60000);
+}
+
+function endOfDay(d: Date): Date {
+  const p = nyDateParts(d);
+  const guess = new Date(Date.UTC(p.y, p.m - 1, p.d, 12));
+  const off = nyOffsetMinutes(guess);
+  return new Date(Date.UTC(p.y, p.m - 1, p.d, 23, 59, 59, 999) - off * 60000);
+}
+
+// A Date object that represents the NY-today calendar day (used only as a marker in dateRange).
+function nyToday(): Date {
+  const p = nyDateParts(new Date());
+  // Return a UTC-noon instant on that calendar date so display formatting is stable.
+  return new Date(Date.UTC(p.y, p.m - 1, p.d, 12));
+}
+
+function sameNyDay(a: Date, b: Date): boolean {
+  const pa = nyDateParts(a); const pb = nyDateParts(b);
+  return pa.y === pb.y && pa.m === pb.m && pa.d === pb.d;
+}
+
+const nyDayLabel = (d: Date) =>
+  new Intl.DateTimeFormat(undefined, { timeZone: NY_TZ, month: "short", day: "numeric", year: "numeric" }).format(d);
+const nyDayLabelShort = (d: Date) =>
+  new Intl.DateTimeFormat(undefined, { timeZone: NY_TZ, month: "short", day: "numeric" }).format(d);
 
 type StatKey = "bookings" | "closed" | "lost" | "no_show" | "dials" | "training";
 
 function SetterDetailPage() {
   const { userId } = Route.useParams();
-  const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
+  const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>(() => {
+    const t = nyToday();
+    return { from: t, to: t };
+  });
   const fromIso = dateRange.from ? startOfDay(dateRange.from).toISOString() : null;
   const toIso = dateRange.to ? endOfDay(dateRange.to).toISOString() : null;
   const { data } = useSuspenseQuery(opts(userId, fromIso, toIso));
@@ -47,16 +101,20 @@ function SetterDetailPage() {
 
   const progress = data.totalModules ? Math.round((data.completions.length / data.totalModules) * 100) : 0;
 
+  const today = nyToday();
+  const isToday = !!(dateRange.from && dateRange.to && sameNyDay(dateRange.from, today) && sameNyDay(dateRange.to, today));
+
   const rangeLabel = dateRange.from && dateRange.to
-    ? `${dateRange.from.toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${dateRange.to.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    ? (sameNyDay(dateRange.from, dateRange.to) ? nyDayLabel(dateRange.from) : `${nyDayLabelShort(dateRange.from)} – ${nyDayLabelShort(dateRange.to)}`)
     : dateRange.from
-    ? dateRange.from.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    ? nyDayLabel(dateRange.from)
     : "All time";
 
   const setToday = () => {
-    const d = new Date();
-    setDateRange({ from: d, to: d });
+    const t = nyToday();
+    setDateRange({ from: t, to: t });
   };
+
 
   return (
     <div className="space-y-6 max-w-7xl">
