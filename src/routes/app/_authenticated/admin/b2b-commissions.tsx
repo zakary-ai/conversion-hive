@@ -97,11 +97,31 @@ function B2BCommissions() {
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1">
               <Label className="text-[10px] text-muted-foreground">From</Label>
-              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-8 w-[140px]" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 w-[150px] justify-start font-normal">
+                    <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                    {fmtBtn(from)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={from} onSelect={setFrom} />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="flex items-center gap-1">
               <Label className="text-[10px] text-muted-foreground">To</Label>
-              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-8 w-[140px]" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 w-[150px] justify-start font-normal">
+                    <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                    {fmtBtn(to)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={to} onSelect={setTo} />
+                </PopoverContent>
+              </Popover>
             </div>
             <Select value={sortDir} onValueChange={(v) => setSortDir(v as "desc" | "asc")}>
               <SelectTrigger className="h-8 w-[140px]"><SelectValue /></SelectTrigger>
@@ -110,10 +130,9 @@ function B2BCommissions() {
                 <SelectItem value="asc">Oldest first</SelectItem>
               </SelectContent>
             </Select>
-            {(from || to) && (
-              <Button size="sm" variant="ghost" onClick={() => { setFrom(""); setTo(""); }}>Clear</Button>
-            )}
+            <Button size="sm" variant="ghost" onClick={() => { setFrom(defaultFrom); setTo(today); }}>Reset</Button>
           </div>
+
         </div>
         {filteredGroups.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">No entries in this range.</div>
