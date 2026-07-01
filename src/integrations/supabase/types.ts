@@ -677,36 +677,51 @@ export type Database = {
           added_by: string | null
           amount: number
           appointment_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          commission_percent: number | null
           created_at: string
+          deal_amount: number | null
           id: string
           note: string | null
           paid_at: string | null
           paid_by: string | null
           paid_method: string | null
+          status: string
           user_id: string
         }
         Insert: {
           added_by?: string | null
           amount: number
           appointment_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          commission_percent?: number | null
           created_at?: string
+          deal_amount?: number | null
           id?: string
           note?: string | null
           paid_at?: string | null
           paid_by?: string | null
           paid_method?: string | null
+          status?: string
           user_id: string
         }
         Update: {
           added_by?: string | null
           amount?: number
           appointment_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          commission_percent?: number | null
           created_at?: string
+          deal_amount?: number | null
           id?: string
           note?: string | null
           paid_at?: string | null
           paid_by?: string | null
           paid_method?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: [

@@ -938,6 +938,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         outcome: z.literal("closed"),
         deal_amount: z.number().nonnegative().max(100000000),
+        commission_percent: z.number().nonnegative().max(100),
         commission_amount: z.number().nonnegative().max(100000000),
       }),
       z.object({
@@ -959,13 +960,14 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
     const isAdmin = (roles ?? []).some((r) => r.role === "admin");
     let allowed = isAdmin || appt.user_id === context.userId;
+    let actingCloserUserId: string | null = isAdmin ? null : context.userId;
     if (!allowed && appt.assigned_closer_id) {
       const { data: c } = await context.supabase.from("closers").select("id").eq("id", appt.assigned_closer_id).eq("user_id", context.userId).maybeSingle();
-      if (c) allowed = true;
+      if (c) { allowed = true; actingCloserUserId = context.userId; }
     }
     if (!allowed && appt.b2b_closer_id) {
       const { data: bc } = await context.supabase.from("b2b_closers").select("id").eq("id", appt.b2b_closer_id).eq("user_id", context.userId).maybeSingle();
-      if (bc) allowed = true;
+      if (bc) { allowed = true; actingCloserUserId = context.userId; }
     }
     if (!allowed) throw new Error("Forbidden");
 
@@ -991,19 +993,32 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
 
-      // Upsert commission tied to this appointment
+      // Tie commission to the closer logging it (so it appears on their account)
+      const commissionUserId = actingCloserUserId ?? appt.user_id;
       const { data: existing } = await context.supabase
-        .from("commissions").select("id").eq("appointment_id", data.id).maybeSingle();
-      const note = `Closed deal: ${appt.name} ($${data.deal_amount.toFixed(2)})`;
+        .from("commissions").select("id, status").eq("appointment_id", data.id).maybeSingle();
+      const note = `Closed deal: ${appt.name} ($${data.deal_amount.toFixed(2)} @ ${data.commission_percent}%)`;
       if (existing) {
         const { error: uerr } = await context.supabase.from("commissions")
-          .update({ amount: data.commission_amount, note, added_by: context.userId, user_id: appt.user_id })
+          .update({
+            amount: data.commission_amount,
+            commission_percent: data.commission_percent,
+            deal_amount: data.deal_amount,
+            note,
+            added_by: context.userId,
+            user_id: commissionUserId,
+          })
           .eq("id", existing.id);
         if (uerr) throw new Error(uerr.message);
       } else {
         const { error: ierr } = await context.supabase.from("commissions").insert({
-          user_id: appt.user_id,
+          user_id: commissionUserId,
           amount: data.commission_amount,
+          commission_percent: data.commission_percent,
+          deal_amount: data.deal_amount,
+          status: isAdmin ? "approved" : "pending",
+          approved_at: isAdmin ? new Date().toISOString() : null,
+          approved_by: isAdmin ? context.userId : null,
           note,
           added_by: context.userId,
           appointment_id: data.id,
@@ -1211,6 +1226,42 @@ export const setCommissionPaid = createServerFn({ method: "POST" })
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
     }
+    return { ok: true };
+  });
+
+export const approveCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const { error } = await context.supabase.from("commissions").update({
+      status: "approved", approved_at: new Date().toISOString(), approved_by: context.userId,
+    }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    id: z.string().uuid(),
+    amount: z.number().nonnegative().max(100000000).optional(),
+    commission_percent: z.number().nonnegative().max(100).nullable().optional(),
+    deal_amount: z.number().nonnegative().max(100000000).nullable().optional(),
+    note: z.string().max(2000).nullable().optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+    const patch: { amount?: number; commission_percent?: number | null; deal_amount?: number | null; note?: string | null } = {};
+    if (data.amount !== undefined) patch.amount = data.amount;
+    if (data.commission_percent !== undefined) patch.commission_percent = data.commission_percent;
+    if (data.deal_amount !== undefined) patch.deal_amount = data.deal_amount;
+    if (data.note !== undefined) patch.note = data.note;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await context.supabase.from("commissions").update(patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 

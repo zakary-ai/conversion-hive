@@ -25,6 +25,7 @@ type Appt = {
   outcome?: string | null;
   deal_amount?: number | string | null;
   commission_amount?: number | string | null;
+  commission_percent?: number | string | null;
   lost_reason?: string | null;
 };
 
@@ -43,25 +44,36 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   const showOutcome = !!(me?.isAdmin || me?.isCloser) && appt?.type === "booking";
   const [mode, setMode] = useState<"none" | "closed" | "lost" | "no_show">("none");
   const [deal, setDeal] = useState("");
-  const [commission, setCommission] = useState("");
+  const [pctPreset, setPctPreset] = useState<"10" | "15" | "custom">("10");
+  const [customPct, setCustomPct] = useState("");
   const [reason, setReason] = useState("");
 
   useEffect(() => {
     if (!appt) return;
     setMode("none");
     setDeal(appt.deal_amount != null ? String(appt.deal_amount) : "");
-    setCommission(appt.commission_amount != null ? String(appt.commission_amount) : "");
+    const existingPct = appt.commission_percent != null ? Number(appt.commission_percent) : null;
+    if (existingPct === 10) { setPctPreset("10"); setCustomPct(""); }
+    else if (existingPct === 15) { setPctPreset("15"); setCustomPct(""); }
+    else if (existingPct != null) { setPctPreset("custom"); setCustomPct(String(existingPct)); }
+    else { setPctPreset("10"); setCustomPct(""); }
     setReason(appt.lost_reason ?? "");
   }, [appt?.id]);
 
+  const pctValue = pctPreset === "custom" ? parseFloat(customPct) : parseFloat(pctPreset);
+  const dealValue = parseFloat(deal);
+  const computedCommission = isFinite(dealValue) && isFinite(pctValue) ? Math.round(dealValue * pctValue) / 100 : 0;
+
   const mutation = useMutation({
-    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "clear" }) =>
+    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_percent: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "clear" }) =>
       setAppointmentOutcome({ data: input }),
     onSuccess: () => {
       toast.success("Updated");
       qc.invalidateQueries({ queryKey: ["my-appointments"] });
       qc.invalidateQueries({ queryKey: ["all-appointments"] });
       qc.invalidateQueries({ queryKey: ["commissions"] });
+      qc.invalidateQueries({ queryKey: ["all-commissions"] });
+      qc.invalidateQueries({ queryKey: ["my-commissions"] });
       qc.invalidateQueries({ queryKey: ["admin-overview"] });
       setMode("none");
     },
@@ -70,10 +82,9 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
 
   const submitClosed = () => {
     const d = parseFloat(deal);
-    const c = parseFloat(commission);
     if (!isFinite(d) || d < 0) return toast.error("Enter a valid deal amount");
-    if (!isFinite(c) || c < 0) return toast.error("Enter a valid commission");
-    mutation.mutate({ id: appt!.id, outcome: "closed", deal_amount: d, commission_amount: c });
+    if (!isFinite(pctValue) || pctValue < 0 || pctValue > 100) return toast.error("Enter a valid commission %");
+    mutation.mutate({ id: appt!.id, outcome: "closed", deal_amount: d, commission_percent: pctValue, commission_amount: computedCommission });
   };
   const submitLost = () => {
     mutation.mutate({ id: appt!.id, outcome: "lost", lost_reason: reason.trim() });
@@ -139,7 +150,10 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                             <CheckCircle2 className="h-4 w-4" /> Deal closed
                           </div>
                           <div className="text-sm flex justify-between"><span className="text-muted-foreground">Deal amount</span><span className="font-medium">${Number(appt.deal_amount ?? 0).toFixed(2)}</span></div>
-                          <div className="text-sm flex justify-between"><span className="text-muted-foreground">Setter commission</span><span className="font-medium">${Number(appt.commission_amount ?? 0).toFixed(2)}</span></div>
+                          {appt.commission_percent != null && (
+                            <div className="text-sm flex justify-between"><span className="text-muted-foreground">Commission %</span><span className="font-medium">{Number(appt.commission_percent)}%</span></div>
+                          )}
+                          <div className="text-sm flex justify-between"><span className="text-muted-foreground">Commission</span><span className="font-medium">${Number(appt.commission_amount ?? 0).toFixed(2)}</span></div>
                         </div>
                       )}
                       {appt.outcome === "lost" && (
@@ -205,12 +219,42 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                             <Input id="deal" type="number" min="0" step="0.01" value={deal} onChange={(e) => setDeal(e.target.value)} placeholder="0.00" />
                           </div>
                           <div>
-                            <Label htmlFor="commission" className="text-xs">Setter commission ($)</Label>
-                            <Input id="commission" type="number" min="0" step="0.01" value={commission} onChange={(e) => setCommission(e.target.value)} placeholder="0.00" />
+                            <Label className="text-xs">Commission</Label>
+                            <div className="flex gap-2 mt-1">
+                              {(["10","15","custom"] as const).map((p) => (
+                                <Button
+                                  key={p}
+                                  type="button"
+                                  size="sm"
+                                  variant={pctPreset === p ? "default" : "outline"}
+                                  onClick={() => setPctPreset(p)}
+                                  className="flex-1"
+                                >
+                                  {p === "custom" ? "Custom" : `${p}%`}
+                                </Button>
+                              ))}
+                            </div>
+                            {pctPreset === "custom" && (
+                              <Input
+                                className="mt-2"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                value={customPct}
+                                onChange={(e) => setCustomPct(e.target.value)}
+                                placeholder="Commission %"
+                              />
+                            )}
+                            <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                              <span>Commission owed</span>
+                              <span className="font-medium text-foreground">${computedCommission.toFixed(2)}</span>
+                            </div>
                           </div>
                           <Button onClick={submitClosed} disabled={mutation.isPending} className="w-full">
                             Save closed deal
                           </Button>
+                          <p className="text-[10px] text-muted-foreground text-center">Submitted as pending — an admin will approve it.</p>
                         </div>
                       )}
 
