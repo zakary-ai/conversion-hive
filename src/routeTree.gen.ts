@@ -27,6 +27,7 @@ import { Route as AppAuthenticatedLeadsRouteImport } from './routes/app/_authent
 import { Route as AppAuthenticatedDashboardRouteImport } from './routes/app/_authenticated/dashboard'
 import { Route as AppAuthenticatedCommissionsRouteImport } from './routes/app/_authenticated/commissions'
 import { Route as AppAuthenticatedCalendarRouteImport } from './routes/app/_authenticated/calendar'
+import { Route as ApiPublicConfirmBookingRouteImport } from './routes/api/public/confirm-booking'
 import { Route as AppAuthenticatedAdminRouteRouteImport } from './routes/app/_authenticated/admin/route'
 import { Route as AppAuthenticatedTrainingIndexRouteImport } from './routes/app/_authenticated/training.index'
 import { Route as AppAuthenticatedCloserIndexRouteImport } from './routes/app/_authenticated/closer/index'
@@ -151,6 +152,11 @@ const AppAuthenticatedCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const ApiPublicConfirmBookingRoute = ApiPublicConfirmBookingRouteImport.update({
+  id: '/api/public/confirm-booking',
+  path: '/api/public/confirm-booking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppAuthenticatedAdminRouteRoute =
   AppAuthenticatedAdminRouteRouteImport.update({
     id: '/admin',
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/app/auth': typeof AppAuthRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
+  '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
   '/app/calendar': typeof AppAuthenticatedCalendarRoute
   '/app/commissions': typeof AppAuthenticatedCommissionsRoute
   '/app/dashboard': typeof AppAuthenticatedDashboardRoute
@@ -391,6 +398,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/auth': typeof AppAuthRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
   '/app/calendar': typeof AppAuthenticatedCalendarRoute
   '/app/commissions': typeof AppAuthenticatedCommissionsRoute
   '/app/dashboard': typeof AppAuthenticatedDashboardRoute
@@ -442,6 +450,7 @@ export interface FileRoutesById {
   '/app/auth': typeof AppAuthRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/_authenticated/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
+  '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
   '/app/_authenticated/calendar': typeof AppAuthenticatedCalendarRoute
   '/app/_authenticated/commissions': typeof AppAuthenticatedCommissionsRoute
   '/app/_authenticated/dashboard': typeof AppAuthenticatedDashboardRoute
@@ -493,6 +502,7 @@ export interface FileRouteTypes {
     | '/app/auth'
     | '/email/unsubscribe'
     | '/app/admin'
+    | '/api/public/confirm-booking'
     | '/app/calendar'
     | '/app/commissions'
     | '/app/dashboard'
@@ -541,6 +551,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/app/auth'
     | '/email/unsubscribe'
+    | '/api/public/confirm-booking'
     | '/app/calendar'
     | '/app/commissions'
     | '/app/dashboard'
@@ -591,6 +602,7 @@ export interface FileRouteTypes {
     | '/app/auth'
     | '/email/unsubscribe'
     | '/app/_authenticated/admin'
+    | '/api/public/confirm-booking'
     | '/app/_authenticated/calendar'
     | '/app/_authenticated/commissions'
     | '/app/_authenticated/dashboard'
@@ -639,6 +651,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  ApiPublicConfirmBookingRoute: typeof ApiPublicConfirmBookingRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
@@ -777,6 +790,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/calendar'
       preLoaderRoute: typeof AppAuthenticatedCalendarRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/api/public/confirm-booking': {
+      id: '/api/public/confirm-booking'
+      path: '/api/public/confirm-booking'
+      fullPath: '/api/public/confirm-booking'
+      preLoaderRoute: typeof ApiPublicConfirmBookingRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/_authenticated/admin': {
       id: '/app/_authenticated/admin'
@@ -1101,6 +1121,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  ApiPublicConfirmBookingRoute: ApiPublicConfirmBookingRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
