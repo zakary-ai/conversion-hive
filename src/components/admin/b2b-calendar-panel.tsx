@@ -613,8 +613,33 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
         </div>
 
       </div>
+      <AppointmentDetailDialog
+        appt={
+          detailOpen
+            ? {
+                id: booking.id,
+                lead_id: booking.lead_id ?? null,
+                type: "booking",
+                scheduled_at: booking.scheduled_at,
+                name: booking.name,
+                phone: booking.phone,
+                email: booking.email,
+                context: booking.context ?? null,
+                meeting_url: booking.meeting_url ?? null,
+                outcome: booking.outcome ?? null,
+              }
+            : null
+        }
+        onClose={() => setDetailOpen(false)}
+      />
+      <RescheduleDialog
+        apptId={rescheduleOpen ? booking.id : null}
+        currentScheduledAt={booking.scheduled_at}
+        onClose={() => setRescheduleOpen(false)}
+      />
     </Card>
 
   );
 }
+
 
