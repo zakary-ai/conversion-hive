@@ -526,7 +526,7 @@ function CallsGoingLiveCard({ appointments, fromMs, toMs, rangeLabel }: {
                     <div className="text-xs text-muted-foreground">{fmtDateTime(a.scheduled_at)}</div>
                   </div>
                   <div className="text-right text-xs">
-                    {isLive && <StatusPill tone="brand">Live now</StatusPill>}
+                    {isLive && <span className="uppercase tracking-wider text-primary font-medium">Live now</span>}
                     {!isLive && !a.outcome && !isPast && <span className="uppercase tracking-wider text-muted-foreground">Upcoming</span>}
                     {!isLive && a.outcome && <span className="uppercase tracking-wider text-muted-foreground">{a.outcome}</span>}
                     {!isLive && !a.outcome && isPast && <span className="uppercase tracking-wider text-muted-foreground">Pending</span>}
