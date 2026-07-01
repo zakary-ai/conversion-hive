@@ -136,6 +136,32 @@ function CloserHome() {
         onOpenChange={(v) => !v && setPreviewFor(null)}
       />
       <AppointmentDetailDialog appt={apptFor} onClose={() => setApptFor(null)} />
+
+      <Dialog open={dqOpen} onOpenChange={setDqOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Disqualified calls ({dqB2b.length})</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {dqB2b.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-6">No disqualified calls yet.</div>
+            ) : dqB2b
+              .sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime())
+              .map((a) => (
+                <Card
+                  key={a.id}
+                  className="p-3 cursor-pointer hover:bg-muted/30"
+                  onClick={() => { setDqOpen(false); setApptFor(a); }}
+                >
+                  <div className="font-medium text-sm">{a.name}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(a.scheduled_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </div>
+                </Card>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
