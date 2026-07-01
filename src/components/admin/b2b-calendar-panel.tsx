@@ -564,12 +564,22 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
               </SelectContent>
             </Select>
           )}
-          {booking.status === "assigned" && (
+          {isAssigned && (
             <Button size="sm" variant="outline" onClick={() => unassign.mutate()}>
               Reassign
             </Button>
           )}
-          {booking.status !== "cancelled" && (
+          {(isPending || isAssigned) && (
+            <Button size="icon" variant="ghost" onClick={() => setRescheduleOpen(true)} title="Reschedule">
+              <CalendarRange className="h-4 w-4" />
+            </Button>
+          )}
+          {isAssigned && (
+            <Button size="icon" variant="ghost" onClick={() => setDetailOpen(true)} title="Set outcome">
+              <ClipboardCheck className="h-4 w-4" />
+            </Button>
+          )}
+          {!isCancelled && (
             <Button size="icon" variant="ghost" onClick={() => cancel.mutate()} title="Cancel">
               <X className="h-4 w-4" />
             </Button>
