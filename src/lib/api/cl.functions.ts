@@ -626,9 +626,6 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
           const slotEnd = t + slotMs;
           let availableClosers = 0;
           for (const cid of closerIds) {
-            const cRules = closerRules.filter((r) => r.closer_id === cid && r.day_of_week === dow);
-            const covers = cRules.some((r) => r.start_minute <= mm && r.end_minute >= mm + SLOT);
-            if (!covers) continue;
             const conflict = allBookings.some((b) => {
               if (b.b2b_closer_id !== cid) return false;
               if (b.status === "cancelled") return false;
