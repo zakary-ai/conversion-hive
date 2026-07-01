@@ -82,7 +82,6 @@ type CloserRowT = {
 
 function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }) {
   const qc = useQueryClient();
-  const [editAvail, setEditAvail] = useState(false);
   const [editZoom, setEditZoom] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const toggleActive = useMutation({
