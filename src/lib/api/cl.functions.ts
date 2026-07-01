@@ -997,7 +997,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       const note = `Closed deal: ${appt.name} ($${data.deal_amount.toFixed(2)} @ ${data.commission_percent}%)`;
 
       // Upsert closer row (role='closer')
-      const { data: existingCloser } = await context.supabase
+      const { data: existingCloser } = await supabaseAdmin
         .from("commissions").select("id").eq("appointment_id", data.id).eq("role", "closer").maybeSingle();
       if (existingCloser) {
         const { error: uerr } = await supabaseAdmin.from("commissions")
