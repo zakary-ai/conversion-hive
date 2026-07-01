@@ -127,13 +127,6 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }
             <CloserZoomCreds closer={closer} onDone={() => setEditZoom(false)} />
           </DialogContent>
         </Dialog>
-        <Dialog open={editAvail} onOpenChange={setEditAvail}>
-          <DialogTrigger asChild><Button size="sm" variant="outline">Availability</Button></DialogTrigger>
-          <DialogContent className="max-w-xl">
-            <DialogHeader><DialogTitle>{closer.full_name}'s B2B availability</DialogTitle></DialogHeader>
-            <CloserAvail closerId={closer.id} />
-          </DialogContent>
-        </Dialog>
         <Button size="sm" variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>
           {resend.isPending ? "Sending…" : "Resend invite"}
         </Button>
