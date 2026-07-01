@@ -221,3 +221,37 @@ export const addB2BCommission = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, count: inserts.length };
   });
+
+export const recordPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      commission_ids: z.array(z.string().uuid()).min(1),
+      note: z.string().max(2000).optional().nullable(),
+    }).parse
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const { error } = await context.supabase
+      .from("commissions")
+      .update({ paid_at: new Date().toISOString(), paid_by: context.userId, paid_note: data.note ?? null })
+      .in("id", data.commission_ids)
+      .is("paid_at", null)
+      .eq("status", "approved");
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const undoPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ commission_ids: z.array(z.string().uuid()).min(1) }).parse)
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const { error } = await context.supabase
+      .from("commissions")
+      .update({ paid_at: null, paid_by: null, paid_note: null })
+      .in("id", data.commission_ids);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
