@@ -45,6 +45,9 @@ const STATUS_STYLES: Record<string, string> = {
   "Follow Up": "bg-warning/20 text-warning border-warning/30",
   "Call Again": "bg-warning/15 text-warning border-warning/30",
   "Call Back": "bg-blue-500/15 text-blue-300 border-blue-500/30",
+  "Closed": "bg-success/30 text-success border-success/40",
+  "Lost": "bg-destructive/15 text-destructive border-destructive/30",
+  "No Show": "bg-warning/15 text-warning border-warning/30",
 };
 
 export function StatusPill({ status }: { status: string }) {
