@@ -968,7 +968,6 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     // Authorization done above — use admin client for commissions writes so
     // closer-inserted setter rows (user_id != auth.uid()) don't hit RLS.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const commissions = supabaseAdmin.from("commissions");
 
 
     if (data.outcome === "clear") {
