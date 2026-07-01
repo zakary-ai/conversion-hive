@@ -976,6 +976,12 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     // closer-inserted setter rows (user_id != auth.uid()) don't hit RLS.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Keep the linked lead's status in sync with the appointment outcome so
+    // the lead profile / pipeline reflects the closer's decision immediately.
+    const syncLeadStatus = async (status: string) => {
+      if (!appt.lead_id) return;
+      await supabaseAdmin.from("leads").update({ status }).eq("id", appt.lead_id);
+    };
 
     if (data.outcome === "clear") {
       const { error } = await context.supabase.from("appointments").update({
@@ -984,6 +990,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
       await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
+      await syncLeadStatus("Booked");
       return { ok: true };
     }
 
