@@ -1,0 +1,3 @@
+ALTER TYPE lead_status ADD VALUE IF NOT EXISTS 'Closed';
+ALTER TYPE lead_status ADD VALUE IF NOT EXISTS 'Lost';
+ALTER TYPE lead_status ADD VALUE IF NOT EXISTS 'No Show';

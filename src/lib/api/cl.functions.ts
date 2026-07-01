@@ -953,7 +953,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { data: appt, error: aerr } = await context.supabase
-      .from("appointments").select("id, user_id, type, name, assigned_closer_id, b2b_closer_id").eq("id", data.id).single();
+      .from("appointments").select("id, user_id, type, name, lead_id, assigned_closer_id, b2b_closer_id").eq("id", data.id).single();
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
     if (appt.type !== "booking") throw new Error("Outcome only applies to bookings");
 
@@ -976,6 +976,13 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     // closer-inserted setter rows (user_id != auth.uid()) don't hit RLS.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Keep the linked lead's status in sync with the appointment outcome so
+    // the lead profile / pipeline reflects the closer's decision immediately.
+    const syncLeadStatus = async (status: string) => {
+      if (!appt.lead_id) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await supabaseAdmin.from("leads").update({ status } as any).eq("id", appt.lead_id);
+    };
 
     if (data.outcome === "clear") {
       const { error } = await context.supabase.from("appointments").update({
@@ -984,6 +991,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
       await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
+      await syncLeadStatus("Booked");
       return { ok: true };
     }
 
@@ -1063,6 +1071,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
           if (ierr) throw new Error(ierr.message);
         }
       }
+      await syncLeadStatus("Closed");
       return { ok: true };
     }
 
@@ -1078,6 +1087,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
       await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
+      await syncLeadStatus("No Show");
       return { ok: true };
     }
 
@@ -1092,6 +1102,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     }).eq("id", data.id);
     if (error) throw new Error(error.message);
     await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
+    await syncLeadStatus("Lost");
     return { ok: true };
   });
 
@@ -1228,7 +1239,10 @@ export const getAppointmentSetter = createServerFn({ method: "GET" })
     }
     if (!allowed) return null;
 
-    const { data: prof } = await context.supabase
+    // Use admin client so profile RLS (own-profile-only) doesn't block the read
+    // when the viewer is an assigned closer (not the setter).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: prof } = await supabaseAdmin
       .from("profiles")
       .select("user_id, full_name, email")
       .eq("user_id", appt.user_id)
