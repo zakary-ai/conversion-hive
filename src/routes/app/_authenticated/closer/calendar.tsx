@@ -85,6 +85,11 @@ function CloserCalendar() {
                     <span className="text-primary hover:underline">{a.name}</span>
                     <Badge variant="secondary" className="text-[10px]">B2B</Badge>
                     <Badge variant="secondary" className="text-[10px]">{a.status}</Badge>
+                    {a.confirmed_at ? (
+                      <Badge className="text-[10px] bg-success/15 text-success border-success/30 hover:bg-success/20">Confirmed</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] text-muted-foreground">Not confirmed</Badge>
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
                     <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {time}</span>
