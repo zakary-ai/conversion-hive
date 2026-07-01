@@ -127,6 +127,11 @@ function CloserHome() {
         </div>
       </section>
 
+      {lines?.b2b && <MyAvailabilitySection line="b2b" label="My B2B availability & notes" />}
+      {lines?.b2c && <MyAvailabilitySection line="b2c" label="My B2C availability & notes" />}
+
+
+
       {outcomeFor && (
         <OutcomeDialog
           bookingId={outcomeFor.id}
