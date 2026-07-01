@@ -35,7 +35,7 @@ export function CloserDetailDialog({
     enabled: !!closerId && open,
   });
 
-  const [activeFilter, setActiveFilter] = useState<"all" | "not-logged" | "not-interested" | "no-show" | "closed">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "not-logged" | "not-interested" | "no-show" | "closed" | "dq">("all");
 
   const bookings = detail?.bookings ?? [];
   const withOutcome = bookings.filter((b) => b.outcome);
@@ -47,6 +47,7 @@ export function CloserDetailDialog({
     if (activeFilter === "not-interested") return b.outcome === "not_interested";
     if (activeFilter === "no-show") return b.outcome === "no_show";
     if (activeFilter === "closed") return b.outcome === "closed" || b.outcome === "deposit";
+    if (activeFilter === "dq") return b.outcome === "disqualified";
     return false;
   });
 
@@ -56,6 +57,7 @@ export function CloserDetailDialog({
     { key: "not-interested" as const, label: "Not interested", count: withOutcome.filter((b) => b.outcome === "not_interested").length },
     { key: "no-show" as const, label: "No show", count: withOutcome.filter((b) => b.outcome === "no_show").length },
     { key: "closed" as const, label: "Closed", count: withOutcome.filter((b) => b.outcome === "closed" || b.outcome === "deposit").length },
+    { key: "dq" as const, label: "DQ", count: withOutcome.filter((b) => b.outcome === "disqualified").length },
   ];
 
   return (
