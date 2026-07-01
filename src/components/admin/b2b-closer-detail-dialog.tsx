@@ -226,7 +226,7 @@ function UpcomingRow({ a, onLog }: { a: DetailAppt; onLog: () => void }) {
   );
 }
 
-function OutcomeRow({ a, onEdit }: { a: DetailAppt; onEdit: () => void }) {
+function OutcomeRow({ a, onEdit, onClear, clearing }: { a: DetailAppt; onEdit: () => void; onClear?: () => void; clearing?: boolean }) {
   return (
     <Card className="p-3">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -241,7 +241,7 @@ function OutcomeRow({ a, onEdit }: { a: DetailAppt; onEdit: () => void }) {
           </div>
           {a.lost_reason && <div className="text-xs mt-1 italic text-muted-foreground">{a.lost_reason}</div>}
         </div>
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2">
           {a.outcome === "closed" && (
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Commission</div>
@@ -251,6 +251,11 @@ function OutcomeRow({ a, onEdit }: { a: DetailAppt; onEdit: () => void }) {
           <Button size="sm" variant="outline" className="h-7 gap-1" onClick={onEdit}>
             <Pencil className="h-3 w-3" /> Edit
           </Button>
+          {onClear && (
+            <Button size="sm" variant="ghost" className="h-7 gap-1 text-destructive hover:text-destructive" onClick={onClear} disabled={clearing}>
+              <Trash2 className="h-3 w-3" /> Delete
+            </Button>
+          )}
         </div>
       </div>
     </Card>
