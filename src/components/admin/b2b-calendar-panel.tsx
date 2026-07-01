@@ -38,10 +38,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video, Eye } from "lucide-react";
+import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video, Eye, ClipboardCheck, CalendarRange } from "lucide-react";
 import { toast } from "sonner";
 import { EmailPreviewDialog } from "./email-preview-dialog";
 import { AdminCloserAvailabilityPanel } from "./admin-closer-availability-panel";
+import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
+import { RescheduleDialog } from "@/components/reschedule-dialog";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
