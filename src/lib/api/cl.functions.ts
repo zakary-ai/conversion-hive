@@ -279,6 +279,13 @@ export const updateLead = createServerFn({ method: "POST" })
     if (data.company !== undefined) patch.company = data.company;
     if (data.contacted === true) patch.contacted_at = new Date().toISOString();
     if (data.contacted === false) patch.contacted_at = null;
+    // A lead becomes "contacted" only once an outcome is recorded.
+    if (data.status !== undefined && data.status !== "New" && patch.contacted_at === undefined) {
+      patch.contacted_at = new Date().toISOString();
+    }
+    if (data.status === "New" && patch.contacted_at === undefined) {
+      patch.contacted_at = null;
+    }
     const { error } = await context.supabase.from("leads").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
 
@@ -1611,6 +1618,14 @@ export const getClientDetail = createServerFn({ method: "GET" })
     const bookingsScheduled = inRange(allBookings, "scheduled_at");
     const leadsInRange = inRange(allLeads, "created_at");
     const callsInRange = inRange(allCalls as Record<string, unknown>[], "started_at");
+    // Dials = leads the setter recorded an outcome on within the window.
+    // A "dial" is any lead whose status moved off "New"; we filter by
+    // last_status_change_at so it matches the Today's Leads → Contacted list
+    // and the Lead history list exactly.
+    const dialedInRange = inRange(
+      allLeads.filter((l) => l.status !== "New") as Record<string, unknown>[],
+      "last_status_change_at",
+    );
 
     return {
       profile: profile.data,
@@ -1631,7 +1646,8 @@ export const getClientDetail = createServerFn({ method: "GET" })
         no_show: bookingsScheduled.filter((a) => a.outcome === "no_show").length,
         pending: bookingsScheduled.filter((a) => !a.outcome).length,
         leadsCount: leadsInRange.length,
-        dials: (callsInRange as Array<{ counted_at: string | null }>).filter((c) => c.counted_at).length,
+        dials: dialedInRange.length,
+        callsWithArtifacts: (callsInRange as Array<{ counted_at: string | null }>).filter((c) => c.counted_at).length,
       },
     };
   });

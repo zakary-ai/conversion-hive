@@ -48,7 +48,9 @@ export const startBridgeCall = createServerFn({ method: "POST" })
       started_at: new Date().toISOString(),
     }).select("id").maybeSingle();
 
-    await supabase.from("leads").update({ contacted_at: new Date().toISOString() }).eq("id", lead.id);
+    // Note: contacted_at is set when the setter records an outcome (updateLead),
+    // not when a call starts. That keeps "contacted" and "dials" in sync.
+
 
     return { ok: true, call_log_id: log?.id, dial: toNumber, from: null as string | null };
   });
