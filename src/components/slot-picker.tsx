@@ -44,10 +44,12 @@ export function SlotPicker({ value, onChange }: Props) {
 
   // Slots are bucketed by the EST business day regardless of display tz.
   const dateKey = date ? toDateKey(date, BASE_TZ) : null;
-  const { data: slots = [], isLoading } = useQuery({
+  const { data: slots = [], isLoading, error, refetch } = useQuery({
     queryKey: ["available-slots", dateKey, BASE_TZ],
     queryFn: () => listAvailableSlots({ data: { date: dateKey!, tz: BASE_TZ } }),
     enabled: !!dateKey,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const tzShort = US_TIMEZONES.find((t) => t.value === displayTz)?.label ?? displayTz;
