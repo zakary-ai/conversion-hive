@@ -420,9 +420,17 @@ function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenCh
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [payTarget, setPayTarget] = useState<{ user_id: string; name: string; total: number; ids: string[] } | null>(null);
+  const [payNote, setPayNote] = useState("");
+
   const payAll = useMutation({
-    mutationFn: (ids: string[]) => recordPayout({ data: { commission_ids: ids, note: null } }),
-    onSuccess: () => { toast.success("Payout recorded"); qc.invalidateQueries({ queryKey: ["b2b-commissions"] }); },
+    mutationFn: (args: { ids: string[]; note: string | null }) => recordPayout({ data: { commission_ids: args.ids, note: args.note } }),
+    onSuccess: () => {
+      toast.success("Payout recorded");
+      qc.invalidateQueries({ queryKey: ["b2b-commissions"] });
+      setPayTarget(null);
+      setPayNote("");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -488,7 +496,7 @@ function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenCh
                         {bucket === "unpaid" && (
                           <Button
                             size="sm"
-                            onClick={() => payAll.mutate(g.rows.map((r) => r.id))}
+                            onClick={() => { setPayTarget({ user_id: g.user_id, name: g.name, total: g.total, ids: g.rows.map((r) => r.id) }); setPayNote(""); }}
                             disabled={payAll.isPending}
                           >
                             <Wallet className="h-3.5 w-3.5 mr-1" /> Pay out
@@ -525,6 +533,30 @@ function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenCh
         </SheetContent>
       </Sheet>
 
+
+      <Dialog open={payTarget !== null} onOpenChange={(o) => { if (!o) { setPayTarget(null); setPayNote(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Pay out {payTarget?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              Marking <span className="font-semibold text-foreground">{money(payTarget?.total ?? 0)}</span> across {payTarget?.ids.length ?? 0} entr{(payTarget?.ids.length ?? 0) === 1 ? "y" : "ies"} as paid.
+            </div>
+            <div>
+              <Label>Note (optional)</Label>
+              <Textarea rows={3} value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="e.g. Venmo, ref #1234" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setPayTarget(null)}>Cancel</Button>
+            <Button
+              onClick={() => payTarget && payAll.mutate({ ids: payTarget.ids, note: payNote || null })}
+              disabled={payAll.isPending}
+            >
+              {payAll.isPending ? "Recording…" : "Confirm payout"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <RecordPayoutDialog
         open={recordOpen}
