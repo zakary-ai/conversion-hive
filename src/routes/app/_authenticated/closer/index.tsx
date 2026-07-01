@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
+import { MyAvailabilitySection } from "@/components/my-availability-section";
+import { getMyCloserLines } from "@/lib/api/closer-availability.functions";
 
 export const Route = createFileRoute("/app/_authenticated/closer/")({
   beforeLoad: async ({ context }) => {
