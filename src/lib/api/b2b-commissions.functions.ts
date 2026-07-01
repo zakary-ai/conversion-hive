@@ -171,7 +171,18 @@ export const addB2BCommission = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
-    const inserts: Array<Record<string, unknown>> = [];
+    type CommissionInsert = {
+      user_id: string;
+      role: string;
+      amount: number;
+      commission_percent: number;
+      deal_amount: number;
+      status: string;
+      note: string | null;
+      added_by: string;
+      created_at: string;
+    };
+    const inserts: CommissionInsert[] = [];
     const nowIso = new Date().toISOString();
     if (data.setter_user_id && data.setter_percent != null) {
       inserts.push({
