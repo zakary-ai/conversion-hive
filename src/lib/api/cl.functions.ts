@@ -948,6 +948,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         lost_reason: z.string().trim().max(2000).optional().default(""),
       }),
       z.object({ id: z.string().uuid(), outcome: z.literal("no_show") }),
+      z.object({ id: z.string().uuid(), outcome: z.literal("disqualified") }),
       z.object({ id: z.string().uuid(), outcome: z.literal("clear") }),
     ]).parse
   )
