@@ -92,10 +92,15 @@ export function SlotPicker({ value, onChange }: Props) {
         )}
         {!date && <div className="text-sm text-muted-foreground">Select a date to see open times.</div>}
         {date && isLoading && <div className="text-sm text-muted-foreground">Loading times…</div>}
-        {date && !isLoading && slots.length === 0 && (
+        {date && !isLoading && !error && slots.length === 0 && (
           <div className="text-sm text-muted-foreground">No open times this day.</div>
         )}
-        {slots.length > 0 && (
+        {date && error && (
+          <div className="text-sm text-destructive space-y-2">
+            <div>Couldn't load times: {(error as Error).message}</div>
+            <Button type="button" size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
+          </div>
+        )}
           <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto">
             {slots.map((iso) => {
               const d = new Date(iso);
