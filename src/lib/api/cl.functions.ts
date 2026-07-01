@@ -349,6 +349,7 @@ const AppointmentInput = z.object({
   phone: z.string().max(50).optional().nullable(),
   email: z.string().max(200).optional().nullable(),
   context: z.string().max(5000).optional().nullable(),
+  timezone: z.string().max(60).optional().nullable(),
 });
 
 // ---------- Per-closer Zoom (B2B routing) ----------
