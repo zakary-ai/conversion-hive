@@ -378,14 +378,17 @@ export function B2bCalendarPanel() {
 
 type DayBooking = {
   id: string;
+  lead_id?: string | null;
   scheduled_at: string;
   status: string | null;
   name: string;
   email: string | null;
   phone: string | null;
+  context?: string | null;
   meeting_url?: string | null;
   assigned_closer_id?: string | null;
   b2b_closer_id?: string | null;
+  outcome?: string | null;
   closers?: { full_name: string; email: string } | null;
   b2b_closer?: { full_name: string; email: string } | null;
 };
