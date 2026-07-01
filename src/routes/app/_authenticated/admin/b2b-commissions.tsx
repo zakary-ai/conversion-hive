@@ -13,8 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, CheckCircle2, Pencil, Trash2, Wallet, Clock } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Plus, CheckCircle2, Pencil, Trash2, Wallet, Clock, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+
 
 const opts = queryOptions({ queryKey: ["b2b-commissions"], queryFn: () => listB2BCommissions() });
 
@@ -33,9 +36,11 @@ function B2BCommissions() {
   const [addOpen, setAddOpen] = useState(false);
   const [payoutsOpen, setPayoutsOpen] = useState(false);
 
-  // filters for "All entries"
-  const [from, setFrom] = useState<string>("");
-  const [to, setTo] = useState<string>("");
+  // filters for "All entries" — default to last 30 days
+  const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
+  const defaultFrom = useMemo(() => { const d = new Date(today); d.setDate(d.getDate() - 30); return d; }, [today]);
+  const [from, setFrom] = useState<Date | undefined>(defaultFrom);
+  const [to, setTo] = useState<Date | undefined>(today);
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["b2b-commissions"] });
@@ -43,7 +48,7 @@ function B2BCommissions() {
   const pending = data.groups.filter((g) => g.status !== "approved");
   const filteredGroups = useMemo(() => {
     let g = data.groups.slice();
-    if (from) g = g.filter((x) => new Date(x.created_at) >= new Date(from));
+    if (from) g = g.filter((x) => new Date(x.created_at) >= from);
     if (to) {
       const end = new Date(to);
       end.setHours(23, 59, 59, 999);
@@ -52,6 +57,11 @@ function B2BCommissions() {
     g.sort((a, b) => (sortDir === "desc" ? b.created_at.localeCompare(a.created_at) : a.created_at.localeCompare(b.created_at)));
     return g;
   }, [data.groups, from, to, sortDir]);
+
+  const fmtBtn = (d: Date | undefined) =>
+    d ? d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Pick date";
+
+
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -87,11 +97,31 @@ function B2BCommissions() {
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1">
               <Label className="text-[10px] text-muted-foreground">From</Label>
-              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-8 w-[140px]" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 w-[150px] justify-start font-normal">
+                    <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                    {fmtBtn(from)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={from} onSelect={setFrom} />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="flex items-center gap-1">
               <Label className="text-[10px] text-muted-foreground">To</Label>
-              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-8 w-[140px]" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 w-[150px] justify-start font-normal">
+                    <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                    {fmtBtn(to)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={to} onSelect={setTo} />
+                </PopoverContent>
+              </Popover>
             </div>
             <Select value={sortDir} onValueChange={(v) => setSortDir(v as "desc" | "asc")}>
               <SelectTrigger className="h-8 w-[140px]"><SelectValue /></SelectTrigger>
@@ -100,10 +130,9 @@ function B2BCommissions() {
                 <SelectItem value="asc">Oldest first</SelectItem>
               </SelectContent>
             </Select>
-            {(from || to) && (
-              <Button size="sm" variant="ghost" onClick={() => { setFrom(""); setTo(""); }}>Clear</Button>
-            )}
+            <Button size="sm" variant="ghost" onClick={() => { setFrom(defaultFrom); setTo(today); }}>Reset</Button>
           </div>
+
         </div>
         {filteredGroups.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">No entries in this range.</div>

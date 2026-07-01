@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getLead, getMe, setAppointmentOutcome } from "@/lib/api/cl.functions";
-import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw, UserX } from "lucide-react";
+import { getLead, getMe, setAppointmentOutcome, getAppointmentSetter } from "@/lib/api/cl.functions";
+import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw, UserX, UserCheck } from "lucide-react";
+
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,12 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
     enabled: !!appt?.lead_id,
   });
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMe() });
+  const { data: setter } = useQuery({
+    queryKey: ["appt-setter", appt?.id],
+    queryFn: () => getAppointmentSetter({ data: { id: appt!.id } }),
+    enabled: !!appt?.id,
+  });
+
 
   const fmt = (s?: string | null) =>
     s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
@@ -122,8 +129,10 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 )}
                 <Row icon={Phone} label="Phone" value={appt.phone ? <a href={`tel:${appt.phone}`} className="text-primary font-medium">{appt.phone}</a> : "—"} />
                 <Row icon={Mail} label="Email" value={appt.email || "—"} />
+                {setter && <Row icon={UserCheck} label="Setter" value={setter.name} />}
                 {appt.context && <Row icon={User} label="Context" value={<span className="block whitespace-pre-wrap break-words text-right">{appt.context}</span>} />}
               </div>
+
 
               {showOutcome && (
                 <div className="rounded-lg border border-border p-3 space-y-3">

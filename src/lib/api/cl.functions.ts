@@ -993,12 +993,14 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
 
-      // Tie commission to the closer logging it (so it appears on their account)
-      const commissionUserId = actingCloserUserId ?? appt.user_id;
-      const { data: existing } = await context.supabase
-        .from("commissions").select("id, status").eq("appointment_id", data.id).maybeSingle();
+      // The closer commission (person who logged the outcome, or setter if admin)
+      const closerUserId = actingCloserUserId ?? appt.user_id;
       const note = `Closed deal: ${appt.name} ($${data.deal_amount.toFixed(2)} @ ${data.commission_percent}%)`;
-      if (existing) {
+
+      // Upsert closer row (role='closer')
+      const { data: existingCloser } = await context.supabase
+        .from("commissions").select("id").eq("appointment_id", data.id).eq("role", "closer").maybeSingle();
+      if (existingCloser) {
         const { error: uerr } = await context.supabase.from("commissions")
           .update({
             amount: data.commission_amount,
@@ -1006,13 +1008,14 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
             deal_amount: data.deal_amount,
             note,
             added_by: context.userId,
-            user_id: commissionUserId,
+            user_id: closerUserId,
           })
-          .eq("id", existing.id);
+          .eq("id", existingCloser.id);
         if (uerr) throw new Error(uerr.message);
       } else {
         const { error: ierr } = await context.supabase.from("commissions").insert({
-          user_id: commissionUserId,
+          user_id: closerUserId,
+          role: "closer",
           amount: data.commission_amount,
           commission_percent: data.commission_percent,
           deal_amount: data.deal_amount,
@@ -1025,8 +1028,39 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         });
         if (ierr) throw new Error(ierr.message);
       }
+
+      // Setter commission row (role='setter') — only if setter differs from the closer
+      const setterUserId = appt.user_id as string | null;
+      if (setterUserId && setterUserId !== closerUserId) {
+        const { data: existingSetter } = await context.supabase
+          .from("commissions").select("id, status, commission_percent").eq("appointment_id", data.id).eq("role", "setter").maybeSingle();
+        const setterNote = `Setter for: ${appt.name} ($${data.deal_amount.toFixed(2)})`;
+        if (existingSetter) {
+          // Recalculate amount if setter percent already set
+          const pct = existingSetter.commission_percent != null ? Number(existingSetter.commission_percent) : null;
+          const patch: { deal_amount: number; note: string; amount?: number } = { deal_amount: data.deal_amount, note: setterNote };
+          if (pct != null) patch.amount = Math.round(data.deal_amount * pct) / 100;
+          const { error: uerr } = await context.supabase.from("commissions").update(patch).eq("id", existingSetter.id);
+          if (uerr) throw new Error(uerr.message);
+
+        } else {
+          const { error: ierr } = await context.supabase.from("commissions").insert({
+            user_id: setterUserId,
+            role: "setter",
+            amount: 0,
+            commission_percent: null,
+            deal_amount: data.deal_amount,
+            status: "pending",
+            note: setterNote,
+            added_by: context.userId,
+            appointment_id: data.id,
+          });
+          if (ierr) throw new Error(ierr.message);
+        }
+      }
       return { ok: true };
     }
+
 
     if (data.outcome === "no_show") {
       const { error } = await context.supabase.from("appointments").update({
@@ -1162,6 +1196,43 @@ export const getLeadDetail = createServerFn({ method: "GET" })
     return { lead, calls: calls ?? [], setter };
   });
 
+
+// Returns the setter (creator) of an appointment. Accessible to admins, the setter themselves,
+// and the assigned closer (b2c or b2b).
+export const getAppointmentSetter = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: appt } = await context.supabase
+      .from("appointments")
+      .select("user_id, assigned_closer_id, b2b_closer_id")
+      .eq("id", data.id)
+      .single();
+    if (!appt) return null;
+
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    let allowed = isAdmin || appt.user_id === context.userId;
+    if (!allowed && appt.assigned_closer_id) {
+      const { data: c } = await context.supabase.from("closers").select("id").eq("id", appt.assigned_closer_id).eq("user_id", context.userId).maybeSingle();
+      if (c) allowed = true;
+    }
+    if (!allowed && appt.b2b_closer_id) {
+      const { data: bc } = await context.supabase.from("b2b_closers").select("id").eq("id", appt.b2b_closer_id).eq("user_id", context.userId).maybeSingle();
+      if (bc) allowed = true;
+    }
+    if (!allowed) return null;
+
+    const { data: prof } = await context.supabase
+      .from("profiles")
+      .select("user_id, full_name, email")
+      .eq("user_id", appt.user_id)
+      .maybeSingle();
+    return prof ? {
+      user_id: prof.user_id,
+      name: (prof.full_name as string | null) || (prof.email as string | null) || "Setter",
+    } : null;
+  });
 
 
 
