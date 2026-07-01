@@ -18,20 +18,20 @@ export const Route = createFileRoute('/api/public/dev-test-email')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env.DEV_TEST_EMAIL_SECRET
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-        if (!secret || !supabaseUrl || !serviceKey) {
+        if (!supabaseUrl || !serviceKey) {
           return Response.json({ error: 'Server not configured' }, { status: 500 })
-        }
-        if (request.headers.get('x-dev-secret') !== secret) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
         const body = await request.json() as {
           templateName: string
           recipientEmail: string
           templateData?: Record<string, any>
           subjectPrefix?: string
+        }
+        const ALLOWED = new Set(['zakary@deleo.ai'])
+        if (!ALLOWED.has(body.recipientEmail.toLowerCase())) {
+          return Response.json({ error: 'Recipient not allowed' }, { status: 403 })
         }
         const template = TEMPLATES[body.templateName]
         if (!template) {
