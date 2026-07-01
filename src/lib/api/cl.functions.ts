@@ -980,7 +980,8 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     // the lead profile / pipeline reflects the closer's decision immediately.
     const syncLeadStatus = async (status: string) => {
       if (!appt.lead_id) return;
-      await supabaseAdmin.from("leads").update({ status }).eq("id", appt.lead_id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await supabaseAdmin.from("leads").update({ status } as any).eq("id", appt.lead_id);
     };
 
     if (data.outcome === "clear") {
