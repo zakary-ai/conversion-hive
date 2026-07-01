@@ -10,6 +10,8 @@ import { CalendarClock, Globe } from "lucide-react";
 type Props = {
   value: Date | null;
   onChange: (d: Date) => void;
+  tz?: string;
+  onTzChange?: (tz: string) => void;
 };
 
 // Calendar is always based in EST so slot day buckets match the business calendar.
@@ -31,9 +33,14 @@ function toDateKey(d: Date, tz: string) {
   }).format(d);
 }
 
-export function SlotPicker({ value, onChange }: Props) {
-  // Display timezone — defaults to EST, setter can switch to clarify booking time for the lead.
-  const [displayTz, setDisplayTz] = useState<string>(BASE_TZ);
+export function SlotPicker({ value, onChange, tz, onTzChange }: Props) {
+  // Display timezone — defaults to EST. When a parent passes tz/onTzChange it's controlled.
+  const [internalTz, setInternalTz] = useState<string>(BASE_TZ);
+  const displayTz = tz ?? internalTz;
+  const setDisplayTz = (v: string) => {
+    if (onTzChange) onTzChange(v);
+    else setInternalTz(v);
+  };
 
   const today = useMemo(() => {
     const d = new Date();
