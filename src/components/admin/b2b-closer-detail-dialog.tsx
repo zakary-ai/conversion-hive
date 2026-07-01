@@ -72,18 +72,20 @@ export function B2bCloserDetailDialog({
     closed: withOutcome.filter((a) => a.outcome === "closed").length,
     lost: withOutcome.filter((a) => a.outcome === "lost").length,
     noShow: withOutcome.filter((a) => a.outcome === "no_show").length,
+    dq: withOutcome.filter((a) => a.outcome === "disqualified").length,
     totalDeals: withOutcome.reduce((s, a) => s + (a.outcome === "closed" ? Number(a.deal_amount ?? 0) : 0), 0),
   };
   const totalLogged = stats.closed + stats.lost;
   const closeRate = totalLogged === 0 ? 0 : Math.round((stats.closed / totalLogged) * 100);
 
-  const [activeFilter, setActiveFilter] = useState<"all" | "not-logged" | "lost" | "no-show" | "closed">("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "not-logged" | "lost" | "no-show" | "closed" | "dq">("all");
   const filteredUpcoming = activeFilter === "all" || activeFilter === "not-logged" ? upcoming : [];
   const filteredOutcomes = withOutcome.filter((b) => {
     if (activeFilter === "all") return true;
     if (activeFilter === "lost") return b.outcome === "lost";
     if (activeFilter === "no-show") return b.outcome === "no_show";
     if (activeFilter === "closed") return b.outcome === "closed";
+    if (activeFilter === "dq") return b.outcome === "disqualified";
     return false;
   });
 
@@ -93,6 +95,7 @@ export function B2bCloserDetailDialog({
     { key: "lost" as const, label: "Lost", count: stats.lost },
     { key: "no-show" as const, label: "No show", count: stats.noShow },
     { key: "closed" as const, label: "Closed", count: stats.closed },
+    { key: "dq" as const, label: "DQ", count: stats.dq },
   ];
 
   return (
