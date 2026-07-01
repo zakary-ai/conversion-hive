@@ -153,6 +153,13 @@ function SetterDetailPage() {
         <div className="text-xs text-muted-foreground mt-2">{data.completions.length} of {data.totalModules} modules complete</div>
       </Card>
 
+      <CallsGoingLiveCard
+        appointments={data.appointments as ApptRow[]}
+        fromMs={dateRange.from ? startOfDay(dateRange.from).getTime() : null}
+        toMs={dateRange.to ? endOfDay(dateRange.to).getTime() : null}
+        rangeLabel={rangeLabel}
+      />
+
       <BookingHistoryCard appointments={data.appointments as ApptRow[]} />
 
       <QuizScoresCard attempts={data.attempts as QuizAttempt[]} />
