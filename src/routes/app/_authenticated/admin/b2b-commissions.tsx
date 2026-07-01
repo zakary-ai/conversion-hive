@@ -385,80 +385,257 @@ function AddDialog({ open, onOpenChange, setters, closers, onAdded }: {
   );
 }
 
+type PayoutBucket = "unpaid" | "paid";
+
 function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenChange: (v: boolean) => void; entries: B2BCommissionEntry[] }) {
-  const grouped = useMemo(() => {
-    const m = new Map<string, { user_id: string; name: string; approved: number; pending: number; rows: B2BCommissionEntry[] }>();
-    for (const e of entries) {
-      const g = m.get(e.user_id) ?? { user_id: e.user_id, name: e.user_name, approved: 0, pending: 0, rows: [] };
-      if (e.status === "approved") g.approved += e.amount;
-      else g.pending += e.amount;
+  const qc = useQueryClient();
+  const [bucket, setBucket] = useState<PayoutBucket | null>(null);
+  const [recordOpen, setRecordOpen] = useState(false);
+
+  // Only approved commissions count as "owed" / "paid"
+  const approved = useMemo(() => entries.filter((e) => e.status === "approved"), [entries]);
+  const unpaid = useMemo(() => approved.filter((e) => !e.paid_at), [approved]);
+  const paid = useMemo(() => approved.filter((e) => !!e.paid_at), [approved]);
+
+  const totalUnpaid = unpaid.reduce((s, e) => s + e.amount, 0);
+  const totalPaid = paid.reduce((s, e) => s + e.amount, 0);
+
+  const groupByUser = (list: B2BCommissionEntry[]) => {
+    const m = new Map<string, { user_id: string; name: string; total: number; rows: B2BCommissionEntry[] }>();
+    for (const e of list) {
+      const g = m.get(e.user_id) ?? { user_id: e.user_id, name: e.user_name, total: 0, rows: [] };
+      g.total += e.amount;
       g.rows.push(e);
       m.set(e.user_id, g);
     }
-    return Array.from(m.values()).sort((a, b) => (b.approved + b.pending) - (a.approved + a.pending));
-  }, [entries]);
+    return Array.from(m.values()).sort((a, b) => b.total - a.total);
+  };
 
-  const grandApproved = grouped.reduce((s, g) => s + g.approved, 0);
-  const grandPending = grouped.reduce((s, g) => s + g.pending, 0);
+  const bucketList = bucket === "unpaid" ? unpaid : bucket === "paid" ? paid : [];
+  const bucketGroups = useMemo(() => groupByUser(bucketList), [bucketList]);
+
+  const undo = useMutation({
+    mutationFn: (id: string) => undoPayout({ data: { commission_ids: [id] } }),
+    onSuccess: () => { toast.success("Marked unpaid"); qc.invalidateQueries({ queryKey: ["b2b-commissions"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Payouts</SheetTitle>
-        </SheetHeader>
-        <div className="mt-4 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="p-3">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Approved owed</div>
-              <div className="text-xl font-semibold text-success">{money(grandApproved)}</div>
-            </Card>
-            <Card className="p-3">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Pending owed</div>
-              <div className="text-xl font-semibold text-warning">{money(grandPending)}</div>
-            </Card>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <div className="flex items-center justify-between gap-2">
+              <SheetTitle>Payouts</SheetTitle>
+              <Button size="sm" onClick={() => setRecordOpen(true)} disabled={unpaid.length === 0}>
+                <Wallet className="h-4 w-4 mr-1" /> Record payout
+              </Button>
+            </div>
+          </SheetHeader>
+          <div className="mt-4 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setBucket("unpaid")}
+                className="text-left"
+              >
+                <Card className="p-3 hover:border-warning/60 transition-colors">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Not Paid Out</div>
+                  <div className="text-xl font-semibold text-warning">{money(totalUnpaid)}</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{unpaid.length} entr{unpaid.length === 1 ? "y" : "ies"} · tap to view</div>
+                </Card>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBucket("paid")}
+                className="text-left"
+              >
+                <Card className="p-3 hover:border-success/60 transition-colors">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Paid Out</div>
+                  <div className="text-xl font-semibold text-success">{money(totalPaid)}</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{paid.length} entr{paid.length === 1 ? "y" : "ies"} · tap to view</div>
+                </Card>
+              </button>
+            </div>
+
+            {approved.length === 0 && (
+              <Card className="p-6 text-center text-sm text-muted-foreground">No approved commissions yet.</Card>
+            )}
           </div>
+        </SheetContent>
+      </Sheet>
 
-          {grouped.length === 0 && (
-            <Card className="p-6 text-center text-sm text-muted-foreground">No commissions yet.</Card>
-          )}
-
-          {grouped.map((g) => (
-            <Card key={g.user_id} className="overflow-hidden">
-              <div className="p-3 border-b border-border flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{g.name}</div>
-                  <div className="text-[11px] text-muted-foreground">{g.rows.length} deal{g.rows.length === 1 ? "" : "s"}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Owed</div>
-                  <div className="font-semibold">{money(g.approved + g.pending)}</div>
-                  <div className="text-[10px] text-muted-foreground">
-                    <span className="text-success">{money(g.approved)}</span> approved · <span className="text-warning">{money(g.pending)}</span> pending
+      <Dialog open={bucket !== null} onOpenChange={(o) => !o && setBucket(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{bucket === "unpaid" ? "Not Paid Out" : "Paid Out"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {bucketGroups.length === 0 && (
+              <div className="p-6 text-center text-sm text-muted-foreground">Nothing here.</div>
+            )}
+            {bucketGroups.map((g) => (
+              <Card key={g.user_id} className="overflow-hidden">
+                <div className="p-3 border-b border-border flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{g.name}</div>
+                    <div className="text-[11px] text-muted-foreground">{g.rows.length} entr{g.rows.length === 1 ? "y" : "ies"}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{bucket === "unpaid" ? "Owed" : "Paid"}</div>
+                    <div className={`font-semibold ${bucket === "unpaid" ? "text-warning" : "text-success"}`}>{money(g.total)}</div>
                   </div>
                 </div>
-              </div>
-              <div className="divide-y divide-border">
-                {g.rows.map((r) => (
-                  <div key={r.id} className="p-2 px-3 text-sm flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-[13px]">
-                        {r.note || (r.role ? `${r.role} commission` : "Commission")}
+                <div className="divide-y divide-border">
+                  {g.rows.map((r) => (
+                    <div key={r.id} className="p-2 px-3 text-sm flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px]">{r.note || (r.role ? `${r.role} commission` : "Commission")}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {fmtDate(r.created_at)}
+                          {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
+                          {r.deal_amount != null ? ` of ${money(r.deal_amount)}` : ""}
+                          {r.paid_at ? ` · paid ${fmtDate(r.paid_at)}` : ""}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {fmtDate(r.created_at)}
-                        {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
-                        {r.deal_amount != null ? ` of ${money(r.deal_amount)}` : ""}
+                      <div className="flex items-center gap-2">
+                        <div className={`font-medium ${bucket === "unpaid" ? "text-warning" : "text-success"}`}>{money(r.amount)}</div>
+                        {bucket === "paid" && (
+                          <Button size="sm" variant="ghost" onClick={() => undo.mutate(r.id)} disabled={undo.isPending}>Undo</Button>
+                        )}
                       </div>
                     </div>
-                    <div className={`font-medium ${r.status === "approved" ? "text-success" : "text-warning"}`}>{money(r.amount)}</div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
-      </SheetContent>
-    </Sheet>
+                  ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <RecordPayoutDialog
+        open={recordOpen}
+        onOpenChange={setRecordOpen}
+        unpaidGroups={groupByUser(unpaid)}
+        onDone={() => qc.invalidateQueries({ queryKey: ["b2b-commissions"] })}
+      />
+    </>
   );
 }
+
+function RecordPayoutDialog({
+  open,
+  onOpenChange,
+  unpaidGroups,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  unpaidGroups: Array<{ user_id: string; name: string; total: number; rows: B2BCommissionEntry[] }>;
+  onDone: () => void;
+}) {
+  const [userId, setUserId] = useState<string>("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [note, setNote] = useState("");
+
+  const activeUser = unpaidGroups.find((g) => g.user_id === userId);
+
+  // reset selection when user changes
+  const pickUser = (id: string) => {
+    setUserId(id);
+    const g = unpaidGroups.find((x) => x.user_id === id);
+    setSelected(new Set(g?.rows.map((r) => r.id) ?? []));
+  };
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedTotal = activeUser
+    ? activeUser.rows.filter((r) => selected.has(r.id)).reduce((s, r) => s + r.amount, 0)
+    : 0;
+
+  const submit = useMutation({
+    mutationFn: () => recordPayout({ data: { commission_ids: Array.from(selected), note: note || null } }),
+    onSuccess: () => {
+      toast.success("Payout recorded");
+      setUserId(""); setSelected(new Set()); setNote("");
+      onDone();
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { setUserId(""); setSelected(new Set()); setNote(""); } onOpenChange(o); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Record a payout</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label>Recipient</Label>
+            <Select value={userId} onValueChange={pickUser}>
+              <SelectTrigger><SelectValue placeholder="Choose person" /></SelectTrigger>
+              <SelectContent>
+                {unpaidGroups.map((g) => (
+                  <SelectItem key={g.user_id} value={g.user_id}>
+                    {g.name} — {money(g.total)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {activeUser && (
+            <div className="rounded-md border border-border divide-y divide-border max-h-64 overflow-y-auto">
+              {activeUser.rows.map((r) => (
+                <label key={r.id} className="flex items-center gap-2 p-2 px-3 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(r.id)}
+                    onChange={() => toggle(r.id)}
+                    className="h-4 w-4"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-[13px]">{r.note || (r.role ? `${r.role} commission` : "Commission")}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {fmtDate(r.created_at)}
+                      {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
+                      {r.deal_amount != null ? ` of ${money(r.deal_amount)}` : ""}
+                    </div>
+                  </div>
+                  <div className="font-medium text-warning">{money(r.amount)}</div>
+                </label>
+              ))}
+            </div>
+          )}
+
+          <div>
+            <Label>Note (optional)</Label>
+            <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Venmo, ref #1234" />
+          </div>
+
+          {activeUser && (
+            <div className="text-sm text-muted-foreground">
+              Marking <span className="font-semibold text-foreground">{money(selectedTotal)}</span> as paid to <span className="font-semibold text-foreground">{activeUser.name}</span>.
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            onClick={() => submit.mutate()}
+            disabled={submit.isPending || selected.size === 0}
+          >
+            {submit.isPending ? "Recording…" : "Record payout"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
