@@ -420,6 +420,12 @@ function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenCh
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const payAll = useMutation({
+    mutationFn: (ids: string[]) => recordPayout({ data: { commission_ids: ids, note: null } }),
+    onSuccess: () => { toast.success("Payout recorded"); qc.invalidateQueries({ queryKey: ["b2b-commissions"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -436,24 +442,24 @@ function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenCh
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setBucket("unpaid")}
+                onClick={() => setBucket(bucket === "unpaid" ? null : "unpaid")}
                 className="text-left"
               >
-                <Card className="p-3 hover:border-warning/60 transition-colors">
+                <Card className={`p-3 hover:border-warning/60 transition-colors ${bucket === "unpaid" ? "border-warning/70 ring-1 ring-warning/40" : ""}`}>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Not Paid Out</div>
                   <div className="text-xl font-semibold text-warning">{money(totalUnpaid)}</div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">{unpaid.length} entr{unpaid.length === 1 ? "y" : "ies"} · tap to view</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{unpaid.length} entr{unpaid.length === 1 ? "y" : "ies"} · tap to {bucket === "unpaid" ? "hide" : "view"}</div>
                 </Card>
               </button>
               <button
                 type="button"
-                onClick={() => setBucket("paid")}
+                onClick={() => setBucket(bucket === "paid" ? null : "paid")}
                 className="text-left"
               >
-                <Card className="p-3 hover:border-success/60 transition-colors">
+                <Card className={`p-3 hover:border-success/60 transition-colors ${bucket === "paid" ? "border-success/70 ring-1 ring-success/40" : ""}`}>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Paid Out</div>
                   <div className="text-xl font-semibold text-success">{money(totalPaid)}</div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">{paid.length} entr{paid.length === 1 ? "y" : "ies"} · tap to view</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{paid.length} entr{paid.length === 1 ? "y" : "ies"} · tap to {bucket === "paid" ? "hide" : "view"}</div>
                 </Card>
               </button>
             </div>
@@ -461,57 +467,64 @@ function PayoutsSheet({ open, onOpenChange, entries }: { open: boolean; onOpenCh
             {approved.length === 0 && (
               <Card className="p-6 text-center text-sm text-muted-foreground">No approved commissions yet.</Card>
             )}
+
+            {bucket !== null && (
+              <div className="space-y-3">
+                {bucketGroups.length === 0 && (
+                  <Card className="p-6 text-center text-sm text-muted-foreground">Nothing here.</Card>
+                )}
+                {bucketGroups.map((g) => (
+                  <Card key={g.user_id} className="overflow-hidden">
+                    <div className="p-3 border-b border-border flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{g.name}</div>
+                        <div className="text-[11px] text-muted-foreground">{g.rows.length} entr{g.rows.length === 1 ? "y" : "ies"}</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{bucket === "unpaid" ? "Owed" : "Paid"}</div>
+                          <div className={`font-semibold ${bucket === "unpaid" ? "text-warning" : "text-success"}`}>{money(g.total)}</div>
+                        </div>
+                        {bucket === "unpaid" && (
+                          <Button
+                            size="sm"
+                            onClick={() => payAll.mutate(g.rows.map((r) => r.id))}
+                            disabled={payAll.isPending}
+                          >
+                            <Wallet className="h-3.5 w-3.5 mr-1" /> Pay out
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="divide-y divide-border">
+                      {g.rows.map((r) => (
+                        <div key={r.id} className="p-2 px-3 text-sm flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="truncate text-[13px]">{r.note || (r.role ? `${r.role} commission` : "Commission")}</div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {fmtDate(r.created_at)}
+                              {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
+                              {r.deal_amount != null ? ` of ${money(r.deal_amount)}` : ""}
+                              {r.paid_at ? ` · paid ${fmtDate(r.paid_at)}` : ""}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className={`font-medium ${bucket === "unpaid" ? "text-warning" : "text-success"}`}>{money(r.amount)}</div>
+                            {bucket === "paid" && (
+                              <Button size="sm" variant="ghost" onClick={() => undo.mutate(r.id)} disabled={undo.isPending}>Undo</Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
 
-      <Dialog open={bucket !== null} onOpenChange={(o) => !o && setBucket(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{bucket === "unpaid" ? "Not Paid Out" : "Paid Out"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            {bucketGroups.length === 0 && (
-              <div className="p-6 text-center text-sm text-muted-foreground">Nothing here.</div>
-            )}
-            {bucketGroups.map((g) => (
-              <Card key={g.user_id} className="overflow-hidden">
-                <div className="p-3 border-b border-border flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{g.name}</div>
-                    <div className="text-[11px] text-muted-foreground">{g.rows.length} entr{g.rows.length === 1 ? "y" : "ies"}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{bucket === "unpaid" ? "Owed" : "Paid"}</div>
-                    <div className={`font-semibold ${bucket === "unpaid" ? "text-warning" : "text-success"}`}>{money(g.total)}</div>
-                  </div>
-                </div>
-                <div className="divide-y divide-border">
-                  {g.rows.map((r) => (
-                    <div key={r.id} className="p-2 px-3 text-sm flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="truncate text-[13px]">{r.note || (r.role ? `${r.role} commission` : "Commission")}</div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {fmtDate(r.created_at)}
-                          {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
-                          {r.deal_amount != null ? ` of ${money(r.deal_amount)}` : ""}
-                          {r.paid_at ? ` · paid ${fmtDate(r.paid_at)}` : ""}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className={`font-medium ${bucket === "unpaid" ? "text-warning" : "text-success"}`}>{money(r.amount)}</div>
-                        {bucket === "paid" && (
-                          <Button size="sm" variant="ghost" onClick={() => undo.mutate(r.id)} disabled={undo.isPending}>Undo</Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <RecordPayoutDialog
         open={recordOpen}
