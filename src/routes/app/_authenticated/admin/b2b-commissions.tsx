@@ -36,9 +36,11 @@ function B2BCommissions() {
   const [addOpen, setAddOpen] = useState(false);
   const [payoutsOpen, setPayoutsOpen] = useState(false);
 
-  // filters for "All entries"
-  const [from, setFrom] = useState<string>("");
-  const [to, setTo] = useState<string>("");
+  // filters for "All entries" — default to last 30 days
+  const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
+  const defaultFrom = useMemo(() => { const d = new Date(today); d.setDate(d.getDate() - 30); return d; }, [today]);
+  const [from, setFrom] = useState<Date | undefined>(defaultFrom);
+  const [to, setTo] = useState<Date | undefined>(today);
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["b2b-commissions"] });
@@ -46,7 +48,7 @@ function B2BCommissions() {
   const pending = data.groups.filter((g) => g.status !== "approved");
   const filteredGroups = useMemo(() => {
     let g = data.groups.slice();
-    if (from) g = g.filter((x) => new Date(x.created_at) >= new Date(from));
+    if (from) g = g.filter((x) => new Date(x.created_at) >= from);
     if (to) {
       const end = new Date(to);
       end.setHours(23, 59, 59, 999);
@@ -55,6 +57,11 @@ function B2BCommissions() {
     g.sort((a, b) => (sortDir === "desc" ? b.created_at.localeCompare(a.created_at) : a.created_at.localeCompare(b.created_at)));
     return g;
   }, [data.groups, from, to, sortDir]);
+
+  const fmtBtn = (d: Date | undefined) =>
+    d ? d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Pick date";
+
+
 
   return (
     <div className="space-y-6 max-w-5xl">
