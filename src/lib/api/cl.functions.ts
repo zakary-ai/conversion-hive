@@ -1038,10 +1038,11 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         if (existingSetter) {
           // Recalculate amount if setter percent already set
           const pct = existingSetter.commission_percent != null ? Number(existingSetter.commission_percent) : null;
-          const patch: Record<string, unknown> = { deal_amount: data.deal_amount, note: setterNote };
+          const patch: { deal_amount: number; note: string; amount?: number } = { deal_amount: data.deal_amount, note: setterNote };
           if (pct != null) patch.amount = Math.round(data.deal_amount * pct) / 100;
           const { error: uerr } = await context.supabase.from("commissions").update(patch).eq("id", existingSetter.id);
           if (uerr) throw new Error(uerr.message);
+
         } else {
           const { error: ierr } = await context.supabase.from("commissions").insert({
             user_id: setterUserId,
