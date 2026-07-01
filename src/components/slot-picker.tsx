@@ -44,10 +44,12 @@ export function SlotPicker({ value, onChange }: Props) {
 
   // Slots are bucketed by the EST business day regardless of display tz.
   const dateKey = date ? toDateKey(date, BASE_TZ) : null;
-  const { data: slots = [], isLoading } = useQuery({
+  const { data: slots = [], isLoading, error, refetch } = useQuery({
     queryKey: ["available-slots", dateKey, BASE_TZ],
     queryFn: () => listAvailableSlots({ data: { date: dateKey!, tz: BASE_TZ } }),
     enabled: !!dateKey,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const tzShort = US_TIMEZONES.find((t) => t.value === displayTz)?.label ?? displayTz;
@@ -90,8 +92,14 @@ export function SlotPicker({ value, onChange }: Props) {
         )}
         {!date && <div className="text-sm text-muted-foreground">Select a date to see open times.</div>}
         {date && isLoading && <div className="text-sm text-muted-foreground">Loading times…</div>}
-        {date && !isLoading && slots.length === 0 && (
+        {date && !isLoading && !error && slots.length === 0 && (
           <div className="text-sm text-muted-foreground">No open times this day.</div>
+        )}
+        {date && error && (
+          <div className="text-sm text-destructive space-y-2">
+            <div>Couldn't load times: {(error as Error).message}</div>
+            <Button type="button" size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
+          </div>
         )}
         {slots.length > 0 && (
           <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto">
