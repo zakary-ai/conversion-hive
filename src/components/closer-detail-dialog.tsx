@@ -80,7 +80,7 @@ export function CloserDetailDialog({
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <Stat icon={<Target className="h-3 w-3" />} label="Close rate" value={`${stats.closeRate}%`} tone="text-success" />
-              <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Wins" value={stats.closed + stats.deposit} tone="text-success" hint={`${stats.closed} closed · ${stats.deposit} deposits`} />
+              <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Wins" value={stats.closed + stats.deposit} tone="text-success" />
               <Stat icon={<X className="h-3 w-3" />} label="Not interested" value={stats.notInterested} />
               <Stat icon={<Clock className="h-3 w-3" />} label="No show" value={stats.noShow} />
               <Stat icon={<Ban className="h-3 w-3" />} label="DQ" value={stats.disqualified} />

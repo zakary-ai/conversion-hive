@@ -128,7 +128,7 @@ export function B2bCloserDetailDialog({
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <Stat icon={<Target className="h-3 w-3" />} label="Close rate" value={`${closeRate}%`} tone="text-success" onClick={() => setActiveFilter("all")} active={activeFilter === "all"} />
-              <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Closed" value={stats.closed} tone="text-success" hint={money(stats.totalDeals)} onClick={() => setActiveFilter("closed")} active={activeFilter === "closed"} />
+              <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Wins" value={stats.closed} tone="text-success" onClick={() => setActiveFilter("closed")} active={activeFilter === "closed"} />
               <Stat icon={<X className="h-3 w-3" />} label="Lost" value={stats.lost} onClick={() => setActiveFilter("lost")} active={activeFilter === "lost"} />
               <Stat icon={<Clock className="h-3 w-3" />} label="No show" value={stats.noShow} onClick={() => setActiveFilter("no-show")} active={activeFilter === "no-show"} />
               <Stat icon={<Ban className="h-3 w-3" />} label="DQ" value={stats.dq} onClick={() => setActiveFilter("dq")} active={activeFilter === "dq"} />
