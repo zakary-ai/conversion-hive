@@ -57,14 +57,12 @@ export const BookingConfirmationEmail = ({ name, scheduledLabel, scheduledAt, me
             )}
 
             <Text style={sectionLabel}>Watch this before our call</Text>
-            <Section style={loomWrap}>
-              <Link href={loom}>
-                <Img src={loomThumb} alt="Watch the intro video on Loom" style={loomImg} width={504} />
-              </Link>
+            <Section style={loomCard}>
+              <Text style={{ ...detail, margin: '0 0 12px' }}>
+                A quick intro video from our team — please watch before we hop on.
+              </Text>
+              <Button href={loom} style={loomBtn}>▶ Watch on Loom</Button>
             </Section>
-            <Text style={{ ...muted, marginTop: '8px', fontSize: '12px' }}>
-              <Link href={loom} style={{ color: '#93c5fd' }}>Watch on Loom →</Link>
-            </Text>
 
             {confirmUrl ? (
               <>
