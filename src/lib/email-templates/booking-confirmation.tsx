@@ -1,5 +1,5 @@
 import React from 'react'
-import { Body, Button, Container, Head, Heading, Html, Img, Link, Preview, Section, Text } from '@react-email/components'
+import { Body, Button, Container, Head, Heading, Html, Preview, Section, Text } from '@react-email/components'
 import type { TemplateEntry } from './registry'
 
 interface Props {
@@ -25,8 +25,8 @@ const detail = { color: '#ffffff', fontSize: '15px', lineHeight: '24px', margin:
 const primaryBtn = { backgroundColor: '#6366f1', color: '#ffffff', borderRadius: '10px', padding: '12px 20px', textDecoration: 'none', fontWeight: 600, fontSize: '15px', display: 'inline-block' }
 const confirmBtn = { backgroundColor: '#22c55e', color: '#ffffff', borderRadius: '10px', padding: '12px 20px', textDecoration: 'none', fontWeight: 600, fontSize: '15px', display: 'inline-block' }
 const footer = { color: '#64748b', fontSize: '12px', margin: '20px 0 0', textAlign: 'center' as const }
-const loomWrap = { marginTop: '20px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #1f2937' }
-const loomImg = { width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }
+const loomCard = { marginTop: '12px', backgroundColor: '#111827', borderRadius: '12px', padding: '18px 20px', border: '1px solid #1f2937' }
+const loomBtn = { backgroundColor: '#ffffff', color: '#0a0a14', borderRadius: '10px', padding: '12px 20px', textDecoration: 'none', fontWeight: 600, fontSize: '15px', display: 'inline-block' }
 const sectionLabel = { color: '#cbd5e1', fontSize: '13px', margin: '20px 0 8px', textTransform: 'uppercase' as const, letterSpacing: '0.08em', fontWeight: 600 }
 
 export const BookingConfirmationEmail = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes, confirmUrl, loomUrl, loomThumbnailUrl }: Props) => {
@@ -57,14 +57,12 @@ export const BookingConfirmationEmail = ({ name, scheduledLabel, scheduledAt, me
             )}
 
             <Text style={sectionLabel}>Watch this before our call</Text>
-            <Section style={loomWrap}>
-              <Link href={loom}>
-                <Img src={loomThumb} alt="Watch the intro video on Loom" style={loomImg} width={504} />
-              </Link>
+            <Section style={loomCard}>
+              <Text style={{ ...detail, margin: '0 0 12px' }}>
+                A quick intro video from our team — please watch before we hop on.
+              </Text>
+              <Button href={loom} style={loomBtn}>▶ Watch on Loom</Button>
             </Section>
-            <Text style={{ ...muted, marginTop: '8px', fontSize: '12px' }}>
-              <Link href={loom} style={{ color: '#93c5fd' }}>Watch on Loom →</Link>
-            </Text>
 
             {confirmUrl ? (
               <>
