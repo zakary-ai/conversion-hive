@@ -121,6 +121,9 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 {appt.outcome === "no_show" && (
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-warning/15 text-warning uppercase tracking-wider">No show</span>
                 )}
+                {appt.outcome === "disqualified" && (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-wider">Disqualified</span>
+                )}
               </DialogTitle>
             </DialogHeader>
 
