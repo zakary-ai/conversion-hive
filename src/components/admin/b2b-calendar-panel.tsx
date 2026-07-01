@@ -331,6 +331,7 @@ export function B2bCalendarPanel() {
         )}
       </Card>
 
+      <AdminCloserAvailabilityPanel line="b2b" />
 
       {/* Date → bookings */}
       <Card className="p-4">
