@@ -965,6 +965,10 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
     }
     if (!allowed) throw new Error("Forbidden");
 
+    // Authorization done above — use admin client for commissions writes so
+    // closer-inserted setter rows (user_id != auth.uid()) don't hit RLS.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
 
     if (data.outcome === "clear") {
       const { error } = await context.supabase.from("appointments").update({
@@ -972,7 +976,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         outcome_set_at: null, outcome_set_by: null,
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
-      await context.supabase.from("commissions").delete().eq("appointment_id", data.id);
+      await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
       return { ok: true };
     }
 
@@ -992,10 +996,10 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       const note = `Closed deal: ${appt.name} ($${data.deal_amount.toFixed(2)} @ ${data.commission_percent}%)`;
 
       // Upsert closer row (role='closer')
-      const { data: existingCloser } = await context.supabase
+      const { data: existingCloser } = await supabaseAdmin
         .from("commissions").select("id").eq("appointment_id", data.id).eq("role", "closer").maybeSingle();
       if (existingCloser) {
-        const { error: uerr } = await context.supabase.from("commissions")
+        const { error: uerr } = await supabaseAdmin.from("commissions")
           .update({
             amount: data.commission_amount,
             commission_percent: data.commission_percent,
@@ -1007,7 +1011,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
           .eq("id", existingCloser.id);
         if (uerr) throw new Error(uerr.message);
       } else {
-        const { error: ierr } = await context.supabase.from("commissions").insert({
+        const { error: ierr } = await supabaseAdmin.from("commissions").insert({
           user_id: closerUserId,
           role: "closer",
           amount: data.commission_amount,
@@ -1026,7 +1030,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       // Setter commission row (role='setter') — only if setter differs from the closer
       const setterUserId = appt.user_id as string | null;
       if (setterUserId && setterUserId !== closerUserId) {
-        const { data: existingSetter } = await context.supabase
+        const { data: existingSetter } = await supabaseAdmin
           .from("commissions").select("id, status, commission_percent").eq("appointment_id", data.id).eq("role", "setter").maybeSingle();
         const setterNote = `Setter for: ${appt.name} ($${data.deal_amount.toFixed(2)})`;
         if (existingSetter) {
@@ -1034,11 +1038,11 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
           const pct = existingSetter.commission_percent != null ? Number(existingSetter.commission_percent) : null;
           const patch: { deal_amount: number; note: string; amount?: number } = { deal_amount: data.deal_amount, note: setterNote };
           if (pct != null) patch.amount = Math.round(data.deal_amount * pct) / 100;
-          const { error: uerr } = await context.supabase.from("commissions").update(patch).eq("id", existingSetter.id);
+          const { error: uerr } = await supabaseAdmin.from("commissions").update(patch).eq("id", existingSetter.id);
           if (uerr) throw new Error(uerr.message);
 
         } else {
-          const { error: ierr } = await context.supabase.from("commissions").insert({
+          const { error: ierr } = await supabaseAdmin.from("commissions").insert({
             user_id: setterUserId,
             role: "setter",
             amount: 0,
@@ -1066,7 +1070,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
         outcome_set_by: context.userId,
       }).eq("id", data.id);
       if (error) throw new Error(error.message);
-      await context.supabase.from("commissions").delete().eq("appointment_id", data.id);
+      await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
       return { ok: true };
     }
 
@@ -1080,7 +1084,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
       outcome_set_by: context.userId,
     }).eq("id", data.id);
     if (error) throw new Error(error.message);
-    await context.supabase.from("commissions").delete().eq("appointment_id", data.id);
+    await supabaseAdmin.from("commissions").delete().eq("appointment_id", data.id);
     return { ok: true };
   });
 
