@@ -174,9 +174,17 @@ function LeadPipeline({ leads, onOpenLead }: { leads: Lead[]; onOpenLead: (l: Le
   const leadById = new Map(leads.map((l) => [l.id, l]));
   const bookings = appts.filter((a) => a.type === "booking");
 
-  const booked = bookings.filter((a) => !a.outcome);
-  const closed = bookings.filter((a) => a.outcome === "closed");
-  const lost = bookings.filter((a) => a.outcome === "lost");
+  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
+  const sortFn = (a: Appointment, b: Appointment) => {
+    const ta = a.scheduled_at ? new Date(a.scheduled_at).getTime() : 0;
+    const tb = b.scheduled_at ? new Date(b.scheduled_at).getTime() : 0;
+    return sortDir === "desc" ? tb - ta : ta - tb;
+  };
+
+  const booked = bookings.filter((a) => !a.outcome).sort(sortFn);
+  const closed = bookings.filter((a) => a.outcome === "closed").sort(sortFn);
+  const lost = bookings.filter((a) => a.outcome === "lost").sort(sortFn);
+  const noShow = bookings.filter((a) => a.outcome === "no_show").sort(sortFn);
 
   const fmt = (s?: string | null) => s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
@@ -223,10 +231,22 @@ function LeadPipeline({ leads, onOpenLead }: { leads: Lead[]; onOpenLead: (l: Le
   );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Column title="Booked" items={booked} tone="bg-primary/15 text-primary" empty="No upcoming bookings" />
-      <Column title="Closed" items={closed} tone="bg-success/15 text-success" empty="No closed deals yet" />
-      <Column title="Lost" items={lost} tone="bg-destructive/15 text-destructive" empty="No lost deals" />
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Select value={sortDir} onValueChange={(v) => setSortDir(v as "desc" | "asc")}>
+          <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="desc">Newest first</SelectItem>
+            <SelectItem value="asc">Oldest first</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Column title="Booked" items={booked} tone="bg-primary/15 text-primary" empty="No upcoming bookings" />
+        <Column title="Closed" items={closed} tone="bg-success/15 text-success" empty="No closed deals yet" />
+        <Column title="Lost" items={lost} tone="bg-destructive/15 text-destructive" empty="No lost deals" />
+        <Column title="No Show" items={noShow} tone="bg-warning/15 text-warning" empty="No no-shows" />
+      </div>
     </div>
   );
 }
