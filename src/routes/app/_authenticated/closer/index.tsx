@@ -7,7 +7,8 @@ import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarClock, Mail, Phone, Video, ClipboardCheck, Target } from "lucide-react";
+import { CalendarClock, Mail, Phone, Video, ClipboardCheck, Target, Ban } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
@@ -50,10 +51,12 @@ function CloserHome() {
   });
   const upcoming = rows.filter((r) => new Date(r.slot_start).getTime() >= now).slice(0, 10);
   const upcomingB2b = b2bRows.filter((a) => new Date(a.scheduled_at).getTime() >= now).slice(0, 10);
+  const dqB2b = (apptsRaw as Appt[]).filter((a) => a.type === "booking" && a.outcome === "disqualified");
 
   const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
   const [previewFor, setPreviewFor] = useState<B | null>(null);
   const [apptFor, setApptFor] = useState<Appt | null>(null);
+  const [dqOpen, setDqOpen] = useState(false);
 
   const [rangeDays, setRangeDays] = useState<number | null>(null);
   const { data: stats } = useQuery({
@@ -68,10 +71,20 @@ function CloserHome() {
         <p className="text-sm text-muted-foreground">Your assigned calls live here.</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <StatCard label="Today" value={today.length + todayB2b.length} />
         <StatCard label="Upcoming" value={upcoming.length + upcomingB2b.length} />
         <StatCard label="Total assigned" value={rows.length + b2bRows.length} />
+        <Card
+          className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+          onClick={() => setDqOpen(true)}
+        >
+          <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+            <Ban className="h-3 w-3" /> DQ
+          </div>
+          <div className="text-3xl font-display font-semibold mt-1 text-muted-foreground">{dqB2b.length}</div>
+          <div className="text-[10px] text-muted-foreground mt-1">Tap to view</div>
+        </Card>
         <Card className="p-4 col-span-2 sm:col-span-1">
           <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
             <Target className="h-3 w-3" /> Close rate
@@ -123,6 +136,32 @@ function CloserHome() {
         onOpenChange={(v) => !v && setPreviewFor(null)}
       />
       <AppointmentDetailDialog appt={apptFor} onClose={() => setApptFor(null)} />
+
+      <Dialog open={dqOpen} onOpenChange={setDqOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Disqualified calls ({dqB2b.length})</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {dqB2b.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-6">No disqualified calls yet.</div>
+            ) : dqB2b
+              .sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime())
+              .map((a) => (
+                <Card
+                  key={a.id}
+                  className="p-3 cursor-pointer hover:bg-muted/30"
+                  onClick={() => { setDqOpen(false); setApptFor(a); }}
+                >
+                  <div className="font-medium text-sm">{a.name}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {new Date(a.scheduled_at).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </div>
+                </Card>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

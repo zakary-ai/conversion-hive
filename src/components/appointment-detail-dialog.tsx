@@ -51,7 +51,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
     s ? new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
   const showOutcome = !!(me?.isAdmin || me?.isCloser) && appt?.type === "booking";
-  const [mode, setMode] = useState<"none" | "closed" | "lost" | "no_show">("none");
+  const [mode, setMode] = useState<"none" | "closed" | "lost" | "no_show" | "disqualified">("none");
   const [deal, setDeal] = useState("");
   const [pctPreset, setPctPreset] = useState<"10" | "15" | "custom">("10");
   const [customPct, setCustomPct] = useState("");
@@ -74,7 +74,7 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   const computedCommission = isFinite(dealValue) && isFinite(pctValue) ? Math.round(dealValue * pctValue) / 100 : 0;
 
   const mutation = useMutation({
-    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_percent: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "clear" }) =>
+    mutationFn: (input: { id: string; outcome: "closed"; deal_amount: number; commission_percent: number; commission_amount: number } | { id: string; outcome: "lost"; lost_reason?: string } | { id: string; outcome: "no_show" } | { id: string; outcome: "disqualified" } | { id: string; outcome: "clear" }) =>
       setAppointmentOutcome({ data: input }),
     onSuccess: () => {
       toast.success("Updated");
@@ -120,6 +120,9 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 )}
                 {appt.outcome === "no_show" && (
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-warning/15 text-warning uppercase tracking-wider">No show</span>
+                )}
+                {appt.outcome === "disqualified" && (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-wider">Disqualified</span>
                 )}
               </DialogTitle>
             </DialogHeader>
@@ -192,7 +195,14 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                           </div>
                         </div>
                       )}
-                      <Button size="sm" variant="outline" className="w-full" onClick={() => setMode(appt.outcome === "lost" ? "lost" : appt.outcome === "no_show" ? "no_show" : "closed")}>
+                      {appt.outcome === "disqualified" && (
+                        <div className="rounded-md bg-muted/40 border border-border p-3">
+                          <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                            <Ban className="h-4 w-4" /> Disqualified
+                          </div>
+                        </div>
+                      )}
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => setMode(appt.outcome === "lost" ? "lost" : appt.outcome === "no_show" ? "no_show" : appt.outcome === "disqualified" ? "disqualified" : "closed")}>
                         Edit outcome
                       </Button>
                     </div>
@@ -223,6 +233,14 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                           className="bg-warning/10 hover:bg-warning/20 text-warning border-warning/30"
                         >
                           <UserX className="h-4 w-4 mr-1" /> No show
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => mutation.mutate({ id: appt.id, outcome: "disqualified" })}
+                          disabled={mutation.isPending}
+                        >
+                          <Ban className="h-4 w-4 mr-1" /> DQ
                         </Button>
                         {appt.outcome && mode !== "none" && (
                           <Button size="sm" variant="ghost" onClick={() => setMode("none")}>
