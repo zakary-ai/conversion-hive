@@ -130,12 +130,13 @@ function SetterDetailPage() {
       />
 
       <div className="flex flex-wrap gap-2 items-center">
-        <Button size="sm" variant={dateRange.from && dateRange.to && dateRange.from.toDateString() === new Date().toDateString() && dateRange.to.toDateString() === new Date().toDateString() ? "default" : "outline"} onClick={setToday}>Today</Button>
+        <Button size="sm" variant={isToday ? "default" : "outline"} onClick={setToday}>Today</Button>
         <DateRangePicker value={dateRange} onChange={setDateRange} label={rangeLabel} />
         {(dateRange.from || dateRange.to) && (
           <Button size="sm" variant="ghost" onClick={() => setDateRange({ from: null, to: null })}>Clear</Button>
         )}
       </div>
+
 
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         <ClickableStat label="Bookings" value={data.stats.bookings} icon={CalendarClock} onClick={() => setStatOpen("bookings")} />
