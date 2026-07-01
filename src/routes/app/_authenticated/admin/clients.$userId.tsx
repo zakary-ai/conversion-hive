@@ -236,7 +236,7 @@ type QuizAttempt = {
   modules?: { title?: string } | null;
 };
 
-function StatDetailDialog({ statKey, onClose, appointments, calls, attempts, completions, totalModules }: {
+function StatDetailDialog({ statKey, onClose, appointments, calls, attempts, completions, totalModules, fromMs, toMs }: {
   statKey: StatKey | null;
   onClose: () => void;
   appointments: ApptRow[];
@@ -244,8 +244,19 @@ function StatDetailDialog({ statKey, onClose, appointments, calls, attempts, com
   attempts: QuizAttempt[];
   completions: { module_id: string; completed_at?: string | null }[];
   totalModules: number;
+  fromMs: number | null;
+  toMs: number | null;
 }) {
-  const bookings = appointments.filter((a) => a.type === "booking");
+  const inWindow = (iso: string | null | undefined) => {
+    if (fromMs == null && toMs == null) return true;
+    if (!iso) return false;
+    const t = new Date(iso).getTime();
+    if (fromMs != null && t < fromMs) return false;
+    if (toMs != null && t > toMs) return false;
+    return true;
+  };
+  const bookings = appointments.filter((a) => a.type === "booking" && inWindow(a.scheduled_at));
+  const callsInWindow = calls.filter((c) => inWindow(c.started_at ?? c.created_at));
   const title = statKey === "bookings" ? "Bookings"
     : statKey === "closed" ? "Closed"
     : statKey === "lost" ? "Lost / DQ"
@@ -268,10 +279,11 @@ function StatDetailDialog({ statKey, onClose, appointments, calls, attempts, com
         </DialogHeader>
         {statKey === "dials" ? (
           <div className="divide-y divide-border rounded-md border border-border">
-            {calls.length === 0 ? (
+            {callsInWindow.length === 0 ? (
               <div className="p-6 text-sm text-muted-foreground text-center">No calls.</div>
-            ) : calls.map((c) => <CallRow key={c.id} call={c} />)}
+            ) : callsInWindow.map((c) => <CallRow key={c.id} call={c} />)}
           </div>
+
         ) : statKey === "training" ? (
           <div className="space-y-3 text-sm">
             <div>
