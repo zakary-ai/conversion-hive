@@ -575,11 +575,12 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
   const [email, setEmail] = useState(lead.email ?? "");
   const [context, setContext] = useState("");
   const [when, setWhen] = useState<Date | null>(null);
+  const [bookingTz, setBookingTz] = useState<string>("America/New_York");
 
   useEffect(() => {
     if (open) {
       setName(lead.name ?? ""); setPhone(lead.phone ?? ""); setEmail(lead.email ?? "");
-      setContext(""); setWhen(null);
+      setContext(""); setWhen(null); setBookingTz("America/New_York");
     }
   }, [open, lead.id]);
 
@@ -590,6 +591,7 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
         lead_id: lead.id, type: "booking",
         scheduled_at: when.toISOString(),
         name, phone: phone || null, email: email || null, context: context || null,
+        timezone: bookingTz,
       }});
       await updateLead({ data: { id: lead.id, status: "Booked", contacted: true } });
     },
@@ -605,7 +607,7 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
           <Field label="Name"><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
           <Field label="Phone"><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
           <Field label="Email"><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-          <Field label="Pick a time"><SlotPicker value={when} onChange={setWhen} /></Field>
+          <Field label="Pick a time"><SlotPicker value={when} onChange={setWhen} tz={bookingTz} onTzChange={setBookingTz} /></Field>
           <Field label="Context"><Textarea rows={3} value={context} onChange={(e) => setContext(e.target.value)} placeholder="What does the lead need?" /></Field>
         </div>
         <DialogFooter>
