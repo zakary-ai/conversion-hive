@@ -195,7 +195,14 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                           </div>
                         </div>
                       )}
-                      <Button size="sm" variant="outline" className="w-full" onClick={() => setMode(appt.outcome === "lost" ? "lost" : appt.outcome === "no_show" ? "no_show" : "closed")}>
+                      {appt.outcome === "disqualified" && (
+                        <div className="rounded-md bg-muted/40 border border-border p-3">
+                          <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                            <Ban className="h-4 w-4" /> Disqualified
+                          </div>
+                        </div>
+                      )}
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => setMode(appt.outcome === "lost" ? "lost" : appt.outcome === "no_show" ? "no_show" : appt.outcome === "disqualified" ? "disqualified" : "closed")}>
                         Edit outcome
                       </Button>
                     </div>
