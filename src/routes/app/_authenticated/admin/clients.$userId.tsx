@@ -160,7 +160,7 @@ function SetterDetailPage() {
         rangeLabel={rangeLabel}
       />
 
-      <BookingHistoryCard appointments={data.appointments as ApptRow[]} />
+      
 
       <QuizScoresCard attempts={data.attempts as QuizAttempt[]} />
 
