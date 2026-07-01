@@ -68,7 +68,7 @@ export const BookingConfirmationEmail = ({ name, scheduledLabel, scheduledAt, me
               <>
                 <Text style={sectionLabel}>Please confirm</Text>
                 <Text style={muted}>
-                  Tap the button below to confirm your booking. This helps your closer know you'll be there.
+                  Tap the button below to confirm your booking. This helps your ads specialist know you'll be there.
                 </Text>
                 <Section style={{ marginTop: '10px' }}>
                   <Button href={confirmUrl} style={confirmBtn}>Confirm my booking</Button>
