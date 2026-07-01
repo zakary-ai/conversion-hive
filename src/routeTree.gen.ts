@@ -13,6 +13,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ConfirmBookingRouteImport } from './routes/confirm-booking'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AppRouteRouteImport } from './routes/app/route'
@@ -77,6 +78,11 @@ const SupportRoute = SupportRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmBookingRoute = ConfirmBookingRouteImport.update({
+  id: '/confirm-booking',
+  path: '/confirm-booking',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -342,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
+  '/confirm-booking': typeof ConfirmBookingRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -392,6 +399,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppAuthenticatedRouteRouteWithChildren
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
+  '/confirm-booking': typeof ConfirmBookingRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -442,6 +450,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteRouteWithChildren
   '/apply': typeof ApplyRoute
   '/auth': typeof AuthRoute
+  '/confirm-booking': typeof ConfirmBookingRoute
   '/privacy': typeof PrivacyRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -495,6 +504,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/apply'
     | '/auth'
+    | '/confirm-booking'
     | '/privacy'
     | '/support'
     | '/terms'
@@ -545,6 +555,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/apply'
     | '/auth'
+    | '/confirm-booking'
     | '/privacy'
     | '/support'
     | '/terms'
@@ -594,6 +605,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/apply'
     | '/auth'
+    | '/confirm-booking'
     | '/privacy'
     | '/support'
     | '/terms'
@@ -646,6 +658,7 @@ export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   ApplyRoute: typeof ApplyRoute
   AuthRoute: typeof AuthRoute
+  ConfirmBookingRoute: typeof ConfirmBookingRoute
   PrivacyRoute: typeof PrivacyRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
@@ -691,6 +704,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirm-booking': {
+      id: '/confirm-booking'
+      path: '/confirm-booking'
+      fullPath: '/confirm-booking'
+      preLoaderRoute: typeof ConfirmBookingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1116,6 +1136,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   ApplyRoute: ApplyRoute,
   AuthRoute: AuthRoute,
+  ConfirmBookingRoute: ConfirmBookingRoute,
   PrivacyRoute: PrivacyRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,

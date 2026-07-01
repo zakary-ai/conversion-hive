@@ -30,6 +30,7 @@ type Appt = {
   commission_amount?: number | string | null;
   commission_percent?: number | string | null;
   lost_reason?: string | null;
+  confirmed_at?: string | null;
 };
 
 export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; onClose: () => void }) {
