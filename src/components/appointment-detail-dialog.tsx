@@ -234,6 +234,14 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                         >
                           <UserX className="h-4 w-4 mr-1" /> No show
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => mutation.mutate({ id: appt.id, outcome: "disqualified" })}
+                          disabled={mutation.isPending}
+                        >
+                          <Ban className="h-4 w-4 mr-1" /> DQ
+                        </Button>
                         {appt.outcome && mode !== "none" && (
                           <Button size="sm" variant="ghost" onClick={() => setMode("none")}>
                             Cancel
