@@ -41,6 +41,7 @@ import {
 import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { EmailPreviewDialog } from "./email-preview-dialog";
+import { AdminCloserAvailabilityPanel } from "./admin-closer-availability-panel";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -331,6 +332,7 @@ export function B2bCalendarPanel() {
         )}
       </Card>
 
+      <AdminCloserAvailabilityPanel line="b2b" />
 
       {/* Date → bookings */}
       <Card className="p-4">

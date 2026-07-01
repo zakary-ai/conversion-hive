@@ -426,6 +426,39 @@ export type Database = {
           },
         ]
       }
+      closer_availability_declarations: {
+        Row: {
+          closer_user_id: string
+          created_at: string
+          id: string
+          line: string
+          notes: string
+          updated_at: string
+          updated_by: string | null
+          weekly: Json
+        }
+        Insert: {
+          closer_user_id: string
+          created_at?: string
+          id?: string
+          line: string
+          notes?: string
+          updated_at?: string
+          updated_by?: string | null
+          weekly?: Json
+        }
+        Update: {
+          closer_user_id?: string
+          created_at?: string
+          id?: string
+          line?: string
+          notes?: string
+          updated_at?: string
+          updated_by?: string | null
+          weekly?: Json
+        }
+        Relationships: []
+      }
       closer_availability_rules: {
         Row: {
           closer_id: string

@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
+import { MyAvailabilitySection } from "@/components/my-availability-section";
+import { getMyCloserLines } from "@/lib/api/closer-availability.functions";
 
 export const Route = createFileRoute("/app/_authenticated/closer/")({
   beforeLoad: async ({ context }) => {
@@ -62,6 +64,10 @@ function CloserHome() {
   const { data: stats } = useQuery({
     queryKey: ["my-closer-stats", rangeDays],
     queryFn: () => getCloserStats({ data: { days: rangeDays ?? undefined } }),
+  });
+  const { data: lines } = useQuery({
+    queryKey: ["my-closer-lines"],
+    queryFn: () => getMyCloserLines(),
   });
 
   return (
@@ -120,6 +126,11 @@ function CloserHome() {
           {upcoming.map((b) => <CallCard key={b.id} b={b} onOutcome={() => setOutcomeFor(b)} onPreview={() => setPreviewFor(b)} />)}
         </div>
       </section>
+
+      {lines?.b2b && <MyAvailabilitySection line="b2b" label="My B2B availability & notes" />}
+      {lines?.b2c && <MyAvailabilitySection line="b2c" label="My B2C availability & notes" />}
+
+
 
       {outcomeFor && (
         <OutcomeDialog
