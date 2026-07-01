@@ -92,6 +92,18 @@ export function B2bCloserDetailDialog({
     return false;
   });
 
+  const clearMutation = useMutation({
+    mutationFn: (id: string) => setAppointmentOutcome({ data: { id, outcome: "clear" } }),
+    onSuccess: () => {
+      toast.success("Outcome cleared");
+      qc.invalidateQueries({ queryKey: ["b2b-closer-detail", closerId] });
+      qc.invalidateQueries({ queryKey: ["my-appointments"] });
+      qc.invalidateQueries({ queryKey: ["all-appointments"] });
+      qc.invalidateQueries({ queryKey: ["b2b-bookings-for-date"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const filters = [
     { key: "all" as const, label: "All", count: appointments.length },
     { key: "not-logged" as const, label: "Not logged", count: upcoming.length },
