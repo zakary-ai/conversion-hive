@@ -79,11 +79,11 @@ export function CloserDetailDialog({
               <RangePicker value={rangeDays} onChange={setRangeDays} />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <Stat icon={<Target className="h-3 w-3" />} label="Close rate" value={`${stats.closeRate}%`} tone="text-success" />
-              <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Closes" value={stats.closed + stats.deposit} tone="text-success" />
-              <Stat icon={<X className="h-3 w-3" />} label="Not interested" value={stats.notInterested} />
-              <Stat icon={<Clock className="h-3 w-3" />} label="No show" value={stats.noShow} />
-              <Stat icon={<Ban className="h-3 w-3" />} label="DQ" value={stats.disqualified} />
+              <Stat icon={<Target className="h-3 w-3" />} label="Close rate" value={`${stats.closeRate}%`} tone="text-success" onClick={() => setActiveFilter("all")} active={activeFilter === "all"} />
+              <Stat icon={<CheckCircle2 className="h-3 w-3" />} label="Closes" value={stats.closed + stats.deposit} tone="text-success" onClick={() => setActiveFilter("closed")} active={activeFilter === "closed"} />
+              <Stat icon={<X className="h-3 w-3" />} label="Not interested" value={stats.notInterested} onClick={() => setActiveFilter("not-interested")} active={activeFilter === "not-interested"} />
+              <Stat icon={<Clock className="h-3 w-3" />} label="No show" value={stats.noShow} onClick={() => setActiveFilter("no-show")} active={activeFilter === "no-show"} />
+              <Stat icon={<Ban className="h-3 w-3" />} label="DQ" value={stats.disqualified} onClick={() => setActiveFilter("dq")} active={activeFilter === "dq"} />
             </div>
           </div>
         )}
@@ -150,9 +150,12 @@ function UpcomingRow({ b, onLog }: { b: { id: string; applicant_name: string; ap
   );
 }
 
-function Stat({ icon, label, value, tone, hint }: { icon: React.ReactNode; label: string; value: string | number; tone?: string; hint?: string }) {
+function Stat({ icon, label, value, tone, hint, onClick, active }: { icon: React.ReactNode; label: string; value: string | number; tone?: string; hint?: string; onClick?: () => void; active?: boolean }) {
   return (
-    <Card className="p-3">
+    <Card
+      className={cn("p-3", onClick && "cursor-pointer transition-colors hover:bg-accent/50", active && "ring-1 ring-primary")}
+      onClick={onClick}
+    >
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1">{icon} {label}</div>
       <div className={`text-2xl font-display font-semibold mt-1 ${tone ?? ""}`}>{value}</div>
       {hint && <div className="text-[10px] text-muted-foreground mt-1">{hint}</div>}
