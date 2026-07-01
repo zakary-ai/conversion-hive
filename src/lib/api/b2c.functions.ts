@@ -1325,6 +1325,38 @@ export const deleteCloserPayout = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Admin: mark B2C commissions paid on the booking rows themselves ----------
+export const recordB2cCommissionPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    booking_ids: z.array(z.string().uuid()).min(1),
+    note: z.string().trim().max(500).optional().nullable(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any)
+      .update({ commission_paid_at: new Date().toISOString(), commission_payout_note: data.note ?? null })
+      .in("id", data.booking_ids);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const undoB2cCommissionPayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ booking_ids: z.array(z.string().uuid()).min(1) }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any)
+      .update({ commission_paid_at: null, commission_payout_note: null })
+      .in("id", data.booking_ids);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Admin: B2C booking calendar settings & availability ----------
 export const getB2cSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
