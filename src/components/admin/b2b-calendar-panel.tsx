@@ -489,11 +489,24 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
 
   const b2bClosers = closers.filter((c) => c.active);
 
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+
+  const isCancelled = booking.status === "cancelled";
+  const isAssigned = booking.status === "assigned";
+  const isPending = booking.status === "pending_assignment";
+
   return (
     <Card className="p-3">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <div className="font-medium">{booking.name}</div>
+          <button
+            type="button"
+            onClick={() => setDetailOpen(true)}
+            className="font-medium text-left hover:underline text-primary"
+          >
+            {booking.name}
+          </button>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
             <span className="inline-flex items-center gap-1">
               <CalendarClock className="h-3 w-3" /> {time}
