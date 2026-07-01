@@ -15,11 +15,19 @@ import {
   saveMyAvailabilityDeclaration,
 } from "@/lib/api/closer-availability.functions";
 
-export function MyAvailabilitySection({ line, label }: { line: "b2b" | "b2c"; label: string }) {
+export function MyAvailabilitySection({
+  lines,
+  label,
+}: {
+  lines: ("b2b" | "b2c")[];
+  label: string;
+}) {
   const qc = useQueryClient();
+  const primary = lines[0];
   const { data } = useQuery({
-    queryKey: ["my-availability-declaration", line],
-    queryFn: () => getMyAvailabilityDeclaration({ data: { line } }),
+    queryKey: ["my-availability-declaration", primary],
+    queryFn: () => getMyAvailabilityDeclaration({ data: { line: primary } }),
+    enabled: !!primary,
   });
 
   const [open, setOpen] = useState(false);
@@ -32,10 +40,17 @@ export function MyAvailabilitySection({ line, label }: { line: "b2b" | "b2c"; la
   }, [data]);
 
   const save = useMutation({
-    mutationFn: () => saveMyAvailabilityDeclaration({ data: { line, weekly, notes } }),
+    mutationFn: async () => {
+      for (const line of lines) {
+        await saveMyAvailabilityDeclaration({ data: { line, weekly, notes } });
+      }
+    },
     onSuccess: () => {
       toast.success("Availability saved");
-      qc.invalidateQueries({ queryKey: ["my-availability-declaration", line] });
+      for (const line of lines) {
+        qc.invalidateQueries({ queryKey: ["my-availability-declaration", line] });
+      }
+      qc.invalidateQueries({ queryKey: ["admin-availability-declarations"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
