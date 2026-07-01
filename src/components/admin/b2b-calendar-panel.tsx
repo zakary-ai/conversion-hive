@@ -38,10 +38,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video, Eye } from "lucide-react";
+import { Plus, Trash2, Save, CalendarClock, Mail, Phone, X, ChevronDown, Video, Eye, ClipboardCheck, CalendarRange } from "lucide-react";
 import { toast } from "sonner";
 import { EmailPreviewDialog } from "./email-preview-dialog";
 import { AdminCloserAvailabilityPanel } from "./admin-closer-availability-panel";
+import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
+import { RescheduleDialog } from "@/components/reschedule-dialog";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -376,14 +378,17 @@ export function B2bCalendarPanel() {
 
 type DayBooking = {
   id: string;
+  lead_id?: string | null;
   scheduled_at: string;
   status: string | null;
   name: string;
   email: string | null;
   phone: string | null;
+  context?: string | null;
   meeting_url?: string | null;
   assigned_closer_id?: string | null;
   b2b_closer_id?: string | null;
+  outcome?: string | null;
   closers?: { full_name: string; email: string } | null;
   b2b_closer?: { full_name: string; email: string } | null;
 };
@@ -484,11 +489,24 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
 
   const b2bClosers = closers.filter((c) => c.active);
 
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+
+  const isCancelled = booking.status === "cancelled";
+  const isAssigned = booking.status === "assigned";
+  const isPending = booking.status === "pending_assignment";
+
   return (
     <Card className="p-3">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <div className="font-medium">{booking.name}</div>
+          <button
+            type="button"
+            onClick={() => setDetailOpen(true)}
+            className="font-medium text-left hover:underline text-primary"
+          >
+            {booking.name}
+          </button>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
             <span className="inline-flex items-center gap-1">
               <CalendarClock className="h-3 w-3" /> {time}
@@ -546,12 +564,22 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
               </SelectContent>
             </Select>
           )}
-          {booking.status === "assigned" && (
+          {isAssigned && (
             <Button size="sm" variant="outline" onClick={() => unassign.mutate()}>
               Reassign
             </Button>
           )}
-          {booking.status !== "cancelled" && (
+          {(isPending || isAssigned) && (
+            <Button size="icon" variant="ghost" onClick={() => setRescheduleOpen(true)} title="Reschedule">
+              <CalendarRange className="h-4 w-4" />
+            </Button>
+          )}
+          {isAssigned && (
+            <Button size="icon" variant="ghost" onClick={() => setDetailOpen(true)} title="Set outcome">
+              <ClipboardCheck className="h-4 w-4" />
+            </Button>
+          )}
+          {!isCancelled && (
             <Button size="icon" variant="ghost" onClick={() => cancel.mutate()} title="Cancel">
               <X className="h-4 w-4" />
             </Button>
@@ -585,8 +613,33 @@ function DayBookingRow({ booking, closers }: { booking: DayBooking; closers: Clo
         </div>
 
       </div>
+      <AppointmentDetailDialog
+        appt={
+          detailOpen
+            ? {
+                id: booking.id,
+                lead_id: booking.lead_id ?? null,
+                type: "booking",
+                scheduled_at: booking.scheduled_at,
+                name: booking.name,
+                phone: booking.phone,
+                email: booking.email,
+                context: booking.context ?? null,
+                meeting_url: booking.meeting_url ?? null,
+                outcome: booking.outcome ?? null,
+              }
+            : null
+        }
+        onClose={() => setDetailOpen(false)}
+      />
+      <RescheduleDialog
+        apptId={rescheduleOpen ? booking.id : null}
+        currentScheduledAt={booking.scheduled_at}
+        onClose={() => setRescheduleOpen(false)}
+      />
     </Card>
 
   );
 }
+
 
