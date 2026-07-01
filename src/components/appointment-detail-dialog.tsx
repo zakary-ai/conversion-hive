@@ -84,6 +84,9 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
       qc.invalidateQueries({ queryKey: ["all-commissions"] });
       qc.invalidateQueries({ queryKey: ["my-commissions"] });
       qc.invalidateQueries({ queryKey: ["admin-overview"] });
+      qc.invalidateQueries({ queryKey: ["my-leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", appt?.lead_id] });
+      qc.invalidateQueries({ queryKey: ["all-leads"] });
       setMode("none");
     },
     onError: (e: Error) => toast.error(e.message),
