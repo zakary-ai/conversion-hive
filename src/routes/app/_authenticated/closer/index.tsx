@@ -51,10 +51,12 @@ function CloserHome() {
   });
   const upcoming = rows.filter((r) => new Date(r.slot_start).getTime() >= now).slice(0, 10);
   const upcomingB2b = b2bRows.filter((a) => new Date(a.scheduled_at).getTime() >= now).slice(0, 10);
+  const dqB2b = (apptsRaw as Appt[]).filter((a) => a.type === "booking" && a.outcome === "disqualified");
 
   const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
   const [previewFor, setPreviewFor] = useState<B | null>(null);
   const [apptFor, setApptFor] = useState<Appt | null>(null);
+  const [dqOpen, setDqOpen] = useState(false);
 
   const [rangeDays, setRangeDays] = useState<number | null>(null);
   const { data: stats } = useQuery({
