@@ -139,7 +139,7 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
     // Lookups for the "+" dialog
     const [{ data: clientRoles }, { data: b2bClosers }] = await Promise.all([
       supabase.from("user_roles").select("user_id").eq("role", "client"),
-      supabase.from("b2b_closers").select("id, user_id, full_name, email").eq("b2b_active", true),
+      supabase.from("b2b_closers").select("id, user_id, full_name, email").eq("active", true),
     ]);
     const clientIds = (clientRoles ?? []).map((r: { user_id: string }) => r.user_id);
     let setters: Array<{ user_id: string; name: string }> = [];
