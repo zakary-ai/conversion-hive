@@ -953,7 +953,7 @@ export const setAppointmentOutcome = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { data: appt, error: aerr } = await context.supabase
-      .from("appointments").select("id, user_id, type, name, assigned_closer_id, b2b_closer_id").eq("id", data.id).single();
+      .from("appointments").select("id, user_id, type, name, lead_id, assigned_closer_id, b2b_closer_id").eq("id", data.id).single();
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
     if (appt.type !== "booking") throw new Error("Outcome only applies to bookings");
 
