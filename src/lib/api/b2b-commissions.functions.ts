@@ -103,6 +103,8 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
       created_at: r.created_at,
       approved_at: r.approved_at,
       appointment_id: r.appointment_id,
+      paid_at: r.paid_at,
+      paid_note: r.paid_note,
     }));
 
     // Group by appointment_id (fallback to own id for orphans)
