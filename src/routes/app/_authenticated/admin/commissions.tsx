@@ -183,8 +183,20 @@ function CommissionRowItem({ row, clientName, onApprove, onDelete, onSaved }: {
 
       {editing && (
         <div className="grid grid-cols-3 gap-2 mt-3">
-          <div><Label className="text-[10px]">Deal ($)</Label><Input type="number" step="0.01" value={deal} onChange={(e) => setDeal(e.target.value)} /></div>
-          <div><Label className="text-[10px]">Percent (%)</Label><Input type="number" step="0.01" value={pct} onChange={(e) => setPct(e.target.value)} /></div>
+          <div><Label className="text-[10px]">Deal ($)</Label><Input type="number" step="0.01" value={deal} onChange={(e) => {
+            const v = e.target.value;
+            setDeal(v);
+            const d = parseFloat(v);
+            const p = parseFloat(pct);
+            if (isFinite(d) && isFinite(p)) setAmount((Math.round(d * p) / 100).toFixed(2));
+          }} /></div>
+          <div><Label className="text-[10px]">Percent (%)</Label><Input type="number" step="0.01" value={pct} onChange={(e) => {
+            const v = e.target.value;
+            setPct(v);
+            const d = parseFloat(deal);
+            const p = parseFloat(v);
+            if (isFinite(d) && isFinite(p)) setAmount((Math.round(d * p) / 100).toFixed(2));
+          }} /></div>
           <div><Label className="text-[10px]">Commission ($)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
         </div>
       )}
