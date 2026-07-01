@@ -6,6 +6,7 @@ import { template as closerInvite } from './closer-invite'
 import { template as setterInvite } from './setter-invite'
 import { template as adminInvite } from './admin-invite'
 import { template as bookingConfirmation } from './booking-confirmation'
+import { template as bookingReceived } from './booking-received'
 
 
 
