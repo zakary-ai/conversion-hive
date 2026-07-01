@@ -25,7 +25,7 @@ const adminB2BItems = [
   { title: "Setters", url: "/app/admin/clients", icon: Users },
   { title: "Closers", url: "/app/admin/b2b-closers", icon: UserPlus },
   { title: "Leads", url: "/app/admin/leads", icon: Briefcase },
-  { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
+  { title: "Bookings", url: "/app/calendar", icon: CalendarCheck },
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/app/admin/b2b-commissions", icon: DollarSign },
