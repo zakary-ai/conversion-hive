@@ -127,8 +127,21 @@ function CloserHome() {
         </div>
       </section>
 
-      {lines?.b2b && <MyAvailabilitySection line="b2b" label="My B2B availability & notes" />}
-      {lines?.b2c && <MyAvailabilitySection line="b2c" label="My B2C availability & notes" />}
+      {(lines?.b2b || lines?.b2c) && (
+        <MyAvailabilitySection
+          lines={[
+            ...(lines?.b2b ? (["b2b"] as const) : []),
+            ...(lines?.b2c ? (["b2c"] as const) : []),
+          ]}
+          label={
+            lines?.b2b && lines?.b2c
+              ? "My availability & notes"
+              : lines?.b2b
+                ? "My B2B availability & notes"
+                : "My B2C availability & notes"
+          }
+        />
+      )}
 
 
 
