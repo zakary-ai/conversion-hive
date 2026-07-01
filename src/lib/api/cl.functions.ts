@@ -1228,7 +1228,10 @@ export const getAppointmentSetter = createServerFn({ method: "GET" })
     }
     if (!allowed) return null;
 
-    const { data: prof } = await context.supabase
+    // Use admin client so profile RLS (own-profile-only) doesn't block the read
+    // when the viewer is an assigned closer (not the setter).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: prof } = await supabaseAdmin
       .from("profiles")
       .select("user_id, full_name, email")
       .eq("user_id", appt.user_id)
