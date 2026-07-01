@@ -37,6 +37,7 @@ export function B2bCloserDetailDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const qc = useQueryClient();
   const [outcomeTarget, setOutcomeTarget] = useState<DetailAppt | null>(null);
   const { data: detail, isLoading } = useQuery({
     queryKey: ["b2b-closer-detail", closerId],
