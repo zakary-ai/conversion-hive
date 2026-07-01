@@ -71,10 +71,20 @@ function CloserHome() {
         <p className="text-sm text-muted-foreground">Your assigned calls live here.</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <StatCard label="Today" value={today.length + todayB2b.length} />
         <StatCard label="Upcoming" value={upcoming.length + upcomingB2b.length} />
         <StatCard label="Total assigned" value={rows.length + b2bRows.length} />
+        <Card
+          className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+          onClick={() => setDqOpen(true)}
+        >
+          <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+            <Ban className="h-3 w-3" /> DQ
+          </div>
+          <div className="text-3xl font-display font-semibold mt-1 text-muted-foreground">{dqB2b.length}</div>
+          <div className="text-[10px] text-muted-foreground mt-1">Tap to view</div>
+        </Card>
         <Card className="p-4 col-span-2 sm:col-span-1">
           <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1">
             <Target className="h-3 w-3" /> Close rate
