@@ -129,7 +129,7 @@ function Row({ setter, onOpen, onDelete, managers }: {
   setter: SetterRow; onOpen: () => void; onDelete: () => void;
   managers?: Array<{ id: string; full_name: string | null }>;
 }) {
-  const link = typeof window !== "undefined" ? `${window.location.origin}/apply?dm=${setter.apply_slug}` : "";
+  const link = setter.apply_slug ? `https://conversionlab.space/apply?dm=${setter.apply_slug}` : "";
   return (
     <div className="flex items-center justify-between rounded-md border border-border p-3">
       <button onClick={onOpen} className="text-left flex-1 min-w-0">

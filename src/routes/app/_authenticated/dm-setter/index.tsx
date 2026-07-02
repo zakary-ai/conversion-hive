@@ -20,8 +20,8 @@ function DmSetterHome() {
   const target = data.dmSetter?.daily_target ?? 100;
   const pct = Math.min(100, Math.round((total_today / target) * 100));
 
-  const link = typeof window !== "undefined" && data.dmSetter?.apply_slug
-    ? `${window.location.origin}/apply?dm=${data.dmSetter.apply_slug}`
+  const link = data.dmSetter?.apply_slug
+    ? `https://conversionlab.space/apply?dm=${data.dmSetter.apply_slug}`
     : "";
 
   return (
