@@ -1102,11 +1102,30 @@ export const listClosedDealsForCommission = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const { data, error } = await context.supabase
       .from("closer_bookings")
-      .select("id, applicant_name, applicant_email, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, commission_status, commission_paid_at, commission_payout_note, closers:assigned_closer_id (id, full_name, email)")
+      .select("id, applicant_name, applicant_email, slot_start, outcome, outcome_at, deal_amount, deposit_amount, follow_up_amount, commission_percent, commission_amount, commission_status, commission_paid_at, commission_payout_note, dm_setter_id, dm_setter_commission_amount, dm_setter_commission_status, dm_setter_commission_paid_at, dm_setter_manager_id, dm_setter_manager_commission_amount, dm_setter_manager_commission_status, dm_setter_manager_commission_paid_at, closers:assigned_closer_id (id, full_name, email)")
       .in("outcome", ["closed", "deposit"])
       .order("outcome_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    const rows = (data ?? []) as Array<Record<string, unknown>>;
+    // Enrich with DM setter + manager names
+    const dmIds = new Set<string>();
+    for (const r of rows) {
+      const a = r.dm_setter_id as string | null;
+      const b = r.dm_setter_manager_id as string | null;
+      if (a) dmIds.add(a);
+      if (b) dmIds.add(b);
+    }
+    let dmMap: Record<string, { id: string; full_name: string; user_id: string | null }> = {};
+    if (dmIds.size) {
+      const { data: dms } = await context.supabase
+        .from("dm_setters").select("id, full_name, user_id").in("id", Array.from(dmIds));
+      dmMap = Object.fromEntries((dms ?? []).map((d) => [d.id as string, d as { id: string; full_name: string; user_id: string | null }]));
+    }
+    return rows.map((r) => ({
+      ...r,
+      dm_setter: r.dm_setter_id ? dmMap[r.dm_setter_id as string] ?? null : null,
+      dm_setter_manager: r.dm_setter_manager_id ? dmMap[r.dm_setter_manager_id as string] ?? null : null,
+    }));
   });
 
 // ---------- Admin: approve a closer's commission ----------
@@ -1123,6 +1142,23 @@ export const approveBookingCommission = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Admin: approve DM setter or manager commission on a booking ----------
+export const approveDmSetterCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ booking_id: z.string().uuid(), role: z.enum(["setter", "manager"]) }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const col = data.role === "setter" ? "dm_setter_commission_status" : "dm_setter_manager_commission_status";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any)
+      .update({ [col]: "approved" })
+      .eq("id", data.booking_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 // ---------- Admin: edit commission on a booking ----------
 export const updateBookingCommission = createServerFn({ method: "POST" })
