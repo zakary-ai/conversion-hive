@@ -23,7 +23,6 @@ function DmSetterHome() {
   const link = data.dmSetter?.apply_slug
     ? `https://conversionlab.space/apply?dm=${data.dmSetter.apply_slug}`
     : "";
-    : "";
 
   return (
     <div className="space-y-6">
