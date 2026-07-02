@@ -12,7 +12,15 @@ import { NotificationsBell } from "@/components/notifications-bell";
 
 export const meQueryOptions = queryOptions({
   queryKey: ["me"],
-  queryFn: async () => getMe(),
+  queryFn: async () => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) throw new Error("Not signed in");
+    return getMe();
+  },
+  retry: (failureCount, error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    return !/unauthorized|not signed in/i.test(message) && failureCount < 2;
+  },
 });
 
 export const Route = createFileRoute("/app/_authenticated")({

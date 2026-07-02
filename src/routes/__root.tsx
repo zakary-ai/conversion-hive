@@ -101,8 +101,24 @@ function RootComponent() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+
+      window.setTimeout(() => {
+        void (async () => {
+          if (event === "SIGNED_OUT") {
+            await queryClient.cancelQueries();
+            queryClient.clear();
+            if (window.location.pathname.startsWith("/app/") && window.location.pathname !== "/app/auth") {
+              await router.navigate({ to: "/app/auth", replace: true });
+            }
+            return;
+          }
+
+          const { data } = await supabase.auth.getSession();
+          if (!data.session) return;
+          await router.invalidate();
+          await queryClient.invalidateQueries();
+        })();
+      }, 0);
     });
     return () => subscription.unsubscribe();
   }, [router, queryClient]);
