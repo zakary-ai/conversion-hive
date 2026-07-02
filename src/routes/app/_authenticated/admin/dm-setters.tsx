@@ -121,7 +121,7 @@ function AdminDmSetters() {
 }
 
 type SetterRow = {
-  id: string; full_name: string; email: string; apply_slug: string;
+  id: string; full_name: string | null; email: string | null; apply_slug: string | null;
   is_manager: boolean; manager_id: string | null;
 };
 
