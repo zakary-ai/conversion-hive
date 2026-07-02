@@ -84,7 +84,12 @@ function B2cCommissionsPage() {
   const dateOf = (r: Row) => r.outcome_at ?? "";
 
   const pending = useMemo(
-    () => rows.filter((r) => (r.commission_status ?? "pending") !== "approved" && r.closers && Number(r.commission_amount ?? 0) > 0),
+    () => rows.filter((r) => {
+      const closerPending = r.closers && Number(r.commission_amount ?? 0) > 0 && (r.commission_status ?? "pending") !== "approved";
+      const dmPending = Number(r.dm_setter_commission_amount ?? 0) > 0 && (r.dm_setter_commission_status ?? "pending") !== "approved";
+      const mgrPending = Number(r.dm_setter_manager_commission_amount ?? 0) > 0 && (r.dm_setter_manager_commission_status ?? "pending") !== "approved";
+      return closerPending || dmPending || mgrPending;
+    }),
     [rows],
   );
 
