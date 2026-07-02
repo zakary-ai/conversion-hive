@@ -211,42 +211,76 @@ const LogImagesSchema = z.object({
   images: z.array(z.string().max(20_000_000)).min(1).max(10), // base64 data URLs
 });
 
+// BYO routing: if GEMINI_API_KEY is set, call Google's Gemini API directly
+// (billed to the customer's Google account). Otherwise, fall back to the
+// Lovable AI Gateway using LOVABLE_API_KEY (billed via Lovable credits).
 async function countDmsWithAI(imageDataUrls: string[]): Promise<{ total: number; per: Array<{ count: number; raw: unknown }> }> {
-  const key = process.env.LOVABLE_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  const useDirect = !!geminiKey;
   const per: Array<{ count: number; raw: unknown }> = [];
   let total = 0;
+
+  const systemPrompt =
+    "You count the number of distinct outbound direct messages sent by the account owner in the screenshot (Instagram or TikTok DM UI). Respond with ONLY a JSON object like {\"count\": 12}. Do not include any other text.";
+
   for (const img of imageDataUrls) {
-    if (!key) { per.push({ count: 0, raw: { error: "no_api_key" } }); continue; }
+    if (!useDirect && !lovableKey) { per.push({ count: 0, raw: { error: "no_api_key" } }); continue; }
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You count the number of distinct outbound direct messages sent by the account owner in the screenshot (Instagram or TikTok DM UI). Respond with ONLY a JSON object like {\"count\": 12}. Do not include any other text.",
-            },
-            {
-              role: "user",
-              content: [
-                { type: "text", text: "Count the outbound DMs I sent in this screenshot." },
-                { type: "image_url", image_url: { url: img } },
-              ],
-            },
-          ],
-        }),
-      });
-      if (!res.ok) { per.push({ count: 0, raw: { status: res.status } }); continue; }
-      const j = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
-      const txt = j.choices?.[0]?.message?.content ?? "";
+      let txt = "";
+      if (useDirect) {
+        // Direct Google Gemini API (BYO key)
+        const m = img.match(/^data:([^;]+);base64,(.+)$/);
+        const mime = m?.[1] ?? "image/png";
+        const b64 = m?.[2] ?? "";
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: systemPrompt }] },
+              contents: [{
+                role: "user",
+                parts: [
+                  { text: "Count the outbound DMs I sent in this screenshot." },
+                  { inline_data: { mime_type: mime, data: b64 } },
+                ],
+              }],
+            }),
+          },
+        );
+        if (!res.ok) { per.push({ count: 0, raw: { status: res.status, provider: "google" } }); continue; }
+        const j = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+        txt = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+      } else {
+        // Fallback: Lovable AI Gateway
+        const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: "Count the outbound DMs I sent in this screenshot." },
+                  { type: "image_url", image_url: { url: img } },
+                ],
+              },
+            ],
+          }),
+        });
+        if (!res.ok) { per.push({ count: 0, raw: { status: res.status, provider: "lovable" } }); continue; }
+        const j = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+        txt = j.choices?.[0]?.message?.content ?? "";
+      }
       const m = txt.match(/\{[^}]*\}/);
       const parsed = m ? JSON.parse(m[0]) as { count?: number } : { count: 0 };
       const c = Math.max(0, Math.min(500, Number(parsed.count) || 0));
       total += c;
-      per.push({ count: c, raw: { text: txt } });
+      per.push({ count: c, raw: { text: txt, provider: useDirect ? "google" : "lovable" } });
     } catch (e) {
       per.push({ count: 0, raw: { error: (e as Error).message } });
     }
