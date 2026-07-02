@@ -532,7 +532,14 @@ export type Database = {
           created_at: string
           deal_amount: number | null
           deposit_amount: number | null
+          dm_setter_commission_amount: number | null
+          dm_setter_commission_paid_at: string | null
+          dm_setter_commission_status: string | null
           dm_setter_id: string | null
+          dm_setter_manager_commission_amount: number | null
+          dm_setter_manager_commission_paid_at: string | null
+          dm_setter_manager_commission_status: string | null
+          dm_setter_manager_id: string | null
           follow_up_amount: number | null
           follow_up_date: string | null
           google_calendar_event_id: string | null
@@ -563,7 +570,14 @@ export type Database = {
           created_at?: string
           deal_amount?: number | null
           deposit_amount?: number | null
+          dm_setter_commission_amount?: number | null
+          dm_setter_commission_paid_at?: string | null
+          dm_setter_commission_status?: string | null
           dm_setter_id?: string | null
+          dm_setter_manager_commission_amount?: number | null
+          dm_setter_manager_commission_paid_at?: string | null
+          dm_setter_manager_commission_status?: string | null
+          dm_setter_manager_id?: string | null
           follow_up_amount?: number | null
           follow_up_date?: string | null
           google_calendar_event_id?: string | null
@@ -594,7 +608,14 @@ export type Database = {
           created_at?: string
           deal_amount?: number | null
           deposit_amount?: number | null
+          dm_setter_commission_amount?: number | null
+          dm_setter_commission_paid_at?: string | null
+          dm_setter_commission_status?: string | null
           dm_setter_id?: string | null
+          dm_setter_manager_commission_amount?: number | null
+          dm_setter_manager_commission_paid_at?: string | null
+          dm_setter_manager_commission_status?: string | null
+          dm_setter_manager_id?: string | null
           follow_up_amount?: number | null
           follow_up_date?: string | null
           google_calendar_event_id?: string | null
