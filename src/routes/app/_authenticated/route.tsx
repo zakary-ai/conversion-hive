@@ -73,14 +73,14 @@ function AuthenticatedLayout() {
               <div className="flex items-center gap-3 min-w-0">
                 <SidebarTrigger />
                 <div className="text-sm text-muted-foreground truncate">
-                  {me.isAdmin ? "Admin workspace" : "Client workspace"}
+                  {me.isAdmin ? "Admin workspace" : me.isCloser ? "Closer workspace" : "Setter workspace"}
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <NotificationsBell />
                 <div className="text-right min-w-0">
                   <div className="text-sm font-medium truncate max-w-[180px]">{me.profile?.full_name || me.profile?.email || "User"}</div>
-                  <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : "Client"}</div>
+                  <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : me.isCloser ? "Closer" : "Setter"}</div>
                 </div>
               </div>
             </div>

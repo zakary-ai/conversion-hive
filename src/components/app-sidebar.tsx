@@ -86,7 +86,7 @@ export function AppSidebar({ isAdmin, isCloser }: { isAdmin: boolean; isCloser?:
     ? channel === "b2c" ? adminB2CItems : adminB2BItems
     : isCloser ? closerItems : clientItems;
 
-  const label = isAdmin ? "Admin" : isCloser ? "Closer" : "Client";
+  const label = isAdmin ? "Admin" : isCloser ? "Closer" : "Setter";
 
   const isActive = (url: string) =>
     url === "/app/admin" || url === "/app/dashboard" || url === "/app/closer"
