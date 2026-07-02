@@ -151,7 +151,7 @@ function Row({ setter, onOpen, onDelete, managers }: {
   );
 }
 
-function ManagerSelect({ setterId, value, managers }: { setterId: string; value: string; managers: Array<{ id: string; full_name: string }> }) {
+function ManagerSelect({ setterId, value, managers }: { setterId: string; value: string; managers: Array<{ id: string; full_name: string | null }> }) {
   const qc = useQueryClient();
   const upd = useMutation({
     mutationFn: (manager_id: string | null) => updateDmSetter({ data: { id: setterId, manager_id } }),
