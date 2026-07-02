@@ -1,68 +1,126 @@
+## DM Setter role — implementation plan
 
-## Overview
+A new account type on the B2C side that tracks Instagram/TikTok DM outreach, owns leads via a personal `/apply` link, and earns commission when their attributed B2C lead closes. Managers oversee a group of DM setters and earn an override.
 
-Two email changes on the B2B booking flow:
+---
 
-1. **New email** — sent right after a setter books a call onto the B2B calendar (before a closer is assigned).
-2. **Edit existing email** — the closer-assigned email (`booking-confirmation`) gets a Loom video block and a "Confirm my booking" button. Clicking the button lands the lead on a public "thanks" page and flips the appointment to confirmed so closers can see the status.
+### 1. New roles & data model
 
-Loom URL: `https://www.loom.com/share/ad9a5d9b3d13417ea1f05e22dcc52799`
+**New Postgres enum values** on `app_role`: `dm_setter`, `dm_setter_manager`.
 
-Both emails greet the lead by name and show the date/time formatted in the timezone the setter selected during booking.
+**New tables** (all under `public`, with GRANTs + RLS as per project rules):
 
-## What gets built
+- `dm_setters`
+  - `user_id` (FK to auth.users, unique), `manager_id` (FK to `dm_setters.user_id`, nullable — a manager row also lives here with `is_manager = true`)
+  - `is_manager boolean default false`
+  - `apply_slug text unique` — used for `/apply?dm=<slug>` (generated on account creation)
+  - `email`, `full_name` denorm mirrors for admin lists
+- `dm_daily_logs` — one row per setter per day
+  - `dm_setter_id`, `log_date`, `ai_count int`, `manual_adjustment int default 0`, `total generated column`, `target int default 100`
+- `dm_log_uploads` — each screenshot upload
+  - `dm_daily_log_id`, `image_path` (storage), `platform` (`instagram` | `tiktok` | `other`), `ai_count int`, `ai_raw jsonb`, `status` (`processing`|`counted`|`failed`), `created_at`
+- Extend `leads`: add `dm_setter_id uuid null`, `dm_setter_locked_at timestamptz` (set on first attribution so re-applications don't overwrite).
+- Extend `commissions` (B2C): allow `role = 'dm_setter' | 'dm_setter_manager'` alongside existing closer entries. Percentages: 7.5% and 2.5% of B2C deal amount.
 
-### 1. New template `booking-received` (setter booked, pre-assignment)
+**Storage bucket:** private `dm-screenshots` bucket, path `dm/<user_id>/<yyyy-mm-dd>/<uuid>.jpg`. RLS: setter can read/write their own folder; managers can read their DM setters' folders; admins read all.
 
-- File: `src/lib/email-templates/booking-received.tsx`, registered in `registry.ts`.
-- Reuses brand styles from the existing `booking-confirmation` template.
-- Content: greeting with lead's name, "Thanks for booking — here are your details", scheduled time formatted in the selected timezone, duration, and a note that a Zoom link is coming once a closer is assigned. No Zoom or confirm buttons.
+---
 
-**Trigger:** `createAppointment` in `src/lib/api/cl.functions.ts`. When `data.type === "booking"` and insert succeeds, fire `sendTransactional({ templateName: 'booking-received', ... })`. Idempotency key `booking-received-<appointmentId>`.
+### 2. Onboarding & apply link
 
-### 2. Edit `booking-confirmation` template (closer assigned)
+- Admin "Setters" area on the **B2C tab** gets two new sections: **DM Setter Managers** and **DM Setters**. Same invite flow already used for closers/setters (email invite → set password → forced first-login change).
+- On DM setter creation: generate an `apply_slug` (short, URL-safe) and expose their link as `https://<domain>/apply?dm=<slug>`. Show it prominently on their dashboard with a copy button.
+- Admin panel: assigning a DM setter to a manager is a dropdown on the DM setter row (list of `is_manager=true` DM setters).
+- On DM setter manager creation: same invite flow, no apply link.
 
-- Add a Loom card section (thumbnail + play overlay, linked to the Loom URL) below the meeting details. Loom's public thumbnail URL pattern is used so the image renders inline in email clients.
-- Add a second CTA button below "Join Zoom call": **"Confirm my booking"** → `https://conversionlab.space/confirm-booking?token=<token>`.
-- Both emails format the date/time using the appointment's stored timezone (see technical notes) instead of hardcoded EST.
-- Preview data updated so the admin email preview dialog still renders (includes a sample `confirmUrl` and Loom URL).
+---
 
-### 3. Confirmation link + token
+### 3. `/apply` attribution
 
-Migration adds to `public.appointments`:
-- `confirmation_token text` with a unique index (nullable)
-- `confirmed_at timestamptz` (nullable)
+- `/apply` page reads `?dm=<slug>` (fallback to referrer field only when no slug present) and shows the DM setter's name ("Referred by …") instead of the current free-text "Referred by".
+- On submit, the created lead gets:
+  - `dm_setter_id = <setter for slug>`
+  - `dm_setter_locked_at = now()`
+  - **Only if lead is brand new.** If the applicant matches an existing lead (email match), keep the existing `dm_setter_id` untouched.
+- The DM setter follows the lead through the pipeline automatically — no re-assignment needed for booking, no-show, close, DQ, not-interested. All existing lead status transitions already stamp `last_status_change_at`; we just carry `dm_setter_id` forward.
 
-Inside `sendBookingConfirmationEmail`, before rendering: mint a 32-byte hex token (same pattern as unsubscribe tokens), store it on the appointment via `supabaseAdmin`, then pass `confirmUrl` into the template.
+---
 
-### 4. Public confirm route + landing page
+### 4. Commissions
 
-- `src/routes/api/public/confirm-booking.ts` (POST) — `/api/public/*` bypasses auth. Takes `{ token }`, uses `supabaseAdmin` to look up the appointment; sets `confirmed_at = now()` if not already set. Idempotent. Returns `{ ok, alreadyConfirmed, leadName, scheduledLabel }`.
-- `src/routes/confirm-booking.tsx` — public page that reads `?token=` on mount, POSTs to the API route, then shows one of: "Thanks for confirming your call, <name> — see you on <scheduledLabel>", "You've already confirmed this call", or "This confirmation link is invalid". No auth required.
+- Extend `setAppointmentOutcome` (B2C path) so when outcome is set to `closed` on an appointment whose lead has `dm_setter_id`:
+  - Create a `pending` commission for the DM setter at 7.5% of deal amount, `role='dm_setter'`.
+  - If that DM setter has a `manager_id`, also create a `pending` commission at 2.5% for the manager, `role='dm_setter_manager'`.
+- Clearing/changing outcome away from `closed` deletes those two commission rows (mirrors current closer behavior).
+- **B2C commissions page** (admin): the "DM Setter" column that currently shows "Not recorded" now shows the real DM setter (and, under it, the manager as a secondary chip). Both entries appear in Pending approval, All entries, and Payouts flows — no separate UI, same approval/payout mechanics as closer commissions today.
 
-### 5. Show confirmed status to closers
+---
 
-- Extend closer calendar / appointment queries to select `confirmed_at`.
-- `src/routes/app/_authenticated/closer/calendar.tsx` and `src/components/appointment-detail-dialog.tsx`: render a green "Confirmed" badge when `confirmed_at != null`, muted "Not confirmed" otherwise, on B2B booking rows.
+### 5. DM setter app (new profile type)
 
-## Timezone handling
+New sidebar/nav item set for `dm_setter` role. Routes under `src/routes/app/_authenticated/dm/`:
 
-The appointment already carries a timezone chosen at booking time via `callback_slot_picker` / booking flow. For appointments where the field exists (e.g. `timezone` / `booked_timezone` on `appointments`), both emails format `scheduledLabel` with that timezone using `Intl.DateTimeFormat`. If the field is missing on legacy rows, we fall back to `America/New_York` (current behavior). I'll confirm the exact column name during build by reading the schema; if it's not yet stored on `appointments`, I'll add it in the same migration and populate it from the booking payload in `createAppointment`.
+- **Home / dashboard**
+  - Today's DM count with progress ring toward 100 target, big "Upload screenshots" button.
+  - Clickable KPI cards for their attributed leads over a selectable date range (default: today, with Today / 7d / 30d / All shortcuts — same date picker component we already use):
+    - Applications, Booked, No show, Closed, Disqualified, Not interested, Close rate.
+  - Clicking a card opens a filtered list of those leads with the standard lead detail dialog.
+  - Apply link with copy button.
+- **DM log** page: history table by day, expandable to show each screenshot, its AI count, and status. Setter can re-run AI on a failed upload.
+- **Commissions**: same layout as closer commissions, showing 7.5% entries.
+- **Profile**.
 
-## Technical notes
+**Screenshot → AI count flow:**
+1. Setter picks platform (Instagram / TikTok) and drops N images.
+2. Client uploads each to `dm-screenshots` bucket, inserts a `dm_log_uploads` row with `status='processing'`.
+3. Server function `countDmsInScreenshot` calls Lovable AI (`google/gemini-2.5-flash` multimodal) with a strict prompt returning `{ count: number, confidence: "high"|"medium"|"low", notes?: string }`. Uses signed URL, JSON output via `Output` API.
+4. Writes `ai_count` + `ai_raw` back, upserts today's `dm_daily_logs` row summing all uploads, sets status.
+5. Failed uploads (bad image, no messages detected) show a "retry" button.
+6. Admin has a "manual adjustment" field on a setter's daily log to correct the total; the total shown to setter and admin is `ai_count + manual_adjustment`.
 
-- Migration adds `confirmation_token` (unique) and `confirmed_at`, plus `timezone text` on `appointments` if not already present. No new RLS: writes happen via `supabaseAdmin` in the public route; reads use existing appointment policies.
-- Confirm route validates the token exists and returns only first-name + scheduled label — no other PII.
-- Idempotent confirm: re-clicking returns `alreadyConfirmed: true`.
-- Loom block is a static `<a><img/></a>` (Loom's public thumbnail) — no `<iframe>`/`<video>` since email clients strip them.
+---
 
-## Files touched
+### 6. Manager app
 
-- **new** `src/lib/email-templates/booking-received.tsx`
-- **edit** `src/lib/email-templates/booking-confirmation.tsx` (Loom + confirm button + `confirmUrl` prop + timezone-aware label)
-- **edit** `src/lib/email-templates/registry.ts`
-- **edit** `src/lib/api/cl.functions.ts` (fire new email on booking; mint/store token + pass `confirmUrl` on assignment; use booking timezone)
-- **new** `src/routes/api/public/confirm-booking.ts`
-- **new** `src/routes/confirm-booking.tsx`
-- **edit** closer calendar route + appointment detail dialog (Confirmed badge)
-- **migration** add `confirmation_token`, `confirmed_at` (and `timezone` if missing) on `appointments`
+`dm_setter_manager` role gets its own nav:
+- **Team dashboard**: list of assigned DM setters with today's DM count, MTD DMs, attributed leads by status, closes, and manager commission earned in selectable range.
+- Clicking a setter opens the same profile view admins see (read-only).
+- **Commissions**: their own 2.5% entries.
+- **Profile**.
+
+---
+
+### 7. Admin B2C — DM setter profile view
+
+New route `admin/dm-setters.$userId.tsx` matching current closer/setter detail dialogs:
+- Header: name, email, manager, apply link, invite status.
+- Date range selector (Today / 7d / 30d / All + custom).
+- KPI cards (clickable, filter list below): Applications, Booked, No Show, Closed, DQ, Not Interested, Close rate, Commission earned in range.
+- DM activity card: daily DMs bar chart + total DMs in range + manual adjustment control.
+- Screenshot log with AI counts (admin can also override).
+- List of attributed leads with existing lead detail dialog.
+
+Managers get an equivalent listing page grouped by manager.
+
+---
+
+### 8. Technical section
+
+Files added:
+- `supabase/migrations/<ts>_dm_setter_role.sql` — enum values, tables, GRANTs, RLS, storage bucket, indexes on `leads.dm_setter_id`, `dm_daily_logs (dm_setter_id, log_date)`.
+- `src/lib/api/dm-setters.functions.ts` — `createDmSetter`, `createDmSetterManager`, `assignManager`, `listDmSetters`, `getDmSetterProfile`, `getDmSetterStats(range)`, `getManagerTeamStats`, `uploadDmScreenshot`, `countDmsInScreenshot`, `adjustDailyLog`, `getMyDmLogs`, `getMyApplyLink`.
+- `src/lib/api/apply.functions.ts` (or extend existing) — accept `dmSlug`, resolve to `dm_setter_id`, enforce "new lead only" attribution.
+- `src/lib/api/cl.functions.ts` — extend `setAppointmentOutcome` B2C branch to create/delete DM setter + manager commissions.
+- `src/lib/api/cl.functions.ts` `getMe` — return `isDmSetter`, `isDmSetterManager`, and (for DM setters) `applyLink`.
+- New routes under `src/routes/app/_authenticated/dm/` and `src/routes/app/_authenticated/dm-manager/` plus admin routes.
+- `src/components/app-sidebar.tsx` + `bottom-nav.tsx` — new nav item sets, extend `AppSidebar` props (`isDmSetter`, `isDmSetterManager`).
+- `src/routes/app/_authenticated/route.tsx` — pass the new role flags.
+- `src/routes/apply.tsx` — read `dm` query param, resolve name via a public read-only server fn using the publishable-key client (narrow `TO anon` SELECT on `dm_setters(apply_slug, full_name)`), replace the "Referred by" input.
+- Route gates for `/app/dm/*` and `/app/dm-manager/*` mirror existing `_authenticated` closer/setter gates.
+- Storage bucket created via `storage_create_bucket` (private), RLS policies via migration.
+
+AI counting call uses the AI Gateway from a `createServerFn` handler with `google/gemini-2.5-flash-image` input support; JSON schema output; request includes the signed URL of the uploaded screenshot.
+
+Manager assignment UI is a simple `<Select>` on the DM setter admin row that calls `assignManager({ dmSetterId, managerId })`.
+
+No changes needed to existing closer/setter code beyond the outcome hook and the B2C commissions page column rendering.

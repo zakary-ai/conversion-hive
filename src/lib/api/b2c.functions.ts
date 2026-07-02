@@ -17,15 +17,25 @@ const SubmitSchema = z.object({
   open_to_invest: InvestEnum.optional().nullable(),
   credit_score_range: CreditEnum,
   referred_by: ReferrerEnum.optional().nullable(),
+  dm_slug: z.string().trim().min(1).max(80).optional().nullable(),
 });
 
 export const submitB2cApplication = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SubmitSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let dm_setter_id: string | null = null;
+    if (data.dm_slug) {
+      const { data: s } = await supabaseAdmin
+        .from("dm_setters").select("id").eq("apply_slug", data.dm_slug).maybeSingle();
+      if (s) dm_setter_id = s.id;
+    }
+    const { dm_slug: _drop, ...rest } = data;
+    void _drop;
+    const insertRow = { ...rest, dm_setter_id } as typeof rest & { dm_setter_id: string | null };
     const { data: row, error } = await supabaseAdmin
       .from("applications")
-      .insert(data)
+      .insert(insertRow)
       .select("id, booking_token")
       .single();
     if (error) throw new Error(error.message);
@@ -301,7 +311,7 @@ export const createCloserBooking = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: app, error: aerr } = await supabaseAdmin
       .from("applications")
-      .select("id, booking_token, full_name, phone, email")
+      .select("id, booking_token, full_name, phone, email, dm_setter_id")
       .eq("id", data.application_id)
       .maybeSingle();
     if (aerr) throw new Error(aerr.message);
@@ -339,6 +349,7 @@ export const createCloserBooking = createServerFn({ method: "POST" })
         applicant_name: app.full_name,
         applicant_email: app.email,
         applicant_phone: app.phone,
+        dm_setter_id: (app as { dm_setter_id: string | null }).dm_setter_id ?? null,
       })
       .select("id, slot_start")
       .single();
@@ -1040,6 +1051,40 @@ export const recordBookingOutcome = createServerFn({ method: "POST" })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabaseAdmin.from("closer_bookings") as any).update(patch).eq("id", data.booking_id);
     if (error) throw new Error(error.message);
+
+    // DM setter + manager commissions on close
+    if (data.outcome === "closed" && deal && deal > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: bk } = await (supabaseAdmin.from("closer_bookings") as any)
+        .select("id, dm_setter_id, applicant_name")
+        .eq("id", data.booking_id).maybeSingle();
+      const dmId = bk?.dm_setter_id as string | null;
+      if (dmId) {
+        const { data: dm } = await supabaseAdmin
+          .from("dm_setters").select("id, user_id, manager_id, full_name").eq("id", dmId).maybeSingle();
+        if (dm?.user_id) {
+          const dmAmount = Math.round(deal * 0.075 * 100) / 100;
+          // Remove existing rows for this booking to avoid dupes
+          // (commissions table has no booking_id column; we tag via note)
+          const note = `DM Setter (B2C close: ${bk?.applicant_name ?? ""}) — 7.5% of $${deal.toFixed(2)}`;
+          await supabaseAdmin.from("commissions").insert({
+            user_id: dm.user_id, amount: dmAmount, note, added_by: context.userId,
+          });
+          if (dm.manager_id) {
+            const { data: mgr } = await supabaseAdmin
+              .from("dm_setters").select("user_id, full_name").eq("id", dm.manager_id).maybeSingle();
+            if (mgr?.user_id) {
+              const mgrAmount = Math.round(deal * 0.025 * 100) / 100;
+              await supabaseAdmin.from("commissions").insert({
+                user_id: mgr.user_id, amount: mgrAmount,
+                note: `DM Manager override (setter: ${dm.full_name}) — 2.5% of $${deal.toFixed(2)}`,
+                added_by: context.userId,
+              });
+            }
+          }
+        }
+      }
+    }
     return { ok: true };
   });
 

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking, getPublicBookingWindow } from "@/lib/api/b2c.functions";
+import { resolveDmSlug } from "@/lib/api/dm-setters.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +11,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GraduationCap, CalendarCheck, DollarSign, Sparkles, CheckCircle2, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 
 export const Route = createFileRoute("/apply")({
+  validateSearch: z.object({ dm: z.string().min(1).max(80).optional() }).parse,
   head: () => ({
     meta: [
       { title: "Apply Now — Remote Sales Opportunity" },
@@ -39,9 +42,17 @@ function toDateKey(d: Date, tz: string) {
 }
 
 function ApplyPage() {
+  const { dm: dmSlug } = Route.useSearch();
   const pageRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>("form");
   const [appInfo, setAppInfo] = useState<{ id: string; token: string } | null>(null);
+
+  const { data: dmSetter } = useQuery({
+    queryKey: ["dm-slug", dmSlug],
+    queryFn: () => resolveDmSlug({ data: { slug: dmSlug! } }),
+    enabled: !!dmSlug,
+  });
+
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
@@ -61,7 +72,8 @@ function ApplyPage() {
       current_monthly_income: form.current_monthly_income,
       desired_monthly_income: form.desired_monthly_income,
       credit_score_range: form.credit_score_range as Credit,
-      referred_by: form.referred_by || null,
+      referred_by: dmSlug ? null : (form.referred_by || null),
+      dm_slug: dmSlug ?? null,
     } }),
     onSuccess: (res) => {
       setAppInfo({ id: res.id, token: res.token });
@@ -80,7 +92,7 @@ function ApplyPage() {
     form.current_monthly_income &&
     form.desired_monthly_income &&
     form.credit_score_range &&
-    form.referred_by;
+    (dmSlug ? true : form.referred_by);
 
   const scrollToApply = useCallback(() => {
     const scroller = pageRef.current;
@@ -184,19 +196,27 @@ function ApplyPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Referred by</Label>
-                <Select value={form.referred_by} onValueChange={(v) => set("referred_by", v as Referrer)}>
-                  <SelectTrigger><SelectValue placeholder="Who referred you?" /></SelectTrigger>
-                  <SelectContent>
-                    {REFERRERS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-
+              {dmSlug ? (
+                <div>
+                  <Label>Referred by</Label>
+                  <div className="mt-1 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm">
+                    {dmSetter?.full_name ?? (dmSlug ? "Loading…" : "")}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <Label>Referred by</Label>
+                  <Select value={form.referred_by} onValueChange={(v) => set("referred_by", v as Referrer)}>
+                    <SelectTrigger><SelectValue placeholder="Who referred you?" /></SelectTrigger>
+                    <SelectContent>
+                      {REFERRERS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {error && <p className="text-sm text-destructive">{error}</p>}
+
 
               <Button
                 size="lg"

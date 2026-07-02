@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Briefcase, Calendar as CalendarIcon, Settings,
-  GraduationCap, UserCog, CalendarCheck, UserPlus, DollarSign,
+  GraduationCap, UserCog, CalendarCheck, UserPlus, DollarSign, MessageCircle, Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminChannel } from "@/components/app-sidebar";
@@ -25,9 +25,9 @@ const adminB2BItems = [
 const adminB2CItems = [
   { title: "Home", url: "/app/admin", icon: LayoutDashboard },
   { title: "Bookings", url: "/app/admin/bookings", icon: CalendarCheck },
-  { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
+  { title: "DM Setters", url: "/app/admin/dm-setters", icon: MessageCircle },
   { title: "Closers", url: "/app/admin/closers", icon: UserPlus },
-  { title: "Settings", url: "/app/admin/settings", icon: Settings },
+  { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
 ] as const;
 
 const closerItems = [
@@ -36,15 +36,30 @@ const closerItems = [
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
-export function BottomNav({ isAdmin, isCloser }: { isAdmin: boolean; isCloser?: boolean }) {
+const dmSetterItems = [
+  { title: "Home", url: "/app/dm-setter", icon: LayoutDashboard },
+  { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
+  { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Profile", url: "/app/profile", icon: UserCog },
+] as const;
+
+const dmManagerItems = [
+  { title: "Home", url: "/app/dm-manager", icon: LayoutDashboard },
+  { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Profile", url: "/app/profile", icon: UserCog },
+] as const;
+
+export function BottomNav({ isAdmin, isCloser, isDmSetter, isDmSetterManager }: { isAdmin: boolean; isCloser?: boolean; isDmSetter?: boolean; isDmSetterManager?: boolean }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [channel] = useAdminChannel();
   const items = isAdmin
     ? channel === "b2c" ? adminB2CItems : adminB2BItems
+    : isDmSetterManager ? dmManagerItems
+    : isDmSetter ? dmSetterItems
     : isCloser ? closerItems : clientItems;
 
   const isActive = (url: string) =>
-    url === "/app/admin" || url === "/app/dashboard" || url === "/app/closer"
+    url === "/app/admin" || url === "/app/dashboard" || url === "/app/closer" || url === "/app/dm-setter" || url === "/app/dm-manager"
       ? pathname === url
       : pathname === url || pathname.startsWith(url + "/");
 

@@ -7,7 +7,7 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck, ShieldCheck,
+  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -37,6 +37,7 @@ const adminB2CItems = [
   { title: "Dashboard", url: "/app/admin", icon: LayoutDashboard },
   { title: "Bookings", url: "/app/admin/bookings", icon: CalendarCheck },
   { title: "Closers", url: "/app/admin/closers", icon: UserPlus },
+  { title: "DM Setters", url: "/app/admin/dm-setters", icon: MessageCircle },
   { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
@@ -45,6 +46,19 @@ const closerItems = [
   { title: "Home", url: "/app/closer", icon: LayoutDashboard },
   { title: "Calendar", url: "/app/closer/calendar", icon: CalendarIcon },
   { title: "Commissions", url: "/app/closer/commissions", icon: DollarSign },
+  { title: "Profile", url: "/app/profile", icon: UserCog },
+] as const;
+
+const dmSetterItems = [
+  { title: "Home", url: "/app/dm-setter", icon: LayoutDashboard },
+  { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
+  { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Profile", url: "/app/profile", icon: UserCog },
+] as const;
+
+const dmManagerItems = [
+  { title: "Home", url: "/app/dm-manager", icon: LayoutDashboard },
+  { title: "Commissions", url: "/app/commissions", icon: DollarSign },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
@@ -76,7 +90,7 @@ export function useAdminChannel(): [AdminChannel, (c: AdminChannel) => void] {
   return [channel, set];
 }
 
-export function AppSidebar({ isAdmin, isCloser }: { isAdmin: boolean; isCloser?: boolean }) {
+export function AppSidebar({ isAdmin, isCloser, isDmSetter, isDmSetterManager }: { isAdmin: boolean; isCloser?: boolean; isDmSetter?: boolean; isDmSetterManager?: boolean }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -84,12 +98,14 @@ export function AppSidebar({ isAdmin, isCloser }: { isAdmin: boolean; isCloser?:
 
   const items = isAdmin
     ? channel === "b2c" ? adminB2CItems : adminB2BItems
+    : isDmSetterManager ? dmManagerItems
+    : isDmSetter ? dmSetterItems
     : isCloser ? closerItems : clientItems;
 
-  const label = isAdmin ? "Admin" : isCloser ? "Closer" : "Setter";
+  const label = isAdmin ? "Admin" : isDmSetterManager ? "DM Manager" : isDmSetter ? "DM Setter" : isCloser ? "Closer" : "Setter";
 
   const isActive = (url: string) =>
-    url === "/app/admin" || url === "/app/dashboard" || url === "/app/closer"
+    url === "/app/admin" || url === "/app/dashboard" || url === "/app/closer" || url === "/app/dm-setter" || url === "/app/dm-manager"
       ? pathname === url
       : pathname === url || pathname.startsWith(url + "/");
 
