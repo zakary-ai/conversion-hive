@@ -116,6 +116,8 @@ function ProfilePage() {
           <Button
             variant="outline"
             onClick={async () => {
+              await qc.cancelQueries();
+              qc.clear();
               await supabase.auth.signOut();
               toast.success("Signed out");
               navigate({ to: "/app/auth", replace: true });
