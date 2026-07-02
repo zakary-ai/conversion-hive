@@ -6,6 +6,7 @@ import {
   updateBookingCommission,
   clearBookingOutcome,
   approveBookingCommission,
+  approveDmSetterCommission,
   recordB2cCommissionPayout,
   undoB2cCommissionPayout,
 } from "@/lib/api/b2c.functions";
