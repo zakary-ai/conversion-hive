@@ -23,9 +23,11 @@ export const getMe = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const [{ data: profile }, { data: roles }] = await Promise.all([
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: profile }, { data: roles }, { data: dm }] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabaseAdmin.from("dm_setters").select("id, full_name, apply_slug, is_manager, manager_id, daily_target").eq("user_id", userId).maybeSingle(),
     ]);
     const roleSet = new Set((roles ?? []).map((r) => r.role));
     return {
@@ -35,6 +37,9 @@ export const getMe = createServerFn({ method: "GET" })
       isAdmin: roleSet.has("admin"),
       isClient: roleSet.has("client"),
       isCloser: roleSet.has("closer"),
+      isDmSetter: roleSet.has("dm_setter"),
+      isDmSetterManager: roleSet.has("dm_setter_manager"),
+      dmSetter: dm ?? null,
     };
   });
 

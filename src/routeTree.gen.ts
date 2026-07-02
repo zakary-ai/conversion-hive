@@ -31,12 +31,15 @@ import { Route as AppAuthenticatedCalendarRouteImport } from './routes/app/_auth
 import { Route as ApiPublicConfirmBookingRouteImport } from './routes/api/public/confirm-booking'
 import { Route as AppAuthenticatedAdminRouteRouteImport } from './routes/app/_authenticated/admin/route'
 import { Route as AppAuthenticatedTrainingIndexRouteImport } from './routes/app/_authenticated/training.index'
+import { Route as AppAuthenticatedDmSetterIndexRouteImport } from './routes/app/_authenticated/dm-setter/index'
+import { Route as AppAuthenticatedDmManagerIndexRouteImport } from './routes/app/_authenticated/dm-manager/index'
 import { Route as AppAuthenticatedCloserIndexRouteImport } from './routes/app/_authenticated/closer/index'
 import { Route as AppAuthenticatedAdminIndexRouteImport } from './routes/app/_authenticated/admin/index'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AppAuthenticatedTrainingModuleIdRouteImport } from './routes/app/_authenticated/training.$moduleId'
+import { Route as AppAuthenticatedDmSetterLogsRouteImport } from './routes/app/_authenticated/dm-setter/logs'
 import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
 import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
 import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
@@ -44,6 +47,7 @@ import { Route as AppAuthenticatedAdminScraperRouteImport } from './routes/app/_
 import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
 import { Route as AppAuthenticatedAdminModulesRouteImport } from './routes/app/_authenticated/admin/modules'
 import { Route as AppAuthenticatedAdminLeadsRouteImport } from './routes/app/_authenticated/admin/leads'
+import { Route as AppAuthenticatedAdminDmSettersRouteImport } from './routes/app/_authenticated/admin/dm-setters'
 import { Route as AppAuthenticatedAdminCommissionsRouteImport } from './routes/app/_authenticated/admin/commissions'
 import { Route as AppAuthenticatedAdminClosersRouteImport } from './routes/app/_authenticated/admin/closers'
 import { Route as AppAuthenticatedAdminBookingsRouteImport } from './routes/app/_authenticated/admin/bookings'
@@ -175,6 +179,18 @@ const AppAuthenticatedTrainingIndexRoute =
     path: '/training/',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedDmSetterIndexRoute =
+  AppAuthenticatedDmSetterIndexRouteImport.update({
+    id: '/dm-setter/',
+    path: '/dm-setter/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedDmManagerIndexRoute =
+  AppAuthenticatedDmManagerIndexRouteImport.update({
+    id: '/dm-manager/',
+    path: '/dm-manager/',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedCloserIndexRoute =
   AppAuthenticatedCloserIndexRouteImport.update({
     id: '/closer/',
@@ -209,6 +225,12 @@ const AppAuthenticatedTrainingModuleIdRoute =
   AppAuthenticatedTrainingModuleIdRouteImport.update({
     id: '/training/$moduleId',
     path: '/training/$moduleId',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedDmSetterLogsRoute =
+  AppAuthenticatedDmSetterLogsRouteImport.update({
+    id: '/dm-setter/logs',
+    path: '/dm-setter/logs',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
 const AppAuthenticatedCloserCommissionsRoute =
@@ -251,6 +273,12 @@ const AppAuthenticatedAdminLeadsRoute =
   AppAuthenticatedAdminLeadsRouteImport.update({
     id: '/leads',
     path: '/leads',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminDmSettersRoute =
+  AppAuthenticatedAdminDmSettersRouteImport.update({
+    id: '/dm-setters',
+    path: '/dm-setters',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 const AppAuthenticatedAdminCommissionsRoute =
@@ -377,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
   '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
+  '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
@@ -384,12 +413,15 @@ export interface FileRoutesByFullPath {
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
   '/app/training/$moduleId': typeof AppAuthenticatedTrainingModuleIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/admin/': typeof AppAuthenticatedAdminIndexRoute
   '/app/closer/': typeof AppAuthenticatedCloserIndexRoute
+  '/app/dm-manager/': typeof AppAuthenticatedDmManagerIndexRoute
+  '/app/dm-setter/': typeof AppAuthenticatedDmSetterIndexRoute
   '/app/training/': typeof AppAuthenticatedTrainingIndexRoute
   '/app/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
   '/app/admin/clients/': typeof AppAuthenticatedAdminClientsIndexRoute
@@ -427,6 +459,7 @@ export interface FileRoutesByTo {
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
   '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
+  '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
@@ -434,12 +467,15 @@ export interface FileRoutesByTo {
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
   '/app/training/$moduleId': typeof AppAuthenticatedTrainingModuleIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/admin': typeof AppAuthenticatedAdminIndexRoute
   '/app/closer': typeof AppAuthenticatedCloserIndexRoute
+  '/app/dm-manager': typeof AppAuthenticatedDmManagerIndexRoute
+  '/app/dm-setter': typeof AppAuthenticatedDmSetterIndexRoute
   '/app/training': typeof AppAuthenticatedTrainingIndexRoute
   '/app/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
   '/app/admin/clients': typeof AppAuthenticatedAdminClientsIndexRoute
@@ -480,6 +516,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/_authenticated/admin/closers': typeof AppAuthenticatedAdminClosersRoute
   '/app/_authenticated/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
+  '/app/_authenticated/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/_authenticated/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/_authenticated/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
@@ -487,12 +524,15 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/_authenticated/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
   '/app/_authenticated/training/$moduleId': typeof AppAuthenticatedTrainingModuleIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/_authenticated/admin/': typeof AppAuthenticatedAdminIndexRoute
   '/app/_authenticated/closer/': typeof AppAuthenticatedCloserIndexRoute
+  '/app/_authenticated/dm-manager/': typeof AppAuthenticatedDmManagerIndexRoute
+  '/app/_authenticated/dm-setter/': typeof AppAuthenticatedDmSetterIndexRoute
   '/app/_authenticated/training/': typeof AppAuthenticatedTrainingIndexRoute
   '/app/_authenticated/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
   '/app/_authenticated/admin/clients/': typeof AppAuthenticatedAdminClientsIndexRoute
@@ -533,6 +573,7 @@ export interface FileRouteTypes {
     | '/app/admin/bookings'
     | '/app/admin/closers'
     | '/app/admin/commissions'
+    | '/app/admin/dm-setters'
     | '/app/admin/leads'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
@@ -540,12 +581,15 @@ export interface FileRouteTypes {
     | '/app/admin/settings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
+    | '/app/dm-setter/logs'
     | '/app/training/$moduleId'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
     | '/app/admin/'
     | '/app/closer/'
+    | '/app/dm-manager/'
+    | '/app/dm-setter/'
     | '/app/training/'
     | '/app/admin/clients/$userId'
     | '/app/admin/clients/'
@@ -583,6 +627,7 @@ export interface FileRouteTypes {
     | '/app/admin/bookings'
     | '/app/admin/closers'
     | '/app/admin/commissions'
+    | '/app/admin/dm-setters'
     | '/app/admin/leads'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
@@ -590,12 +635,15 @@ export interface FileRouteTypes {
     | '/app/admin/settings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
+    | '/app/dm-setter/logs'
     | '/app/training/$moduleId'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
     | '/app/admin'
     | '/app/closer'
+    | '/app/dm-manager'
+    | '/app/dm-setter'
     | '/app/training'
     | '/app/admin/clients/$userId'
     | '/app/admin/clients'
@@ -635,6 +683,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/bookings'
     | '/app/_authenticated/admin/closers'
     | '/app/_authenticated/admin/commissions'
+    | '/app/_authenticated/admin/dm-setters'
     | '/app/_authenticated/admin/leads'
     | '/app/_authenticated/admin/modules'
     | '/app/_authenticated/admin/quizzes'
@@ -642,12 +691,15 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/settings'
     | '/app/_authenticated/closer/calendar'
     | '/app/_authenticated/closer/commissions'
+    | '/app/_authenticated/dm-setter/logs'
     | '/app/_authenticated/training/$moduleId'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
     | '/app/_authenticated/admin/'
     | '/app/_authenticated/closer/'
+    | '/app/_authenticated/dm-manager/'
+    | '/app/_authenticated/dm-setter/'
     | '/app/_authenticated/training/'
     | '/app/_authenticated/admin/clients/$userId'
     | '/app/_authenticated/admin/clients/'
@@ -832,6 +884,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedTrainingIndexRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/dm-setter/': {
+      id: '/app/_authenticated/dm-setter/'
+      path: '/dm-setter'
+      fullPath: '/app/dm-setter/'
+      preLoaderRoute: typeof AppAuthenticatedDmSetterIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/dm-manager/': {
+      id: '/app/_authenticated/dm-manager/'
+      path: '/dm-manager'
+      fullPath: '/app/dm-manager/'
+      preLoaderRoute: typeof AppAuthenticatedDmManagerIndexRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/closer/': {
       id: '/app/_authenticated/closer/'
       path: '/closer'
@@ -872,6 +938,13 @@ declare module '@tanstack/react-router' {
       path: '/training/$moduleId'
       fullPath: '/app/training/$moduleId'
       preLoaderRoute: typeof AppAuthenticatedTrainingModuleIdRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/dm-setter/logs': {
+      id: '/app/_authenticated/dm-setter/logs'
+      path: '/dm-setter/logs'
+      fullPath: '/app/dm-setter/logs'
+      preLoaderRoute: typeof AppAuthenticatedDmSetterLogsRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
     '/app/_authenticated/closer/commissions': {
@@ -921,6 +994,13 @@ declare module '@tanstack/react-router' {
       path: '/leads'
       fullPath: '/app/admin/leads'
       preLoaderRoute: typeof AppAuthenticatedAdminLeadsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/dm-setters': {
+      id: '/app/_authenticated/admin/dm-setters'
+      path: '/dm-setters'
+      fullPath: '/app/admin/dm-setters'
+      preLoaderRoute: typeof AppAuthenticatedAdminDmSettersRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
     '/app/_authenticated/admin/commissions': {
@@ -1040,6 +1120,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminBookingsRoute: typeof AppAuthenticatedAdminBookingsRoute
   AppAuthenticatedAdminClosersRoute: typeof AppAuthenticatedAdminClosersRoute
   AppAuthenticatedAdminCommissionsRoute: typeof AppAuthenticatedAdminCommissionsRoute
+  AppAuthenticatedAdminDmSettersRoute: typeof AppAuthenticatedAdminDmSettersRoute
   AppAuthenticatedAdminLeadsRoute: typeof AppAuthenticatedAdminLeadsRoute
   AppAuthenticatedAdminModulesRoute: typeof AppAuthenticatedAdminModulesRoute
   AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
@@ -1064,6 +1145,7 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminClosersRoute: AppAuthenticatedAdminClosersRoute,
     AppAuthenticatedAdminCommissionsRoute:
       AppAuthenticatedAdminCommissionsRoute,
+    AppAuthenticatedAdminDmSettersRoute: AppAuthenticatedAdminDmSettersRoute,
     AppAuthenticatedAdminLeadsRoute: AppAuthenticatedAdminLeadsRoute,
     AppAuthenticatedAdminModulesRoute: AppAuthenticatedAdminModulesRoute,
     AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
@@ -1091,8 +1173,11 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedSetPasswordRoute: typeof AppAuthenticatedSetPasswordRoute
   AppAuthenticatedCloserCalendarRoute: typeof AppAuthenticatedCloserCalendarRoute
   AppAuthenticatedCloserCommissionsRoute: typeof AppAuthenticatedCloserCommissionsRoute
+  AppAuthenticatedDmSetterLogsRoute: typeof AppAuthenticatedDmSetterLogsRoute
   AppAuthenticatedTrainingModuleIdRoute: typeof AppAuthenticatedTrainingModuleIdRoute
   AppAuthenticatedCloserIndexRoute: typeof AppAuthenticatedCloserIndexRoute
+  AppAuthenticatedDmManagerIndexRoute: typeof AppAuthenticatedDmManagerIndexRoute
+  AppAuthenticatedDmSetterIndexRoute: typeof AppAuthenticatedDmSetterIndexRoute
   AppAuthenticatedTrainingIndexRoute: typeof AppAuthenticatedTrainingIndexRoute
 }
 
@@ -1107,8 +1192,11 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedCloserCalendarRoute: AppAuthenticatedCloserCalendarRoute,
   AppAuthenticatedCloserCommissionsRoute:
     AppAuthenticatedCloserCommissionsRoute,
+  AppAuthenticatedDmSetterLogsRoute: AppAuthenticatedDmSetterLogsRoute,
   AppAuthenticatedTrainingModuleIdRoute: AppAuthenticatedTrainingModuleIdRoute,
   AppAuthenticatedCloserIndexRoute: AppAuthenticatedCloserIndexRoute,
+  AppAuthenticatedDmManagerIndexRoute: AppAuthenticatedDmManagerIndexRoute,
+  AppAuthenticatedDmSetterIndexRoute: AppAuthenticatedDmSetterIndexRoute,
   AppAuthenticatedTrainingIndexRoute: AppAuthenticatedTrainingIndexRoute,
 }
 

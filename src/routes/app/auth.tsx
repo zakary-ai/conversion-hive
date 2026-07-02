@@ -51,7 +51,9 @@ function AuthPage() {
     toast.success("Welcome back");
     const isAdmin = (roles ?? []).some((r) => r.role === "admin");
     const isCloser = (roles ?? []).some((r) => r.role === "closer");
-    navigate({ to: isAdmin ? "/app/admin" : isCloser ? "/app/closer" : "/app/dashboard" });
+    const isDmSetter = (roles ?? []).some((r) => (r.role as string) === "dm_setter");
+    const isDmManager = (roles ?? []).some((r) => (r.role as string) === "dm_setter_manager");
+    navigate({ to: isAdmin ? "/app/admin" : isDmManager ? "/app/dm-manager" : isDmSetter ? "/app/dm-setter" : isCloser ? "/app/closer" : "/app/dashboard" });
   };
 
   return (

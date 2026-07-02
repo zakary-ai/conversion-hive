@@ -54,7 +54,7 @@ function AuthenticatedLayout() {
     <SidebarProvider>
       <div className="flex h-dvh min-h-dvh w-full overflow-hidden bg-background md:min-h-screen">
         <div className="hidden md:block">
-          <AppSidebar isAdmin={me.isAdmin} isCloser={me.isCloser} />
+          <AppSidebar isAdmin={me.isAdmin} isCloser={me.isCloser} isDmSetter={me.isDmSetter} isDmSetterManager={me.isDmSetterManager} />
         </div>
         <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
           <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card pt-[env(safe-area-inset-top)]">
@@ -73,14 +73,14 @@ function AuthenticatedLayout() {
               <div className="flex items-center gap-3 min-w-0">
                 <SidebarTrigger />
                 <div className="text-sm text-muted-foreground truncate">
-                  {me.isAdmin ? "Admin workspace" : me.isCloser ? "Closer workspace" : "Setter workspace"}
+                  {me.isAdmin ? "Admin workspace" : me.isDmSetterManager ? "DM Manager workspace" : me.isDmSetter ? "DM Setter workspace" : me.isCloser ? "Closer workspace" : "Setter workspace"}
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <NotificationsBell />
                 <div className="text-right min-w-0">
                   <div className="text-sm font-medium truncate max-w-[180px]">{me.profile?.full_name || me.profile?.email || "User"}</div>
-                  <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : me.isCloser ? "Closer" : "Setter"}</div>
+                  <div className="text-xs text-muted-foreground">{me.isAdmin ? "Admin" : me.isDmSetterManager ? "DM Manager" : me.isDmSetter ? "DM Setter" : me.isCloser ? "Closer" : "Setter"}</div>
                 </div>
               </div>
             </div>
@@ -92,7 +92,7 @@ function AuthenticatedLayout() {
           </main>
 
         </div>
-        <BottomNav isAdmin={me.isAdmin} isCloser={me.isCloser} />
+        <BottomNav isAdmin={me.isAdmin} isCloser={me.isCloser} isDmSetter={me.isDmSetter} isDmSetterManager={me.isDmSetterManager} />
       </div>
     </SidebarProvider>
   );

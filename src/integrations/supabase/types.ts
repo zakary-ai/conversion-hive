@@ -22,6 +22,7 @@ export type Database = {
           credit_score_range: Database["public"]["Enums"]["application_credit"]
           current_monthly_income: string
           desired_monthly_income: string
+          dm_setter_id: string | null
           email: string | null
           full_name: string
           id: string
@@ -41,6 +42,7 @@ export type Database = {
           credit_score_range: Database["public"]["Enums"]["application_credit"]
           current_monthly_income: string
           desired_monthly_income: string
+          dm_setter_id?: string | null
           email?: string | null
           full_name: string
           id?: string
@@ -60,6 +62,7 @@ export type Database = {
           credit_score_range?: Database["public"]["Enums"]["application_credit"]
           current_monthly_income?: string
           desired_monthly_income?: string
+          dm_setter_id?: string | null
           email?: string | null
           full_name?: string
           id?: string
@@ -72,7 +75,15 @@ export type Database = {
           updated_at?: string
           why_remote_sales?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "applications_dm_setter_id_fkey"
+            columns: ["dm_setter_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       appointments: {
         Row: {
@@ -521,6 +532,7 @@ export type Database = {
           created_at: string
           deal_amount: number | null
           deposit_amount: number | null
+          dm_setter_id: string | null
           follow_up_amount: number | null
           follow_up_date: string | null
           google_calendar_event_id: string | null
@@ -551,6 +563,7 @@ export type Database = {
           created_at?: string
           deal_amount?: number | null
           deposit_amount?: number | null
+          dm_setter_id?: string | null
           follow_up_amount?: number | null
           follow_up_date?: string | null
           google_calendar_event_id?: string | null
@@ -581,6 +594,7 @@ export type Database = {
           created_at?: string
           deal_amount?: number | null
           deposit_amount?: number | null
+          dm_setter_id?: string | null
           follow_up_amount?: number | null
           follow_up_date?: string | null
           google_calendar_event_id?: string | null
@@ -610,6 +624,13 @@ export type Database = {
             columns: ["assigned_closer_id"]
             isOneToOne: false
             referencedRelation: "closers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closer_bookings_dm_setter_id_fkey"
+            columns: ["dm_setter_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
             referencedColumns: ["id"]
           },
         ]
@@ -788,6 +809,148 @@ export type Database = {
           },
         ]
       }
+      dm_daily_logs: {
+        Row: {
+          ai_count: number
+          created_at: string
+          dm_setter_id: string
+          id: string
+          log_date: string
+          manual_adjustment: number
+          target: number
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          ai_count?: number
+          created_at?: string
+          dm_setter_id: string
+          id?: string
+          log_date: string
+          manual_adjustment?: number
+          target?: number
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ai_count?: number
+          created_at?: string
+          dm_setter_id?: string
+          id?: string
+          log_date?: string
+          manual_adjustment?: number
+          target?: number
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_daily_logs_dm_setter_id_fkey"
+            columns: ["dm_setter_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_log_uploads: {
+        Row: {
+          ai_count: number
+          ai_raw: Json | null
+          created_at: string
+          dm_daily_log_id: string
+          dm_setter_id: string
+          id: string
+          image_path: string
+          platform: string
+          status: string
+        }
+        Insert: {
+          ai_count?: number
+          ai_raw?: Json | null
+          created_at?: string
+          dm_daily_log_id: string
+          dm_setter_id: string
+          id?: string
+          image_path: string
+          platform: string
+          status?: string
+        }
+        Update: {
+          ai_count?: number
+          ai_raw?: Json | null
+          created_at?: string
+          dm_daily_log_id?: string
+          dm_setter_id?: string
+          id?: string
+          image_path?: string
+          platform?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_log_uploads_dm_daily_log_id_fkey"
+            columns: ["dm_daily_log_id"]
+            isOneToOne: false
+            referencedRelation: "dm_daily_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_log_uploads_dm_setter_id_fkey"
+            columns: ["dm_setter_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_setters: {
+        Row: {
+          apply_slug: string | null
+          created_at: string
+          daily_target: number
+          email: string | null
+          full_name: string | null
+          id: string
+          is_manager: boolean
+          manager_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          apply_slug?: string | null
+          created_at?: string
+          daily_target?: number
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_manager?: boolean
+          manager_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          apply_slug?: string | null
+          created_at?: string
+          daily_target?: number
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_manager?: boolean
+          manager_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_setters_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -883,6 +1046,8 @@ export type Database = {
           company: string | null
           contacted_at: string | null
           created_at: string
+          dm_setter_id: string | null
+          dm_setter_locked_at: string | null
           do_not_contact: boolean
           email: string | null
           id: string
@@ -902,6 +1067,8 @@ export type Database = {
           company?: string | null
           contacted_at?: string | null
           created_at?: string
+          dm_setter_id?: string | null
+          dm_setter_locked_at?: string | null
           do_not_contact?: boolean
           email?: string | null
           id?: string
@@ -921,6 +1088,8 @@ export type Database = {
           company?: string | null
           contacted_at?: string | null
           created_at?: string
+          dm_setter_id?: string | null
+          dm_setter_locked_at?: string | null
           do_not_contact?: boolean
           email?: string | null
           id?: string
@@ -933,7 +1102,15 @@ export type Database = {
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_dm_setter_id_fkey"
+            columns: ["dm_setter_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       module_completions: {
         Row: {
@@ -1376,7 +1553,12 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "client" | "closer"
+      app_role:
+        | "admin"
+        | "client"
+        | "closer"
+        | "dm_setter"
+        | "dm_setter_manager"
       application_credit:
         | "Below 600"
         | "600-650"
@@ -1532,7 +1714,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "client", "closer"],
+      app_role: ["admin", "client", "closer", "dm_setter", "dm_setter_manager"],
       application_credit: [
         "Below 600",
         "600-650",
