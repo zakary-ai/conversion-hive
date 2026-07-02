@@ -189,7 +189,7 @@ async function computeStatsFor(setterId: string) {
 export const getMyDmStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target").eq("user_id", context.userId).maybeSingle();
+    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name").eq("user_id", context.userId).maybeSingle();
     if (!me) throw new Error("Not a DM setter");
     const stats = await computeStatsFor(me.id);
     // Today's log
@@ -259,7 +259,7 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => LogImagesSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target").eq("user_id", context.userId).maybeSingle();
+    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name").eq("user_id", context.userId).maybeSingle();
     if (!me) throw new Error("Not a DM setter");
 
     // Upsert today's log
@@ -304,7 +304,7 @@ export const adjustDmDailyLog = createServerFn({ method: "POST" })
   .inputValidator(z.object({ delta: z.number().int().min(-500).max(500) }).parse)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target").eq("user_id", context.userId).maybeSingle();
+    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name").eq("user_id", context.userId).maybeSingle();
     if (!me) throw new Error("Not a DM setter");
     const date = todayKey();
     const { data: existing } = await supabaseAdmin
