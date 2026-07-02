@@ -1052,38 +1052,45 @@ export const recordBookingOutcome = createServerFn({ method: "POST" })
     const { error } = await (supabaseAdmin.from("closer_bookings") as any).update(patch).eq("id", data.booking_id);
     if (error) throw new Error(error.message);
 
-    // DM setter + manager commissions on close
+    // DM setter + manager commissions on close — recorded on the booking and
+    // routed through the same pending-approval flow as the closer commission.
     if (data.outcome === "closed" && deal && deal > 0) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: bk } = await (supabaseAdmin.from("closer_bookings") as any)
-        .select("id, dm_setter_id, applicant_name")
+        .select("id, dm_setter_id")
         .eq("id", data.booking_id).maybeSingle();
       const dmId = bk?.dm_setter_id as string | null;
+      let dmSetterAmount: number | null = null;
+      let dmManagerId: string | null = null;
+      let dmManagerAmount: number | null = null;
       if (dmId) {
         const { data: dm } = await supabaseAdmin
-          .from("dm_setters").select("id, user_id, manager_id, full_name").eq("id", dmId).maybeSingle();
-        if (dm?.user_id) {
-          const dmAmount = Math.round(deal * 0.075 * 100) / 100;
-          // Remove existing rows for this booking to avoid dupes
-          // (commissions table has no booking_id column; we tag via note)
-          const note = `DM Setter (B2C close: ${bk?.applicant_name ?? ""}) — 7.5% of $${deal.toFixed(2)}`;
-          await supabaseAdmin.from("commissions").insert({
-            user_id: dm.user_id, amount: dmAmount, note, added_by: context.userId,
-          });
+          .from("dm_setters").select("id, manager_id").eq("id", dmId).maybeSingle();
+        if (dm) {
+          dmSetterAmount = Math.round(deal * 0.075 * 100) / 100;
           if (dm.manager_id) {
-            const { data: mgr } = await supabaseAdmin
-              .from("dm_setters").select("user_id, full_name").eq("id", dm.manager_id).maybeSingle();
-            if (mgr?.user_id) {
-              const mgrAmount = Math.round(deal * 0.025 * 100) / 100;
-              await supabaseAdmin.from("commissions").insert({
-                user_id: mgr.user_id, amount: mgrAmount,
-                note: `DM Manager override (setter: ${dm.full_name}) — 2.5% of $${deal.toFixed(2)}`,
-                added_by: context.userId,
-              });
-            }
+            dmManagerId = dm.manager_id as string;
+            dmManagerAmount = Math.round(deal * 0.025 * 100) / 100;
           }
         }
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabaseAdmin.from("closer_bookings") as any).update({
+        dm_setter_commission_amount: dmSetterAmount,
+        dm_setter_commission_status: dmSetterAmount != null ? "pending" : null,
+        dm_setter_manager_id: dmManagerId,
+        dm_setter_manager_commission_amount: dmManagerAmount,
+        dm_setter_manager_commission_status: dmManagerAmount != null ? "pending" : null,
+      }).eq("id", data.booking_id);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabaseAdmin.from("closer_bookings") as any).update({
+        dm_setter_commission_amount: null,
+        dm_setter_commission_status: null,
+        dm_setter_manager_id: null,
+        dm_setter_manager_commission_amount: null,
+        dm_setter_manager_commission_status: null,
+      }).eq("id", data.booking_id);
     }
     return { ok: true };
   });
