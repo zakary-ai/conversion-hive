@@ -45,6 +45,16 @@ type Row = {
   commission_paid_at?: string | null;
   commission_payout_note?: string | null;
   closers: { id: string; full_name: string; email: string } | null;
+  dm_setter_id?: string | null;
+  dm_setter_commission_amount?: number | null;
+  dm_setter_commission_status?: string | null;
+  dm_setter_commission_paid_at?: string | null;
+  dm_setter?: { id: string; full_name: string; user_id: string | null } | null;
+  dm_setter_manager_id?: string | null;
+  dm_setter_manager_commission_amount?: number | null;
+  dm_setter_manager_commission_status?: string | null;
+  dm_setter_manager_commission_paid_at?: string | null;
+  dm_setter_manager?: { id: string; full_name: string; user_id: string | null } | null;
 };
 
 const money = (n: number | null | undefined) =>
