@@ -196,9 +196,18 @@ function B2cCommissionsPage() {
 // ---------- Booking group card (DM Setter | Closer) ----------
 function BookingGroupCard({ row }: { row: Row }) {
   const [editing, setEditing] = useState(false);
-  const isApproved = (row.commission_status ?? "pending") === "approved";
+  const closerApproved = (row.commission_status ?? "pending") === "approved";
+  const dmApproved = (row.dm_setter_commission_status ?? "pending") === "approved";
+  const mgrApproved = (row.dm_setter_manager_commission_status ?? "pending") === "approved";
   const isPaid = !!row.commission_paid_at;
-  const total = Number(row.commission_amount ?? 0);
+  const closerAmt = Number(row.commission_amount ?? 0);
+  const dmAmt = Number(row.dm_setter_commission_amount ?? 0);
+  const mgrAmt = Number(row.dm_setter_manager_commission_amount ?? 0);
+  const total = closerAmt + dmAmt + mgrAmt;
+  const allApproved =
+    (closerAmt === 0 || closerApproved) &&
+    (dmAmt === 0 || dmApproved) &&
+    (mgrAmt === 0 || mgrApproved);
 
   return (
     <div className="p-3 sm:p-4 space-y-3">
@@ -207,7 +216,7 @@ function BookingGroupCard({ row }: { row: Row }) {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium">{row.applicant_name}</span>
             <Badge variant={row.outcome === "closed" ? "default" : "secondary"} className="capitalize text-[10px]">{row.outcome}</Badge>
-            {isApproved
+            {allApproved
               ? <Badge variant="outline" className="border-success text-success text-[10px]">Approved</Badge>
               : <Badge variant="outline" className="border-warning text-warning text-[10px]">Pending</Badge>}
             {isPaid && <Badge variant="outline" className="border-success text-success text-[10px]">Paid</Badge>}
@@ -219,20 +228,106 @@ function BookingGroupCard({ row }: { row: Row }) {
         </div>
         <div className="text-right">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total</div>
-          <div className={`font-semibold ${isApproved ? "text-success" : "text-warning"}`}>{money(total)}</div>
+          <div className={`font-semibold ${allApproved ? "text-success" : "text-warning"}`}>{money(total)}</div>
         </div>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-2">
-        {/* DM Setter — structure ready for future data */}
-        <div className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
-          <div className="uppercase tracking-widest text-[10px]">DM Setter</div>
-          <div className="mt-1">Not recorded</div>
-        </div>
-
-        {/* Closer slot */}
+        <DmSetterSlot row={row} />
         <CloserSlot row={row} editing={editing} setEditing={setEditing} />
       </div>
+
+      {mgrAmt > 0 && <DmManagerSlot row={row} />}
+    </div>
+  );
+}
+
+function DmSetterSlot({ row }: { row: Row }) {
+  const qc = useQueryClient();
+  const amount = Number(row.dm_setter_commission_amount ?? 0);
+  const approved = (row.dm_setter_commission_status ?? "pending") === "approved";
+  const deal = Number(row.deal_amount ?? 0);
+
+  const approve = useMutation({
+    mutationFn: () => approveDmSetterCommission({ data: { booking_id: row.id, role: "setter" } }),
+    onSuccess: () => {
+      toast.success("DM setter commission approved");
+      qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (!row.dm_setter || amount <= 0) {
+    return (
+      <div className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
+        <div className="uppercase tracking-widest text-[10px]">DM Setter</div>
+        <div className="mt-1">Not recorded</div>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-md border border-border p-3 space-y-2 bg-muted/10">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">DM Setter</div>
+          <div className="font-medium truncate">{row.dm_setter.full_name}</div>
+          <div className="text-[11px] text-muted-foreground">7.5%{deal > 0 ? ` of ${money(deal)}` : ""}</div>
+        </div>
+        <div className="text-right">
+          <div className={`font-semibold ${approved ? "text-success" : "text-warning"}`}>{money(amount)}</div>
+          {approved
+            ? <CheckCircle2 className="h-3 w-3 inline text-success" />
+            : <Clock className="h-3 w-3 inline text-warning" />}
+        </div>
+      </div>
+      {!approved && (
+        <div className="flex justify-end">
+          <Button size="sm" className="h-7" onClick={() => approve.mutate()} disabled={approve.isPending}>
+            <CheckCircle2 className="h-3 w-3 mr-1" /> Approve
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DmManagerSlot({ row }: { row: Row }) {
+  const qc = useQueryClient();
+  const amount = Number(row.dm_setter_manager_commission_amount ?? 0);
+  const approved = (row.dm_setter_manager_commission_status ?? "pending") === "approved";
+  const deal = Number(row.deal_amount ?? 0);
+
+  const approve = useMutation({
+    mutationFn: () => approveDmSetterCommission({ data: { booking_id: row.id, role: "manager" } }),
+    onSuccess: () => {
+      toast.success("DM manager commission approved");
+      qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="rounded-md border border-border p-3 space-y-2 bg-muted/10">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">DM Setter Manager</div>
+          <div className="font-medium truncate">{row.dm_setter_manager?.full_name ?? "—"}</div>
+          <div className="text-[11px] text-muted-foreground">2.5%{deal > 0 ? ` of ${money(deal)}` : ""}</div>
+        </div>
+        <div className="text-right">
+          <div className={`font-semibold ${approved ? "text-success" : "text-warning"}`}>{money(amount)}</div>
+          {approved
+            ? <CheckCircle2 className="h-3 w-3 inline text-success" />
+            : <Clock className="h-3 w-3 inline text-warning" />}
+        </div>
+      </div>
+      {!approved && (
+        <div className="flex justify-end">
+          <Button size="sm" className="h-7" onClick={() => approve.mutate()} disabled={approve.isPending}>
+            <CheckCircle2 className="h-3 w-3 mr-1" /> Approve
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
