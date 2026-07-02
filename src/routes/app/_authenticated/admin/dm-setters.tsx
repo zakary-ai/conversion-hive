@@ -127,7 +127,7 @@ type SetterRow = {
 
 function Row({ setter, onOpen, onDelete, managers }: {
   setter: SetterRow; onOpen: () => void; onDelete: () => void;
-  managers?: Array<{ id: string; full_name: string }>;
+  managers?: Array<{ id: string; full_name: string | null }>;
 }) {
   const link = typeof window !== "undefined" ? `${window.location.origin}/apply?dm=${setter.apply_slug}` : "";
   return (
