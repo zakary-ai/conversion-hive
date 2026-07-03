@@ -58,6 +58,7 @@ const dmSetterItems = [
 
 const dmManagerItems = [
   { title: "Home", url: "/app/dm-manager", icon: LayoutDashboard },
+  { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
