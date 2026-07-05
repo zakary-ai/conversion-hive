@@ -158,15 +158,21 @@ type LeadStats = {
   total_commission: number;
 };
 
-async function computeStatsFor(setterId: string) {
+async function computeStatsFor(setterId: string, range?: { from?: string; to?: string }) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  // Pull applications+bookings that this DM setter is attributed to
-  const [{ data: apps }, { data: bookings }] = await Promise.all([
-    supabaseAdmin.from("applications").select("id, created_at, full_name, email, phone").eq("dm_setter_id", setterId),
-    supabaseAdmin.from("closer_bookings")
-      .select("id, applicant_name, applicant_email, slot_start, status, outcome, deal_amount, commission_percent, commission_amount")
-      .eq("dm_setter_id", setterId),
-  ]);
+  let appsQ = supabaseAdmin.from("applications").select("id, created_at, full_name, email, phone").eq("dm_setter_id", setterId);
+  let bookQ = supabaseAdmin.from("closer_bookings")
+    .select("id, applicant_name, applicant_email, slot_start, status, outcome, deal_amount, commission_percent, commission_amount")
+    .eq("dm_setter_id", setterId);
+  if (range?.from) {
+    appsQ = appsQ.gte("created_at", range.from);
+    bookQ = bookQ.gte("slot_start", range.from);
+  }
+  if (range?.to) {
+    appsQ = appsQ.lt("created_at", range.to);
+    bookQ = bookQ.lt("slot_start", range.to);
+  }
+  const [{ data: apps }, { data: bookings }] = await Promise.all([appsQ, bookQ]);
   const stats: LeadStats = {
     applied: (apps ?? []).length,
     booked: 0, no_show: 0, disqualified: 0, not_interested: 0, closed: 0,
@@ -385,14 +391,18 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
 
 export const getAdminDmSetterDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .inputValidator(z.object({
+    id: z.string().uuid(),
+    from: z.string().datetime().nullable().optional(),
+    to: z.string().datetime().nullable().optional(),
+  }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: setter } = await supabaseAdmin.from("dm_setters").select("*").eq("id", data.id).maybeSingle();
     if (!setter) throw new Error("Not found");
     const [{ stats, applications, bookings }, logs] = await Promise.all([
-      computeStatsFor(setter.id),
+      computeStatsFor(setter.id, { from: data.from ?? undefined, to: data.to ?? undefined }),
       supabaseAdmin.from("dm_daily_logs").select("*").eq("dm_setter_id", setter.id).order("log_date", { ascending: false }).limit(30),
     ]);
     return { setter, stats, applications, bookings, logs: logs.data ?? [] };
