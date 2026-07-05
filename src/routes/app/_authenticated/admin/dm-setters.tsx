@@ -173,56 +173,171 @@ function ManagerSelect({ setterId, value, managers }: { setterId: string; value:
   );
 }
 
+type RangeMode = "today" | "all" | "custom";
+type Section = "applied" | "booked" | "no_show" | "disqualified" | "not_interested" | "closed";
+
+function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function endOfDay(d: Date) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
+
 function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
-  const { data } = useQuery({ queryKey: ["dm-setter-detail", id], queryFn: () => getAdminDmSetterDetail({ data: { id } }) });
+  const [mode, setMode] = useState<RangeMode>("today");
+  const [customFrom, setCustomFrom] = useState<Date | undefined>();
+  const [customTo, setCustomTo] = useState<Date | undefined>();
+  const [section, setSection] = useState<Section>("applied");
+
+  const range = useMemo(() => {
+    if (mode === "all") return { from: null, to: null };
+    if (mode === "today") {
+      const now = new Date();
+      return { from: startOfDay(now).toISOString(), to: endOfDay(now).toISOString() };
+    }
+    return {
+      from: customFrom ? startOfDay(customFrom).toISOString() : null,
+      to: customTo ? endOfDay(customTo).toISOString() : null,
+    };
+  }, [mode, customFrom, customTo]);
+
+  const { data } = useQuery({
+    queryKey: ["dm-setter-detail", id, range.from, range.to],
+    queryFn: () => getAdminDmSetterDetail({ data: { id, from: range.from, to: range.to } }),
+  });
+
+  const leads = useMemo(() => {
+    if (!data) return [] as Array<{ id: string; name: string; email: string; when: string; extra?: string }>;
+    if (section === "applied") {
+      return data.applications
+        .map((a) => ({ id: a.id, name: a.full_name ?? "—", email: a.email ?? "—", when: a.created_at }))
+        .sort((a, b) => (b.when ?? "").localeCompare(a.when ?? ""));
+    }
+    const filter = (o: string | null) => section === "booked" ? true : o === section;
+    return data.bookings
+      .filter((b) => filter(b.outcome))
+      .map((b) => ({
+        id: b.id,
+        name: b.applicant_name ?? "—",
+        email: b.applicant_email ?? "—",
+        when: b.slot_start,
+        extra: b.outcome
+          ? (b.outcome === "closed" && b.deal_amount ? `closed · $${Number(b.deal_amount).toLocaleString()}` : b.outcome.replace("_", " "))
+          : (b.status ?? ""),
+      }))
+      .sort((a, b) => (b.when ?? "").localeCompare(a.when ?? ""));
+  }, [data, section]);
+
+  const sections: Array<{ key: Section; label: string; value: number }> = data ? [
+    { key: "applied", label: "Applied", value: data.stats.applied },
+    { key: "booked", label: "Booked", value: data.stats.booked },
+    { key: "no_show", label: "No Show", value: data.stats.no_show },
+    { key: "disqualified", label: "DQ", value: data.stats.disqualified },
+    { key: "not_interested", label: "Not Interested", value: data.stats.not_interested },
+    { key: "closed", label: "Closes", value: data.stats.closed },
+  ] : [];
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{data?.setter.full_name ?? "Loading…"}</DialogTitle></DialogHeader>
         {data && (
           <div className="space-y-4">
             <div className="text-xs text-muted-foreground break-all">/apply?dm={data.setter.apply_slug}</div>
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-              <Stat label="Applied" value={data.stats.applied} />
-              <Stat label="Booked" value={data.stats.booked} />
-              <Stat label="No Show" value={data.stats.no_show} />
-              <Stat label="DQ" value={data.stats.disqualified} />
-              <Stat label="Not Interested" value={data.stats.not_interested} />
-              <Stat label="Closes" value={data.stats.closed} />
+
+            {/* Date range controls */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant={mode === "today" ? "default" : "outline"} onClick={() => setMode("today")}>Today</Button>
+              <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>All time</Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant={mode === "custom" ? "default" : "outline"}
+                    className={cn("gap-2", !customFrom && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                    {mode === "custom" && customFrom
+                      ? `${format(customFrom, "MMM d")}${customTo ? ` – ${format(customTo, "MMM d")}` : ""}`
+                      : "Custom range"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={{ from: customFrom, to: customTo }}
+                    onSelect={(r) => {
+                      setCustomFrom(r?.from);
+                      setCustomTo(r?.to);
+                      if (r?.from) setMode("custom");
+                    }}
+                    numberOfMonths={2}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
+
+            {/* Clickable stat buttons */}
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              {sections.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setSection(s.key)}
+                  className={cn(
+                    "rounded-md border p-3 text-left transition-colors",
+                    section === s.key ? "border-primary bg-primary/10" : "border-border hover:bg-accent",
+                  )}
+                >
+                  <div className="text-xs text-muted-foreground">{s.label}</div>
+                  <div className="text-lg font-semibold tabular-nums">{s.value}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Leads table for selected section */}
             <Card>
-              <CardHeader><CardTitle className="text-base">Commission</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-base capitalize">
+                  {sections.find((s) => s.key === section)?.label} ({leads.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {leads.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No leads in this range.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Date</TableHead>
+                        {section !== "applied" && <TableHead>Status</TableHead>}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {leads.map((l) => (
+                        <TableRow key={l.id}>
+                          <TableCell className="font-medium">{l.name}</TableCell>
+                          <TableCell className="text-muted-foreground">{l.email}</TableCell>
+                          <TableCell className="tabular-nums text-xs">
+                            {l.when ? format(new Date(l.when), "MMM d, yyyy h:mm a") : "—"}
+                          </TableCell>
+                          {section !== "applied" && <TableCell className="text-xs capitalize">{l.extra}</TableCell>}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Commission (in range)</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-lg font-semibold">${data.stats.total_commission.toFixed(2)}</div>
                 <div className="text-xs text-muted-foreground">7.5% of ${data.stats.total_revenue.toFixed(2)}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader><CardTitle className="text-base">Recent DM logs</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-1 text-sm">
-                  {data.logs.map((l) => (
-                    <div key={l.id} className="flex justify-between border-b border-border/60 py-1">
-                      <span>{l.log_date}</span>
-                      <span className="tabular-nums">{(l.ai_count ?? 0) + (l.manual_adjustment ?? 0)} / {l.target ?? 100}</span>
-                    </div>
-                  ))}
-                  {data.logs.length === 0 && <div className="text-muted-foreground">No logs.</div>}
-                </div>
               </CardContent>
             </Card>
           </div>
         )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-md border border-border p-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-lg font-semibold tabular-nums">{value}</div>
-    </div>
   );
 }
