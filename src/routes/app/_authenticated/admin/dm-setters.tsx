@@ -203,10 +203,11 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
   });
 
   const leads = useMemo(() => {
-    if (!data) return [] as Array<{ id: string; name: string; email: string; when: string; extra?: string }>;
+    type Lead = { id: string; name: string; email: string; when: string; extra?: string };
+    if (!data) return [] as Lead[];
     if (section === "applied") {
       return data.applications
-        .map((a) => ({ id: a.id, name: a.full_name ?? "—", email: a.email ?? "—", when: a.created_at }))
+        .map<Lead>((a) => ({ id: a.id, name: a.full_name ?? "—", email: a.email ?? "—", when: a.created_at }))
         .sort((a, b) => (b.when ?? "").localeCompare(a.when ?? ""));
     }
     const filter = (o: string | null) => section === "booked" ? true : o === section;
