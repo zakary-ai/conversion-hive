@@ -391,14 +391,18 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
 
 export const getAdminDmSetterDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .inputValidator(z.object({
+    id: z.string().uuid(),
+    from: z.string().datetime().nullable().optional(),
+    to: z.string().datetime().nullable().optional(),
+  }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: setter } = await supabaseAdmin.from("dm_setters").select("*").eq("id", data.id).maybeSingle();
     if (!setter) throw new Error("Not found");
     const [{ stats, applications, bookings }, logs] = await Promise.all([
-      computeStatsFor(setter.id),
+      computeStatsFor(setter.id, { from: data.from ?? undefined, to: data.to ?? undefined }),
       supabaseAdmin.from("dm_daily_logs").select("*").eq("dm_setter_id", setter.id).order("log_date", { ascending: false }).limit(30),
     ]);
     return { setter, stats, applications, bookings, logs: logs.data ?? [] };
