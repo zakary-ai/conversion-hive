@@ -35,7 +35,9 @@ function DmLogsPage() {
       return logDmScreenshots({ data: { platform, images } });
     },
     onSuccess: (r) => {
-      toast.success(`Added ${r.added} DMs (today: ${r.total_today})`);
+      const parts = [`+${r.added} DM${r.added === 1 ? "" : "s"} · today ${r.total_today}`];
+      if (r.duplicates_skipped > 0) parts.push(`${r.duplicates_skipped} duplicate${r.duplicates_skipped === 1 ? "" : "s"} skipped`);
+      toast.success(parts.join(" · "));
       setFiles([]);
       qc.invalidateQueries({ queryKey: ["my-dm-stats"] });
     },
@@ -93,6 +95,32 @@ function DmLogsPage() {
             {upload.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
             Count with AI
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recipients logged ({data?.recipientTotal ?? 0})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground mb-3">
+            AI extracts recipient usernames from your screenshots. Duplicates are automatically skipped so the same person is never counted twice.
+          </p>
+          {(data?.recipients ?? []).length === 0 ? (
+            <div className="text-sm text-muted-foreground">No recipients logged yet.</div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
+              {(data?.recipients ?? []).map((r) => (
+                <span
+                  key={r.id}
+                  className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs"
+                  title={new Date(r.created_at).toLocaleString()}
+                >
+                  {r.name_original}
+                </span>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

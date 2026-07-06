@@ -925,6 +925,51 @@ export type Database = {
           },
         ]
       }
+      dm_recipients: {
+        Row: {
+          created_at: string
+          dm_daily_log_id: string | null
+          dm_setter_id: string
+          id: string
+          name_normalized: string
+          name_original: string
+          platform: string | null
+        }
+        Insert: {
+          created_at?: string
+          dm_daily_log_id?: string | null
+          dm_setter_id: string
+          id?: string
+          name_normalized: string
+          name_original: string
+          platform?: string | null
+        }
+        Update: {
+          created_at?: string
+          dm_daily_log_id?: string | null
+          dm_setter_id?: string
+          id?: string
+          name_normalized?: string
+          name_original?: string
+          platform?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_recipients_dm_daily_log_id_fkey"
+            columns: ["dm_daily_log_id"]
+            isOneToOne: false
+            referencedRelation: "dm_daily_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_recipients_dm_setter_id_fkey"
+            columns: ["dm_setter_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dm_setters: {
         Row: {
           apply_slug: string | null
