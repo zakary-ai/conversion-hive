@@ -48,11 +48,6 @@ function DmLogsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const adjust = useMutation({
-    mutationFn: (delta: number) => adjustDmDailyLog({ data: { delta } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-dm-stats"] }),
-  });
-
   const totalToday = (data?.todayLog?.ai_count ?? 0) + (data?.todayLog?.manual_adjustment ?? 0);
   const target = data?.dmSetter?.daily_target ?? 100;
 
@@ -65,11 +60,6 @@ function DmLogsPage() {
 
       <Card>
         <CardHeader><CardTitle>Today: {totalToday} / {target}</CardTitle></CardHeader>
-        <CardContent className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => adjust.mutate(-1)}><Minus className="h-4 w-4" /></Button>
-          <Button size="sm" variant="outline" onClick={() => adjust.mutate(1)}><Plus className="h-4 w-4" /></Button>
-          <div className="text-xs text-muted-foreground self-center">Manual adjustments</div>
-        </CardContent>
       </Card>
 
       <Card>
