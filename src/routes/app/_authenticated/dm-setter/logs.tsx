@@ -103,7 +103,7 @@ function DmLogsPage() {
           </div>
           <Button onClick={() => upload.mutate()} disabled={!files.length || upload.isPending} className="w-full sm:w-auto">
             {upload.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-            Count with AI
+            Submit
           </Button>
         </CardContent>
       </Card>
