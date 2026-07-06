@@ -345,20 +345,20 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
     // AI count + name extraction
     const { total, per } = await countDmsWithAI(data.images);
 
-    // Collect unique candidate recipients across all images in this batch
+    // Collect unique candidate recipients across all images in this batch (with platform per image)
     const seenInBatch = new Set<string>();
-    const candidates: Array<{ normalized: string; original: string }> = [];
+    const candidates: Array<{ normalized: string; original: string; platform: "instagram" | "tiktok" | "other" }> = [];
     for (const p of per) {
       for (const raw of p.names) {
         const norm = normalizeName(raw);
         if (!norm || seenInBatch.has(norm)) continue;
         seenInBatch.add(norm);
-        candidates.push({ normalized: norm, original: raw });
+        candidates.push({ normalized: norm, original: raw, platform: p.platform });
       }
     }
 
     // Filter out names already logged for this setter (across all time)
-    let newNames: Array<{ normalized: string; original: string }> = candidates;
+    let newNames: Array<{ normalized: string; original: string; platform: "instagram" | "tiktok" | "other" }> = candidates;
     if (candidates.length) {
       const { data: existingRows } = await supabaseAdmin
         .from("dm_recipients")
@@ -369,12 +369,12 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
       newNames = candidates.filter((c) => !existingSet.has(c.normalized));
     }
 
-    // Insert upload rows
+    // Insert upload rows (platform per image detected by AI)
     const uploadRows = data.images.map((_img, i) => ({
       dm_daily_log_id: logId!,
       dm_setter_id: me.id,
       image_path: `inline-${Date.now()}-${i}`,
-      platform: data.platform,
+      platform: per[i]?.platform ?? "other",
       ai_count: per[i]?.count ?? 0,
       ai_raw: per[i]?.raw as never,
       status: "counted",
@@ -383,7 +383,7 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
       await supabaseAdmin.from("dm_log_uploads").insert(uploadRows);
     }
 
-    // Insert new unique recipients
+    // Insert new unique recipients (platform per recipient detected by AI)
     let insertedNames = 0;
     if (newNames.length) {
       const { data: inserted } = await supabaseAdmin
@@ -393,7 +393,7 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
           dm_daily_log_id: logId!,
           name_normalized: n.normalized,
           name_original: n.original,
-          platform: data.platform,
+          platform: n.platform,
         })))
         .select("id");
       insertedNames = inserted?.length ?? 0;
