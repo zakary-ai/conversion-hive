@@ -3,9 +3,9 @@ import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { logDmScreenshots, getMyDmStats, adjustDmDailyLog } from "@/lib/api/dm-setters.functions";
+import { logDmScreenshots, getMyDmStats } from "@/lib/api/dm-setters.functions";
 import { toast } from "sonner";
-import { Loader2, Upload, Minus, Plus, ImagePlus, X } from "lucide-react";
+import { Loader2, Upload, ImagePlus, X } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/logs")({
   component: DmLogsPage,
@@ -48,11 +48,6 @@ function DmLogsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const adjust = useMutation({
-    mutationFn: (delta: number) => adjustDmDailyLog({ data: { delta } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-dm-stats"] }),
-  });
-
   const totalToday = (data?.todayLog?.ai_count ?? 0) + (data?.todayLog?.manual_adjustment ?? 0);
   const target = data?.dmSetter?.daily_target ?? 100;
 
@@ -65,11 +60,6 @@ function DmLogsPage() {
 
       <Card>
         <CardHeader><CardTitle>Today: {totalToday} / {target}</CardTitle></CardHeader>
-        <CardContent className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => adjust.mutate(-1)}><Minus className="h-4 w-4" /></Button>
-          <Button size="sm" variant="outline" onClick={() => adjust.mutate(1)}><Plus className="h-4 w-4" /></Button>
-          <div className="text-xs text-muted-foreground self-center">Manual adjustments</div>
-        </CardContent>
       </Card>
 
       <Card>
@@ -113,7 +103,7 @@ function DmLogsPage() {
           </div>
           <Button onClick={() => upload.mutate()} disabled={!files.length || upload.isPending} className="w-full sm:w-auto">
             {upload.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-            Count with AI
+            Submit
           </Button>
         </CardContent>
       </Card>

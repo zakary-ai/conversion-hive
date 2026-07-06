@@ -345,31 +345,35 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
     // AI count + name extraction
     const { total, per } = await countDmsWithAI(data.images);
 
-    // Collect unique candidate recipients across all images in this batch (with platform per image)
+    // For each image: collect its candidate names (dedupe within batch across images),
+    // then insert new-unique recipients. Count = sum over images of (names ? new_unique_from_that_image : raw_count).
     const seenInBatch = new Set<string>();
-    const candidates: Array<{ normalized: string; original: string; platform: "instagram" | "tiktok" | "other" }> = [];
+    const perImageCandidates: Array<Array<{ normalized: string; original: string; platform: "instagram" | "tiktok" | "other" }>> = [];
+    const allCandidates: Array<{ normalized: string; original: string; platform: "instagram" | "tiktok" | "other" }> = [];
     for (const p of per) {
+      const imgCands: Array<{ normalized: string; original: string; platform: "instagram" | "tiktok" | "other" }> = [];
       for (const raw of p.names) {
         const norm = normalizeName(raw);
         if (!norm || seenInBatch.has(norm)) continue;
         seenInBatch.add(norm);
-        candidates.push({ normalized: norm, original: raw, platform: p.platform });
+        const c = { normalized: norm, original: raw, platform: p.platform };
+        imgCands.push(c);
+        allCandidates.push(c);
       }
+      perImageCandidates.push(imgCands);
     }
 
-    // Filter out names already logged for this setter (across all time)
-    let newNames: Array<{ normalized: string; original: string; platform: "instagram" | "tiktok" | "other" }> = candidates;
-    if (candidates.length) {
+    let existingSet = new Set<string>();
+    if (allCandidates.length) {
       const { data: existingRows } = await supabaseAdmin
         .from("dm_recipients")
         .select("name_normalized")
         .eq("dm_setter_id", me.id)
-        .in("name_normalized", candidates.map((c) => c.normalized));
-      const existingSet = new Set((existingRows ?? []).map((r) => r.name_normalized));
-      newNames = candidates.filter((c) => !existingSet.has(c.normalized));
+        .in("name_normalized", allCandidates.map((c) => c.normalized));
+      existingSet = new Set((existingRows ?? []).map((r) => r.name_normalized));
     }
+    const newNames = allCandidates.filter((c) => !existingSet.has(c.normalized));
 
-    // Insert upload rows (platform per image detected by AI)
     const uploadRows = data.images.map((_img, i) => ({
       dm_daily_log_id: logId!,
       dm_setter_id: me.id,
@@ -383,10 +387,8 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
       await supabaseAdmin.from("dm_log_uploads").insert(uploadRows);
     }
 
-    // Insert new unique recipients (platform per recipient detected by AI)
-    let insertedNames = 0;
     if (newNames.length) {
-      const { data: inserted } = await supabaseAdmin
+      await supabaseAdmin
         .from("dm_recipients")
         .insert(newNames.map((n) => ({
           dm_setter_id: me.id,
@@ -394,15 +396,20 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
           name_normalized: n.normalized,
           name_original: n.original,
           platform: n.platform,
-        })))
-        .select("id");
-      insertedNames = inserted?.length ?? 0;
+        })));
     }
 
-    // If AI returned names, only count unique NEW names toward the total (dedupe).
-    // If AI returned no names, fall back to raw AI count.
-    const addToCount = candidates.length > 0 ? insertedNames : total;
-    const duplicatesSkipped = candidates.length - insertedNames;
+    // Per-image count: if that image produced names, count only its NEW-unique names; else fall back to its raw AI count.
+    let addToCount = 0;
+    for (let i = 0; i < per.length; i++) {
+      const cands = perImageCandidates[i] ?? [];
+      if (cands.length > 0) {
+        addToCount += cands.filter((c) => !existingSet.has(c.normalized)).length;
+      } else {
+        addToCount += per[i]?.count ?? 0;
+      }
+    }
+    const duplicatesSkipped = allCandidates.length - newNames.length;
 
     const newCount = (existing?.ai_count ?? 0) + addToCount;
     await supabaseAdmin.from("dm_daily_logs").update({ ai_count: newCount }).eq("id", logId!);
