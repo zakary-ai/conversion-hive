@@ -226,7 +226,6 @@ export const getMyDmStats = createServerFn({ method: "GET" })
   });
 
 const LogImagesSchema = z.object({
-  platform: z.enum(["instagram", "tiktok", "other"]),
   images: z.array(z.string().max(20_000_000)).min(1).max(10), // base64 data URLs
 });
 
@@ -238,24 +237,25 @@ function normalizeName(n: string) {
 // Otherwise fall back to the Lovable AI Gateway using LOVABLE_API_KEY.
 async function countDmsWithAI(imageDataUrls: string[]): Promise<{
   total: number;
-  per: Array<{ count: number; names: string[]; raw: unknown }>;
+  per: Array<{ count: number; names: string[]; platform: "instagram" | "tiktok" | "other"; raw: unknown }>;
 }> {
   const geminiKey = process.env.GEMINI_API_KEY;
   const lovableKey = process.env.LOVABLE_API_KEY;
   const useDirect = !!geminiKey;
-  const per: Array<{ count: number; names: string[]; raw: unknown }> = [];
+  const per: Array<{ count: number; names: string[]; platform: "instagram" | "tiktok" | "other"; raw: unknown }> = [];
   let total = 0;
 
   const systemPrompt =
-    'You are analyzing a screenshot of an Instagram or TikTok DM inbox / conversation UI. ' +
+    'You are analyzing a screenshot of a social media DM inbox or conversation UI. ' +
+    'Identify the platform: respond with "instagram" if the UI is Instagram, "tiktok" if it is TikTok, or "other" if it is a different platform. ' +
     'Identify each distinct outbound direct message the account owner sent in the screenshot. ' +
     'Also extract the recipient usernames or display names visible for those conversations (one per conversation). ' +
     'Respond with ONLY a JSON object of the form ' +
-    '{"count": <integer>, "names": ["name1","name2",...]}. ' +
+    '{"platform": "instagram" | "tiktok" | "other", "count": <integer>, "names": ["name1","name2",...]}. ' +
     'Use the @username if visible, otherwise the display name. No other text.';
 
   for (const img of imageDataUrls) {
-    if (!useDirect && !lovableKey) { per.push({ count: 0, names: [], raw: { error: "no_api_key" } }); continue; }
+    if (!useDirect && !lovableKey) { per.push({ count: 0, names: [], platform: "other", raw: { error: "no_api_key" } }); continue; }
     try {
       let txt = "";
       if (useDirect) {
@@ -279,7 +279,7 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
             }),
           },
         );
-        if (!res.ok) { per.push({ count: 0, names: [], raw: { status: res.status, provider: "google" } }); continue; }
+        if (!res.ok) { per.push({ count: 0, names: [], platform: "other", raw: { status: res.status, provider: "google" } }); continue; }
         const j = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
         txt = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
       } else {
@@ -300,20 +300,22 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
             ],
           }),
         });
-        if (!res.ok) { per.push({ count: 0, names: [], raw: { status: res.status, provider: "lovable" } }); continue; }
+        if (!res.ok) { per.push({ count: 0, names: [], platform: "other", raw: { status: res.status, provider: "lovable" } }); continue; }
         const j = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
         txt = j.choices?.[0]?.message?.content ?? "";
       }
       const m = txt.match(/\{[\s\S]*\}/);
-      const parsed = m ? JSON.parse(m[0]) as { count?: number; names?: unknown } : { count: 0, names: [] };
+      const parsed = m ? JSON.parse(m[0]) as { platform?: unknown; count?: number; names?: unknown } : { platform: "other", count: 0, names: [] };
       const c = Math.max(0, Math.min(500, Number(parsed.count) || 0));
       const namesArr = Array.isArray(parsed.names)
         ? (parsed.names as unknown[]).map((n) => String(n ?? "").trim()).filter((n) => n.length > 0 && n.length < 200)
         : [];
+      const rawPlatform = String(parsed.platform ?? "").toLowerCase();
+      const detectedPlatform: "instagram" | "tiktok" | "other" = rawPlatform === "instagram" ? "instagram" : rawPlatform === "tiktok" ? "tiktok" : "other";
       total += c;
-      per.push({ count: c, names: namesArr, raw: { text: txt, provider: useDirect ? "google" : "lovable" } });
+      per.push({ count: c, names: namesArr, platform: detectedPlatform, raw: { text: txt, provider: useDirect ? "google" : "lovable" } });
     } catch (e) {
-      per.push({ count: 0, names: [], raw: { error: (e as Error).message } });
+      per.push({ count: 0, names: [], platform: "other", raw: { error: (e as Error).message } });
     }
   }
   return { total, per };
@@ -343,20 +345,20 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
     // AI count + name extraction
     const { total, per } = await countDmsWithAI(data.images);
 
-    // Collect unique candidate recipients across all images in this batch
+    // Collect unique candidate recipients across all images in this batch (with platform per image)
     const seenInBatch = new Set<string>();
-    const candidates: Array<{ normalized: string; original: string }> = [];
+    const candidates: Array<{ normalized: string; original: string; platform: "instagram" | "tiktok" | "other" }> = [];
     for (const p of per) {
       for (const raw of p.names) {
         const norm = normalizeName(raw);
         if (!norm || seenInBatch.has(norm)) continue;
         seenInBatch.add(norm);
-        candidates.push({ normalized: norm, original: raw });
+        candidates.push({ normalized: norm, original: raw, platform: p.platform });
       }
     }
 
     // Filter out names already logged for this setter (across all time)
-    let newNames: Array<{ normalized: string; original: string }> = candidates;
+    let newNames: Array<{ normalized: string; original: string; platform: "instagram" | "tiktok" | "other" }> = candidates;
     if (candidates.length) {
       const { data: existingRows } = await supabaseAdmin
         .from("dm_recipients")
@@ -367,12 +369,12 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
       newNames = candidates.filter((c) => !existingSet.has(c.normalized));
     }
 
-    // Insert upload rows
+    // Insert upload rows (platform per image detected by AI)
     const uploadRows = data.images.map((_img, i) => ({
       dm_daily_log_id: logId!,
       dm_setter_id: me.id,
       image_path: `inline-${Date.now()}-${i}`,
-      platform: data.platform,
+      platform: per[i]?.platform ?? "other",
       ai_count: per[i]?.count ?? 0,
       ai_raw: per[i]?.raw as never,
       status: "counted",
@@ -381,7 +383,7 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
       await supabaseAdmin.from("dm_log_uploads").insert(uploadRows);
     }
 
-    // Insert new unique recipients
+    // Insert new unique recipients (platform per recipient detected by AI)
     let insertedNames = 0;
     if (newNames.length) {
       const { data: inserted } = await supabaseAdmin
@@ -391,7 +393,7 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
           dm_daily_log_id: logId!,
           name_normalized: n.normalized,
           name_original: n.original,
-          platform: data.platform,
+          platform: n.platform,
         })))
         .select("id");
       insertedNames = inserted?.length ?? 0;

@@ -3,16 +3,13 @@ import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { logDmScreenshots, getMyDmStats, adjustDmDailyLog } from "@/lib/api/dm-setters.functions";
 import { toast } from "sonner";
-import { Loader2, Upload, Minus, Plus, Camera, ImagePlus, X } from "lucide-react";
+import { Loader2, Upload, Minus, Plus, ImagePlus, X } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/logs")({
   component: DmLogsPage,
 });
-
-type Platform = "instagram" | "tiktok" | "other";
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -26,10 +23,8 @@ async function fileToDataUrl(file: File): Promise<string> {
 function DmLogsPage() {
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ["my-dm-stats"], queryFn: () => getMyDmStats() });
-  const [platform, setPlatform] = useState<Platform>("instagram");
   const [files, setFiles] = useState<File[]>([]);
   const libraryRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
@@ -41,7 +36,7 @@ function DmLogsPage() {
   const upload = useMutation({
     mutationFn: async () => {
       const images = await Promise.all(files.map(fileToDataUrl));
-      return logDmScreenshots({ data: { platform, images } });
+      return logDmScreenshots({ data: { images } });
     },
     onSuccess: (r) => {
       const parts = [`+${r.added} DM${r.added === 1 ? "" : "s"} · today ${r.total_today}`];
@@ -65,7 +60,7 @@ function DmLogsPage() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-semibold">Log DMs</h1>
-        <p className="text-sm text-muted-foreground">Upload screenshots and AI will count outbound DMs.</p>
+        <p className="text-sm text-muted-foreground">Upload screenshots and AI will count outbound DMs and detect the platform.</p>
       </div>
 
       <Card>
@@ -80,16 +75,6 @@ function DmLogsPage() {
       <Card>
         <CardHeader><CardTitle>Upload screenshots</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <div>
-            <Select value={platform} onValueChange={(v) => setPlatform(v as Platform)}>
-              <SelectTrigger className="w-full max-w-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="instagram">Instagram</SelectItem>
-                <SelectItem value="tiktok">TikTok</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <input
             ref={libraryRef}
             type="file"
@@ -98,20 +83,9 @@ function DmLogsPage() {
             className="hidden"
             onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
           />
-          <input
-            ref={cameraRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
-          />
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" onClick={() => libraryRef.current?.click()}>
               <ImagePlus className="h-4 w-4 mr-2" /> Choose from library
-            </Button>
-            <Button type="button" variant="outline" onClick={() => cameraRef.current?.click()}>
-              <Camera className="h-4 w-4 mr-2" /> Take photo
             </Button>
           </div>
           {files.length > 0 && (
@@ -135,7 +109,7 @@ function DmLogsPage() {
             </div>
           )}
           <div className="text-xs text-muted-foreground">
-            {files.length}/10 selected · you can add photos one at a time from your phone camera.
+            {files.length}/10 selected · AI will detect whether the screenshot is from Instagram, TikTok, or another platform.
           </div>
           <Button onClick={() => upload.mutate()} disabled={!files.length || upload.isPending} className="w-full sm:w-auto">
             {upload.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
