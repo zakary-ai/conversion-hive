@@ -99,6 +99,32 @@ function DmLogsPage() {
       </Card>
 
       <Card>
+        <CardHeader>
+          <CardTitle>Recipients logged ({data?.recipientTotal ?? 0})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground mb-3">
+            AI extracts recipient usernames from your screenshots. Duplicates are automatically skipped so the same person is never counted twice.
+          </p>
+          {(data?.recipients ?? []).length === 0 ? (
+            <div className="text-sm text-muted-foreground">No recipients logged yet.</div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
+              {(data?.recipients ?? []).map((r) => (
+                <span
+                  key={r.id}
+                  className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs"
+                  title={new Date(r.created_at).toLocaleString()}
+                >
+                  {r.name_original}
+                </span>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle>Recent days</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-1 text-sm">
