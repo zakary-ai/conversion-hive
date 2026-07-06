@@ -217,25 +217,35 @@ const LogImagesSchema = z.object({
   images: z.array(z.string().max(20_000_000)).min(1).max(10), // base64 data URLs
 });
 
-// BYO routing: if GEMINI_API_KEY is set, call Google's Gemini API directly
-// (billed to the customer's Google account). Otherwise, fall back to the
-// Lovable AI Gateway using LOVABLE_API_KEY (billed via Lovable credits).
-async function countDmsWithAI(imageDataUrls: string[]): Promise<{ total: number; per: Array<{ count: number; raw: unknown }> }> {
+function normalizeName(n: string) {
+  return n.trim().toLowerCase().replace(/^@+/, "").replace(/\s+/g, " ");
+}
+
+// BYO routing: if GEMINI_API_KEY is set, call Google's Gemini API directly.
+// Otherwise fall back to the Lovable AI Gateway using LOVABLE_API_KEY.
+async function countDmsWithAI(imageDataUrls: string[]): Promise<{
+  total: number;
+  per: Array<{ count: number; names: string[]; raw: unknown }>;
+}> {
   const geminiKey = process.env.GEMINI_API_KEY;
   const lovableKey = process.env.LOVABLE_API_KEY;
   const useDirect = !!geminiKey;
-  const per: Array<{ count: number; raw: unknown }> = [];
+  const per: Array<{ count: number; names: string[]; raw: unknown }> = [];
   let total = 0;
 
   const systemPrompt =
-    "You count the number of distinct outbound direct messages sent by the account owner in the screenshot (Instagram or TikTok DM UI). Respond with ONLY a JSON object like {\"count\": 12}. Do not include any other text.";
+    'You are analyzing a screenshot of an Instagram or TikTok DM inbox / conversation UI. ' +
+    'Identify each distinct outbound direct message the account owner sent in the screenshot. ' +
+    'Also extract the recipient usernames or display names visible for those conversations (one per conversation). ' +
+    'Respond with ONLY a JSON object of the form ' +
+    '{"count": <integer>, "names": ["name1","name2",...]}. ' +
+    'Use the @username if visible, otherwise the display name. No other text.';
 
   for (const img of imageDataUrls) {
-    if (!useDirect && !lovableKey) { per.push({ count: 0, raw: { error: "no_api_key" } }); continue; }
+    if (!useDirect && !lovableKey) { per.push({ count: 0, names: [], raw: { error: "no_api_key" } }); continue; }
     try {
       let txt = "";
       if (useDirect) {
-        // Direct Google Gemini API (BYO key)
         const m = img.match(/^data:([^;]+);base64,(.+)$/);
         const mime = m?.[1] ?? "image/png";
         const b64 = m?.[2] ?? "";
@@ -249,18 +259,17 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{ total: number;
               contents: [{
                 role: "user",
                 parts: [
-                  { text: "Count the outbound DMs I sent in this screenshot." },
+                  { text: "Count outbound DMs and list recipient names for this screenshot." },
                   { inline_data: { mime_type: mime, data: b64 } },
                 ],
               }],
             }),
           },
         );
-        if (!res.ok) { per.push({ count: 0, raw: { status: res.status, provider: "google" } }); continue; }
+        if (!res.ok) { per.push({ count: 0, names: [], raw: { status: res.status, provider: "google" } }); continue; }
         const j = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
         txt = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
       } else {
-        // Fallback: Lovable AI Gateway
         const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
@@ -271,24 +280,27 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{ total: number;
               {
                 role: "user",
                 content: [
-                  { type: "text", text: "Count the outbound DMs I sent in this screenshot." },
+                  { type: "text", text: "Count outbound DMs and list recipient names for this screenshot." },
                   { type: "image_url", image_url: { url: img } },
                 ],
               },
             ],
           }),
         });
-        if (!res.ok) { per.push({ count: 0, raw: { status: res.status, provider: "lovable" } }); continue; }
+        if (!res.ok) { per.push({ count: 0, names: [], raw: { status: res.status, provider: "lovable" } }); continue; }
         const j = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
         txt = j.choices?.[0]?.message?.content ?? "";
       }
-      const m = txt.match(/\{[^}]*\}/);
-      const parsed = m ? JSON.parse(m[0]) as { count?: number } : { count: 0 };
+      const m = txt.match(/\{[\s\S]*\}/);
+      const parsed = m ? JSON.parse(m[0]) as { count?: number; names?: unknown } : { count: 0, names: [] };
       const c = Math.max(0, Math.min(500, Number(parsed.count) || 0));
+      const namesArr = Array.isArray(parsed.names)
+        ? (parsed.names as unknown[]).map((n) => String(n ?? "").trim()).filter((n) => n.length > 0 && n.length < 200)
+        : [];
       total += c;
-      per.push({ count: c, raw: { text: txt, provider: useDirect ? "google" : "lovable" } });
+      per.push({ count: c, names: namesArr, raw: { text: txt, provider: useDirect ? "google" : "lovable" } });
     } catch (e) {
-      per.push({ count: 0, raw: { error: (e as Error).message } });
+      per.push({ count: 0, names: [], raw: { error: (e as Error).message } });
     }
   }
   return { total, per };
