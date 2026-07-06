@@ -3,9 +3,9 @@ import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { logDmScreenshots, getMyDmStats, adjustDmDailyLog } from "@/lib/api/dm-setters.functions";
+import { logDmScreenshots, getMyDmStats } from "@/lib/api/dm-setters.functions";
 import { toast } from "sonner";
-import { Loader2, Upload, Minus, Plus, ImagePlus, X } from "lucide-react";
+import { Loader2, Upload, ImagePlus, X } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/logs")({
   component: DmLogsPage,
