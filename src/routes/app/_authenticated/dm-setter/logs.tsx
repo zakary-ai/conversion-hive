@@ -75,16 +75,6 @@ function DmLogsPage() {
       <Card>
         <CardHeader><CardTitle>Upload screenshots</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <div>
-            <Select value={platform} onValueChange={(v) => setPlatform(v as Platform)}>
-              <SelectTrigger className="w-full max-w-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="instagram">Instagram</SelectItem>
-                <SelectItem value="tiktok">TikTok</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <input
             ref={libraryRef}
             type="file"
@@ -93,20 +83,9 @@ function DmLogsPage() {
             className="hidden"
             onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
           />
-          <input
-            ref={cameraRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
-          />
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" onClick={() => libraryRef.current?.click()}>
               <ImagePlus className="h-4 w-4 mr-2" /> Choose from library
-            </Button>
-            <Button type="button" variant="outline" onClick={() => cameraRef.current?.click()}>
-              <Camera className="h-4 w-4 mr-2" /> Take photo
             </Button>
           </div>
           {files.length > 0 && (
