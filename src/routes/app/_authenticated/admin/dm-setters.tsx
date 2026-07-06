@@ -337,6 +337,45 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
                 <div className="text-xs text-muted-foreground">7.5% of ${data.stats.total_revenue.toFixed(2)}</div>
               </CardContent>
             </Card>
+
+            {data.setter.is_manager && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Setters under management ({data.team.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {data.team.length === 0 && (
+                    <div className="text-sm text-muted-foreground">No setters assigned to this manager.</div>
+                  )}
+                  {data.team.map((t) => {
+                    const pct = Math.min(100, t.kpi_percent);
+                    const color = t.kpi_percent >= 100 ? "text-emerald-600" : t.kpi_percent >= 60 ? "text-amber-600" : "text-red-600";
+                    return (
+                      <div key={t.setter.id} className="rounded-md border border-border p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{t.setter.full_name}</div>
+                            <div className="text-xs text-muted-foreground truncate">{t.setter.email}</div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className={cn("text-sm font-semibold tabular-nums", color)}>{t.kpi_percent}%</div>
+                            <div className="text-[11px] text-muted-foreground tabular-nums">
+                              {t.dms.toLocaleString()} / {t.target_total.toLocaleString()} DMs
+                            </div>
+                          </div>
+                        </div>
+                        <Progress value={pct} className="mt-2 h-2" />
+                        <div className="mt-1 text-[11px] text-muted-foreground">
+                          Target {t.target}/day{data.rangeDays ? ` · ${data.rangeDays} day${data.rangeDays > 1 ? "s" : ""}` : ` · ${t.days_logged} logged day${t.days_logged === 1 ? "" : "s"}`}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </DialogContent>
