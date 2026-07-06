@@ -60,7 +60,7 @@ function DmLogsPage() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-semibold">Log DMs</h1>
-        <p className="text-sm text-muted-foreground">Upload screenshots and AI will count outbound DMs.</p>
+        <p className="text-sm text-muted-foreground">Upload screenshots and AI will count outbound DMs and detect the platform.</p>
       </div>
 
       <Card>
