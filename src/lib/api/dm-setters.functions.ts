@@ -204,10 +204,23 @@ export const getMyDmStats = createServerFn({ method: "GET" })
     // Recent logs
     const { data: recent } = await context.supabase
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).order("log_date", { ascending: false }).limit(14);
+    // Recent recipients (most recent 100)
+    const { data: recipients } = await context.supabase
+      .from("dm_recipients")
+      .select("id, name_original, platform, created_at")
+      .eq("dm_setter_id", me.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    const { count: recipientCount } = await context.supabase
+      .from("dm_recipients")
+      .select("id", { count: "exact", head: true })
+      .eq("dm_setter_id", me.id);
     return {
       dmSetter: me,
       todayLog: log,
       recentLogs: recent ?? [],
+      recipients: recipients ?? [],
+      recipientTotal: recipientCount ?? 0,
       ...stats,
     };
   });
