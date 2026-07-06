@@ -237,20 +237,21 @@ function normalizeName(n: string) {
 // Otherwise fall back to the Lovable AI Gateway using LOVABLE_API_KEY.
 async function countDmsWithAI(imageDataUrls: string[]): Promise<{
   total: number;
-  per: Array<{ count: number; names: string[]; raw: unknown }>;
+  per: Array<{ count: number; names: string[]; platform: "instagram" | "tiktok" | "other"; raw: unknown }>;
 }> {
   const geminiKey = process.env.GEMINI_API_KEY;
   const lovableKey = process.env.LOVABLE_API_KEY;
   const useDirect = !!geminiKey;
-  const per: Array<{ count: number; names: string[]; raw: unknown }> = [];
+  const per: Array<{ count: number; names: string[]; platform: "instagram" | "tiktok" | "other"; raw: unknown }> = [];
   let total = 0;
 
   const systemPrompt =
-    'You are analyzing a screenshot of an Instagram or TikTok DM inbox / conversation UI. ' +
+    'You are analyzing a screenshot of a social media DM inbox or conversation UI. ' +
+    'Identify the platform: respond with "instagram" if the UI is Instagram, "tiktok" if it is TikTok, or "other" if it is a different platform. ' +
     'Identify each distinct outbound direct message the account owner sent in the screenshot. ' +
     'Also extract the recipient usernames or display names visible for those conversations (one per conversation). ' +
     'Respond with ONLY a JSON object of the form ' +
-    '{"count": <integer>, "names": ["name1","name2",...]}. ' +
+    '{"platform": "instagram" | "tiktok" | "other", "count": <integer>, "names": ["name1","name2",...]}. ' +
     'Use the @username if visible, otherwise the display name. No other text.';
 
   for (const img of imageDataUrls) {
