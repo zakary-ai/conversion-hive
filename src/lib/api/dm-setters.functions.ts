@@ -389,6 +389,24 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
 /*  Admin: DM setter detail                                                    */
 /* -------------------------------------------------------------------------- */
 
+async function sumDmsInRange(setterId: string, from?: string | null, to?: string | null) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  let q = supabaseAdmin.from("dm_daily_logs").select("ai_count, manual_adjustment, log_date").eq("dm_setter_id", setterId);
+  if (from) q = q.gte("log_date", from.slice(0, 10));
+  if (to) q = q.lte("log_date", to.slice(0, 10));
+  const { data } = await q;
+  let total = 0;
+  for (const r of data ?? []) total += (r.ai_count ?? 0) + (r.manual_adjustment ?? 0);
+  return { total, days_logged: (data ?? []).length };
+}
+
+function daysInRange(from?: string | null, to?: string | null) {
+  if (!from || !to) return null;
+  const a = new Date(from.slice(0, 10) + "T00:00:00Z").getTime();
+  const b = new Date(to.slice(0, 10) + "T00:00:00Z").getTime();
+  return Math.max(1, Math.round((b - a) / 86_400_000) + 1);
+}
+
 export const getAdminDmSetterDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
@@ -401,11 +419,42 @@ export const getAdminDmSetterDetail = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: setter } = await supabaseAdmin.from("dm_setters").select("*").eq("id", data.id).maybeSingle();
     if (!setter) throw new Error("Not found");
-    const [{ stats, applications, bookings }, logs] = await Promise.all([
+    const [{ stats, applications, bookings }, logs, dmSum] = await Promise.all([
       computeStatsFor(setter.id, { from: data.from ?? undefined, to: data.to ?? undefined }),
       supabaseAdmin.from("dm_daily_logs").select("*").eq("dm_setter_id", setter.id).order("log_date", { ascending: false }).limit(30),
+      sumDmsInRange(setter.id, data.from, data.to),
     ]);
-    return { setter, stats, applications, bookings, logs: logs.data ?? [] };
+
+    const rangeDays = daysInRange(data.from, data.to);
+
+    type TeamRow = {
+      setter: typeof setter;
+      dms: number;
+      days_logged: number;
+      target: number;
+      target_total: number;
+      kpi_percent: number;
+    };
+    let team: TeamRow[] = [];
+    if (setter.is_manager) {
+      const { data: teamRows } = await supabaseAdmin.from("dm_setters").select("*").eq("manager_id", setter.id);
+      team = await Promise.all((teamRows ?? []).map(async (s): Promise<TeamRow> => {
+        const { total, days_logged } = await sumDmsInRange(s.id, data.from, data.to);
+        const perDayTarget = s.daily_target ?? 100;
+        const days = rangeDays ?? Math.max(1, days_logged);
+        const target_total = perDayTarget * days;
+        return {
+          setter: s,
+          dms: total,
+          days_logged,
+          target: perDayTarget,
+          target_total,
+          kpi_percent: target_total > 0 ? Math.round((total / target_total) * 100) : 0,
+        };
+      }));
+    }
+
+    return { setter, stats, applications, bookings, logs: logs.data ?? [], dmSum, rangeDays, team };
   });
 
 export const listDmManagers = createServerFn({ method: "GET" })
