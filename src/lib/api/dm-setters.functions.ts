@@ -255,7 +255,7 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
     'Use the @username if visible, otherwise the display name. No other text.';
 
   for (const img of imageDataUrls) {
-    if (!useDirect && !lovableKey) { per.push({ count: 0, names: [], raw: { error: "no_api_key" } }); continue; }
+    if (!useDirect && !lovableKey) { per.push({ count: 0, names: [], platform: "other", raw: { error: "no_api_key" } }); continue; }
     try {
       let txt = "";
       if (useDirect) {
@@ -279,7 +279,7 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
             }),
           },
         );
-        if (!res.ok) { per.push({ count: 0, names: [], raw: { status: res.status, provider: "google" } }); continue; }
+        if (!res.ok) { per.push({ count: 0, names: [], platform: "other", raw: { status: res.status, provider: "google" } }); continue; }
         const j = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
         txt = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
       } else {
@@ -300,20 +300,22 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
             ],
           }),
         });
-        if (!res.ok) { per.push({ count: 0, names: [], raw: { status: res.status, provider: "lovable" } }); continue; }
+        if (!res.ok) { per.push({ count: 0, names: [], platform: "other", raw: { status: res.status, provider: "lovable" } }); continue; }
         const j = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
         txt = j.choices?.[0]?.message?.content ?? "";
       }
       const m = txt.match(/\{[\s\S]*\}/);
-      const parsed = m ? JSON.parse(m[0]) as { count?: number; names?: unknown } : { count: 0, names: [] };
+      const parsed = m ? JSON.parse(m[0]) as { platform?: unknown; count?: number; names?: unknown } : { platform: "other", count: 0, names: [] };
       const c = Math.max(0, Math.min(500, Number(parsed.count) || 0));
       const namesArr = Array.isArray(parsed.names)
         ? (parsed.names as unknown[]).map((n) => String(n ?? "").trim()).filter((n) => n.length > 0 && n.length < 200)
         : [];
+      const rawPlatform = String(parsed.platform ?? "").toLowerCase();
+      const detectedPlatform: "instagram" | "tiktok" | "other" = rawPlatform === "instagram" ? "instagram" : rawPlatform === "tiktok" ? "tiktok" : "other";
       total += c;
-      per.push({ count: c, names: namesArr, raw: { text: txt, provider: useDirect ? "google" : "lovable" } });
+      per.push({ count: c, names: namesArr, platform: detectedPlatform, raw: { text: txt, provider: useDirect ? "google" : "lovable" } });
     } catch (e) {
-      per.push({ count: 0, names: [], raw: { error: (e as Error).message } });
+      per.push({ count: 0, names: [], platform: "other", raw: { error: (e as Error).message } });
     }
   }
   return { total, per };
