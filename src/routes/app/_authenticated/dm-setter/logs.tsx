@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { logDmScreenshots, getMyDmStats, adjustDmDailyLog } from "@/lib/api/dm-setters.functions";
 import { toast } from "sonner";
-import { Loader2, Upload, Minus, Plus } from "lucide-react";
+import { Loader2, Upload, Minus, Plus, Camera, ImagePlus, X } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/logs")({
   component: DmLogsPage,
