@@ -35,7 +35,9 @@ function DmLogsPage() {
       return logDmScreenshots({ data: { platform, images } });
     },
     onSuccess: (r) => {
-      toast.success(`Added ${r.added} DMs (today: ${r.total_today})`);
+      const parts = [`+${r.added} DM${r.added === 1 ? "" : "s"} · today ${r.total_today}`];
+      if (r.duplicates_skipped > 0) parts.push(`${r.duplicates_skipped} duplicate${r.duplicates_skipped === 1 ? "" : "s"} skipped`);
+      toast.success(parts.join(" · "));
       setFiles([]);
       qc.invalidateQueries({ queryKey: ["my-dm-stats"] });
     },
