@@ -397,10 +397,27 @@ export async function runDistributePhase(opts: { triggeredBy: string; manual?: b
       else result.recycled = staleIds.length;
     }
 
-    // 2. Distribute: each enabled setter gets LEADS_PER_SETTER fresh leads.
+    // 2. Distribute: top up each enabled setter to LEADS_PER_SETTER for today,
+    //    allocating the available pool round-robin so a small pool doesn't get
+    //    vacuumed up by whoever comes first.
     const setters = await loadEnabledSetters();
     const nowIso = new Date().toISOString();
+
+    // Per-setter "need" = LEADS_PER_SETTER minus leads already assigned today.
+    const setterState: Array<{ setter: Setter; assignedToday: number; need: number }> = [];
     for (const s of setters) {
+      const { count } = await supabaseAdmin
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .eq("assigned_user_id", s.user_id)
+        .gte("assigned_at", since);
+      const assignedToday = count ?? 0;
+      const need = Math.max(0, LEADS_PER_SETTER - assignedToday);
+      setterState.push({ setter: s, assignedToday, need });
+    }
+    const totalNeed = setterState.reduce((n, r) => n + r.need, 0);
+
+    if (totalNeed > 0) {
       const { data: pool, error: pErr } = await supabaseAdmin
         .from("leads")
         .select("id")
@@ -409,34 +426,59 @@ export async function runDistributePhase(opts: { triggeredBy: string; manual?: b
         .eq("do_not_contact", false)
         .is("assigned_user_id", null)
         .order("created_at", { ascending: true })
-        .limit(LEADS_PER_SETTER);
-      if (pErr) {
-        errors.push(`pool(${s.user_id}): ${pErr.message}`);
-        result.perSetter.push({ user_id: s.user_id, name: s.full_name, assigned: 0, shortfall: LEADS_PER_SETTER });
-        continue;
+        .limit(totalNeed);
+      if (pErr) errors.push(`pool: ${pErr.message}`);
+      const poolIds = (pool ?? []).map((r) => r.id as string);
+
+      // Round-robin: iterate setters repeatedly, hand out one lead at a time
+      // until the pool is empty or every setter is topped up.
+      const buckets = new Map<string, string[]>();
+      for (const r of setterState) buckets.set(r.setter.user_id, []);
+      let cursor = 0;
+      const remaining = setterState.map((r) => r.need);
+      while (cursor < poolIds.length) {
+        let handedOutThisRound = 0;
+        for (let i = 0; i < setterState.length && cursor < poolIds.length; i++) {
+          if (remaining[i] <= 0) continue;
+          buckets.get(setterState[i].setter.user_id)!.push(poolIds[cursor++]);
+          remaining[i] -= 1;
+          handedOutThisRound += 1;
+        }
+        if (handedOutThisRound === 0) break;
       }
-      const ids = (pool ?? []).map((r) => r.id as string);
-      if (ids.length === 0) {
-        result.perSetter.push({ user_id: s.user_id, name: s.full_name, assigned: 0, shortfall: LEADS_PER_SETTER });
-        continue;
+
+      for (const r of setterState) {
+        const ids = buckets.get(r.setter.user_id) ?? [];
+        if (ids.length > 0) {
+          const { error: aErr } = await supabaseAdmin
+            .from("leads")
+            .update({ assigned_user_id: r.setter.user_id, assigned_at: nowIso })
+            .in("id", ids);
+          if (aErr) {
+            errors.push(`assign(${r.setter.user_id}): ${aErr.message}`);
+            result.perSetter.push({ user_id: r.setter.user_id, name: r.setter.full_name, assigned: 0, shortfall: r.need });
+            continue;
+          }
+          result.distributed += ids.length;
+        }
+        result.perSetter.push({
+          user_id: r.setter.user_id,
+          name: r.setter.full_name,
+          assigned: ids.length,
+          shortfall: Math.max(0, r.need - ids.length),
+        });
       }
-      const { error: aErr } = await supabaseAdmin
-        .from("leads")
-        .update({ assigned_user_id: s.user_id, assigned_at: nowIso })
-        .in("id", ids);
-      if (aErr) {
-        errors.push(`assign(${s.user_id}): ${aErr.message}`);
-        result.perSetter.push({ user_id: s.user_id, name: s.full_name, assigned: 0, shortfall: LEADS_PER_SETTER });
-        continue;
+    } else {
+      for (const r of setterState) {
+        result.perSetter.push({
+          user_id: r.setter.user_id,
+          name: r.setter.full_name,
+          assigned: 0,
+          shortfall: 0,
+        });
       }
-      result.distributed += ids.length;
-      result.perSetter.push({
-        user_id: s.user_id,
-        name: s.full_name,
-        assigned: ids.length,
-        shortfall: Math.max(0, LEADS_PER_SETTER - ids.length),
-      });
     }
+
 
     result.shortfall = result.perSetter.reduce((sum, p) => sum + p.shortfall, 0);
     result.poolAfter = await countAvailablePool();
