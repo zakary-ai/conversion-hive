@@ -327,8 +327,32 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
       logId = created.id;
     }
 
-    // AI count
+    // AI count + name extraction
     const { total, per } = await countDmsWithAI(data.images);
+
+    // Collect unique candidate recipients across all images in this batch
+    const seenInBatch = new Set<string>();
+    const candidates: Array<{ normalized: string; original: string }> = [];
+    for (const p of per) {
+      for (const raw of p.names) {
+        const norm = normalizeName(raw);
+        if (!norm || seenInBatch.has(norm)) continue;
+        seenInBatch.add(norm);
+        candidates.push({ normalized: norm, original: raw });
+      }
+    }
+
+    // Filter out names already logged for this setter (across all time)
+    let newNames: Array<{ normalized: string; original: string }> = candidates;
+    if (candidates.length) {
+      const { data: existingRows } = await supabaseAdmin
+        .from("dm_recipients")
+        .select("name_normalized")
+        .eq("dm_setter_id", me.id)
+        .in("name_normalized", candidates.map((c) => c.normalized));
+      const existingSet = new Set((existingRows ?? []).map((r) => r.name_normalized));
+      newNames = candidates.filter((c) => !existingSet.has(c.normalized));
+    }
 
     // Insert upload rows
     const uploadRows = data.images.map((_img, i) => ({
@@ -344,11 +368,37 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
       await supabaseAdmin.from("dm_log_uploads").insert(uploadRows);
     }
 
-    // Add to daily ai_count
-    const newCount = (existing?.ai_count ?? 0) + total;
+    // Insert new unique recipients
+    let insertedNames = 0;
+    if (newNames.length) {
+      const { data: inserted } = await supabaseAdmin
+        .from("dm_recipients")
+        .insert(newNames.map((n) => ({
+          dm_setter_id: me.id,
+          dm_daily_log_id: logId!,
+          name_normalized: n.normalized,
+          name_original: n.original,
+          platform: data.platform,
+        })))
+        .select("id");
+      insertedNames = inserted?.length ?? 0;
+    }
+
+    // If AI returned names, only count unique NEW names toward the total (dedupe).
+    // If AI returned no names, fall back to raw AI count.
+    const addToCount = candidates.length > 0 ? insertedNames : total;
+    const duplicatesSkipped = candidates.length - insertedNames;
+
+    const newCount = (existing?.ai_count ?? 0) + addToCount;
     await supabaseAdmin.from("dm_daily_logs").update({ ai_count: newCount }).eq("id", logId!);
 
-    return { added: total, total_today: newCount + (existing?.manual_adjustment ?? 0) };
+    return {
+      added: addToCount,
+      ai_detected: total,
+      duplicates_skipped: duplicatesSkipped,
+      new_names: newNames.map((n) => n.original),
+      total_today: newCount + (existing?.manual_adjustment ?? 0),
+    };
   });
 
 export const adjustDmDailyLog = createServerFn({ method: "POST" })
