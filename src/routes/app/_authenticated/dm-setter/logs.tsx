@@ -28,6 +28,15 @@ function DmLogsPage() {
   const { data } = useQuery({ queryKey: ["my-dm-stats"], queryFn: () => getMyDmStats() });
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [files, setFiles] = useState<File[]>([]);
+  const libraryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+
+  const addFiles = (list: FileList | null) => {
+    if (!list) return;
+    const incoming = Array.from(list);
+    setFiles((prev) => [...prev, ...incoming].slice(0, 10));
+  };
+  const removeFile = (i: number) => setFiles((prev) => prev.filter((_, idx) => idx !== i));
 
   const upload = useMutation({
     mutationFn: async () => {
