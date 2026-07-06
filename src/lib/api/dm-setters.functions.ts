@@ -226,7 +226,6 @@ export const getMyDmStats = createServerFn({ method: "GET" })
   });
 
 const LogImagesSchema = z.object({
-  platform: z.enum(["instagram", "tiktok", "other"]),
   images: z.array(z.string().max(20_000_000)).min(1).max(10), // base64 data URLs
 });
 
