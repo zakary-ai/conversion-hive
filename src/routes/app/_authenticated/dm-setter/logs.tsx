@@ -23,10 +23,8 @@ async function fileToDataUrl(file: File): Promise<string> {
 function DmLogsPage() {
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ["my-dm-stats"], queryFn: () => getMyDmStats() });
-  const [platform, setPlatform] = useState<Platform>("instagram");
   const [files, setFiles] = useState<File[]>([]);
   const libraryRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
@@ -38,7 +36,7 @@ function DmLogsPage() {
   const upload = useMutation({
     mutationFn: async () => {
       const images = await Promise.all(files.map(fileToDataUrl));
-      return logDmScreenshots({ data: { platform, images } });
+      return logDmScreenshots({ data: { images } });
     },
     onSuccess: (r) => {
       const parts = [`+${r.added} DM${r.added === 1 ? "" : "s"} · today ${r.total_today}`];
