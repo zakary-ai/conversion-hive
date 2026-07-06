@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { logDmScreenshots, getMyDmStats, adjustDmDailyLog } from "@/lib/api/dm-setters.functions";
 import { toast } from "sonner";
-import { Loader2, Upload, Minus, Plus } from "lucide-react";
+import { Loader2, Upload, Minus, Plus, Camera, ImagePlus, X } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/logs")({
   component: DmLogsPage,
@@ -28,6 +28,15 @@ function DmLogsPage() {
   const { data } = useQuery({ queryKey: ["my-dm-stats"], queryFn: () => getMyDmStats() });
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [files, setFiles] = useState<File[]>([]);
+  const libraryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+
+  const addFiles = (list: FileList | null) => {
+    if (!list) return;
+    const incoming = Array.from(list);
+    setFiles((prev) => [...prev, ...incoming].slice(0, 10));
+  };
+  const removeFile = (i: number) => setFiles((prev) => prev.filter((_, idx) => idx !== i));
 
   const upload = useMutation({
     mutationFn: async () => {
@@ -82,16 +91,53 @@ function DmLogsPage() {
             </Select>
           </div>
           <input
+            ref={libraryRef}
             type="file"
             multiple
             accept="image/*"
-            onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 10))}
-            className="block w-full text-sm"
+            className="hidden"
+            onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
           />
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={() => libraryRef.current?.click()}>
+              <ImagePlus className="h-4 w-4 mr-2" /> Choose from library
+            </Button>
+            <Button type="button" variant="outline" onClick={() => cameraRef.current?.click()}>
+              <Camera className="h-4 w-4 mr-2" /> Take photo
+            </Button>
+          </div>
           {files.length > 0 && (
-            <div className="text-xs text-muted-foreground">{files.length} file(s) selected</div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {files.map((f, i) => {
+                const url = URL.createObjectURL(f);
+                return (
+                  <div key={i} className="relative aspect-square rounded-md overflow-hidden border border-border">
+                    <img src={url} alt="preview" className="w-full h-full object-cover" onLoad={() => URL.revokeObjectURL(url)} />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      className="absolute top-1 right-1 rounded-full bg-background/80 p-1 text-foreground hover:bg-background"
+                      aria-label="Remove"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           )}
-          <Button onClick={() => upload.mutate()} disabled={!files.length || upload.isPending}>
+          <div className="text-xs text-muted-foreground">
+            {files.length}/10 selected · you can add photos one at a time from your phone camera.
+          </div>
+          <Button onClick={() => upload.mutate()} disabled={!files.length || upload.isPending} className="w-full sm:w-auto">
             {upload.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
             Count with AI
           </Button>
