@@ -109,7 +109,7 @@ function DmLogsPage() {
             </div>
           )}
           <div className="text-xs text-muted-foreground">
-            {files.length}/10 selected · you can add photos one at a time from your phone camera.
+            {files.length}/10 selected · AI will detect whether the screenshot is from Instagram, TikTok, or another platform.
           </div>
           <Button onClick={() => upload.mutate()} disabled={!files.length || upload.isPending} className="w-full sm:w-auto">
             {upload.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
