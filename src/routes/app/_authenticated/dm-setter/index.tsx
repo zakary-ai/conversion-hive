@@ -67,7 +67,7 @@ function DmSetterHome() {
         <CardHeader><CardTitle>Commission earned</CardTitle></CardHeader>
         <CardContent>
           <div className="text-2xl font-semibold">${data.stats.total_commission.toFixed(2)}</div>
-          <div className="text-xs text-muted-foreground">7.5% of ${data.stats.total_revenue.toFixed(2)} closed revenue</div>
+          <div className="text-xs text-muted-foreground">{(() => { const r = Number((data.dmSetter as { commission_rate?: number | string | null } | undefined)?.commission_rate ?? 0.075); return `${(r * 100).toFixed(r * 100 % 1 === 0 ? 0 : 1)}%`; })()} of ${data.stats.total_revenue.toFixed(2)} closed revenue</div>
         </CardContent>
       </Card>
     </div>
