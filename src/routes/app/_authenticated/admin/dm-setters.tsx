@@ -31,23 +31,25 @@ function AdminDmSetters() {
   const { data: managers = [] } = useQuery({ queryKey: ["dm-managers"], queryFn: () => listDmManagers() });
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const [form, setForm] = useState({ full_name: "", email: "", is_manager: false, manager_id: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", is_manager: false, manager_id: "", commission_rate: 0.075 });
   const [createOpen, setCreateOpen] = useState(false);
 
   const create = useMutation({
     mutationFn: () => createDmSetter({ data: {
       full_name: form.full_name, email: form.email, is_manager: form.is_manager,
       manager_id: form.is_manager ? null : (form.manager_id || null),
+      commission_rate: form.is_manager ? undefined : form.commission_rate,
     } }),
     onSuccess: (r) => {
       toast.success(`Created. Password: ${r.default_password}`);
       setCreateOpen(false);
-      setForm({ full_name: "", email: "", is_manager: false, manager_id: "" });
+      setForm({ full_name: "", email: "", is_manager: false, manager_id: "", commission_rate: 0.075 });
       qc.invalidateQueries({ queryKey: ["dm-setters"] });
       qc.invalidateQueries({ queryKey: ["dm-managers"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const del = useMutation({
     mutationFn: (id: string) => deleteDmSetter({ data: { id } }),
