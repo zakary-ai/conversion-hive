@@ -577,7 +577,7 @@ export const createAppointment = createServerFn({ method: "POST" })
     if (data.type === "booking" && data.email) {
       const slotMinutes = await getSlotMinutes().catch(() => 30);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      void sendBookingReceivedEmail({
+      await sendBookingReceivedEmail({
         appointmentId: (row as any).id as string,
         recipientEmail: data.email,
         leadName: data.name,
@@ -845,7 +845,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     if (appt.type === "booking" && assignedCloserId && appt.email) {
-      void sendBookingConfirmationEmail({
+      await sendBookingConfirmationEmail({
         appointmentId: data.id,
         recipientEmail: appt.email,
         leadName: appt.name,
@@ -956,7 +956,7 @@ export const assignB2bCloser = createServerFn({ method: "POST" })
     if (uerr) throw new Error(uerr.message);
 
     if (appt.email) {
-      void sendBookingConfirmationEmail({
+      await sendBookingConfirmationEmail({
         appointmentId: data.appointment_id,
         recipientEmail: appt.email as string,
         leadName: appt.name as string,
