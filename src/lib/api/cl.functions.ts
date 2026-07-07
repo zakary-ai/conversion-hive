@@ -2365,3 +2365,57 @@ export const backfillSetterCallArtifacts = createServerFn({ method: "POST" })
     return { scanned, adopted, withRec, withTx, withSum };
   });
 
+// ---------- Email activity for a lead ----------
+export const getLeadEmailActivity = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    leadId: z.string().uuid().optional().nullable(),
+    appointmentId: z.string().uuid().optional().nullable(),
+    extraEmail: z.string().trim().email().optional().nullable(),
+  }).parse)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const emails = new Set<string>();
+    if (data.extraEmail) emails.add(data.extraEmail.toLowerCase());
+    if (data.leadId) {
+      const { data: lead } = await supabaseAdmin
+        .from("leads").select("email").eq("id", data.leadId).maybeSingle();
+      if (lead?.email) emails.add(lead.email.toLowerCase());
+    }
+    if (data.appointmentId) {
+      const { data: appt } = await supabaseAdmin
+        .from("appointments").select("email").eq("id", data.appointmentId).maybeSingle();
+      if (appt?.email) emails.add(appt.email.toLowerCase());
+    }
+    if (emails.size === 0) return [] as Array<{
+      message_id: string; template_name: string; recipient_email: string;
+      status: string; error_message: string | null; created_at: string;
+    }>;
+
+    // Case-insensitive match on stored recipient_email
+    const emailList = Array.from(emails);
+    const orFilter = emailList.map((e) => `recipient_email.ilike.${e}`).join(",");
+    const { data: rows, error } = await supabaseAdmin
+      .from("email_send_log")
+      .select("message_id,template_name,recipient_email,status,error_message,created_at")
+      .or(orFilter)
+      .not("message_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw new Error(error.message);
+
+    // Deduplicate by message_id: keep latest status (rows already sorted desc)
+    const seen = new Set<string>();
+    const dedup: typeof rows = [] as any;
+    for (const r of rows ?? []) {
+      const key = r.message_id as string;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      dedup.push(r);
+    }
+    return dedup as Array<{
+      message_id: string; template_name: string; recipient_email: string;
+      status: string; error_message: string | null; created_at: string;
+    }>;
+  });
+

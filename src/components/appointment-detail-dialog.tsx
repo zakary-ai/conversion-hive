@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getLead, getMe, setAppointmentOutcome, getAppointmentSetter, listSetters, setAppointmentSetter } from "@/lib/api/cl.functions";
+import { EmailActivityTimeline } from "@/components/email-activity-timeline";
 
 import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw, UserX, UserCheck } from "lucide-react";
 
@@ -153,6 +154,14 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
 
                 {appt.context && <Row icon={User} label="Context" value={<span className="block whitespace-pre-wrap break-words text-right">{appt.context}</span>} />}
               </div>
+
+              <EmailActivityTimeline
+                leadId={appt.lead_id}
+                appointmentId={appt.id}
+                extraEmail={appt.email}
+              />
+
+
 
 
               {showOutcome && (

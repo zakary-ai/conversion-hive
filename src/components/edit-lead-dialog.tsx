@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { EmailActivityTimeline } from "@/components/email-activity-timeline";
 
 export function EditLeadDialog({ leadId, onClose }: { leadId: string | null; onClose: () => void }) {
   const open = !!leadId;
@@ -80,6 +81,10 @@ export function EditLeadDialog({ leadId, onClose }: { leadId: string | null; onC
             <Label>Notes</Label>
             <Textarea rows={4} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
+          {leadId && (
+            <EmailActivityTimeline leadId={leadId} extraEmail={form.email || null} />
+          )}
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
