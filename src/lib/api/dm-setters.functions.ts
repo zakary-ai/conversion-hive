@@ -464,17 +464,18 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: me } = await supabaseAdmin.from("dm_setters").select("*").eq("user_id", context.userId).maybeSingle();
     if (!me) throw new Error("Not a DM setter");
-    const { stats: myStats } = await computeStatsFor(me.id);
+    const { stats: myStats } = await computeStatsFor(me.id, undefined, Number(me.commission_rate ?? 0.075));
     const { data: myLog } = await supabaseAdmin
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).eq("log_date", todayKey()).maybeSingle();
     if (!me.is_manager) return { manager: me, myStats, myLog, team: [] };
     const { data: team } = await supabaseAdmin.from("dm_setters").select("*").eq("manager_id", me.id);
     const rows = await Promise.all((team ?? []).map(async (s) => {
-      const { stats } = await computeStatsFor(s.id);
+      const { stats } = await computeStatsFor(s.id, undefined, Number(s.commission_rate ?? 0.075));
       const { data: log } = await supabaseAdmin.from("dm_daily_logs").select("ai_count, manual_adjustment").eq("dm_setter_id", s.id).eq("log_date", todayKey()).maybeSingle();
       const today_dms = (log?.ai_count ?? 0) + (log?.manual_adjustment ?? 0);
       return { setter: s, stats, today_dms, manager_commission: stats.total_revenue * 0.025 };
     }));
+
     return { manager: me, myStats, myLog, team: rows };
   });
 
