@@ -47,6 +47,7 @@ export const createDmSetter = createServerFn({ method: "POST" })
     email: z.string().trim().email().max(200),
     is_manager: z.boolean().default(false),
     manager_id: z.string().uuid().nullable().optional(),
+    commission_rate: z.number().min(0).max(1).optional(),
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -61,10 +62,12 @@ export const createDmSetter = createServerFn({ method: "POST" })
         is_manager: data.is_manager,
         manager_id: data.is_manager ? null : (data.manager_id ?? null),
         apply_slug,
+        commission_rate: data.is_manager ? 0.075 : (data.commission_rate ?? 0.075),
       })
       .select("id, apply_slug")
       .single();
     if (error) throw new Error(error.message);
+
 
     const { data: created, error: uerr } = await supabaseAdmin.auth.admin.createUser({
       email,
