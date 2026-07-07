@@ -81,6 +81,10 @@ export function EditLeadDialog({ leadId, onClose }: { leadId: string | null; onC
             <Label>Notes</Label>
             <Textarea rows={4} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
+          {leadId && (
+            <EmailActivityTimeline leadId={leadId} extraEmail={form.email || null} />
+          )}
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
