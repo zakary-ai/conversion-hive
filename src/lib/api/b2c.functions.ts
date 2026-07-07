@@ -1065,15 +1065,17 @@ export const recordBookingOutcome = createServerFn({ method: "POST" })
       let dmManagerAmount: number | null = null;
       if (dmId) {
         const { data: dm } = await supabaseAdmin
-          .from("dm_setters").select("id, manager_id").eq("id", dmId).maybeSingle();
+          .from("dm_setters").select("id, manager_id, commission_rate").eq("id", dmId).maybeSingle();
         if (dm) {
-          dmSetterAmount = Math.round(deal * 0.075 * 100) / 100;
+          const rate = Number((dm as { commission_rate?: number | string | null }).commission_rate ?? 0.075);
+          dmSetterAmount = Math.round(deal * rate * 100) / 100;
           if (dm.manager_id) {
             dmManagerId = dm.manager_id as string;
             dmManagerAmount = Math.round(deal * 0.025 * 100) / 100;
           }
         }
       }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabaseAdmin.from("closer_bookings") as any).update({
         dm_setter_commission_amount: dmSetterAmount,
