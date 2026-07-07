@@ -146,8 +146,13 @@ function AdminDmSetters() {
 
 type SetterRow = {
   id: string; full_name: string | null; email: string | null; apply_slug: string | null;
-  is_manager: boolean; manager_id: string | null;
+  is_manager: boolean; manager_id: string | null; commission_rate?: number | string | null;
 };
+
+function formatRate(r: number | string | null | undefined) {
+  const n = Number(r ?? 0.075);
+  return `${(n * 100).toFixed(n * 100 % 1 === 0 ? 0 : 1)}%`;
+}
 
 function Row({ setter, onOpen, onDelete, managers }: {
   setter: SetterRow; onOpen: () => void; onDelete: () => void;
@@ -157,9 +162,17 @@ function Row({ setter, onOpen, onDelete, managers }: {
   return (
     <div className="flex items-center justify-between rounded-md border border-border p-3">
       <button onClick={onOpen} className="text-left flex-1 min-w-0">
-        <div className="font-medium">{setter.full_name}</div>
+        <div className="font-medium flex items-center gap-2">
+          {setter.full_name}
+          {!setter.is_manager && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+              {formatRate(setter.commission_rate)}
+            </span>
+          )}
+        </div>
         <div className="text-xs text-muted-foreground truncate">{setter.email} • /apply?dm={setter.apply_slug}</div>
       </button>
+
       <div className="flex items-center gap-1">
         {managers && !setter.is_manager && (
           <ManagerSelect setterId={setter.id} value={setter.manager_id ?? ""} managers={managers} />
