@@ -1,0 +1,1 @@
+ALTER TABLE public.dm_setters ADD COLUMN IF NOT EXISTS commission_rate numeric NOT NULL DEFAULT 0.075;
