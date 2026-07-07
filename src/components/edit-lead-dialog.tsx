@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { EmailActivityTimeline } from "@/components/email-activity-timeline";
 
 export function EditLeadDialog({ leadId, onClose }: { leadId: string | null; onClose: () => void }) {
   const open = !!leadId;
