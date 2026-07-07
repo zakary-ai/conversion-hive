@@ -365,7 +365,7 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
               <CardHeader><CardTitle className="text-base">Commission (in range)</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-lg font-semibold">${data.stats.total_commission.toFixed(2)}</div>
-                <div className="text-xs text-muted-foreground">7.5% of ${data.stats.total_revenue.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">{formatRate((data.setter as { commission_rate?: number | string | null }).commission_rate)} of ${data.stats.total_revenue.toFixed(2)}</div>
               </CardContent>
             </Card>
 
