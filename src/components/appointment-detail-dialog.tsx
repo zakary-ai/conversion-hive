@@ -155,6 +155,14 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 {appt.context && <Row icon={User} label="Context" value={<span className="block whitespace-pre-wrap break-words text-right">{appt.context}</span>} />}
               </div>
 
+              <EmailActivityTimeline
+                leadId={appt.lead_id}
+                appointmentId={appt.id}
+                extraEmail={appt.email}
+              />
+
+
+
 
               {showOutcome && (
                 <div className="rounded-lg border border-border p-3 space-y-3">
