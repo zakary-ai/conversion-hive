@@ -577,7 +577,7 @@ export const createAppointment = createServerFn({ method: "POST" })
     if (data.type === "booking" && data.email) {
       const slotMinutes = await getSlotMinutes().catch(() => 30);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      void sendBookingReceivedEmail({
+      await sendBookingReceivedEmail({
         appointmentId: (row as any).id as string,
         recipientEmail: data.email,
         leadName: data.name,
