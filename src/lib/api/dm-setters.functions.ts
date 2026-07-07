@@ -103,6 +103,7 @@ export const updateDmSetter = createServerFn({ method: "POST" })
     manager_id: z.string().uuid().nullable().optional(),
     daily_target: z.number().int().min(1).max(1000).optional(),
     full_name: z.string().trim().min(1).max(200).optional(),
+    commission_rate: z.number().min(0).max(1).optional(),
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -111,14 +112,17 @@ export const updateDmSetter = createServerFn({ method: "POST" })
       manager_id?: string | null;
       daily_target?: number;
       full_name?: string;
+      commission_rate?: number;
     } = {};
     if (data.manager_id !== undefined) patch.manager_id = data.manager_id;
     if (data.daily_target !== undefined) patch.daily_target = data.daily_target;
     if (data.full_name !== undefined) patch.full_name = data.full_name;
+    if (data.commission_rate !== undefined) patch.commission_rate = data.commission_rate;
     const { error } = await supabaseAdmin.from("dm_setters").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 /* -------------------------------------------------------------------------- */
 /*  Public: resolve slug on the /apply page                                    */
