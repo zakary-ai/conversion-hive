@@ -104,9 +104,6 @@ export function EmailActivityTimeline({
         </ul>
       )}
 
-      <p className="text-[11px] text-muted-foreground leading-snug pt-1 border-t border-border/60">
-        Shows delivery status from our email provider. Open &amp; click tracking is not currently exposed by the sending provider.
-      </p>
     </div>
   );
 }
