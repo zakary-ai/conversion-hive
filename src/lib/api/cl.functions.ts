@@ -956,7 +956,7 @@ export const assignB2bCloser = createServerFn({ method: "POST" })
     if (uerr) throw new Error(uerr.message);
 
     if (appt.email) {
-      void sendBookingConfirmationEmail({
+      await sendBookingConfirmationEmail({
         appointmentId: data.appointment_id,
         recipientEmail: appt.email as string,
         leadName: appt.name as string,
