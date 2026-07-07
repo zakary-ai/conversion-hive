@@ -31,23 +31,25 @@ function AdminDmSetters() {
   const { data: managers = [] } = useQuery({ queryKey: ["dm-managers"], queryFn: () => listDmManagers() });
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const [form, setForm] = useState({ full_name: "", email: "", is_manager: false, manager_id: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", is_manager: false, manager_id: "", commission_rate: 0.075 });
   const [createOpen, setCreateOpen] = useState(false);
 
   const create = useMutation({
     mutationFn: () => createDmSetter({ data: {
       full_name: form.full_name, email: form.email, is_manager: form.is_manager,
       manager_id: form.is_manager ? null : (form.manager_id || null),
+      commission_rate: form.is_manager ? undefined : form.commission_rate,
     } }),
     onSuccess: (r) => {
       toast.success(`Created. Password: ${r.default_password}`);
       setCreateOpen(false);
-      setForm({ full_name: "", email: "", is_manager: false, manager_id: "" });
+      setForm({ full_name: "", email: "", is_manager: false, manager_id: "", commission_rate: 0.075 });
       qc.invalidateQueries({ queryKey: ["dm-setters"] });
       qc.invalidateQueries({ queryKey: ["dm-managers"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const del = useMutation({
     mutationFn: (id: string) => deleteDmSetter({ data: { id } }),
@@ -82,6 +84,21 @@ function AdminDmSetters() {
                 <Switch checked={form.is_manager} onCheckedChange={(v) => setForm({ ...form, is_manager: v })} />
                 <Label>Is a manager</Label>
               </div>
+              {!form.is_manager && (
+                <div>
+                  <Label>Commission tier</Label>
+                  <Select
+                    value={String(form.commission_rate)}
+                    onValueChange={(v) => setForm({ ...form, commission_rate: Number(v) })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.075">Standard — 7.5% per closed deal</SelectItem>
+                      <SelectItem value="0.1">Premium — 10% per closed deal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {!form.is_manager && managers.length > 0 && (
                 <div>
                   <Label>Assign to manager</Label>
@@ -96,6 +113,7 @@ function AdminDmSetters() {
               <Button disabled={!form.full_name || !form.email || create.isPending} onClick={() => create.mutate()}>
                 {create.isPending ? "Creating…" : "Create"}
               </Button>
+
             </div>
           </DialogContent>
         </Dialog>
@@ -128,8 +146,13 @@ function AdminDmSetters() {
 
 type SetterRow = {
   id: string; full_name: string | null; email: string | null; apply_slug: string | null;
-  is_manager: boolean; manager_id: string | null;
+  is_manager: boolean; manager_id: string | null; commission_rate?: number | string | null;
 };
+
+function formatRate(r: number | string | null | undefined) {
+  const n = Number(r ?? 0.075);
+  return `${(n * 100).toFixed(n * 100 % 1 === 0 ? 0 : 1)}%`;
+}
 
 function Row({ setter, onOpen, onDelete, managers }: {
   setter: SetterRow; onOpen: () => void; onDelete: () => void;
@@ -139,9 +162,17 @@ function Row({ setter, onOpen, onDelete, managers }: {
   return (
     <div className="flex items-center justify-between rounded-md border border-border p-3">
       <button onClick={onOpen} className="text-left flex-1 min-w-0">
-        <div className="font-medium">{setter.full_name}</div>
+        <div className="font-medium flex items-center gap-2">
+          {setter.full_name}
+          {!setter.is_manager && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+              {formatRate(setter.commission_rate)}
+            </span>
+          )}
+        </div>
         <div className="text-xs text-muted-foreground truncate">{setter.email} • /apply?dm={setter.apply_slug}</div>
       </button>
+
       <div className="flex items-center gap-1">
         {managers && !setter.is_manager && (
           <ManagerSelect setterId={setter.id} value={setter.manager_id ?? ""} managers={managers} />
@@ -334,7 +365,7 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
               <CardHeader><CardTitle className="text-base">Commission (in range)</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-lg font-semibold">${data.stats.total_commission.toFixed(2)}</div>
-                <div className="text-xs text-muted-foreground">7.5% of ${data.stats.total_revenue.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">{formatRate((data.setter as { commission_rate?: number | string | null }).commission_rate)} of ${data.stats.total_revenue.toFixed(2)}</div>
               </CardContent>
             </Card>
 

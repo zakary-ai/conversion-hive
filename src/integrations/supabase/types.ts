@@ -973,6 +973,7 @@ export type Database = {
       dm_setters: {
         Row: {
           apply_slug: string | null
+          commission_rate: number
           created_at: string
           daily_target: number
           email: string | null
@@ -985,6 +986,7 @@ export type Database = {
         }
         Insert: {
           apply_slug?: string | null
+          commission_rate?: number
           created_at?: string
           daily_target?: number
           email?: string | null
@@ -997,6 +999,7 @@ export type Database = {
         }
         Update: {
           apply_slug?: string | null
+          commission_rate?: number
           created_at?: string
           daily_target?: number
           email?: string | null

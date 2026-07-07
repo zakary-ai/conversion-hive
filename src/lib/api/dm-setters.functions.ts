@@ -47,6 +47,7 @@ export const createDmSetter = createServerFn({ method: "POST" })
     email: z.string().trim().email().max(200),
     is_manager: z.boolean().default(false),
     manager_id: z.string().uuid().nullable().optional(),
+    commission_rate: z.number().min(0).max(1).optional(),
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -61,10 +62,12 @@ export const createDmSetter = createServerFn({ method: "POST" })
         is_manager: data.is_manager,
         manager_id: data.is_manager ? null : (data.manager_id ?? null),
         apply_slug,
+        commission_rate: data.is_manager ? 0.075 : (data.commission_rate ?? 0.075),
       })
       .select("id, apply_slug")
       .single();
     if (error) throw new Error(error.message);
+
 
     const { data: created, error: uerr } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -100,6 +103,7 @@ export const updateDmSetter = createServerFn({ method: "POST" })
     manager_id: z.string().uuid().nullable().optional(),
     daily_target: z.number().int().min(1).max(1000).optional(),
     full_name: z.string().trim().min(1).max(200).optional(),
+    commission_rate: z.number().min(0).max(1).optional(),
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -108,14 +112,17 @@ export const updateDmSetter = createServerFn({ method: "POST" })
       manager_id?: string | null;
       daily_target?: number;
       full_name?: string;
+      commission_rate?: number;
     } = {};
     if (data.manager_id !== undefined) patch.manager_id = data.manager_id;
     if (data.daily_target !== undefined) patch.daily_target = data.daily_target;
     if (data.full_name !== undefined) patch.full_name = data.full_name;
+    if (data.commission_rate !== undefined) patch.commission_rate = data.commission_rate;
     const { error } = await supabaseAdmin.from("dm_setters").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 /* -------------------------------------------------------------------------- */
 /*  Public: resolve slug on the /apply page                                    */
@@ -158,7 +165,7 @@ type LeadStats = {
   total_commission: number;
 };
 
-async function computeStatsFor(setterId: string, range?: { from?: string; to?: string }) {
+async function computeStatsFor(setterId: string, range?: { from?: string; to?: string }, rate = 0.075) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   let appsQ = supabaseAdmin.from("applications").select("id, created_at, full_name, email, phone").eq("dm_setter_id", setterId);
   let bookQ = supabaseAdmin.from("closer_bookings")
@@ -186,18 +193,20 @@ async function computeStatsFor(setterId: string, range?: { from?: string; to?: s
     else if (b.outcome === "not_interested") stats.not_interested += 1;
     if (b.outcome === "closed" && b.deal_amount) {
       stats.total_revenue += Number(b.deal_amount);
-      stats.total_commission += Number(b.deal_amount) * 0.075;
+      stats.total_commission += Number(b.deal_amount) * rate;
     }
   }
   return { stats, applications: apps ?? [], bookings: bookings ?? [] };
 }
 
+
 export const getMyDmStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name").eq("user_id", context.userId).maybeSingle();
+    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name, commission_rate").eq("user_id", context.userId).maybeSingle();
     if (!me) throw new Error("Not a DM setter");
-    const stats = await computeStatsFor(me.id);
+    const stats = await computeStatsFor(me.id, undefined, Number(me.commission_rate ?? 0.075));
+
     // Today's log
     const { data: log } = await context.supabase
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).eq("log_date", todayKey()).maybeSingle();
@@ -455,17 +464,18 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: me } = await supabaseAdmin.from("dm_setters").select("*").eq("user_id", context.userId).maybeSingle();
     if (!me) throw new Error("Not a DM setter");
-    const { stats: myStats } = await computeStatsFor(me.id);
+    const { stats: myStats } = await computeStatsFor(me.id, undefined, Number(me.commission_rate ?? 0.075));
     const { data: myLog } = await supabaseAdmin
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).eq("log_date", todayKey()).maybeSingle();
     if (!me.is_manager) return { manager: me, myStats, myLog, team: [] };
     const { data: team } = await supabaseAdmin.from("dm_setters").select("*").eq("manager_id", me.id);
     const rows = await Promise.all((team ?? []).map(async (s) => {
-      const { stats } = await computeStatsFor(s.id);
+      const { stats } = await computeStatsFor(s.id, undefined, Number(s.commission_rate ?? 0.075));
       const { data: log } = await supabaseAdmin.from("dm_daily_logs").select("ai_count, manual_adjustment").eq("dm_setter_id", s.id).eq("log_date", todayKey()).maybeSingle();
       const today_dms = (log?.ai_count ?? 0) + (log?.manual_adjustment ?? 0);
       return { setter: s, stats, today_dms, manager_commission: stats.total_revenue * 0.025 };
     }));
+
     return { manager: me, myStats, myLog, team: rows };
   });
 
@@ -504,10 +514,11 @@ export const getAdminDmSetterDetail = createServerFn({ method: "GET" })
     const { data: setter } = await supabaseAdmin.from("dm_setters").select("*").eq("id", data.id).maybeSingle();
     if (!setter) throw new Error("Not found");
     const [{ stats, applications, bookings }, logs, dmSum] = await Promise.all([
-      computeStatsFor(setter.id, { from: data.from ?? undefined, to: data.to ?? undefined }),
+      computeStatsFor(setter.id, { from: data.from ?? undefined, to: data.to ?? undefined }, Number(setter.commission_rate ?? 0.075)),
       supabaseAdmin.from("dm_daily_logs").select("*").eq("dm_setter_id", setter.id).order("log_date", { ascending: false }).limit(30),
       sumDmsInRange(setter.id, data.from, data.to),
     ]);
+
 
     const rangeDays = daysInRange(data.from, data.to);
 
