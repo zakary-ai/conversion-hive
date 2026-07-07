@@ -271,7 +271,7 @@ function DmSetterSlot({ row }: { row: Row }) {
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">DM Setter</div>
           <div className="font-medium truncate">{row.dm_setter.full_name}</div>
-          <div className="text-[11px] text-muted-foreground">7.5%{deal > 0 ? ` of ${money(deal)}` : ""}</div>
+          <div className="text-[11px] text-muted-foreground">{deal > 0 ? `${((amount / deal) * 100).toFixed(((amount / deal) * 100) % 1 === 0 ? 0 : 1)}% of ${money(deal)}` : ""}</div>
         </div>
         <div className="text-right">
           <div className={`font-semibold ${approved ? "text-success" : "text-warning"}`}>{money(amount)}</div>
