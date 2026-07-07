@@ -587,10 +587,16 @@ function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: bool
   const submit = useMutation({
     mutationFn: async () => {
       if (!when) throw new Error("Pick a time slot");
+      const trimmedEmail = email.trim();
+      // Persist a freshly-typed email back onto the lead so it's saved
+      // regardless of where in the flow it was entered.
+      if (trimmedEmail && trimmedEmail !== (lead.email ?? "")) {
+        await updateLead({ data: { id: lead.id, email: trimmedEmail } });
+      }
       await createAppointment({ data: {
         lead_id: lead.id, type: "booking",
         scheduled_at: when.toISOString(),
-        name, phone: phone || null, email: email || null, context: context || null,
+        name, phone: phone || null, email: trimmedEmail || null, context: context || null,
         timezone: bookingTz,
       }});
       await updateLead({ data: { id: lead.id, status: "Booked", contacted: true } });
