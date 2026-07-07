@@ -203,9 +203,10 @@ async function computeStatsFor(setterId: string, range?: { from?: string; to?: s
 export const getMyDmStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name").eq("user_id", context.userId).maybeSingle();
+    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name, commission_rate").eq("user_id", context.userId).maybeSingle();
     if (!me) throw new Error("Not a DM setter");
-    const stats = await computeStatsFor(me.id);
+    const stats = await computeStatsFor(me.id, undefined, Number(me.commission_rate ?? 0.075));
+
     // Today's log
     const { data: log } = await context.supabase
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).eq("log_date", todayKey()).maybeSingle();
