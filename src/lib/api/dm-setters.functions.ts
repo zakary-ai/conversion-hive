@@ -165,7 +165,7 @@ type LeadStats = {
   total_commission: number;
 };
 
-async function computeStatsFor(setterId: string, range?: { from?: string; to?: string }) {
+async function computeStatsFor(setterId: string, range?: { from?: string; to?: string }, rate = 0.075) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   let appsQ = supabaseAdmin.from("applications").select("id, created_at, full_name, email, phone").eq("dm_setter_id", setterId);
   let bookQ = supabaseAdmin.from("closer_bookings")
@@ -193,11 +193,12 @@ async function computeStatsFor(setterId: string, range?: { from?: string; to?: s
     else if (b.outcome === "not_interested") stats.not_interested += 1;
     if (b.outcome === "closed" && b.deal_amount) {
       stats.total_revenue += Number(b.deal_amount);
-      stats.total_commission += Number(b.deal_amount) * 0.075;
+      stats.total_commission += Number(b.deal_amount) * rate;
     }
   }
   return { stats, applications: apps ?? [], bookings: bookings ?? [] };
 }
+
 
 export const getMyDmStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
