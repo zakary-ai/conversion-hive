@@ -845,7 +845,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     if (appt.type === "booking" && assignedCloserId && appt.email) {
-      void sendBookingConfirmationEmail({
+      await sendBookingConfirmationEmail({
         appointmentId: data.id,
         recipientEmail: appt.email,
         leadName: appt.name,
