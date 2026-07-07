@@ -84,6 +84,21 @@ function AdminDmSetters() {
                 <Switch checked={form.is_manager} onCheckedChange={(v) => setForm({ ...form, is_manager: v })} />
                 <Label>Is a manager</Label>
               </div>
+              {!form.is_manager && (
+                <div>
+                  <Label>Commission tier</Label>
+                  <Select
+                    value={String(form.commission_rate)}
+                    onValueChange={(v) => setForm({ ...form, commission_rate: Number(v) })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.075">Standard — 7.5% per closed deal</SelectItem>
+                      <SelectItem value="0.1">Premium — 10% per closed deal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {!form.is_manager && managers.length > 0 && (
                 <div>
                   <Label>Assign to manager</Label>
@@ -98,6 +113,7 @@ function AdminDmSetters() {
               <Button disabled={!form.full_name || !form.email || create.isPending} onClick={() => create.mutate()}>
                 {create.isPending ? "Creating…" : "Create"}
               </Button>
+
             </div>
           </DialogContent>
         </Dialog>
