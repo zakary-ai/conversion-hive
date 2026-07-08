@@ -69,14 +69,23 @@ export const createDmSetter = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
 
+    let newUserId: string | undefined;
     const { data: created, error: uerr } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: DEFAULT_DM_PASSWORD,
       email_confirm: true,
       user_metadata: { full_name: data.full_name },
     });
-    if (uerr) throw new Error(uerr.message);
-    const newUserId = created.user?.id;
+    if (uerr) {
+      // Auth user already exists — reuse it and reset password so the invite works.
+      const { data: list } = await supabaseAdmin.auth.admin.listUsers();
+      const existing = list?.users?.find((u: { email?: string | null }) => (u.email || "").toLowerCase() === email);
+      if (!existing) throw new Error(uerr.message);
+      await supabaseAdmin.auth.admin.updateUserById(existing.id, { password: DEFAULT_DM_PASSWORD });
+      newUserId = existing.id;
+    } else {
+      newUserId = created.user?.id;
+    }
     if (newUserId) {
       await supabaseAdmin.from("profiles").update({
         must_change_password: true, full_name: data.full_name,
