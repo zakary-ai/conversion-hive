@@ -82,7 +82,70 @@ export const createDmSetter = createServerFn({ method: "POST" })
         must_change_password: true, full_name: data.full_name,
       }).eq("user_id", newUserId);
     }
+    await sendDmSetterInviteEmail({
+      setterId: row.id,
+      email,
+      fullName: data.full_name,
+      password: DEFAULT_DM_PASSWORD,
+    });
     return { id: row.id, apply_slug: row.apply_slug, default_password: DEFAULT_DM_PASSWORD };
+  });
+
+async function sendDmSetterInviteEmail(input: {
+  setterId: string;
+  email: string;
+  fullName: string;
+  password: string;
+}) {
+  try {
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    await sendTransactional({
+      templateName: "setter-invite",
+      recipientEmail: input.email,
+      idempotencyKey: `dm-setter-invite-${input.setterId}-${Date.now()}`,
+      templateData: {
+        fullName: input.fullName,
+        email: input.email,
+        password: input.password,
+        loginUrl: "https://conversionlab.space/app/auth",
+      },
+    });
+  } catch (e) {
+    console.error("sendDmSetterInviteEmail failed", e);
+  }
+}
+
+export const resendDmSetterInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: setter, error } = await supabaseAdmin
+      .from("dm_setters").select("id, email, full_name").eq("id", data.id).single();
+    if (error || !setter) throw new Error(error?.message || "DM setter not found");
+    const email = (setter.email || "").toLowerCase();
+
+    const { data: userRow } = await supabaseAdmin.auth.admin.listUsers();
+    const authUser = userRow?.users?.find((u) => (u.email || "").toLowerCase() === email);
+    if (authUser) {
+      await supabaseAdmin.auth.admin.updateUserById(authUser.id, { password: DEFAULT_DM_PASSWORD });
+      await supabaseAdmin.from("profiles").update({ must_change_password: true }).eq("user_id", authUser.id);
+    } else {
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: DEFAULT_DM_PASSWORD,
+        email_confirm: true,
+        user_metadata: { full_name: setter.full_name },
+      });
+    }
+    await sendDmSetterInviteEmail({
+      setterId: setter.id,
+      email,
+      fullName: setter.full_name ?? "",
+      password: DEFAULT_DM_PASSWORD,
+    });
+    return { ok: true };
   });
 
 export const deleteDmSetter = createServerFn({ method: "POST" })
