@@ -59,6 +59,32 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   const [pctPreset, setPctPreset] = useState<"10" | "15" | "custom">("10");
   const [customPct, setCustomPct] = useState("");
   const [reason, setReason] = useState("");
+  const [bookOpen, setBookOpen] = useState(false);
+
+  const showCallbackActions = appt?.type === "callback" && !!appt?.lead_id;
+
+  const notInterested = useMutation({
+    mutationFn: (id: string) => cancelAppointment({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Marked Not Interested");
+      qc.invalidateQueries({ queryKey: ["my-appointments"] });
+      qc.invalidateQueries({ queryKey: ["all-appointments"] });
+      qc.invalidateQueries({ queryKey: ["my-leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", appt?.lead_id] });
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeCallback = useMutation({
+    mutationFn: (id: string) => deleteAppointment({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-appointments"] });
+      qc.invalidateQueries({ queryKey: ["all-appointments"] });
+      qc.invalidateQueries({ queryKey: ["my-leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", appt?.lead_id] });
+    },
+  });
 
   useEffect(() => {
     if (!appt) return;
