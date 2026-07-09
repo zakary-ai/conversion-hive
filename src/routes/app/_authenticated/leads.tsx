@@ -569,7 +569,7 @@ function EmailInlineEdit({ leadId, onSaved }: { leadId: string; onSaved: () => v
   );
 }
 
-function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boolean; onClose: () => void; onDone: () => void }) {
+export function BookingDialog({ lead, open, onClose, onDone }: { lead: Lead; open: boolean; onClose: () => void; onDone: () => void }) {
   const [name, setName] = useState(lead.name ?? "");
   const [phone, setPhone] = useState(lead.phone ?? "");
   const [email, setEmail] = useState(lead.email ?? "");
