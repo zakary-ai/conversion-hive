@@ -1016,6 +1016,25 @@ export const cancelAppointment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Delete an appointment without touching the lead status.
+// Used when converting a callback into a booking — the booking flow
+// already sets lead.status = "Booked", so cancelAppointment (which
+// forces "Not Interested") is not appropriate.
+export const deleteAppointment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: appt } = await context.supabase
+      .from("appointments").select("id, user_id").eq("id", data.id).single();
+    if (!appt) throw new Error("Appointment not found");
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+    if (!isAdmin && appt.user_id !== context.userId) throw new Error("Forbidden");
+    const { error } = await context.supabase.from("appointments").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const setAppointmentOutcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
