@@ -992,7 +992,7 @@ export const getApplicationById = createServerFn({ method: "GET" })
     if (dmId) {
       const { data: s } = await supabaseAdmin
         .from("dm_setters").select("id, full_name, email").eq("id", dmId).maybeSingle();
-      if (s) dm_setter = s as typeof dm_setter;
+      if (s) dm_setter = s;
     }
     return { ...app, dm_setter };
   });
