@@ -182,6 +182,34 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
                 {appt.context && <Row icon={User} label="Context" value={<span className="block whitespace-pre-wrap break-words text-right">{appt.context}</span>} />}
               </div>
 
+              {showCallbackActions && (
+                <div className="rounded-lg border border-border p-3 space-y-2">
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground">Callback outcome</div>
+                  <p className="text-xs text-muted-foreground">How did this callback go?</p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      onClick={() => setBookOpen(true)}
+                      className="bg-success hover:bg-success/90 text-success-foreground"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" /> Book
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        if (confirm("Mark this lead as Not Interested?")) {
+                          notInterested.mutate(appt.id);
+                        }
+                      }}
+                      disabled={notInterested.isPending}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" /> Not interested
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <EmailActivityTimeline
                 leadId={appt.lead_id}
                 appointmentId={appt.id}
