@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listDmSetters, listDmManagers, createDmSetter, deleteDmSetter, updateDmSetter,
-  getAdminDmSetterDetail,
+  getAdminDmSetterDetail, resendDmSetterInvite,
 } from "@/lib/api/dm-setters.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Copy, Trash2, Plus, CalendarIcon } from "lucide-react";
+import { Copy, Trash2, Plus, CalendarIcon, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -180,11 +180,25 @@ function Row({ setter, onOpen, onDelete, managers }: {
         <Button size="icon" variant="ghost" onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }}>
           <Copy className="h-4 w-4" />
         </Button>
+        <ResendInviteButton id={setter.id} />
         <Button size="icon" variant="ghost" onClick={onDelete}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
     </div>
+  );
+}
+
+function ResendInviteButton({ id }: { id: string }) {
+  const m = useMutation({
+    mutationFn: () => resendDmSetterInvite({ data: { id } }),
+    onSuccess: () => toast.success("Invite email resent"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Button size="icon" variant="ghost" disabled={m.isPending} onClick={() => m.mutate()} title="Resend invite">
+      <Mail className="h-4 w-4" />
+    </Button>
   );
 }
 
