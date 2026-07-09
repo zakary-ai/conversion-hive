@@ -987,7 +987,14 @@ export const getApplicationById = createServerFn({ method: "GET" })
       .from("applications").select("*").eq("id", data.id).maybeSingle();
     if (error) throw new Error(error.message);
     if (!app) throw new Error("Application not found");
-    return app;
+    let dm_setter: { id: string; full_name: string | null; email: string | null } | null = null;
+    const dmId = (app as { dm_setter_id?: string | null }).dm_setter_id ?? null;
+    if (dmId) {
+      const { data: s } = await supabaseAdmin
+        .from("dm_setters").select("id, full_name, email").eq("id", dmId).maybeSingle();
+      if (s) dm_setter = s as typeof dm_setter;
+    }
+    return { ...app, dm_setter };
   });
 
 // ---------- Closer: submit call outcome ----------
