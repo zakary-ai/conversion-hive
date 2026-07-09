@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getLead, getMe, setAppointmentOutcome, getAppointmentSetter, listSetters, setAppointmentSetter } from "@/lib/api/cl.functions";
+import { getLead, getMe, setAppointmentOutcome, getAppointmentSetter, listSetters, setAppointmentSetter, cancelAppointment, deleteAppointment } from "@/lib/api/cl.functions";
+import { LeadBookingDialog } from "@/components/lead-booking-dialog";
 import { EmailActivityTimeline } from "@/components/email-activity-timeline";
 
 import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw, UserX, UserCheck } from "lucide-react";
