@@ -417,6 +417,26 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
             </div>
           </div>
         )}
+        {appt && showCallbackActions && lead && (
+          <LeadBookingDialog
+            lead={{
+              id: lead.id,
+              name: lead.name ?? appt.name,
+              phone: lead.phone ?? appt.phone,
+              email: lead.email ?? appt.email,
+            }}
+            open={bookOpen}
+            onClose={() => setBookOpen(false)}
+            onDone={() => {
+              // Convert the callback into a booking: remove the callback row
+              // (BookingDialog already created the new booking appointment
+              // and updated the lead status to Booked).
+              removeCallback.mutate(appt.id);
+              setBookOpen(false);
+              onClose();
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
