@@ -48,7 +48,27 @@ function DmSetterHome() {
         <CardHeader><CardTitle>Your apply link</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           <div className="rounded-md bg-muted/50 px-3 py-2 text-sm font-mono break-all">{link || "—"}</div>
-          <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }}>
+          <Button size="sm" variant="outline" onClick={async () => {
+            if (!link) { toast.error("No link yet"); return; }
+            try {
+              if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(link);
+              } else {
+                const ta = document.createElement("textarea");
+                ta.value = link;
+                ta.style.position = "fixed";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+              }
+              toast.success("Copied");
+            } catch {
+              toast.error("Couldn't copy — long-press the link to copy");
+            }
+          }}>
             <Copy className="h-4 w-4 mr-1" /> Copy link
           </Button>
         </CardContent>
