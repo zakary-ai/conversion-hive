@@ -585,12 +585,23 @@ export const getAdminDmSetterDetail = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: setter } = await supabaseAdmin.from("dm_setters").select("*").eq("id", data.id).maybeSingle();
     if (!setter) throw new Error("Not found");
-    const [{ stats, applications, bookings }, logs, dmSum] = await Promise.all([
+
+    // Recipients query, optionally filtered to the same date range
+    let recipQ = supabaseAdmin
+      .from("dm_recipients")
+      .select("id, name_original, platform, created_at")
+      .eq("dm_setter_id", setter.id)
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (data.from) recipQ = recipQ.gte("created_at", data.from);
+    if (data.to) recipQ = recipQ.lte("created_at", data.to);
+
+    const [{ stats, applications, bookings }, logs, dmSum, recipientsRes] = await Promise.all([
       computeStatsFor(setter.id, { from: data.from ?? undefined, to: data.to ?? undefined }, Number(setter.commission_rate ?? 0.075)),
       supabaseAdmin.from("dm_daily_logs").select("*").eq("dm_setter_id", setter.id).order("log_date", { ascending: false }).limit(30),
       sumDmsInRange(setter.id, data.from, data.to),
+      recipQ,
     ]);
-
 
     const rangeDays = daysInRange(data.from, data.to);
 
@@ -621,7 +632,17 @@ export const getAdminDmSetterDetail = createServerFn({ method: "GET" })
       }));
     }
 
-    return { setter, stats, applications, bookings, logs: logs.data ?? [], dmSum, rangeDays, team };
+    return {
+      setter,
+      stats,
+      applications,
+      bookings,
+      logs: logs.data ?? [],
+      dmSum,
+      rangeDays,
+      team,
+      recipients: recipientsRes.data ?? [],
+    };
   });
 
 export const listDmManagers = createServerFn({ method: "GET" })
