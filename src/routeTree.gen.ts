@@ -40,6 +40,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AppAuthenticatedTrainingModuleIdRouteImport } from './routes/app/_authenticated/training.$moduleId'
 import { Route as AppAuthenticatedDmSetterLogsRouteImport } from './routes/app/_authenticated/dm-setter/logs'
+import { Route as AppAuthenticatedDmSetterCalendarRouteImport } from './routes/app/_authenticated/dm-setter/calendar'
 import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
 import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
 import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
@@ -233,6 +234,12 @@ const AppAuthenticatedDmSetterLogsRoute =
     path: '/dm-setter/logs',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedDmSetterCalendarRoute =
+  AppAuthenticatedDmSetterCalendarRouteImport.update({
+    id: '/dm-setter/calendar',
+    path: '/dm-setter/calendar',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedCloserCommissionsRoute =
   AppAuthenticatedCloserCommissionsRouteImport.update({
     id: '/closer/commissions',
@@ -413,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
   '/app/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
   '/app/training/$moduleId': typeof AppAuthenticatedTrainingModuleIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -467,6 +475,7 @@ export interface FileRoutesByTo {
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
   '/app/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
   '/app/training/$moduleId': typeof AppAuthenticatedTrainingModuleIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -524,6 +533,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/_authenticated/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
   '/app/_authenticated/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
   '/app/_authenticated/training/$moduleId': typeof AppAuthenticatedTrainingModuleIdRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -581,6 +591,7 @@ export interface FileRouteTypes {
     | '/app/admin/settings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
+    | '/app/dm-setter/calendar'
     | '/app/dm-setter/logs'
     | '/app/training/$moduleId'
     | '/lovable/email/queue/process'
@@ -635,6 +646,7 @@ export interface FileRouteTypes {
     | '/app/admin/settings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
+    | '/app/dm-setter/calendar'
     | '/app/dm-setter/logs'
     | '/app/training/$moduleId'
     | '/lovable/email/queue/process'
@@ -691,6 +703,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/settings'
     | '/app/_authenticated/closer/calendar'
     | '/app/_authenticated/closer/commissions'
+    | '/app/_authenticated/dm-setter/calendar'
     | '/app/_authenticated/dm-setter/logs'
     | '/app/_authenticated/training/$moduleId'
     | '/lovable/email/queue/process'
@@ -947,6 +960,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedDmSetterLogsRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/dm-setter/calendar': {
+      id: '/app/_authenticated/dm-setter/calendar'
+      path: '/dm-setter/calendar'
+      fullPath: '/app/dm-setter/calendar'
+      preLoaderRoute: typeof AppAuthenticatedDmSetterCalendarRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/closer/commissions': {
       id: '/app/_authenticated/closer/commissions'
       path: '/closer/commissions'
@@ -1173,6 +1193,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedSetPasswordRoute: typeof AppAuthenticatedSetPasswordRoute
   AppAuthenticatedCloserCalendarRoute: typeof AppAuthenticatedCloserCalendarRoute
   AppAuthenticatedCloserCommissionsRoute: typeof AppAuthenticatedCloserCommissionsRoute
+  AppAuthenticatedDmSetterCalendarRoute: typeof AppAuthenticatedDmSetterCalendarRoute
   AppAuthenticatedDmSetterLogsRoute: typeof AppAuthenticatedDmSetterLogsRoute
   AppAuthenticatedTrainingModuleIdRoute: typeof AppAuthenticatedTrainingModuleIdRoute
   AppAuthenticatedCloserIndexRoute: typeof AppAuthenticatedCloserIndexRoute
@@ -1192,6 +1213,7 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedCloserCalendarRoute: AppAuthenticatedCloserCalendarRoute,
   AppAuthenticatedCloserCommissionsRoute:
     AppAuthenticatedCloserCommissionsRoute,
+  AppAuthenticatedDmSetterCalendarRoute: AppAuthenticatedDmSetterCalendarRoute,
   AppAuthenticatedDmSetterLogsRoute: AppAuthenticatedDmSetterLogsRoute,
   AppAuthenticatedTrainingModuleIdRoute: AppAuthenticatedTrainingModuleIdRoute,
   AppAuthenticatedCloserIndexRoute: AppAuthenticatedCloserIndexRoute,
