@@ -376,6 +376,49 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
             </Card>
 
             <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  DMs sent ({data.dmSum.total.toLocaleString()})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-xs text-muted-foreground">
+                  {data.dmSum.total.toLocaleString()} DMs across {data.dmSum.days_logged} logged day{data.dmSum.days_logged === 1 ? "" : "s"}
+                  {data.rangeDays ? ` · ${data.rangeDays} day${data.rangeDays > 1 ? "s" : ""} in range` : ""}
+                  {" · "}{data.recipients.length} unique recipient{data.recipients.length === 1 ? "" : "s"}
+                </div>
+                {data.recipients.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No recipients logged in this range.</div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
+                    {data.recipients.map((r) => (
+                      <span
+                        key={r.id}
+                        className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs"
+                        title={`${r.platform} · ${new Date(r.created_at).toLocaleString()}`}
+                      >
+                        {r.name_original}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {data.logs.length > 0 && (
+                  <div className="pt-2 border-t border-border/60">
+                    <div className="text-xs font-medium mb-1">Recent daily totals</div>
+                    <div className="space-y-1 text-xs">
+                      {data.logs.slice(0, 14).map((l) => (
+                        <div key={l.id} className="flex justify-between border-b border-border/40 py-0.5">
+                          <span className="text-muted-foreground">{l.log_date}</span>
+                          <span className="tabular-nums">{(l.ai_count ?? 0) + (l.manual_adjustment ?? 0)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
               <CardHeader><CardTitle className="text-base">Commission (in range)</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-lg font-semibold">${data.stats.total_commission.toFixed(2)}</div>

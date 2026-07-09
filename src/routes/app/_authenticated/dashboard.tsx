@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getClientDashboard, getMe, listMyCommissions } from "@/lib/api/cl.functions";
@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Briefcase, CheckCircle2, Clock, GraduationCap, DollarSign, ArrowRight, ListChecks } from "lucide-react";
+import { meQueryOptions } from "./route";
 
 const dashboardOpts = queryOptions({
   queryKey: ["client-dashboard"],
@@ -16,6 +17,13 @@ const dashboardOpts = queryOptions({
 const meOpts = queryOptions({ queryKey: ["me"], queryFn: () => getMe() });
 
 export const Route = createFileRoute("/app/_authenticated/dashboard")({
+  beforeLoad: async ({ context }) => {
+    const me = await context.queryClient.ensureQueryData(meQueryOptions);
+    if (me.isAdmin) throw redirect({ to: "/app/admin" });
+    if (me.isDmSetterManager) throw redirect({ to: "/app/dm-manager" });
+    if (me.isDmSetter) throw redirect({ to: "/app/dm-setter" });
+    if (me.isCloser) throw redirect({ to: "/app/closer" });
+  },
   loader: ({ context }) => context.queryClient.ensureQueryData(dashboardOpts),
   component: ClientDashboard,
 });

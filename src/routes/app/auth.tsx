@@ -28,7 +28,10 @@ function AuthPage() {
         .select("role")
         .eq("user_id", data.session.user.id);
       const isAdmin = (roles ?? []).some((r) => r.role === "admin");
-      if (active) navigate({ to: isAdmin ? "/app/admin" : "/app/dashboard" });
+      const isCloser = (roles ?? []).some((r) => r.role === "closer");
+      const isDmSetter = (roles ?? []).some((r) => (r.role as string) === "dm_setter");
+      const isDmManager = (roles ?? []).some((r) => (r.role as string) === "dm_setter_manager");
+      if (active) navigate({ to: isAdmin ? "/app/admin" : isDmManager ? "/app/dm-manager" : isDmSetter ? "/app/dm-setter" : isCloser ? "/app/closer" : "/app/dashboard" });
     });
     return () => {
       active = false;
