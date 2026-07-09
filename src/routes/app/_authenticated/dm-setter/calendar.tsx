@@ -81,11 +81,6 @@ function DmSetterCalendar() {
                     {b.closers?.full_name && <span className="inline-flex items-center gap-1"><User className="h-3 w-3" /> Closer: {b.closers.full_name}</span>}
                   </div>
                 </div>
-                {b.zoom_join_url && (
-                  <a href={b.zoom_join_url} target="_blank" rel="noreferrer">
-                    <Button size="sm" variant="outline" className="gap-1"><Video className="h-3 w-3" /> Join</Button>
-                  </a>
-                )}
               </Card>
             );
           })}
