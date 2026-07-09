@@ -1016,6 +1016,7 @@ export const cancelAppointment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
 export const setAppointmentOutcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(

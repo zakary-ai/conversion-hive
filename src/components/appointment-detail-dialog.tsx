@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getLead, getMe, setAppointmentOutcome, getAppointmentSetter, listSetters, setAppointmentSetter } from "@/lib/api/cl.functions";
+import { getLead, getMe, setAppointmentOutcome, getAppointmentSetter, listSetters, setAppointmentSetter, cancelAppointment, deleteAppointment } from "@/lib/api/cl.functions";
+import { LeadBookingDialog } from "@/components/lead-booking-dialog";
 import { EmailActivityTimeline } from "@/components/email-activity-timeline";
 
 import { Building2, Phone, Mail, Tag, Clock, CalendarClock, CheckCircle2, Video, Ban, User, XCircle, RotateCcw, UserX, UserCheck } from "lucide-react";
@@ -58,6 +59,32 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
   const [pctPreset, setPctPreset] = useState<"10" | "15" | "custom">("10");
   const [customPct, setCustomPct] = useState("");
   const [reason, setReason] = useState("");
+  const [bookOpen, setBookOpen] = useState(false);
+
+  const showCallbackActions = appt?.type === "callback" && !!appt?.lead_id;
+
+  const notInterested = useMutation({
+    mutationFn: (id: string) => cancelAppointment({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Marked Not Interested");
+      qc.invalidateQueries({ queryKey: ["my-appointments"] });
+      qc.invalidateQueries({ queryKey: ["all-appointments"] });
+      qc.invalidateQueries({ queryKey: ["my-leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", appt?.lead_id] });
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeCallback = useMutation({
+    mutationFn: (id: string) => deleteAppointment({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-appointments"] });
+      qc.invalidateQueries({ queryKey: ["all-appointments"] });
+      qc.invalidateQueries({ queryKey: ["my-leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", appt?.lead_id] });
+    },
+  });
 
   useEffect(() => {
     if (!appt) return;
@@ -154,6 +181,34 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
 
                 {appt.context && <Row icon={User} label="Context" value={<span className="block whitespace-pre-wrap break-words text-right">{appt.context}</span>} />}
               </div>
+
+              {showCallbackActions && (
+                <div className="rounded-lg border border-border p-3 space-y-2">
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground">Callback outcome</div>
+                  <p className="text-xs text-muted-foreground">How did this callback go?</p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      onClick={() => setBookOpen(true)}
+                      className="bg-success hover:bg-success/90 text-success-foreground"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" /> Book
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        if (confirm("Mark this lead as Not Interested?")) {
+                          notInterested.mutate(appt.id);
+                        }
+                      }}
+                      disabled={notInterested.isPending}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" /> Not interested
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <EmailActivityTimeline
                 leadId={appt.lead_id}
@@ -361,6 +416,26 @@ export function AppointmentDetailDialog({ appt, onClose }: { appt: Appt | null; 
               )}
             </div>
           </div>
+        )}
+        {appt && showCallbackActions && lead && (
+          <LeadBookingDialog
+            lead={{
+              id: lead.id,
+              name: lead.name ?? appt.name,
+              phone: lead.phone ?? appt.phone,
+              email: lead.email ?? appt.email,
+            }}
+            open={bookOpen}
+            onClose={() => setBookOpen(false)}
+            onDone={() => {
+              // Convert the callback into a booking: remove the callback row
+              // (BookingDialog already created the new booking appointment
+              // and updated the lead status to Booked).
+              removeCallback.mutate(appt.id);
+              setBookOpen(false);
+              onClose();
+            }}
+          />
         )}
       </DialogContent>
     </Dialog>
