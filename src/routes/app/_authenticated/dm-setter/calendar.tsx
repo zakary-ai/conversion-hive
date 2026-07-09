@@ -5,8 +5,7 @@ import { listMyDmBookings } from "@/lib/api/dm-setters.functions";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Mail, Phone, Video, CalendarClock, User } from "lucide-react";
+import { Mail, Phone, CalendarClock, User } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/calendar")({
   component: DmSetterCalendar,
