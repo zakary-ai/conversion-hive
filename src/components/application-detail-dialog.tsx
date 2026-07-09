@@ -38,7 +38,17 @@ export function ApplicationDetailDialog({
             <Row label="Current monthly income" value={data.current_monthly_income} />
             <Row label="Desired monthly income" value={data.desired_monthly_income} />
             <Row label="Credit score range" value={data.credit_score_range} />
-            <Row label="Referred by" value={(data as { referred_by?: string | null }).referred_by ?? null} />
+            <Row
+              label="Referred by"
+              value={(() => {
+                const d = data as { referred_by?: string | null; dm_setter?: { full_name: string | null; email: string | null } | null };
+                if (d.dm_setter) {
+                  const name = d.dm_setter.full_name || d.dm_setter.email || "DM setter";
+                  return `${name} (DM setter)`;
+                }
+                return d.referred_by ?? null;
+              })()}
+            />
             <div className="text-xs text-muted-foreground pt-2 border-t border-border">
               Submitted {new Date(data.created_at as string).toLocaleString()}
             </div>
