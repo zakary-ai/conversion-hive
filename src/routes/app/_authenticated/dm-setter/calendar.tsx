@@ -5,8 +5,7 @@ import { listMyDmBookings } from "@/lib/api/dm-setters.functions";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Mail, Phone, Video, CalendarClock, User } from "lucide-react";
+import { Mail, Phone, CalendarClock, User } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/calendar")({
   component: DmSetterCalendar,
@@ -81,11 +80,6 @@ function DmSetterCalendar() {
                     {b.closers?.full_name && <span className="inline-flex items-center gap-1"><User className="h-3 w-3" /> Closer: {b.closers.full_name}</span>}
                   </div>
                 </div>
-                {b.zoom_join_url && (
-                  <a href={b.zoom_join_url} target="_blank" rel="noreferrer">
-                    <Button size="sm" variant="outline" className="gap-1"><Video className="h-3 w-3" /> Join</Button>
-                  </a>
-                )}
               </Card>
             );
           })}
