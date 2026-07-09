@@ -180,11 +180,25 @@ function Row({ setter, onOpen, onDelete, managers }: {
         <Button size="icon" variant="ghost" onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }}>
           <Copy className="h-4 w-4" />
         </Button>
+        <ResendInviteButton id={setter.id} />
         <Button size="icon" variant="ghost" onClick={onDelete}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
     </div>
+  );
+}
+
+function ResendInviteButton({ id }: { id: string }) {
+  const m = useMutation({
+    mutationFn: () => resendDmSetterInvite({ data: { id } }),
+    onSuccess: () => toast.success("Invite email resent"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Button size="icon" variant="ghost" disabled={m.isPending} onClick={() => m.mutate()} title="Resend invite">
+      <Mail className="h-4 w-4" />
+    </Button>
   );
 }
 
