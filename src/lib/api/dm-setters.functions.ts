@@ -653,3 +653,28 @@ export const listDmManagers = createServerFn({ method: "GET" })
       .from("dm_setters").select("id, full_name, email").eq("is_manager", true).order("full_name");
     return data ?? [];
   });
+
+export const listMyDmBookings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: me } = await supabaseAdmin
+      .from("dm_setters").select("id, is_manager").eq("user_id", context.userId).maybeSingle();
+    if (!me) throw new Error("Not a DM setter");
+
+    // Collect setter ids: self + team (if manager)
+    const setterIds: string[] = [me.id];
+    if (me.is_manager) {
+      const { data: team } = await supabaseAdmin
+        .from("dm_setters").select("id").eq("manager_id", me.id);
+      for (const t of team ?? []) setterIds.push(t.id);
+    }
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("closer_bookings")
+      .select("id, application_id, slot_start, status, zoom_join_url, applicant_name, applicant_email, applicant_phone, outcome, dm_setter_id, closers:assigned_closer_id (full_name, email)")
+      .in("dm_setter_id", setterIds)
+      .order("slot_start", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [] };
+  });

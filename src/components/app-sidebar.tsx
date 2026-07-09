@@ -52,6 +52,8 @@ const closerItems = [
 const dmSetterItems = [
   { title: "Home", url: "/app/dm-setter", icon: LayoutDashboard },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
+  { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
+  { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
@@ -59,6 +61,8 @@ const dmSetterItems = [
 const dmManagerItems = [
   { title: "Home", url: "/app/dm-manager", icon: LayoutDashboard },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
+  { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
+  { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
