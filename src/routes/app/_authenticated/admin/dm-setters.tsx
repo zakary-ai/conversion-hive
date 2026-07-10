@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listDmSetters, listDmManagers, createDmSetter, deleteDmSetter, updateDmSetter,
-  getAdminDmSetterDetail, resendDmSetterInvite,
+  getAdminDmSetterDetail, resendDmSetterInvite, getAdminDmSetterUploads,
 } from "@/lib/api/dm-setters.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
