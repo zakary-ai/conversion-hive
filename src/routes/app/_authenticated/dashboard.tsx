@@ -36,10 +36,14 @@ function ClientDashboard() {
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <PageHeader
-        title={`Welcome back, ${name}`}
-        description="Here's what's happening with your pipeline today."
-      />
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <PageHeader
+          title={`Welcome back, ${name}`}
+          description="Here's what's happening with your pipeline today."
+        />
+        <SupportButton />
+      </div>
+
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Today's leads" value={data.todayLeads} icon={Briefcase} hint="New leads added today" />
