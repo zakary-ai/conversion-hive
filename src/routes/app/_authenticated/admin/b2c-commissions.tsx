@@ -192,11 +192,14 @@ function B2cCommissionsPage() {
         )}
       </Card>
 
+      <ManualEntriesCard />
+
       <PayoutsSheet open={payoutsOpen} onOpenChange={setPayoutsOpen} rows={rows} />
       <AddDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }
+
 
 // ---------- Booking group card (DM Setter | Closer) ----------
 function BookingGroupCard({ row }: { row: Row }) {
