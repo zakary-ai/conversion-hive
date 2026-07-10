@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query"
 import { useState } from "react";
 import { getClientDashboard, getMe, listMyCommissions } from "@/lib/api/cl.functions";
 import { StatCard, PageHeader } from "@/components/ui-bits";
+import { SupportButton } from "@/components/support-button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
