@@ -329,8 +329,8 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
               </Popover>
             </div>
 
-            {/* Clickable stat buttons */}
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+            {/* Clickable stat buttons — DMs sent lives here as the primary block */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
               {sections.map((s) => (
                 <button
                   key={s.key}
@@ -338,13 +338,15 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
                   className={cn(
                     "rounded-md border p-3 text-left transition-colors",
                     section === s.key ? "border-primary bg-primary/10" : "border-border hover:bg-accent",
+                    s.key === "dms" && "col-span-2 md:col-span-4 lg:col-span-2 border-primary/40",
                   )}
                 >
                   <div className="text-xs text-muted-foreground">{s.label}</div>
-                  <div className="text-lg font-semibold tabular-nums">{s.value}</div>
+                  <div className="text-lg font-semibold tabular-nums">{s.value.toLocaleString()}</div>
                 </button>
               ))}
             </div>
+
 
             {/* Leads table for selected section */}
             <Card>
