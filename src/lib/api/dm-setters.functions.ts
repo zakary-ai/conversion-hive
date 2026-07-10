@@ -701,3 +701,37 @@ export const listMyDmBookings = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { rows: rows ?? [] };
   });
+
+export const getAdminDmSetterUploads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    id: z.string().uuid(),
+    from: z.string().datetime().nullable().optional(),
+    to: z.string().datetime().nullable().optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
+      .from("dm_log_uploads")
+      .select("id, image_path, platform, ai_count, created_at")
+      .eq("dm_setter_id", data.id)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (data.from) q = q.gte("created_at", data.from);
+    if (data.to) q = q.lte("created_at", data.to);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const results: Array<{ id: string; url: string | null; platform: string; ai_count: number; created_at: string }> = [];
+    for (const r of rows ?? []) {
+      let url: string | null = null;
+      if (r.image_path && !r.image_path.startsWith("inline-")) {
+        const { data: signed } = await supabaseAdmin.storage
+          .from("dm-uploads").createSignedUrl(r.image_path, 60 * 60);
+        url = signed?.signedUrl ?? null;
+      }
+      results.push({ id: r.id, url, platform: r.platform, ai_count: r.ai_count, created_at: r.created_at });
+    }
+    return { uploads: results };
+  });
