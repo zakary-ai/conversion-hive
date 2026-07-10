@@ -30,6 +30,7 @@ const adminB2BItems = [
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/app/admin/b2b-commissions", icon: DollarSign },
+  { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
   { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
@@ -40,6 +41,7 @@ const adminB2CItems = [
   { title: "Closers", url: "/app/admin/closers", icon: UserPlus },
   { title: "DM Setters", url: "/app/admin/dm-setters", icon: MessageCircle },
   { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
+  { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
 
