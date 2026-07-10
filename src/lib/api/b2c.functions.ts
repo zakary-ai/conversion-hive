@@ -1599,6 +1599,7 @@ export const addB2cManualCommission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
     deal_amount: z.number().nonnegative().max(100000000).optional().nullable(),
+    deal_name: z.string().trim().max(200).optional().nullable(),
     entries: z.array(z.object({
       role: z.enum(B2C_ROLES),
       user_id: z.string().uuid(),
@@ -1610,12 +1611,14 @@ export const addB2cManualCommission = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const nowIso = new Date().toISOString();
+    const dealName = data.deal_name?.trim() || null;
     const rows = data.entries.map((e) => ({
       user_id: e.user_id,
       role: e.role,
       amount: e.amount,
       commission_percent: e.commission_percent ?? null,
       deal_amount: data.deal_amount ?? null,
+      deal_name: dealName,
       status: "pending",
       note: data.note ?? null,
       added_by: context.userId,
@@ -1637,7 +1640,7 @@ export const listB2cManualCommissions = createServerFn({ method: "GET" })
       .in("role", B2C_ROLES as unknown as string[])
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    const rows = (data ?? []) as Array<{ id: string; user_id: string; role: string; amount: number | string; commission_percent: number | string | null; deal_amount: number | string | null; status: string | null; note: string | null; created_at: string; approved_at: string | null; paid_at: string | null; paid_note: string | null }>;
+    const rows = (data ?? []) as Array<{ id: string; user_id: string; role: string; amount: number | string; commission_percent: number | string | null; deal_amount: number | string | null; deal_name: string | null; status: string | null; note: string | null; created_at: string; approved_at: string | null; paid_at: string | null; paid_note: string | null }>;
     const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
     const nameMap = new Map<string, string>();
     if (userIds.length > 0) {
@@ -1654,6 +1657,7 @@ export const listB2cManualCommissions = createServerFn({ method: "GET" })
       amount: Number(r.amount ?? 0),
       commission_percent: r.commission_percent != null ? Number(r.commission_percent) : null,
       deal_amount: r.deal_amount != null ? Number(r.deal_amount) : null,
+      deal_name: r.deal_name ?? null,
       status: (r.status ?? "pending") as string,
       note: r.note,
       created_at: r.created_at,
@@ -1662,3 +1666,4 @@ export const listB2cManualCommissions = createServerFn({ method: "GET" })
       paid_note: r.paid_note,
     }));
   });
+
