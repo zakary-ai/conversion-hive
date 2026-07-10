@@ -15,6 +15,7 @@ export type B2BCommissionEntry = {
   amount: number;
   commission_percent: number | null;
   deal_amount: number | null;
+  deal_name: string | null;
   status: string;
   note: string | null;
   created_at: string;
@@ -54,7 +55,7 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
     const commissionRows = (rows ?? []) as Array<{
       id: string; user_id: string; role: string | null;
       amount: number | string; commission_percent: number | string | null;
-      deal_amount: number | string | null; status: string | null;
+      deal_amount: number | string | null; deal_name: string | null; status: string | null;
       note: string | null; created_at: string; approved_at: string | null;
       appointment_id: string | null;
       paid_at: string | null; paid_note: string | null;
@@ -76,8 +77,12 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
       }
     }
 
-    // Filter commissions: keep those tied to a B2B appointment OR orphan manual/setter/closer rows
-    const scoped = commissionRows.filter((r) => !r.appointment_id || apptMap.has(r.appointment_id));
+    // Filter commissions: exclude B2C manual roles; keep B2B-scoped or orphan rows
+    const B2C_ROLES = new Set(["dm_setter", "dm_manager", "closer_b2c"]);
+    const scoped = commissionRows.filter((r) => {
+      if (r.role && B2C_ROLES.has(r.role)) return false;
+      return !r.appointment_id || apptMap.has(r.appointment_id);
+    });
 
     // Resolve user names
     const userIds = Array.from(new Set(scoped.map((r) => r.user_id)));
@@ -98,6 +103,7 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
       amount: Number(r.amount ?? 0),
       commission_percent: r.commission_percent != null ? Number(r.commission_percent) : null,
       deal_amount: r.deal_amount != null ? Number(r.deal_amount) : null,
+      deal_name: r.deal_name ?? null,
       status: (r.status ?? "pending") as string,
       note: r.note,
       created_at: r.created_at,
@@ -107,15 +113,19 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
       paid_note: r.paid_note,
     }));
 
-    // Group by appointment_id (fallback to own id for orphans)
+    // Group by appointment_id, or by (deal_name + created_at bucket) for orphans so a
+    // setter+closer pair added together in the same dialog groups into one card.
     const groups = new Map<string, B2BCommissionGroup>();
     for (const e of entries) {
-      const key = e.appointment_id ?? `orphan:${e.id}`;
+      let key: string;
+      if (e.appointment_id) key = e.appointment_id;
+      else if (e.deal_name) key = `deal:${e.deal_name}:${e.created_at.slice(0, 16)}`;
+      else key = `orphan:${e.id}`;
       const appt = e.appointment_id ? apptMap.get(e.appointment_id) : null;
       const g = groups.get(key) ?? {
         key,
         appointment_id: e.appointment_id,
-        appointment_name: appt?.name ?? null,
+        appointment_name: appt?.name ?? e.deal_name ?? null,
         scheduled_at: appt?.scheduled_at ?? null,
         deal_amount: e.deal_amount,
         created_at: e.created_at,
@@ -129,10 +139,12 @@ export const listB2BCommissions = createServerFn({ method: "GET" })
       else if (e.role === "manual" && !g.closer && !e.appointment_id) g.closer = e; // orphan manual shows as primary
       else g.extras.push(e);
       if (!g.deal_amount && e.deal_amount) g.deal_amount = e.deal_amount;
+      if (!g.appointment_name && e.deal_name) g.appointment_name = e.deal_name;
       if (e.created_at < g.created_at) g.created_at = e.created_at;
       groups.set(key, g);
     }
     // Compute group status
+
     for (const g of groups.values()) {
       const all = [g.setter, g.closer, ...g.extras].filter(Boolean) as B2BCommissionEntry[];
       const anyPending = all.some((x) => x.status === "pending");
