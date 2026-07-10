@@ -291,18 +291,20 @@ function AddDialog({ open, onOpenChange, setters, closers, onAdded }: {
   onAdded: () => void;
 }) {
   const [deal, setDeal] = useState("");
+  const [dealName, setDealName] = useState("");
   const [setterId, setSetterId] = useState<string>("");
   const [setterPct, setSetterPct] = useState<string>("10");
   const [closerId, setCloserId] = useState<string>("");
   const [closerPct, setCloserPct] = useState<string>("15");
   const [note, setNote] = useState("");
 
-  const reset = () => { setDeal(""); setSetterId(""); setSetterPct("10"); setCloserId(""); setCloserPct("15"); setNote(""); };
+  const reset = () => { setDeal(""); setDealName(""); setSetterId(""); setSetterPct("10"); setCloserId(""); setCloserPct("15"); setNote(""); };
 
   const submit = useMutation({
     mutationFn: () => addB2BCommission({
       data: {
         deal_amount: parseFloat(deal) || 0,
+        deal_name: dealName.trim() || null,
         setter_user_id: setterId || null,
         setter_percent: setterId ? parseFloat(setterPct) || 0 : null,
         closer_user_id: closerId || null,
@@ -324,9 +326,15 @@ function AddDialog({ open, onOpenChange, setters, closers, onAdded }: {
         <DialogHeader><DialogTitle>Add commission</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div>
+            <Label>Deal name</Label>
+            <Input value={dealName} onChange={(e) => setDealName(e.target.value)} placeholder="e.g. Acme Corp — Q3 package" />
+          </div>
+          <div>
             <Label>Deal amount ($)</Label>
             <Input type="number" step="0.01" value={deal} onChange={(e) => setDeal(e.target.value)} placeholder="0.00" />
           </div>
+
+
 
           <div className="rounded-md border border-border p-3 space-y-2">
             <div className="flex items-center justify-between">

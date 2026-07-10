@@ -609,7 +609,7 @@ function ManualEntriesCard() {
             <div key={r.id} className="p-3 sm:p-4 flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium">{r.user_name}</span>
+                  <span className="font-medium">{r.deal_name || r.user_name}</span>
                   <Badge variant="outline" className="text-[10px]">{ROLE_LABEL[r.role] ?? r.role}</Badge>
                   {isPending
                     ? <Badge variant="outline" className="border-warning text-warning text-[10px]">Pending</Badge>
@@ -617,12 +617,14 @@ function ManualEntriesCard() {
                   {isPaid && <Badge variant="outline" className="border-success text-success text-[10px]">Paid</Badge>}
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {r.deal_name ? `${r.user_name} · ` : ""}
                   {fmtDate(r.created_at)}
                   {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
                   {r.deal_amount != null ? ` of ${money(r.deal_amount)}` : ""}
                   {r.note ? ` · ${r.note}` : ""}
                 </div>
               </div>
+
               <div className="flex items-center gap-2">
                 <div className={`font-semibold ${isPending ? "text-warning" : "text-success"}`}>{money(r.amount)}</div>
                 {isPending && (
@@ -657,6 +659,7 @@ function AddDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: bo
   });
 
   const [deal, setDeal] = useState("");
+  const [dealName, setDealName] = useState("");
   const [note, setNote] = useState("");
   const [setterId, setSetterId] = useState("");
   const [setterPct, setSetterPct] = useState("10");
@@ -666,7 +669,7 @@ function AddDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: bo
   const [closerPct, setCloserPct] = useState("15");
 
   const reset = () => {
-    setDeal(""); setNote("");
+    setDeal(""); setDealName(""); setNote("");
     setSetterId(""); setSetterPct("10");
     setManagerId(""); setManagerPct("2.5");
     setCloserId(""); setCloserPct("15");
@@ -685,7 +688,12 @@ function AddDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: bo
       if (managerId) entries.push({ role: "dm_manager", user_id: managerId, amount: mAmt, commission_percent: parseFloat(managerPct) || null });
       if (closerId) entries.push({ role: "closer_b2c", user_id: closerId, amount: cAmt, commission_percent: parseFloat(closerPct) || null });
       return addB2cManualCommission({
-        data: { deal_amount: isFinite(d) && d > 0 ? d : null, entries, note: note || null },
+        data: {
+          deal_amount: isFinite(d) && d > 0 ? d : null,
+          deal_name: dealName.trim() || null,
+          entries,
+          note: note || null,
+        },
       });
     },
     onSuccess: () => {
@@ -706,10 +714,16 @@ function AddDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: bo
         <DialogHeader><DialogTitle>Add B2C commission</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div>
+            <Label>Deal name</Label>
+            <Input value={dealName} onChange={(e) => setDealName(e.target.value)} placeholder="e.g. Jane Doe — Coaching package" />
+          </div>
+          <div>
             <Label>Deal amount ($)</Label>
             <Input type="number" step="0.01" value={deal} onChange={(e) => setDeal(e.target.value)} placeholder="0.00" />
             <div className="text-[10px] text-muted-foreground mt-1">Optional — used to auto-compute commissions by percentage.</div>
           </div>
+
+
 
           <ManualRoleBlock
             label="DM Setter"
