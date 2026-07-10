@@ -348,85 +348,136 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
             </div>
 
 
-            {/* Leads table for selected section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base capitalize">
-                  {sections.find((s) => s.key === section)?.label} ({leads.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {leads.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">No leads in this range.</div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Date</TableHead>
-                        {section !== "applied" && <TableHead>Status</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {leads.map((l) => (
-                        <TableRow key={l.id}>
-                          <TableCell className="font-medium">{l.name}</TableCell>
-                          <TableCell className="text-muted-foreground">{l.email}</TableCell>
-                          <TableCell className="tabular-nums text-xs">
-                            {l.when ? format(new Date(l.when), "MMM d, yyyy h:mm a") : "—"}
-                          </TableCell>
-                          {section !== "applied" && <TableCell className="text-xs capitalize">{l.extra}</TableCell>}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+            {/* Content pane: DMs+screenshots for the "dms" section, otherwise leads table */}
+            {section === "dms" ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    DMs sent ({data.dmSum.total.toLocaleString()})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-xs text-muted-foreground">
+                    {data.dmSum.total.toLocaleString()} DMs across {data.dmSum.days_logged} logged day{data.dmSum.days_logged === 1 ? "" : "s"}
+                    {data.rangeDays ? ` · ${data.rangeDays} day${data.rangeDays > 1 ? "s" : ""} in range` : ""}
+                    {" · "}{data.recipients.length} unique recipient{data.recipients.length === 1 ? "" : "s"}
+                  </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  DMs sent ({data.dmSum.total.toLocaleString()})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-xs text-muted-foreground">
-                  {data.dmSum.total.toLocaleString()} DMs across {data.dmSum.days_logged} logged day{data.dmSum.days_logged === 1 ? "" : "s"}
-                  {data.rangeDays ? ` · ${data.rangeDays} day${data.rangeDays > 1 ? "s" : ""} in range` : ""}
-                  {" · "}{data.recipients.length} unique recipient{data.recipients.length === 1 ? "" : "s"}
-                </div>
-                {data.recipients.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">No recipients logged in this range.</div>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
-                    {data.recipients.map((r) => (
-                      <span
-                        key={r.id}
-                        className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs"
-                        title={`${r.platform} · ${new Date(r.created_at).toLocaleString()}`}
-                      >
-                        {r.name_original}
-                      </span>
-                    ))}
+                  <div>
+                    <div className="text-xs font-medium mb-2">Recipients</div>
+                    {data.recipients.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">No recipients logged in this range.</div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
+                        {data.recipients.map((r) => (
+                          <span
+                            key={r.id}
+                            className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs"
+                            title={`${r.platform} · ${new Date(r.created_at).toLocaleString()}`}
+                          >
+                            {r.name_original}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-                {data.logs.length > 0 && (
-                  <div className="pt-2 border-t border-border/60">
-                    <div className="text-xs font-medium mb-1">Recent daily totals</div>
-                    <div className="space-y-1 text-xs">
-                      {data.logs.slice(0, 14).map((l) => (
-                        <div key={l.id} className="flex justify-between border-b border-border/40 py-0.5">
-                          <span className="text-muted-foreground">{l.log_date}</span>
-                          <span className="tabular-nums">{(l.ai_count ?? 0) + (l.manual_adjustment ?? 0)}</span>
-                        </div>
-                      ))}
+
+                  <div>
+                    <div className="text-xs font-medium mb-2">
+                      Screenshots uploaded ({uploadsData?.uploads.length ?? 0})
                     </div>
+                    {!uploadsData ? (
+                      <div className="text-sm text-muted-foreground">Loading…</div>
+                    ) : uploadsData.uploads.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">No screenshots in this range.</div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {uploadsData.uploads.map((u) => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => u.url && setLightbox(u.url)}
+                            className="group relative aspect-square overflow-hidden rounded-md border border-border bg-muted"
+                            title={`${u.platform} · ${u.ai_count} DMs · ${new Date(u.created_at).toLocaleString()}`}
+                          >
+                            {u.url ? (
+                              <img src={u.url} alt="DM screenshot" className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground px-2 text-center">
+                                Not stored<br />(legacy upload)
+                              </div>
+                            )}
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1.5 py-0.5 flex justify-between">
+                              <span className="capitalize">{u.platform}</span>
+                              <span className="tabular-nums">{u.ai_count}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  {data.logs.length > 0 && (
+                    <div className="pt-2 border-t border-border/60">
+                      <div className="text-xs font-medium mb-1">Recent daily totals</div>
+                      <div className="space-y-1 text-xs">
+                        {data.logs.slice(0, 14).map((l) => (
+                          <div key={l.id} className="flex justify-between border-b border-border/40 py-0.5">
+                            <span className="text-muted-foreground">{l.log_date}</span>
+                            <span className="tabular-nums">{(l.ai_count ?? 0) + (l.manual_adjustment ?? 0)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base capitalize">
+                    {sections.find((s) => s.key === section)?.label} ({leads.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {leads.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">No leads in this range.</div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Date</TableHead>
+                          {section !== "applied" && <TableHead>Status</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {leads.map((l) => (
+                          <TableRow key={l.id}>
+                            <TableCell className="font-medium">{l.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{l.email}</TableCell>
+                            <TableCell className="tabular-nums text-xs">
+                              {l.when ? format(new Date(l.when), "MMM d, yyyy h:mm a") : "—"}
+                            </TableCell>
+                            {section !== "applied" && <TableCell className="text-xs capitalize">{l.extra}</TableCell>}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {lightbox && (
+              <Dialog open onOpenChange={() => setLightbox(null)}>
+                <DialogContent className="max-w-3xl p-2">
+                  <img src={lightbox} alt="Screenshot" className="w-full h-auto rounded" />
+                </DialogContent>
+              </Dialog>
+            )}
+
 
             <Card>
               <CardHeader><CardTitle className="text-base">Commission (in range)</CardTitle></CardHeader>
