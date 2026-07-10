@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { getMyDmTeam } from "@/lib/api/dm-setters.functions";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getMyDmTeam, inviteDmSetterAsManager } from "@/lib/api/dm-setters.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Copy, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/_authenticated/dm-manager/")({
@@ -12,7 +17,24 @@ export const Route = createFileRoute("/app/_authenticated/dm-manager/")({
 });
 
 function DmManagerHome() {
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["my-dm-team"], queryFn: () => getMyDmTeam() });
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [form, setForm] = useState({ full_name: "", email: "", commission_rate: 0.075 });
+
+  const invite = useMutation({
+    mutationFn: () => inviteDmSetterAsManager({ data: {
+      full_name: form.full_name, email: form.email, commission_rate: form.commission_rate,
+    } }),
+    onSuccess: () => {
+      toast.success("Setter invited — email sent");
+      setInviteOpen(false);
+      setForm({ full_name: "", email: "", commission_rate: 0.075 });
+      qc.invalidateQueries({ queryKey: ["my-dm-team"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (isLoading || !data) return <div className="text-sm text-muted-foreground">Loading…</div>;
 
   const totalCommission = data.team.reduce((s, r) => s + (r.manager_commission ?? 0), 0);
@@ -71,7 +93,58 @@ function DmManagerHome() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-2">My DM Setters</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold">My DM Setters</h2>
+          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><UserPlus className="h-4 w-4 mr-1" /> Invite setter</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Invite a DM setter</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  They'll be added to your team automatically and receive a login email.
+                </p>
+                <div>
+                  <Label>Full name</Label>
+                  <Input
+                    value={form.full_name}
+                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                    maxLength={200}
+                  />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    maxLength={200}
+                  />
+                </div>
+                <div>
+                  <Label>Commission tier</Label>
+                  <Select
+                    value={String(form.commission_rate)}
+                    onValueChange={(v) => setForm({ ...form, commission_rate: Number(v) })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.075">Standard — 7.5% per closed deal</SelectItem>
+                      <SelectItem value="0.1">Premium — 10% per closed deal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  disabled={!form.full_name.trim() || !form.email.trim() || invite.isPending}
+                  onClick={() => invite.mutate()}
+                >
+                  {invite.isPending ? "Inviting…" : "Send invite"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
         <div className="space-y-3">
           {data.team.map((row) => (
             <Card key={row.setter.id}>
