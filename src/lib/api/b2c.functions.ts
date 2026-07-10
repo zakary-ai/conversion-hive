@@ -1561,3 +1561,104 @@ export const submitManualCommission = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Admin: manual B2C commission entries (dm setter / manager / closer) ----------
+// Stored in `commissions` with role tags so the B2C page can list/manage them
+// separately from booking-linked commissions.
+const B2C_ROLES = ["dm_setter", "dm_manager", "closer_b2c"] as const;
+type B2CRole = typeof B2C_ROLES[number];
+
+export const listB2cManualLookups = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabase } = context;
+
+    const [{ data: setters }, { data: closerRows }] = await Promise.all([
+      supabase.from("dm_setters").select("id, full_name, email, is_manager, user_id").order("full_name"),
+      supabase.from("closers").select("id, full_name, email, user_id, active").eq("active", true).order("full_name"),
+    ]);
+
+    type DmRow = { id: string; full_name: string | null; email: string | null; is_manager: boolean; user_id: string | null };
+    type CloserRow = { id: string; full_name: string | null; email: string | null; user_id: string | null };
+
+    const dmSetters = ((setters ?? []) as DmRow[])
+      .filter((s) => !s.is_manager && !!s.user_id)
+      .map((s) => ({ user_id: s.user_id as string, name: s.full_name || s.email || "DM Setter" }));
+    const dmManagers = ((setters ?? []) as DmRow[])
+      .filter((s) => s.is_manager && !!s.user_id)
+      .map((s) => ({ user_id: s.user_id as string, name: s.full_name || s.email || "DM Manager" }));
+    const closers = ((closerRows ?? []) as CloserRow[])
+      .filter((c) => !!c.user_id)
+      .map((c) => ({ user_id: c.user_id as string, name: c.full_name || c.email || "Closer" }));
+
+    return { dmSetters, dmManagers, closers };
+  });
+
+export const addB2cManualCommission = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    deal_amount: z.number().nonnegative().max(100000000).optional().nullable(),
+    entries: z.array(z.object({
+      role: z.enum(B2C_ROLES),
+      user_id: z.string().uuid(),
+      amount: z.number().nonnegative().max(1000000),
+      commission_percent: z.number().min(0).max(100).nullable().optional(),
+    })).min(1),
+    note: z.string().max(2000).optional().nullable(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const nowIso = new Date().toISOString();
+    const rows = data.entries.map((e) => ({
+      user_id: e.user_id,
+      role: e.role,
+      amount: e.amount,
+      commission_percent: e.commission_percent ?? null,
+      deal_amount: data.deal_amount ?? null,
+      status: "pending",
+      note: data.note ?? null,
+      added_by: context.userId,
+      created_at: nowIso,
+    }));
+    const { error } = await context.supabase.from("commissions").insert(rows);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: rows.length };
+  });
+
+export const listB2cManualCommissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabase } = context;
+    const { data, error } = await supabase
+      .from("commissions")
+      .select("*")
+      .in("role", B2C_ROLES as unknown as string[])
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as Array<{ id: string; user_id: string; role: string; amount: number | string; commission_percent: number | string | null; deal_amount: number | string | null; status: string | null; note: string | null; created_at: string; approved_at: string | null; paid_at: string | null; paid_note: string | null }>;
+    const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
+    const nameMap = new Map<string, string>();
+    if (userIds.length > 0) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name, email").in("user_id", userIds);
+      for (const p of ((profs ?? []) as Array<{ user_id: string; full_name: string | null; email: string | null }>)) {
+        nameMap.set(p.user_id, p.full_name || p.email || p.user_id.slice(0, 8));
+      }
+    }
+    return rows.map((r) => ({
+      id: r.id,
+      user_id: r.user_id,
+      user_name: nameMap.get(r.user_id) ?? r.user_id.slice(0, 8),
+      role: r.role as B2CRole,
+      amount: Number(r.amount ?? 0),
+      commission_percent: r.commission_percent != null ? Number(r.commission_percent) : null,
+      deal_amount: r.deal_amount != null ? Number(r.deal_amount) : null,
+      status: (r.status ?? "pending") as string,
+      note: r.note,
+      created_at: r.created_at,
+      approved_at: r.approved_at,
+      paid_at: r.paid_at,
+      paid_note: r.paid_note,
+    }));
+  });

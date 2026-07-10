@@ -9,7 +9,12 @@ import {
   approveDmSetterCommission,
   recordB2cCommissionPayout,
   undoB2cCommissionPayout,
+  listB2cManualLookups,
+  addB2cManualCommission,
+  listB2cManualCommissions,
 } from "@/lib/api/b2c.functions";
+import { approveCommission, deleteCommission, setCommissionPaid } from "@/lib/api/cl.functions";
+
 import { PageHeader } from "@/components/ui-bits";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
@@ -187,11 +192,14 @@ function B2cCommissionsPage() {
         )}
       </Card>
 
+      <ManualEntriesCard />
+
       <PayoutsSheet open={payoutsOpen} onOpenChange={setPayoutsOpen} rows={rows} />
       <AddDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }
+
 
 // ---------- Booking group card (DM Setter | Closer) ----------
 function BookingGroupCard({ row }: { row: Row }) {
@@ -544,38 +552,244 @@ function DeleteCommissionButton({ bookingId, name }: { bookingId: string; name: 
   );
 }
 
-// ---------- Add commission dialog (placeholder for DM setter structure) ----------
-function AddDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+// ---------- Manual B2C commission entries (admin-added) ----------
+type ManualEntry = Awaited<ReturnType<typeof listB2cManualCommissions>>[number];
+
+const ROLE_LABEL: Record<string, string> = {
+  dm_setter: "DM Setter",
+  dm_manager: "DM Manager",
+  closer_b2c: "Closer",
+};
+
+function ManualEntriesCard() {
+  const qc = useQueryClient();
+  const { data = [] } = useQuery({
+    queryKey: ["b2c-manual-commissions"],
+    queryFn: () => listB2cManualCommissions(),
+  });
+  const rows = data as ManualEntry[];
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["b2c-manual-commissions"] });
+
+  const approve = useMutation({
+    mutationFn: (id: string) => approveCommission({ data: { id } }),
+    onSuccess: () => { toast.success("Approved"); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => deleteCommission({ data: { id } }),
+    onSuccess: () => { toast.success("Removed"); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const togglePaid = useMutation({
+    mutationFn: (r: ManualEntry) =>
+      r.paid_at
+        ? setCommissionPaid({ data: { id: r.id, paid: false } })
+        : setCommissionPaid({ data: { id: r.id, paid: true, paid_at: new Date().toISOString(), paid_method: "Manual" } }),
+    onSuccess: () => { toast.success("Updated"); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (rows.length === 0) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>Add commission</DialogTitle></DialogHeader>
-        <div className="space-y-4">
-          <div className="rounded-md border border-border p-3 space-y-2 opacity-60">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">DM Setter</div>
-            <Select disabled>
-              <SelectTrigger><SelectValue placeholder="No DM setters yet — coming soon" /></SelectTrigger>
-              <SelectContent />
-            </Select>
-          </div>
-          <div className="rounded-md border border-border p-3 space-y-2 opacity-60">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Closer</div>
-            <Select disabled>
-              <SelectTrigger><SelectValue placeholder="Manual entry coming soon" /></SelectTrigger>
-              <SelectContent />
-            </Select>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            B2C commissions are auto-created when a closer logs a "closed" or "deposit" outcome. Manual B2C entries will unlock once DM setters are added.
-          </p>
+    <Card>
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <div>
+          <h3 className="font-display font-semibold">Manual entries</h3>
+          <div className="text-xs text-muted-foreground">Admin-added B2C commissions.</div>
         </div>
-        <div className="flex justify-end pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+        <Badge variant="secondary">{rows.length}</Badge>
+      </div>
+      <div className="divide-y divide-border">
+        {rows.map((r) => {
+          const isPending = r.status !== "approved";
+          const isPaid = !!r.paid_at;
+          return (
+            <div key={r.id} className="p-3 sm:p-4 flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium">{r.user_name}</span>
+                  <Badge variant="outline" className="text-[10px]">{ROLE_LABEL[r.role] ?? r.role}</Badge>
+                  {isPending
+                    ? <Badge variant="outline" className="border-warning text-warning text-[10px]">Pending</Badge>
+                    : <Badge variant="outline" className="border-success text-success text-[10px]">Approved</Badge>}
+                  {isPaid && <Badge variant="outline" className="border-success text-success text-[10px]">Paid</Badge>}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {fmtDate(r.created_at)}
+                  {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
+                  {r.deal_amount != null ? ` of ${money(r.deal_amount)}` : ""}
+                  {r.note ? ` · ${r.note}` : ""}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`font-semibold ${isPending ? "text-warning" : "text-success"}`}>{money(r.amount)}</div>
+                {isPending && (
+                  <Button size="sm" className="h-7" onClick={() => approve.mutate(r.id)} disabled={approve.isPending}>
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> Approve
+                  </Button>
+                )}
+                {!isPending && (
+                  <Button size="sm" variant="outline" className="h-7" onClick={() => togglePaid.mutate(r)} disabled={togglePaid.isPending}>
+                    <Wallet className="h-3 w-3 mr-1" /> {isPaid ? "Unmark paid" : "Mark paid"}
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => confirm("Remove this entry?") && del.mutate(r.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+// ---------- Add commission dialog (manual DM setter / manager / closer entries) ----------
+function AddDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const qc = useQueryClient();
+  const { data: lookups } = useQuery({
+    queryKey: ["b2c-manual-lookups"],
+    queryFn: () => listB2cManualLookups(),
+    enabled: open,
+  });
+
+  const [deal, setDeal] = useState("");
+  const [note, setNote] = useState("");
+  const [setterId, setSetterId] = useState("");
+  const [setterPct, setSetterPct] = useState("10");
+  const [managerId, setManagerId] = useState("");
+  const [managerPct, setManagerPct] = useState("2.5");
+  const [closerId, setCloserId] = useState("");
+  const [closerPct, setCloserPct] = useState("15");
+
+  const reset = () => {
+    setDeal(""); setNote("");
+    setSetterId(""); setSetterPct("10");
+    setManagerId(""); setManagerPct("2.5");
+    setCloserId(""); setCloserPct("15");
+  };
+
+  const d = parseFloat(deal);
+  const calc = (pct: string) => (isFinite(d) && d > 0 ? Math.round(d * (parseFloat(pct) || 0)) / 100 : 0);
+  const sAmt = setterId ? calc(setterPct) : 0;
+  const mAmt = managerId ? calc(managerPct) : 0;
+  const cAmt = closerId ? calc(closerPct) : 0;
+
+  const submit = useMutation({
+    mutationFn: () => {
+      const entries: Array<{ role: "dm_setter" | "dm_manager" | "closer_b2c"; user_id: string; amount: number; commission_percent: number | null }> = [];
+      if (setterId) entries.push({ role: "dm_setter", user_id: setterId, amount: sAmt, commission_percent: parseFloat(setterPct) || null });
+      if (managerId) entries.push({ role: "dm_manager", user_id: managerId, amount: mAmt, commission_percent: parseFloat(managerPct) || null });
+      if (closerId) entries.push({ role: "closer_b2c", user_id: closerId, amount: cAmt, commission_percent: parseFloat(closerPct) || null });
+      return addB2cManualCommission({
+        data: { deal_amount: isFinite(d) && d > 0 ? d : null, entries, note: note || null },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Commission added");
+      reset();
+      qc.invalidateQueries({ queryKey: ["b2c-manual-commissions"] });
+      qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const canSubmit = !!(setterId || managerId || closerId) && (sAmt + mAmt + cAmt) > 0;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Add B2C commission</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label>Deal amount ($)</Label>
+            <Input type="number" step="0.01" value={deal} onChange={(e) => setDeal(e.target.value)} placeholder="0.00" />
+            <div className="text-[10px] text-muted-foreground mt-1">Optional — used to auto-compute commissions by percentage.</div>
+          </div>
+
+          <ManualRoleBlock
+            label="DM Setter"
+            options={lookups?.dmSetters ?? []}
+            userId={setterId}
+            setUserId={setSetterId}
+            pct={setterPct}
+            setPct={setSetterPct}
+            amount={sAmt}
+          />
+          <ManualRoleBlock
+            label="DM Manager"
+            options={lookups?.dmManagers ?? []}
+            userId={managerId}
+            setUserId={setManagerId}
+            pct={managerPct}
+            setPct={setManagerPct}
+            amount={mAmt}
+          />
+          <ManualRoleBlock
+            label="Closer"
+            options={lookups?.closers ?? []}
+            userId={closerId}
+            setUserId={setCloserId}
+            pct={closerPct}
+            setPct={setCloserPct}
+            amount={cAmt}
+          />
+
+          <div>
+            <Label>Note</Label>
+            <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note" />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => submit.mutate()} disabled={submit.isPending || !canSubmit}>
+            {submit.isPending ? "Adding…" : "Add commission"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+function ManualRoleBlock({
+  label, options, userId, setUserId, pct, setPct, amount,
+}: {
+  label: string;
+  options: Array<{ user_id: string; name: string }>;
+  userId: string;
+  setUserId: (v: string) => void;
+  pct: string;
+  setPct: (v: string) => void;
+  amount: number;
+}) {
+  return (
+    <div className="rounded-md border border-border p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div>
+        {amount > 0 && <div className="text-xs text-success">{money(amount)}</div>}
+      </div>
+      <Select value={userId} onValueChange={setUserId}>
+        <SelectTrigger>
+          <SelectValue placeholder={options.length === 0 ? `No ${label.toLowerCase()}s available` : `Assign a ${label.toLowerCase()} (optional)`} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => <SelectItem key={o.user_id} value={o.user_id}>{o.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      {userId && (
+        <div>
+          <Label className="text-[10px]">{label} %</Label>
+          <Input type="number" step="0.01" value={pct} onChange={(e) => setPct(e.target.value)} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 // ---------- Payouts Sheet (mirrors B2B) ----------
 type PayoutBucket = "unpaid" | "paid";
