@@ -735,3 +735,72 @@ export const getAdminDmSetterUploads = createServerFn({ method: "GET" })
     }
     return { uploads: results };
   });
+
+/* -------------------------------------------------------------------------- */
+/*  Manager self-service: invite a setter under their management               */
+/* -------------------------------------------------------------------------- */
+
+export const inviteDmSetterAsManager = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    full_name: z.string().trim().min(1).max(200),
+    email: z.string().trim().email().max(200),
+    commission_rate: z.number().min(0).max(1).optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Caller must be a manager
+    const { data: me } = await supabaseAdmin
+      .from("dm_setters")
+      .select("id, is_manager")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!me || !me.is_manager) throw new Error("Only DM managers can invite setters");
+
+    const email = data.email.toLowerCase();
+    const apply_slug = slugify(data.full_name);
+    const { data: row, error } = await supabaseAdmin
+      .from("dm_setters")
+      .insert({
+        full_name: data.full_name,
+        email,
+        is_manager: false,
+        manager_id: me.id,
+        apply_slug,
+        commission_rate: data.commission_rate ?? 0.075,
+      })
+      .select("id, apply_slug")
+      .single();
+    if (error) throw new Error(error.message);
+
+    // Create (or reuse) the auth user with the default password
+    let newUserId: string | undefined;
+    const { data: created, error: uerr } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: DEFAULT_DM_PASSWORD,
+      email_confirm: true,
+      user_metadata: { full_name: data.full_name },
+    });
+    if (uerr) {
+      const { data: list } = await supabaseAdmin.auth.admin.listUsers();
+      const existing = list?.users?.find((u: { email?: string | null }) => (u.email || "").toLowerCase() === email);
+      if (!existing) throw new Error(uerr.message);
+      await supabaseAdmin.auth.admin.updateUserById(existing.id, { password: DEFAULT_DM_PASSWORD });
+      newUserId = existing.id;
+    } else {
+      newUserId = created.user?.id;
+    }
+    if (newUserId) {
+      await supabaseAdmin.from("profiles").update({
+        must_change_password: true, full_name: data.full_name,
+      }).eq("user_id", newUserId);
+    }
+
+    await sendDmSetterInviteEmail({
+      setterId: row.id,
+      email,
+      fullName: data.full_name,
+      password: DEFAULT_DM_PASSWORD,
+    });
+    return { id: row.id, apply_slug: row.apply_slug };
+  });
