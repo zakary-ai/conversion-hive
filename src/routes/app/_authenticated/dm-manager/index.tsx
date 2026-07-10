@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Copy, UserPlus } from "lucide-react";
+import { SupportButton } from "@/components/support-button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/_authenticated/dm-manager/")({
@@ -47,10 +48,14 @@ function DmManagerHome() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">DM Manager Home</h1>
-        <p className="text-sm text-muted-foreground">Your DMs, your apply link, and your team.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold">DM Manager Home</h1>
+          <p className="text-sm text-muted-foreground">Your DMs, your apply link, and your team.</p>
+        </div>
+        <SupportButton />
       </div>
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, MessageCircle, CalendarCheck, XCircle, Ban, UserX, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
+import { SupportButton } from "@/components/support-button";
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/")({
   component: DmSetterHome,
@@ -26,10 +27,14 @@ function DmSetterHome() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">DM Setter Home</h1>
-        <p className="text-sm text-muted-foreground">Track your daily DMs and the leads that come through your link.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">DM Setter Home</h1>
+          <p className="text-sm text-muted-foreground">Track your daily DMs and the leads that come through your link.</p>
+        </div>
+        <SupportButton />
       </div>
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

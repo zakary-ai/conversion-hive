@@ -19,6 +19,7 @@ import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 import { MyAvailabilitySection } from "@/components/my-availability-section";
 import { getMyCloserLines } from "@/lib/api/closer-availability.functions";
+import { SupportButton } from "@/components/support-button";
 
 export const Route = createFileRoute("/app/_authenticated/closer/")({
   beforeLoad: async ({ context }) => {
@@ -148,10 +149,14 @@ function CloserHome() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-display font-semibold">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">Your assigned calls live here.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-display font-semibold">Welcome back</h1>
+          <p className="text-sm text-muted-foreground">Your assigned calls live here.</p>
+        </div>
+        <SupportButton />
       </div>
+
 
       {/* Date range picker */}
       <Card className="p-3 flex items-center gap-3 flex-wrap">
