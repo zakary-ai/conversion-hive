@@ -47,10 +47,14 @@ function DmManagerHome() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">DM Manager Home</h1>
-        <p className="text-sm text-muted-foreground">Your DMs, your apply link, and your team.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold">DM Manager Home</h1>
+          <p className="text-sm text-muted-foreground">Your DMs, your apply link, and your team.</p>
+        </div>
+        <SupportButton />
       </div>
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
