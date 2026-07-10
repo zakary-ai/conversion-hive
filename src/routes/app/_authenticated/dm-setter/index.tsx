@@ -26,10 +26,14 @@ function DmSetterHome() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">DM Setter Home</h1>
-        <p className="text-sm text-muted-foreground">Track your daily DMs and the leads that come through your link.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">DM Setter Home</h1>
+          <p className="text-sm text-muted-foreground">Track your daily DMs and the leads that come through your link.</p>
+        </div>
+        <SupportButton />
       </div>
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
