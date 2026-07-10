@@ -44,6 +44,7 @@ import { Route as AppAuthenticatedDmSetterLogsRouteImport } from './routes/app/_
 import { Route as AppAuthenticatedDmSetterCalendarRouteImport } from './routes/app/_authenticated/dm-setter/calendar'
 import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
 import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
+import { Route as AppAuthenticatedAdminTicketsRouteImport } from './routes/app/_authenticated/admin/tickets'
 import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
 import { Route as AppAuthenticatedAdminScraperRouteImport } from './routes/app/_authenticated/admin/scraper'
 import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
@@ -259,6 +260,12 @@ const AppAuthenticatedCloserCalendarRoute =
     path: '/closer/calendar',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedAdminTicketsRoute =
+  AppAuthenticatedAdminTicketsRouteImport.update({
+    id: '/tickets',
+    path: '/tickets',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
 const AppAuthenticatedAdminSettingsRoute =
   AppAuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
@@ -433,6 +440,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
+  '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -490,6 +498,7 @@ export interface FileRoutesByTo {
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
+  '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -550,6 +559,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/_authenticated/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
+  '/app/_authenticated/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
   '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/_authenticated/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -610,6 +620,7 @@ export interface FileRouteTypes {
     | '/app/admin/quizzes'
     | '/app/admin/scraper'
     | '/app/admin/settings'
+    | '/app/admin/tickets'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-setter/calendar'
@@ -667,6 +678,7 @@ export interface FileRouteTypes {
     | '/app/admin/quizzes'
     | '/app/admin/scraper'
     | '/app/admin/settings'
+    | '/app/admin/tickets'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-setter/calendar'
@@ -726,6 +738,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/quizzes'
     | '/app/_authenticated/admin/scraper'
     | '/app/_authenticated/admin/settings'
+    | '/app/_authenticated/admin/tickets'
     | '/app/_authenticated/closer/calendar'
     | '/app/_authenticated/closer/commissions'
     | '/app/_authenticated/dm-setter/calendar'
@@ -1014,6 +1027,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedCloserCalendarRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/admin/tickets': {
+      id: '/app/_authenticated/admin/tickets'
+      path: '/tickets'
+      fullPath: '/app/admin/tickets'
+      preLoaderRoute: typeof AppAuthenticatedAdminTicketsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
     '/app/_authenticated/admin/settings': {
       id: '/app/_authenticated/admin/settings'
       path: '/settings'
@@ -1186,6 +1206,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
   AppAuthenticatedAdminScraperRoute: typeof AppAuthenticatedAdminScraperRoute
   AppAuthenticatedAdminSettingsRoute: typeof AppAuthenticatedAdminSettingsRoute
+  AppAuthenticatedAdminTicketsRoute: typeof AppAuthenticatedAdminTicketsRoute
   AppAuthenticatedAdminIndexRoute: typeof AppAuthenticatedAdminIndexRoute
   AppAuthenticatedAdminClientsUserIdRoute: typeof AppAuthenticatedAdminClientsUserIdRoute
   AppAuthenticatedAdminClientsIndexRoute: typeof AppAuthenticatedAdminClientsIndexRoute
@@ -1211,6 +1232,7 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
     AppAuthenticatedAdminScraperRoute: AppAuthenticatedAdminScraperRoute,
     AppAuthenticatedAdminSettingsRoute: AppAuthenticatedAdminSettingsRoute,
+    AppAuthenticatedAdminTicketsRoute: AppAuthenticatedAdminTicketsRoute,
     AppAuthenticatedAdminIndexRoute: AppAuthenticatedAdminIndexRoute,
     AppAuthenticatedAdminClientsUserIdRoute:
       AppAuthenticatedAdminClientsUserIdRoute,
