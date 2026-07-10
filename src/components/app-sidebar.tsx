@@ -49,6 +49,7 @@ const closerItems = [
   { title: "Home", url: "/app/closer", icon: LayoutDashboard },
   { title: "Calendar", url: "/app/closer/calendar", icon: CalendarIcon },
   { title: "Commissions", url: "/app/closer/commissions", icon: DollarSign },
+  { title: "Support", url: "/app/support", icon: LifeBuoy },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
@@ -58,6 +59,7 @@ const dmSetterItems = [
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Support", url: "/app/support", icon: LifeBuoy },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
@@ -67,6 +69,7 @@ const dmManagerItems = [
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Support", url: "/app/support", icon: LifeBuoy },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
