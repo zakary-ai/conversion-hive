@@ -19,6 +19,7 @@ import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 import { MyAvailabilitySection } from "@/components/my-availability-section";
 import { getMyCloserLines } from "@/lib/api/closer-availability.functions";
+import { SupportButton } from "@/components/support-button";
 
 export const Route = createFileRoute("/app/_authenticated/closer/")({
   beforeLoad: async ({ context }) => {
