@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, MessageCircle, CalendarCheck, XCircle, Ban, UserX, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
+import { SupportButton } from "@/components/support-button";
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/")({
   component: DmSetterHome,
