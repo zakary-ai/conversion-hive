@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listDmSetters, listDmManagers, createDmSetter, deleteDmSetter, updateDmSetter,
-  getAdminDmSetterDetail, resendDmSetterInvite,
+  getAdminDmSetterDetail, resendDmSetterInvite, getAdminDmSetterUploads,
 } from "@/lib/api/dm-setters.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -220,7 +220,7 @@ function ManagerSelect({ setterId, value, managers }: { setterId: string; value:
 }
 
 type RangeMode = "today" | "all" | "custom";
-type Section = "applied" | "booked" | "no_show" | "disqualified" | "not_interested" | "closed";
+type Section = "dms" | "applied" | "booked" | "no_show" | "disqualified" | "not_interested" | "closed";
 
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function endOfDay(d: Date) { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; }
@@ -229,7 +229,8 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const [mode, setMode] = useState<RangeMode>("today");
   const [customFrom, setCustomFrom] = useState<Date | undefined>();
   const [customTo, setCustomTo] = useState<Date | undefined>();
-  const [section, setSection] = useState<Section>("applied");
+  const [section, setSection] = useState<Section>("dms");
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   const range = useMemo(() => {
     if (mode === "all") return { from: null, to: null };
@@ -246,6 +247,12 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const { data } = useQuery({
     queryKey: ["dm-setter-detail", id, range.from, range.to],
     queryFn: () => getAdminDmSetterDetail({ data: { id, from: range.from, to: range.to } }),
+  });
+
+  const { data: uploadsData } = useQuery({
+    queryKey: ["dm-setter-uploads", id, range.from, range.to],
+    queryFn: () => getAdminDmSetterUploads({ data: { id, from: range.from, to: range.to } }),
+    enabled: section === "dms",
   });
 
   const leads = useMemo(() => {
@@ -272,6 +279,7 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
   }, [data, section]);
 
   const sections: Array<{ key: Section; label: string; value: number }> = data ? [
+    { key: "dms", label: "DMs sent", value: data.dmSum.total },
     { key: "applied", label: "Applied", value: data.stats.applied },
     { key: "booked", label: "Booked", value: data.stats.booked },
     { key: "no_show", label: "No Show", value: data.stats.no_show },
@@ -321,8 +329,8 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
               </Popover>
             </div>
 
-            {/* Clickable stat buttons */}
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+            {/* Clickable stat buttons — DMs sent lives here as the primary block */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
               {sections.map((s) => (
                 <button
                   key={s.key}
@@ -330,93 +338,146 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
                   className={cn(
                     "rounded-md border p-3 text-left transition-colors",
                     section === s.key ? "border-primary bg-primary/10" : "border-border hover:bg-accent",
+                    s.key === "dms" && "col-span-2 md:col-span-4 lg:col-span-2 border-primary/40",
                   )}
                 >
                   <div className="text-xs text-muted-foreground">{s.label}</div>
-                  <div className="text-lg font-semibold tabular-nums">{s.value}</div>
+                  <div className="text-lg font-semibold tabular-nums">{s.value.toLocaleString()}</div>
                 </button>
               ))}
             </div>
 
-            {/* Leads table for selected section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base capitalize">
-                  {sections.find((s) => s.key === section)?.label} ({leads.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {leads.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">No leads in this range.</div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Date</TableHead>
-                        {section !== "applied" && <TableHead>Status</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {leads.map((l) => (
-                        <TableRow key={l.id}>
-                          <TableCell className="font-medium">{l.name}</TableCell>
-                          <TableCell className="text-muted-foreground">{l.email}</TableCell>
-                          <TableCell className="tabular-nums text-xs">
-                            {l.when ? format(new Date(l.when), "MMM d, yyyy h:mm a") : "—"}
-                          </TableCell>
-                          {section !== "applied" && <TableCell className="text-xs capitalize">{l.extra}</TableCell>}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  DMs sent ({data.dmSum.total.toLocaleString()})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-xs text-muted-foreground">
-                  {data.dmSum.total.toLocaleString()} DMs across {data.dmSum.days_logged} logged day{data.dmSum.days_logged === 1 ? "" : "s"}
-                  {data.rangeDays ? ` · ${data.rangeDays} day${data.rangeDays > 1 ? "s" : ""} in range` : ""}
-                  {" · "}{data.recipients.length} unique recipient{data.recipients.length === 1 ? "" : "s"}
-                </div>
-                {data.recipients.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">No recipients logged in this range.</div>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
-                    {data.recipients.map((r) => (
-                      <span
-                        key={r.id}
-                        className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs"
-                        title={`${r.platform} · ${new Date(r.created_at).toLocaleString()}`}
-                      >
-                        {r.name_original}
-                      </span>
-                    ))}
+            {/* Content pane: DMs+screenshots for the "dms" section, otherwise leads table */}
+            {section === "dms" ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    DMs sent ({data.dmSum.total.toLocaleString()})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-xs text-muted-foreground">
+                    {data.dmSum.total.toLocaleString()} DMs across {data.dmSum.days_logged} logged day{data.dmSum.days_logged === 1 ? "" : "s"}
+                    {data.rangeDays ? ` · ${data.rangeDays} day${data.rangeDays > 1 ? "s" : ""} in range` : ""}
+                    {" · "}{data.recipients.length} unique recipient{data.recipients.length === 1 ? "" : "s"}
                   </div>
-                )}
-                {data.logs.length > 0 && (
-                  <div className="pt-2 border-t border-border/60">
-                    <div className="text-xs font-medium mb-1">Recent daily totals</div>
-                    <div className="space-y-1 text-xs">
-                      {data.logs.slice(0, 14).map((l) => (
-                        <div key={l.id} className="flex justify-between border-b border-border/40 py-0.5">
-                          <span className="text-muted-foreground">{l.log_date}</span>
-                          <span className="tabular-nums">{(l.ai_count ?? 0) + (l.manual_adjustment ?? 0)}</span>
-                        </div>
-                      ))}
+
+                  <div>
+                    <div className="text-xs font-medium mb-2">Recipients</div>
+                    {data.recipients.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">No recipients logged in this range.</div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
+                        {data.recipients.map((r) => (
+                          <span
+                            key={r.id}
+                            className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs"
+                            title={`${r.platform} · ${new Date(r.created_at).toLocaleString()}`}
+                          >
+                            {r.name_original}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-medium mb-2">
+                      Screenshots uploaded ({uploadsData?.uploads.length ?? 0})
                     </div>
+                    {!uploadsData ? (
+                      <div className="text-sm text-muted-foreground">Loading…</div>
+                    ) : uploadsData.uploads.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">No screenshots in this range.</div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {uploadsData.uploads.map((u) => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => u.url && setLightbox(u.url)}
+                            className="group relative aspect-square overflow-hidden rounded-md border border-border bg-muted"
+                            title={`${u.platform} · ${u.ai_count} DMs · ${new Date(u.created_at).toLocaleString()}`}
+                          >
+                            {u.url ? (
+                              <img src={u.url} alt="DM screenshot" className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground px-2 text-center">
+                                Not stored<br />(legacy upload)
+                              </div>
+                            )}
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1.5 py-0.5 flex justify-between">
+                              <span className="capitalize">{u.platform}</span>
+                              <span className="tabular-nums">{u.ai_count}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  {data.logs.length > 0 && (
+                    <div className="pt-2 border-t border-border/60">
+                      <div className="text-xs font-medium mb-1">Recent daily totals</div>
+                      <div className="space-y-1 text-xs">
+                        {data.logs.slice(0, 14).map((l) => (
+                          <div key={l.id} className="flex justify-between border-b border-border/40 py-0.5">
+                            <span className="text-muted-foreground">{l.log_date}</span>
+                            <span className="tabular-nums">{(l.ai_count ?? 0) + (l.manual_adjustment ?? 0)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base capitalize">
+                    {sections.find((s) => s.key === section)?.label} ({leads.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {leads.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">No leads in this range.</div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Date</TableHead>
+                          {section !== "applied" && <TableHead>Status</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {leads.map((l) => (
+                          <TableRow key={l.id}>
+                            <TableCell className="font-medium">{l.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{l.email}</TableCell>
+                            <TableCell className="tabular-nums text-xs">
+                              {l.when ? format(new Date(l.when), "MMM d, yyyy h:mm a") : "—"}
+                            </TableCell>
+                            {section !== "applied" && <TableCell className="text-xs capitalize">{l.extra}</TableCell>}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {lightbox && (
+              <Dialog open onOpenChange={() => setLightbox(null)}>
+                <DialogContent className="max-w-3xl p-2">
+                  <img src={lightbox} alt="Screenshot" className="w-full h-auto rounded" />
+                </DialogContent>
+              </Dialog>
+            )}
+
 
             <Card>
               <CardHeader><CardTitle className="text-base">Commission (in range)</CardTitle></CardHeader>

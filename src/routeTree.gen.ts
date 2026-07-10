@@ -60,6 +60,7 @@ import { Route as AppAuthenticatedAdminAdminsRouteImport } from './routes/app/_a
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as ApiPublicHooksRunDailyCycleRouteImport } from './routes/api/public/hooks/run-daily-cycle'
+import { Route as ApiPublicHooksPurgeDmScreenshotsRouteImport } from './routes/api/public/hooks/purge-dm-screenshots'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
 import { Route as ApiPublicHooksDistributeLeadsRouteImport } from './routes/api/public/hooks/distribute-leads'
 import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
@@ -354,6 +355,12 @@ const ApiPublicHooksRunDailyCycleRoute =
     path: '/api/public/hooks/run-daily-cycle',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksPurgeDmScreenshotsRoute =
+  ApiPublicHooksPurgeDmScreenshotsRouteImport.update({
+    id: '/api/public/hooks/purge-dm-screenshots',
+    path: '/api/public/hooks/purge-dm-screenshots',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOpenphoneRoute = ApiPublicHooksOpenphoneRouteImport.update({
   id: '/api/public/hooks/openphone',
   path: '/api/public/hooks/openphone',
@@ -401,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
+  '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
@@ -456,6 +464,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
+  '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
@@ -514,6 +523,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
+  '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
@@ -572,6 +582,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
+    | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
@@ -627,6 +638,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
+    | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
@@ -684,6 +696,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
+    | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
@@ -733,6 +746,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
+  ApiPublicHooksPurgeDmScreenshotsRoute: typeof ApiPublicHooksPurgeDmScreenshotsRoute
   ApiPublicHooksRunDailyCycleRoute: typeof ApiPublicHooksRunDailyCycleRoute
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
   ApiPublicHooksSendCallRemindersRoute: typeof ApiPublicHooksSendCallRemindersRoute
@@ -1100,6 +1114,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRunDailyCycleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/purge-dm-screenshots': {
+      id: '/api/public/hooks/purge-dm-screenshots'
+      path: '/api/public/hooks/purge-dm-screenshots'
+      fullPath: '/api/public/hooks/purge-dm-screenshots'
+      preLoaderRoute: typeof ApiPublicHooksPurgeDmScreenshotsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/openphone': {
       id: '/api/public/hooks/openphone'
       path: '/api/public/hooks/openphone'
@@ -1256,6 +1277,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
+  ApiPublicHooksPurgeDmScreenshotsRoute: ApiPublicHooksPurgeDmScreenshotsRoute,
   ApiPublicHooksRunDailyCycleRoute: ApiPublicHooksRunDailyCycleRoute,
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
   ApiPublicHooksSendCallRemindersRoute: ApiPublicHooksSendCallRemindersRoute,

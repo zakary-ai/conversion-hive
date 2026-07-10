@@ -455,15 +455,38 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
     }
     const newNames = allCandidates.filter((c) => !existingSet.has(c.normalized));
 
-    const uploadRows = data.images.map((_img, i) => ({
-      dm_daily_log_id: logId!,
-      dm_setter_id: me.id,
-      image_path: `inline-${Date.now()}-${i}`,
-      platform: per[i]?.platform ?? "other",
-      ai_count: per[i]?.count ?? 0,
-      ai_raw: per[i]?.raw as never,
-      status: "counted",
-    }));
+    // Upload each screenshot to Storage (dm-uploads bucket). Retention: 90 days (cron purge).
+    const uploadRows: Array<{
+      dm_daily_log_id: string; dm_setter_id: string; image_path: string;
+      platform: string; ai_count: number; ai_raw: never; status: string;
+    }> = [];
+    for (let i = 0; i < data.images.length; i++) {
+      const img = data.images[i];
+      let storedPath = `inline-${Date.now()}-${i}`;
+      try {
+        const m = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/.exec(img);
+        const mime = m?.[1] ?? "image/jpeg";
+        const b64 = m?.[2] ?? img;
+        const ext = mime.split("/")[1]?.split("+")[0] ?? "jpg";
+        const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        const path = `${me.id}/${date}/${Date.now()}-${i}.${ext}`;
+        const { error: upErr } = await supabaseAdmin.storage.from("dm-uploads").upload(path, bin, {
+          contentType: mime, upsert: false,
+        });
+        if (!upErr) storedPath = path;
+      } catch {
+        // Fall back to inline placeholder so counting still succeeds
+      }
+      uploadRows.push({
+        dm_daily_log_id: logId!,
+        dm_setter_id: me.id,
+        image_path: storedPath,
+        platform: per[i]?.platform ?? "other",
+        ai_count: per[i]?.count ?? 0,
+        ai_raw: per[i]?.raw as never,
+        status: "counted",
+      });
+    }
     if (uploadRows.length) {
       await supabaseAdmin.from("dm_log_uploads").insert(uploadRows);
     }
@@ -677,4 +700,38 @@ export const listMyDmBookings = createServerFn({ method: "GET" })
       .order("slot_start", { ascending: true });
     if (error) throw new Error(error.message);
     return { rows: rows ?? [] };
+  });
+
+export const getAdminDmSetterUploads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    id: z.string().uuid(),
+    from: z.string().datetime().nullable().optional(),
+    to: z.string().datetime().nullable().optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
+      .from("dm_log_uploads")
+      .select("id, image_path, platform, ai_count, created_at")
+      .eq("dm_setter_id", data.id)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (data.from) q = q.gte("created_at", data.from);
+    if (data.to) q = q.lte("created_at", data.to);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const results: Array<{ id: string; url: string | null; platform: string; ai_count: number; created_at: string }> = [];
+    for (const r of rows ?? []) {
+      let url: string | null = null;
+      if (r.image_path && !r.image_path.startsWith("inline-")) {
+        const { data: signed } = await supabaseAdmin.storage
+          .from("dm-uploads").createSignedUrl(r.image_path, 60 * 60);
+        url = signed?.signedUrl ?? null;
+      }
+      results.push({ id: r.id, url, platform: r.platform, ai_count: r.ai_count, created_at: r.created_at });
+    }
+    return { uploads: results };
   });
