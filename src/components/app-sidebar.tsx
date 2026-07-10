@@ -7,7 +7,7 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera,
+  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -17,6 +17,7 @@ const clientItems = [
   { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Support", url: "/app/support", icon: LifeBuoy },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
@@ -29,6 +30,7 @@ const adminB2BItems = [
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/app/admin/b2b-commissions", icon: DollarSign },
+  { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
   { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
@@ -39,6 +41,7 @@ const adminB2CItems = [
   { title: "Closers", url: "/app/admin/closers", icon: UserPlus },
   { title: "DM Setters", url: "/app/admin/dm-setters", icon: MessageCircle },
   { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
+  { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
 
@@ -46,6 +49,7 @@ const closerItems = [
   { title: "Home", url: "/app/closer", icon: LayoutDashboard },
   { title: "Calendar", url: "/app/closer/calendar", icon: CalendarIcon },
   { title: "Commissions", url: "/app/closer/commissions", icon: DollarSign },
+  { title: "Support", url: "/app/support", icon: LifeBuoy },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
@@ -55,6 +59,7 @@ const dmSetterItems = [
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Support", url: "/app/support", icon: LifeBuoy },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
@@ -64,6 +69,7 @@ const dmManagerItems = [
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Support", url: "/app/support", icon: LifeBuoy },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 

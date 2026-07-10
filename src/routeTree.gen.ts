@@ -22,6 +22,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as AppAuthRouteImport } from './routes/app/auth'
 import { Route as AppAuthenticatedRouteRouteImport } from './routes/app/_authenticated/route'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as AppAuthenticatedSupportRouteImport } from './routes/app/_authenticated/support'
 import { Route as AppAuthenticatedSetPasswordRouteImport } from './routes/app/_authenticated/set-password'
 import { Route as AppAuthenticatedProfileRouteImport } from './routes/app/_authenticated/profile'
 import { Route as AppAuthenticatedLeadsRouteImport } from './routes/app/_authenticated/leads'
@@ -43,6 +44,7 @@ import { Route as AppAuthenticatedDmSetterLogsRouteImport } from './routes/app/_
 import { Route as AppAuthenticatedDmSetterCalendarRouteImport } from './routes/app/_authenticated/dm-setter/calendar'
 import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
 import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
+import { Route as AppAuthenticatedAdminTicketsRouteImport } from './routes/app/_authenticated/admin/tickets'
 import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
 import { Route as AppAuthenticatedAdminScraperRouteImport } from './routes/app/_authenticated/admin/scraper'
 import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
@@ -129,6 +131,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppAuthenticatedSupportRoute = AppAuthenticatedSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AppAuthenticatedRouteRoute,
 } as any)
 const AppAuthenticatedSetPasswordRoute =
   AppAuthenticatedSetPasswordRouteImport.update({
@@ -252,6 +259,12 @@ const AppAuthenticatedCloserCalendarRoute =
     id: '/closer/calendar',
     path: '/closer/calendar',
     getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedAdminTicketsRoute =
+  AppAuthenticatedAdminTicketsRouteImport.update({
+    id: '/tickets',
+    path: '/tickets',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 const AppAuthenticatedAdminSettingsRoute =
   AppAuthenticatedAdminSettingsRouteImport.update({
@@ -405,6 +418,7 @@ export interface FileRoutesByFullPath {
   '/app/leads': typeof AppAuthenticatedLeadsRoute
   '/app/profile': typeof AppAuthenticatedProfileRoute
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
+  '/app/support': typeof AppAuthenticatedSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
@@ -426,6 +440,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
+  '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -461,6 +476,7 @@ export interface FileRoutesByTo {
   '/app/leads': typeof AppAuthenticatedLeadsRoute
   '/app/profile': typeof AppAuthenticatedProfileRoute
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
+  '/app/support': typeof AppAuthenticatedSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
@@ -482,6 +498,7 @@ export interface FileRoutesByTo {
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
+  '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -520,6 +537,7 @@ export interface FileRoutesById {
   '/app/_authenticated/leads': typeof AppAuthenticatedLeadsRoute
   '/app/_authenticated/profile': typeof AppAuthenticatedProfileRoute
   '/app/_authenticated/set-password': typeof AppAuthenticatedSetPasswordRoute
+  '/app/_authenticated/support': typeof AppAuthenticatedSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
@@ -541,6 +559,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/_authenticated/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
+  '/app/_authenticated/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
   '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/_authenticated/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -579,6 +598,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/profile'
     | '/app/set-password'
+    | '/app/support'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
@@ -600,6 +620,7 @@ export interface FileRouteTypes {
     | '/app/admin/quizzes'
     | '/app/admin/scraper'
     | '/app/admin/settings'
+    | '/app/admin/tickets'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-setter/calendar'
@@ -635,6 +656,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/profile'
     | '/app/set-password'
+    | '/app/support'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
@@ -656,6 +678,7 @@ export interface FileRouteTypes {
     | '/app/admin/quizzes'
     | '/app/admin/scraper'
     | '/app/admin/settings'
+    | '/app/admin/tickets'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-setter/calendar'
@@ -693,6 +716,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/leads'
     | '/app/_authenticated/profile'
     | '/app/_authenticated/set-password'
+    | '/app/_authenticated/support'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/openphone'
@@ -714,6 +738,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/quizzes'
     | '/app/_authenticated/admin/scraper'
     | '/app/_authenticated/admin/settings'
+    | '/app/_authenticated/admin/tickets'
     | '/app/_authenticated/closer/calendar'
     | '/app/_authenticated/closer/commissions'
     | '/app/_authenticated/dm-setter/calendar'
@@ -847,6 +872,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/_authenticated/support': {
+      id: '/app/_authenticated/support'
+      path: '/support'
+      fullPath: '/app/support'
+      preLoaderRoute: typeof AppAuthenticatedSupportRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
     }
     '/app/_authenticated/set-password': {
       id: '/app/_authenticated/set-password'
@@ -994,6 +1026,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/closer/calendar'
       preLoaderRoute: typeof AppAuthenticatedCloserCalendarRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/admin/tickets': {
+      id: '/app/_authenticated/admin/tickets'
+      path: '/tickets'
+      fullPath: '/app/admin/tickets'
+      preLoaderRoute: typeof AppAuthenticatedAdminTicketsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
     '/app/_authenticated/admin/settings': {
       id: '/app/_authenticated/admin/settings'
@@ -1167,6 +1206,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
   AppAuthenticatedAdminScraperRoute: typeof AppAuthenticatedAdminScraperRoute
   AppAuthenticatedAdminSettingsRoute: typeof AppAuthenticatedAdminSettingsRoute
+  AppAuthenticatedAdminTicketsRoute: typeof AppAuthenticatedAdminTicketsRoute
   AppAuthenticatedAdminIndexRoute: typeof AppAuthenticatedAdminIndexRoute
   AppAuthenticatedAdminClientsUserIdRoute: typeof AppAuthenticatedAdminClientsUserIdRoute
   AppAuthenticatedAdminClientsIndexRoute: typeof AppAuthenticatedAdminClientsIndexRoute
@@ -1192,6 +1232,7 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
     AppAuthenticatedAdminScraperRoute: AppAuthenticatedAdminScraperRoute,
     AppAuthenticatedAdminSettingsRoute: AppAuthenticatedAdminSettingsRoute,
+    AppAuthenticatedAdminTicketsRoute: AppAuthenticatedAdminTicketsRoute,
     AppAuthenticatedAdminIndexRoute: AppAuthenticatedAdminIndexRoute,
     AppAuthenticatedAdminClientsUserIdRoute:
       AppAuthenticatedAdminClientsUserIdRoute,
@@ -1212,6 +1253,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedLeadsRoute: typeof AppAuthenticatedLeadsRoute
   AppAuthenticatedProfileRoute: typeof AppAuthenticatedProfileRoute
   AppAuthenticatedSetPasswordRoute: typeof AppAuthenticatedSetPasswordRoute
+  AppAuthenticatedSupportRoute: typeof AppAuthenticatedSupportRoute
   AppAuthenticatedCloserCalendarRoute: typeof AppAuthenticatedCloserCalendarRoute
   AppAuthenticatedCloserCommissionsRoute: typeof AppAuthenticatedCloserCommissionsRoute
   AppAuthenticatedDmSetterCalendarRoute: typeof AppAuthenticatedDmSetterCalendarRoute
@@ -1231,6 +1273,7 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedLeadsRoute: AppAuthenticatedLeadsRoute,
   AppAuthenticatedProfileRoute: AppAuthenticatedProfileRoute,
   AppAuthenticatedSetPasswordRoute: AppAuthenticatedSetPasswordRoute,
+  AppAuthenticatedSupportRoute: AppAuthenticatedSupportRoute,
   AppAuthenticatedCloserCalendarRoute: AppAuthenticatedCloserCalendarRoute,
   AppAuthenticatedCloserCommissionsRoute:
     AppAuthenticatedCloserCommissionsRoute,
