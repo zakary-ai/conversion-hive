@@ -229,7 +229,8 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const [mode, setMode] = useState<RangeMode>("today");
   const [customFrom, setCustomFrom] = useState<Date | undefined>();
   const [customTo, setCustomTo] = useState<Date | undefined>();
-  const [section, setSection] = useState<Section>("applied");
+  const [section, setSection] = useState<Section>("dms");
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   const range = useMemo(() => {
     if (mode === "all") return { from: null, to: null };
