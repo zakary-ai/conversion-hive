@@ -249,6 +249,12 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
     queryFn: () => getAdminDmSetterDetail({ data: { id, from: range.from, to: range.to } }),
   });
 
+  const { data: uploadsData } = useQuery({
+    queryKey: ["dm-setter-uploads", id, range.from, range.to],
+    queryFn: () => getAdminDmSetterUploads({ data: { id, from: range.from, to: range.to } }),
+    enabled: section === "dms",
+  });
+
   const leads = useMemo(() => {
     type Lead = { id: string; name: string; email: string; when: string; extra?: string };
     if (!data) return [] as Lead[];
