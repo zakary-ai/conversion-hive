@@ -279,6 +279,7 @@ function DetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
   }, [data, section]);
 
   const sections: Array<{ key: Section; label: string; value: number }> = data ? [
+    { key: "dms", label: "DMs sent", value: data.dmSum.total },
     { key: "applied", label: "Applied", value: data.stats.applied },
     { key: "booked", label: "Booked", value: data.stats.booked },
     { key: "no_show", label: "No Show", value: data.stats.no_show },
