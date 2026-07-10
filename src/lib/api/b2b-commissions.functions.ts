@@ -168,6 +168,7 @@ export const addB2BCommission = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       deal_amount: z.number().nonnegative().max(100000000),
+      deal_name: z.string().trim().max(200).optional().nullable(),
       setter_user_id: z.string().uuid().nullable().optional(),
       setter_percent: z.number().nonnegative().max(100).nullable().optional(),
       closer_user_id: z.string().uuid().nullable().optional(),
@@ -183,6 +184,7 @@ export const addB2BCommission = createServerFn({ method: "POST" })
       amount: number;
       commission_percent: number;
       deal_amount: number;
+      deal_name: string | null;
       status: string;
       note: string | null;
       added_by: string;
@@ -190,6 +192,7 @@ export const addB2BCommission = createServerFn({ method: "POST" })
     };
     const inserts: CommissionInsert[] = [];
     const nowIso = new Date().toISOString();
+    const dealName = data.deal_name?.trim() || null;
     if (data.setter_user_id && data.setter_percent != null) {
       inserts.push({
         user_id: data.setter_user_id,
@@ -197,6 +200,7 @@ export const addB2BCommission = createServerFn({ method: "POST" })
         amount: Math.round(data.deal_amount * data.setter_percent) / 100,
         commission_percent: data.setter_percent,
         deal_amount: data.deal_amount,
+        deal_name: dealName,
         status: "pending",
         note: data.note ?? null,
         added_by: context.userId,
@@ -210,12 +214,14 @@ export const addB2BCommission = createServerFn({ method: "POST" })
         amount: Math.round(data.deal_amount * data.closer_percent) / 100,
         commission_percent: data.closer_percent,
         deal_amount: data.deal_amount,
+        deal_name: dealName,
         status: "pending",
         note: data.note ?? null,
         added_by: context.userId,
         created_at: nowIso,
       });
     }
+
     if (inserts.length === 0) throw new Error("Choose a setter or a closer");
     const { error } = await context.supabase.from("commissions").insert(inserts);
     if (error) throw new Error(error.message);
