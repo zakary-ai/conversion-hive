@@ -506,10 +506,9 @@ export async function runDistributePhase(opts: { triggeredBy: string; manual?: b
   return result;
 }
 
-// ---------------- DAILY CYCLE — flipped flow ----------------
-// 1. Recycle + distribute from existing pool.
-// 2. If any setter came up short, scrape (target = shortfall × 1.2) then
-//    distribute again to fill the gap.
+// ---------------- DAILY CYCLE ----------------
+// 1. Scrape first — target = (setters × LEADS_PER_SETTER × 1.2) − current pool.
+// 2. Recycle + distribute once the scrape has populated the pool.
 
 export async function runDailyCycle(opts: { triggeredBy: string; manual?: boolean; skipIfRanToday?: boolean }): Promise<PipelineResult> {
   const manual = opts.manual ?? false;
@@ -524,37 +523,35 @@ export async function runDailyCycle(opts: { triggeredBy: string; manual?: boolea
     };
   }
 
-  // Phase 1: recycle + distribute from existing pool.
-  const dist1 = await runDistributePhase({ triggeredBy: opts.triggeredBy, manual });
+  // Phase 1: scrape 120% of total demand, minus whatever's already in the pool.
+  const setters = await loadEnabledSetters();
+  const totalDemand = Math.ceil(setters.length * LEADS_PER_SETTER * SCRAPE_OVERAGE);
+  const poolBefore = await countAvailablePool();
+  const scrapeTarget = Math.max(0, totalDemand - poolBefore);
 
-  let scrape: ScrapeResult = {
-    enabled: false, skipped: true, reason: "no_shortfall",
-    enabledSetters: dist1.perSetter.length, scrapeTarget: 0,
-    fetched: 0, inserted: 0, cities: [], errors: [],
-  };
-  let dist2: DistributeResult | null = null;
-
-  // Phase 2: only scrape if there's a shortfall.
-  if (dist1.shortfall > 0) {
-    const target = Math.ceil(dist1.shortfall * SCRAPE_OVERAGE);
-    scrape = await runScrapePhase({ triggeredBy: opts.triggeredBy, manual: true, targetCount: target });
-
-    if (scrape.inserted > 0) {
-      // Second distribution pass to top up setters that came up short.
-      dist2 = await runDistributePhase({ triggeredBy: opts.triggeredBy, manual: true });
-    }
+  let scrape: ScrapeResult;
+  if (scrapeTarget > 0) {
+    scrape = await runScrapePhase({ triggeredBy: opts.triggeredBy, manual: true, targetCount: scrapeTarget });
+  } else {
+    scrape = {
+      enabled: false, skipped: true, reason: "pool_already_sufficient",
+      enabledSetters: setters.length, scrapeTarget: 0,
+      fetched: 0, inserted: 0, cities: [], errors: [],
+    };
   }
 
-  const finalDist = dist2 ?? dist1;
+  // Phase 2: recycle + distribute from the (now-topped-up) pool.
+  const dist = await runDistributePhase({ triggeredBy: opts.triggeredBy, manual });
+
   return {
     ...scrape,
-    recycled: dist1.recycled,
-    distributed: dist1.distributed + (dist2?.distributed ?? 0),
-    perSetter: finalDist.perSetter,
-    shortfall: finalDist.shortfall,
-    poolAfter: finalDist.poolAfter,
-    scrapedThisRun: scrape.inserted > 0 || (scrape.fetched > 0),
-    errors: [...dist1.errors, ...scrape.errors, ...(dist2?.errors ?? [])],
+    recycled: dist.recycled,
+    distributed: dist.distributed,
+    perSetter: dist.perSetter,
+    shortfall: dist.shortfall,
+    poolAfter: dist.poolAfter,
+    scrapedThisRun: scrape.inserted > 0 || scrape.fetched > 0,
+    errors: [...scrape.errors, ...dist.errors],
   };
 }
 
