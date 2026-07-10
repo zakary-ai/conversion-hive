@@ -148,10 +148,14 @@ function CloserHome() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-display font-semibold">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">Your assigned calls live here.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-display font-semibold">Welcome back</h1>
+          <p className="text-sm text-muted-foreground">Your assigned calls live here.</p>
+        </div>
+        <SupportButton />
       </div>
+
 
       {/* Date range picker */}
       <Card className="p-3 flex items-center gap-3 flex-wrap">
