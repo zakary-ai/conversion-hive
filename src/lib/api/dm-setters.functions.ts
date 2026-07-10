@@ -458,7 +458,7 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
     // Upload each screenshot to Storage (dm-uploads bucket). Retention: 90 days (cron purge).
     const uploadRows: Array<{
       dm_daily_log_id: string; dm_setter_id: string; image_path: string;
-      platform: string; ai_count: number; ai_raw: unknown; status: string;
+      platform: string; ai_count: number; ai_raw: never; status: string;
     }> = [];
     for (let i = 0; i < data.images.length; i++) {
       const img = data.images[i];
