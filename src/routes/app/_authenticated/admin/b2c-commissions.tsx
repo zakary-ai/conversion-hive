@@ -609,7 +609,7 @@ function ManualEntriesCard() {
             <div key={r.id} className="p-3 sm:p-4 flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium">{r.user_name}</span>
+                  <span className="font-medium">{r.deal_name || r.user_name}</span>
                   <Badge variant="outline" className="text-[10px]">{ROLE_LABEL[r.role] ?? r.role}</Badge>
                   {isPending
                     ? <Badge variant="outline" className="border-warning text-warning text-[10px]">Pending</Badge>
@@ -617,12 +617,14 @@ function ManualEntriesCard() {
                   {isPaid && <Badge variant="outline" className="border-success text-success text-[10px]">Paid</Badge>}
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {r.deal_name ? `${r.user_name} · ` : ""}
                   {fmtDate(r.created_at)}
                   {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
                   {r.deal_amount != null ? ` of ${money(r.deal_amount)}` : ""}
                   {r.note ? ` · ${r.note}` : ""}
                 </div>
               </div>
+
               <div className="flex items-center gap-2">
                 <div className={`font-semibold ${isPending ? "text-warning" : "text-success"}`}>{money(r.amount)}</div>
                 {isPending && (
