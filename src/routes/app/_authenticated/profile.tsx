@@ -140,42 +140,113 @@ function ProfilePage() {
   );
 }
 
-function DeleteAccountButton({ onDeleted }: { onDeleted: () => void }) {
+const deletionRequestQuery = {
+  queryKey: ["my-account-deletion-request"],
+  queryFn: () => getMyAccountDeletionRequest(),
+} as const;
+
+function DeleteAccountRequestCard() {
+  const qc = useQueryClient();
+  const { data: existing, isLoading } = useSuspenseQuery({
+    ...deletionRequestQuery,
+    // Refetch cheaply on mount so status stays fresh.
+  } as never) as unknown as { data: { id: string; status: string; reason: string | null; admin_notes: string | null; created_at: string; resolved_at: string | null } | null; isLoading: boolean };
+
   const [open, setOpen] = useState(false);
-  const [confirm, setConfirm] = useState("");
-  const del = useMutation({
-    mutationFn: () => deleteMyAccount(),
-    onSuccess: async () => {
-      toast.success("Account deleted");
-      await supabase.auth.signOut();
-      onDeleted();
+  const [reason, setReason] = useState("");
+
+  const submit = useMutation({
+    mutationFn: () => requestAccountDeletion({ data: { reason: reason.trim() || undefined } }),
+    onSuccess: (res) => {
+      toast.success(res.already ? "You already have a pending request" : "Deletion request sent to admin");
+      setOpen(false);
+      setReason("");
+      qc.invalidateQueries({ queryKey: ["my-account-deletion-request"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const cancel = useMutation({
+    mutationFn: () => cancelMyAccountDeletionRequest(),
+    onSuccess: () => {
+      toast.success("Request cancelled");
+      qc.invalidateQueries({ queryKey: ["my-account-deletion-request"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const pending = existing && existing.status === "pending";
+  const rejected = existing && existing.status === "rejected";
+
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button variant="destructive"><Trash2 className="h-4 w-4 mr-2" />Delete account</Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Permanently delete your account?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This removes your login, profile, and personal data. Type <strong>DELETE</strong> to confirm.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="DELETE" />
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={confirm !== "DELETE" || del.isPending}
-            onClick={(e) => { e.preventDefault(); del.mutate(); }}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            {del.isPending ? "Deleting…" : "Delete forever"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <Card className="p-6 border-destructive/40">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-display font-semibold text-destructive">Delete account</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Submit a request to have your account permanently deleted. An admin will review and process your request.
+          </p>
+          {pending && (
+            <div className="mt-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+              <div className="font-medium text-amber-600 dark:text-amber-400">Request pending admin review</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Submitted {new Date(existing!.created_at).toLocaleString()}
+              </div>
+              {existing!.reason && (
+                <div className="text-xs text-muted-foreground mt-1">Reason: {existing!.reason}</div>
+              )}
+            </div>
+          )}
+          {rejected && (
+            <div className="mt-3 rounded-md border border-border bg-muted/30 p-3 text-sm">
+              <div className="font-medium">Previous request rejected</div>
+              {existing!.admin_notes && (
+                <div className="text-xs text-muted-foreground mt-1">Admin notes: {existing!.admin_notes}</div>
+              )}
+            </div>
+          )}
+        </div>
+        {pending ? (
+          <Button variant="outline" onClick={() => cancel.mutate()} disabled={cancel.isPending}>
+            {cancel.isPending ? "Cancelling…" : "Cancel request"}
+          </Button>
+        ) : (
+          <AlertDialog open={open} onOpenChange={setOpen}>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={isLoading}>
+                <Trash2 className="h-4 w-4 mr-2" />Request deletion
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Request account deletion?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  An admin will review your request. Optionally tell them why you're leaving.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Reason (optional)"
+                rows={4}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                maxLength={2000}
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={submit.isPending}
+                  onClick={(e) => { e.preventDefault(); submit.mutate(); }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {submit.isPending ? "Sending…" : "Send request"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+    </Card>
   );
 }
+
