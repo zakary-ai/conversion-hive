@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { meQueryOptions } from "./route";
-import { updateProfile, changeMyPassword, deleteMyAccount } from "@/lib/api/cl.functions";
+import { updateProfile, changeMyPassword, requestAccountDeletion, getMyAccountDeletionRequest, cancelMyAccountDeletionRequest } from "@/lib/api/cl.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/ui-bits";
