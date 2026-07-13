@@ -99,7 +99,7 @@ function DmLogsPage() {
             </div>
           )}
           <div className="text-xs text-muted-foreground">
-            {files.length}/50 selected · No daily limit — upload as many screenshots as you like. AI will detect whether the screenshot is from Instagram, TikTok, or another platform.
+            {files.length}/10 selected · Upload up to 10 screenshots at a time. AI will detect whether the screenshot is from Instagram, TikTok, or another platform.
           </div>
           <Button onClick={() => upload.mutate()} disabled={!files.length || upload.isPending} className="w-full sm:w-auto">
             {upload.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
