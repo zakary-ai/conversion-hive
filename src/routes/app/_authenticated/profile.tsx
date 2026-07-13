@@ -147,10 +147,10 @@ const deletionRequestQuery = {
 
 function DeleteAccountRequestCard() {
   const qc = useQueryClient();
-  const { data: existing, isLoading } = useSuspenseQuery({
-    ...deletionRequestQuery,
-    // Refetch cheaply on mount so status stays fresh.
-  } as never) as unknown as { data: { id: string; status: string; reason: string | null; admin_notes: string | null; created_at: string; resolved_at: string | null } | null; isLoading: boolean };
+  const { data: existing, isLoading } = useQuery({
+    queryKey: ["my-account-deletion-request"],
+    queryFn: () => getMyAccountDeletionRequest(),
+  });
 
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
