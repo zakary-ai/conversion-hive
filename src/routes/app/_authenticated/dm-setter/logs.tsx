@@ -29,7 +29,7 @@ function DmLogsPage() {
   const addFiles = (list: FileList | null) => {
     if (!list) return;
     const incoming = Array.from(list);
-    setFiles((prev) => [...prev, ...incoming].slice(0, 50));
+    setFiles((prev) => [...prev, ...incoming].slice(0, 10));
   };
   const removeFile = (i: number) => setFiles((prev) => prev.filter((_, idx) => idx !== i));
 
