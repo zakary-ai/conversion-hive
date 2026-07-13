@@ -2214,19 +2214,120 @@ export const generateQuizFromTranscript = createServerFn({ method: "POST" })
     return { inserted: rows.length };
   });
 
-// ---------- Account deletion (App Store compliance 5.1.1(v)) ----------
-export const deleteMyAccount = createServerFn({ method: "POST" })
+// ---------- Account deletion requests ----------
+// Users request deletion; admin reviews and approves/rejects.
+export const requestAccountDeletion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ reason: z.string().trim().max(2000).optional() }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: existing } = await supabaseAdmin
+      .from("account_deletion_requests")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("status", "pending")
+      .maybeSingle();
+    if (existing) return { ok: true, already: true };
+    const { error } = await supabaseAdmin
+      .from("account_deletion_requests")
+      .insert({ user_id: context.userId, reason: data.reason || null });
+    if (error) throw new Error(error.message);
+    return { ok: true, already: false };
+  });
+
+export const getMyAccountDeletionRequest = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const userId = context.userId;
-    // Best-effort cleanup of owned/user-scoped rows. Auth user deletion cascades
-    // any FK with on delete cascade; other rows are removed explicitly here.
-    await supabaseAdmin.from("module_completions").delete().eq("user_id", userId);
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-    await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    const { data } = await supabaseAdmin
+      .from("account_deletion_requests")
+      .select("id, status, reason, admin_notes, created_at, resolved_at")
+      .eq("user_id", context.userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data;
+  });
+
+export const cancelMyAccountDeletionRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("account_deletion_requests")
+      .delete()
+      .eq("user_id", context.userId)
+      .eq("status", "pending");
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listAccountDeletionRequests = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId, _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: reqs, error } = await supabaseAdmin
+      .from("account_deletion_requests")
+      .select("id, user_id, reason, status, admin_notes, created_at, resolved_at")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const ids = Array.from(new Set((reqs ?? []).map((r) => r.user_id)));
+    const { data: profs } = ids.length
+      ? await supabaseAdmin.from("profiles").select("user_id, full_name, email").in("user_id", ids)
+      : { data: [] as { user_id: string; full_name: string | null; email: string | null }[] };
+    const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
+    return (reqs ?? []).map((r) => ({
+      ...r,
+      full_name: map.get(r.user_id)?.full_name ?? null,
+      email: map.get(r.user_id)?.email ?? null,
+    }));
+  });
+
+export const resolveAccountDeletionRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    request_id: z.string().uuid(),
+    action: z.enum(["approve", "reject"]),
+    admin_notes: z.string().trim().max(2000).optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId, _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: req, error: fetchErr } = await supabaseAdmin
+      .from("account_deletion_requests")
+      .select("id, user_id, status")
+      .eq("id", data.request_id)
+      .maybeSingle();
+    if (fetchErr) throw new Error(fetchErr.message);
+    if (!req) throw new Error("Request not found");
+    if (req.status !== "pending") throw new Error("Request already resolved");
+
+    if (data.action === "approve") {
+      const userId = req.user_id;
+      await supabaseAdmin.from("module_completions").delete().eq("user_id", userId);
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+      await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
+      const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (delErr) throw new Error(delErr.message);
+    }
+
+    const { error: updErr } = await supabaseAdmin
+      .from("account_deletion_requests")
+      .update({
+        status: data.action === "approve" ? "approved" : "rejected",
+        admin_notes: data.admin_notes || null,
+        resolved_by: context.userId,
+        resolved_at: new Date().toISOString(),
+      })
+      .eq("id", data.request_id);
+    if (updErr) throw new Error(updErr.message);
     return { ok: true };
   });
 

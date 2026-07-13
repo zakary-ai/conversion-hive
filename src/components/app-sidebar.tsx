@@ -7,7 +7,7 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy,
+  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -31,6 +31,7 @@ const adminB2BItems = [
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/app/admin/b2b-commissions", icon: DollarSign },
   { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
+  { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },
   { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
@@ -42,6 +43,7 @@ const adminB2CItems = [
   { title: "DM Setters", url: "/app/admin/dm-setters", icon: MessageCircle },
   { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
   { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
+  { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
 
