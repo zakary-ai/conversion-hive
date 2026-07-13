@@ -19,7 +19,11 @@ export const Route = createFileRoute("/app/_authenticated/dm-manager/")({
 
 function DmManagerHome() {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({ queryKey: ["my-dm-team"], queryFn: () => getMyDmTeam() });
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["my-dm-team"],
+    queryFn: () => getMyDmTeam(),
+    retry: 1,
+  });
   const [inviteOpen, setInviteOpen] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", commission_rate: 0.075 });
 
@@ -36,7 +40,25 @@ function DmManagerHome() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (isLoading || !data) return <div className="text-sm text-muted-foreground">Loading…</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="h-3 w-3 rounded-full bg-primary/60 animate-pulse" />
+        Loading your team…
+      </div>
+    );
+  }
+  if (isError || !data) {
+    return (
+      <div className="max-w-md space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+        <div className="font-semibold">Couldn't load your dashboard</div>
+        <div className="text-sm text-muted-foreground break-words">
+          {error instanceof Error ? error.message : "Unknown error"}
+        </div>
+        <Button size="sm" onClick={() => refetch()}>Retry</Button>
+      </div>
+    );
+  }
 
   const totalCommission = data.team.reduce((s, r) => s + (r.manager_commission ?? 0), 0);
   const target = data.manager?.daily_target ?? 100;

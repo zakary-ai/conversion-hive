@@ -307,7 +307,9 @@ export const getMyDmStats = createServerFn({ method: "GET" })
   });
 
 const LogImagesSchema = z.object({
-  images: z.array(z.string().max(20_000_000)).min(1).max(50), // base64 data URLs
+  // Client is expected to downscale images to ~1600px JPEG before sending.
+  // 3 MB per image × 10 images keeps the total request under Worker limits.
+  images: z.array(z.string().max(3_500_000)).min(1).max(10),
 });
 
 function normalizeName(n: string) {
@@ -563,13 +565,67 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
     const { data: myLog } = await supabaseAdmin
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).eq("log_date", todayKey()).maybeSingle();
     if (!me.is_manager) return { manager: me, myStats, myLog, team: [] };
+
     const { data: team } = await supabaseAdmin.from("dm_setters").select("*").eq("manager_id", me.id);
-    const rows = await Promise.all((team ?? []).map(async (s) => {
-      const { stats } = await computeStatsFor(s.id, undefined, Number(s.commission_rate ?? 0.075));
-      const { data: log } = await supabaseAdmin.from("dm_daily_logs").select("ai_count, manual_adjustment").eq("dm_setter_id", s.id).eq("log_date", todayKey()).maybeSingle();
+    const teamList = team ?? [];
+    if (teamList.length === 0) return { manager: me, myStats, myLog, team: [] };
+
+    const teamIds = teamList.map((s) => s.id);
+    const today = todayKey();
+
+    // Batch queries: 1 for bookings, 1 for today's logs. Avoids N×3 subrequests
+    // that made managers with large teams time out on the Worker.
+    const [{ data: bookings }, { data: logs }] = await Promise.all([
+      supabaseAdmin.from("closer_bookings")
+        .select("dm_setter_id, outcome, deal_amount")
+        .in("dm_setter_id", teamIds),
+      supabaseAdmin.from("dm_daily_logs")
+        .select("dm_setter_id, ai_count, manual_adjustment")
+        .in("dm_setter_id", teamIds)
+        .eq("log_date", today),
+    ]);
+
+    const bookingsBySetter = new Map<string, Array<{ outcome: string | null; deal_amount: number | null }>>();
+    for (const b of bookings ?? []) {
+      if (!b.dm_setter_id) continue;
+      const list = bookingsBySetter.get(b.dm_setter_id) ?? [];
+      list.push({ outcome: b.outcome, deal_amount: b.deal_amount });
+      bookingsBySetter.set(b.dm_setter_id, list);
+    }
+    const logsBySetter = new Map<string, { ai_count: number | null; manual_adjustment: number | null }>();
+    for (const l of logs ?? []) if (l.dm_setter_id) logsBySetter.set(l.dm_setter_id, l);
+
+    const rows = teamList.map((s) => {
+      const rate = Number(s.commission_rate ?? 0.075);
+      const bs = bookingsBySetter.get(s.id) ?? [];
+      let booked = 0, closed = 0, no_show = 0, disqualified = 0, not_interested = 0, total_revenue = 0, total_commission = 0;
+      for (const b of bs) {
+        booked += 1;
+        if (b.outcome === "closed") closed += 1;
+        else if (b.outcome === "no_show") no_show += 1;
+        else if (b.outcome === "disqualified") disqualified += 1;
+        else if (b.outcome === "not_interested") not_interested += 1;
+        if (b.outcome === "closed" && b.deal_amount) {
+          total_revenue += Number(b.deal_amount);
+          total_commission += Number(b.deal_amount) * rate;
+        }
+      }
+      const log = logsBySetter.get(s.id);
       const today_dms = (log?.ai_count ?? 0) + (log?.manual_adjustment ?? 0);
-      return { setter: s, stats, today_dms, manager_commission: stats.total_revenue * 0.025 };
-    }));
+      return {
+        setter: s,
+        stats: { applied: 0, booked, no_show, disqualified, not_interested, closed, total_revenue, total_commission },
+        today_dms,
+        manager_commission: total_revenue * 0.025,
+      };
+    });
+
+    // Fill in "applied" counts in a single batched query.
+    const { data: apps } = await supabaseAdmin
+      .from("applications").select("dm_setter_id").in("dm_setter_id", teamIds);
+    const appliedBySetter = new Map<string, number>();
+    for (const a of apps ?? []) if (a.dm_setter_id) appliedBySetter.set(a.dm_setter_id, (appliedBySetter.get(a.dm_setter_id) ?? 0) + 1);
+    for (const r of rows) r.stats.applied = appliedBySetter.get(r.setter.id) ?? 0;
 
     return { manager: me, myStats, myLog, team: rows };
   });
