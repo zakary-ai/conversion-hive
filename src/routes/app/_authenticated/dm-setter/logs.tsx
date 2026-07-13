@@ -63,7 +63,7 @@ function DmLogsPage() {
 
   const upload = useMutation({
     mutationFn: async () => {
-      const images = await Promise.all(files.map(fileToDataUrl));
+      const images = await Promise.all(files.map(fileToCompressedDataUrl));
       return logDmScreenshots({ data: { images } });
     },
     onSuccess: (r) => {
