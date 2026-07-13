@@ -11,13 +11,41 @@ export const Route = createFileRoute("/app/_authenticated/dm-setter/logs")({
   component: DmLogsPage,
 });
 
-async function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
+// Downscale + re-encode to JPEG before sending. iPhone screenshots are often
+// 3–8 MB PNG/HEIC — Cloudflare Workers reject huge JSON bodies and the AI
+// counter doesn't need full resolution. Max long-edge 1600 px, quality 0.82
+// keeps every screenshot under ~500 KB while remaining legible.
+async function fileToCompressedDataUrl(file: File): Promise<string> {
+  const readAs = (f: File) => new Promise<string>((res, rej) => {
     const r = new FileReader();
-    r.onload = () => resolve(r.result as string);
-    r.onerror = reject;
-    r.readAsDataURL(file);
+    r.onload = () => res(r.result as string);
+    r.onerror = rej;
+    r.readAsDataURL(f);
   });
+
+  // Some formats (HEIC, unknown) can't be decoded by <img>; fall back to raw.
+  try {
+    const dataUrl = await readAs(file);
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const el = new Image();
+      el.onload = () => res(el);
+      el.onerror = rej;
+      el.src = dataUrl;
+    });
+    const MAX = 1600;
+    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvas.toDataURL("image/jpeg", 0.82);
+  } catch {
+    return readAs(file);
+  }
 }
 
 function DmLogsPage() {
