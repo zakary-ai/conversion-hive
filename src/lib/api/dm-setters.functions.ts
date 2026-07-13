@@ -624,7 +624,7 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
     const { data: apps } = await supabaseAdmin
       .from("applications").select("dm_setter_id").in("dm_setter_id", teamIds);
     const appliedBySetter = new Map<string, number>();
-    for (const a of apps ?? []) appliedBySetter.set(a.dm_setter_id, (appliedBySetter.get(a.dm_setter_id) ?? 0) + 1);
+    for (const a of apps ?? []) if (a.dm_setter_id) appliedBySetter.set(a.dm_setter_id, (appliedBySetter.get(a.dm_setter_id) ?? 0) + 1);
     for (const r of rows) r.stats.applied = appliedBySetter.get(r.setter.id) ?? 0;
 
     return { manager: me, myStats, myLog, team: rows };
