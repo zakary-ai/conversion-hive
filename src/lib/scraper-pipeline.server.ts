@@ -19,7 +19,7 @@ type RawLead = {
   [k: string]: unknown;
 };
 
-type Setter = { user_id: string; full_name: string | null };
+type Setter = { user_id: string; full_name: string | null; daily_lead_quota: number };
 
 type CityRun = { city: string; fetched: number; inserted: number; error?: string };
 
@@ -112,13 +112,14 @@ async function loadEnabledSetters(): Promise<Setter[]> {
   if (clientIds.length === 0) return [];
   const { data: profiles } = await supabaseAdmin
     .from("profiles")
-    .select("user_id, full_name, scraper_enabled")
+    .select("user_id, full_name, scraper_enabled, daily_lead_quota")
     .in("user_id", clientIds);
   return (profiles ?? [])
     .filter((p) => (p as { scraper_enabled?: boolean }).scraper_enabled !== false)
     .map((p) => ({
       user_id: p.user_id as string,
       full_name: (p.full_name as string | null) ?? null,
+      daily_lead_quota: ((p as { daily_lead_quota?: number }).daily_lead_quota as number) ?? LEADS_PER_SETTER,
     }));
 }
 
@@ -412,7 +413,8 @@ export async function runDistributePhase(opts: { triggeredBy: string; manual?: b
         .eq("assigned_user_id", s.user_id)
         .gte("assigned_at", since);
       const assignedToday = count ?? 0;
-      const need = Math.max(0, LEADS_PER_SETTER - assignedToday);
+      const quota = s.daily_lead_quota > 0 ? s.daily_lead_quota : LEADS_PER_SETTER;
+      const need = Math.max(0, quota - assignedToday);
       setterState.push({ setter: s, assignedToday, need });
     }
     const totalNeed = setterState.reduce((n, r) => n + r.need, 0);
