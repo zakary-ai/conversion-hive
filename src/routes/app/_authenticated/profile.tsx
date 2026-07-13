@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSuspenseQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { meQueryOptions } from "./route";
 import { updateProfile, changeMyPassword, requestAccountDeletion, getMyAccountDeletionRequest, cancelMyAccountDeletionRequest } from "@/lib/api/cl.functions";
