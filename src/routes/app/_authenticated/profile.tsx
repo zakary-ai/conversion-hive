@@ -128,17 +128,8 @@ function ProfilePage() {
         </div>
       </Card>
 
-      <Card className="p-6 border-destructive/40">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="min-w-0">
-            <h3 className="font-display font-semibold text-destructive">Delete account</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Permanently delete your account and personal profile. This cannot be undone.
-            </p>
-          </div>
-          <DeleteAccountButton onDeleted={() => navigate({ to: "/app/auth", replace: true })} />
-        </div>
-      </Card>
+      <DeleteAccountRequestCard />
+
 
       <p className="text-center text-xs text-muted-foreground pt-2">
         <Link to="/privacy" className="hover:text-foreground hover:underline">Privacy Policy</Link>
