@@ -59,6 +59,7 @@ import { Route as AppAuthenticatedAdminB2bCommissionsRouteImport } from './route
 import { Route as AppAuthenticatedAdminB2bClosersRouteImport } from './routes/app/_authenticated/admin/b2b-closers'
 import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/app/_authenticated/admin/applications'
 import { Route as AppAuthenticatedAdminAdminsRouteImport } from './routes/app/_authenticated/admin/admins'
+import { Route as AppAuthenticatedAdminAccountDeletionsRouteImport } from './routes/app/_authenticated/admin/account-deletions'
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as ApiPublicHooksRunDailyCycleRouteImport } from './routes/api/public/hooks/run-daily-cycle'
@@ -350,6 +351,12 @@ const AppAuthenticatedAdminAdminsRoute =
     path: '/admins',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
+const AppAuthenticatedAdminAccountDeletionsRoute =
+  AppAuthenticatedAdminAccountDeletionsRouteImport.update({
+    id: '/account-deletions',
+    path: '/account-deletions',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
 const ApiPublicHooksSendCallRemindersRoute =
   ApiPublicHooksSendCallRemindersRouteImport.update({
     id: '/api/public/hooks/send-call-reminders',
@@ -426,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
+  '/app/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
@@ -484,6 +492,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
+  '/app/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
@@ -545,6 +554,7 @@ export interface FileRoutesById {
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
+  '/app/_authenticated/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/_authenticated/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/_authenticated/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/_authenticated/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
@@ -606,6 +616,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
+    | '/app/admin/account-deletions'
     | '/app/admin/admins'
     | '/app/admin/applications'
     | '/app/admin/b2b-closers'
@@ -664,6 +675,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
+    | '/app/admin/account-deletions'
     | '/app/admin/admins'
     | '/app/admin/applications'
     | '/app/admin/b2b-closers'
@@ -724,6 +736,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
+    | '/app/_authenticated/admin/account-deletions'
     | '/app/_authenticated/admin/admins'
     | '/app/_authenticated/admin/applications'
     | '/app/_authenticated/admin/b2b-closers'
@@ -1132,6 +1145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAdminAdminsRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
+    '/app/_authenticated/admin/account-deletions': {
+      id: '/app/_authenticated/admin/account-deletions'
+      path: '/account-deletions'
+      fullPath: '/app/admin/account-deletions'
+      preLoaderRoute: typeof AppAuthenticatedAdminAccountDeletionsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
     '/api/public/hooks/send-call-reminders': {
       id: '/api/public/hooks/send-call-reminders'
       path: '/api/public/hooks/send-call-reminders'
@@ -1192,6 +1212,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAuthenticatedAdminRouteRouteChildren {
+  AppAuthenticatedAdminAccountDeletionsRoute: typeof AppAuthenticatedAdminAccountDeletionsRoute
   AppAuthenticatedAdminAdminsRoute: typeof AppAuthenticatedAdminAdminsRoute
   AppAuthenticatedAdminApplicationsRoute: typeof AppAuthenticatedAdminApplicationsRoute
   AppAuthenticatedAdminB2bClosersRoute: typeof AppAuthenticatedAdminB2bClosersRoute
@@ -1214,6 +1235,8 @@ interface AppAuthenticatedAdminRouteRouteChildren {
 
 const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteChildren =
   {
+    AppAuthenticatedAdminAccountDeletionsRoute:
+      AppAuthenticatedAdminAccountDeletionsRoute,
     AppAuthenticatedAdminAdminsRoute: AppAuthenticatedAdminAdminsRoute,
     AppAuthenticatedAdminApplicationsRoute:
       AppAuthenticatedAdminApplicationsRoute,
