@@ -140,11 +140,6 @@ function ProfilePage() {
   );
 }
 
-const deletionRequestQuery = {
-  queryKey: ["my-account-deletion-request"],
-  queryFn: () => getMyAccountDeletionRequest(),
-} as const;
-
 function DeleteAccountRequestCard() {
   const qc = useQueryClient();
   const { data: existing, isLoading } = useQuery({
