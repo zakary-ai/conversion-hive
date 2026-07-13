@@ -307,7 +307,9 @@ export const getMyDmStats = createServerFn({ method: "GET" })
   });
 
 const LogImagesSchema = z.object({
-  images: z.array(z.string().max(20_000_000)).min(1).max(50), // base64 data URLs
+  // Client is expected to downscale images to ~1600px JPEG before sending.
+  // 3 MB per image × 10 images keeps the total request under Worker limits.
+  images: z.array(z.string().max(3_500_000)).min(1).max(10),
 });
 
 function normalizeName(n: string) {
