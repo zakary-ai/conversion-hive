@@ -587,12 +587,13 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
 
     const bookingsBySetter = new Map<string, Array<{ outcome: string | null; deal_amount: number | null }>>();
     for (const b of bookings ?? []) {
+      if (!b.dm_setter_id) continue;
       const list = bookingsBySetter.get(b.dm_setter_id) ?? [];
       list.push({ outcome: b.outcome, deal_amount: b.deal_amount });
       bookingsBySetter.set(b.dm_setter_id, list);
     }
     const logsBySetter = new Map<string, { ai_count: number | null; manual_adjustment: number | null }>();
-    for (const l of logs ?? []) logsBySetter.set(l.dm_setter_id, l);
+    for (const l of logs ?? []) if (l.dm_setter_id) logsBySetter.set(l.dm_setter_id, l);
 
     const rows = teamList.map((s) => {
       const rate = Number(s.commission_rate ?? 0.075);
