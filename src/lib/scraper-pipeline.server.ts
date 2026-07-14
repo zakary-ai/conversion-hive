@@ -245,7 +245,12 @@ export async function runScrapePhase(opts: { triggeredBy: string; manual?: boole
     let cursor = cityIndex;
     let citiesAdvanced = 0;
     const maxCities = Math.min(MAX_CITIES_PER_RUN, cityRotation.length);
+    const startedAt = Date.now();
     while (result.inserted < result.scrapeTarget && citiesAdvanced < maxCities) {
+      if (Date.now() - startedAt > SCRAPE_WALL_BUDGET_MS) {
+        errors.push(`wall_budget_exceeded after ${citiesAdvanced} cities`);
+        break;
+      }
       const city = cityRotation[cursor];
       const cityRun: CityRun = { city, fetched: 0, inserted: 0 };
       try {
