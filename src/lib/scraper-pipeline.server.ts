@@ -53,28 +53,56 @@ export type PipelineResult = ScrapeResult & DistributeResult & {
 export const LEADS_PER_SETTER = 150;
 export const SCRAPE_OVERAGE = 1.2;
 const KITCHEN_RE = /kitchen\s+(remodel|renovat)/i;
-const MAX_CITIES_PER_RUN = 8;
+const MAX_CITIES_PER_RUN = 6;
+// Wall-clock budget for the entire scrape phase so the finally block always
+// runs and writes scraper_runs before the Worker gets killed.
+const SCRAPE_WALL_BUDGET_MS = 240_000; // 4 minutes
+// Per-Apify call timeout — Apify's sync endpoint frequently hangs and returns
+// 524. Abort early so we can retry or move to the next city.
+const APIFY_CALL_TIMEOUT_MS = 75_000;
 
 function pickField(row: RawLead, key: string | undefined, fallback: string): unknown {
   if (key && key in row) return row[key];
   return row[fallback];
 }
 
+async function callApifyOnce(actorId: string, input: Record<string, unknown>, token: string): Promise<RawLead[]> {
+  const url = `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/run-sync-get-dataset-items?token=${encodeURIComponent(token)}`;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), APIFY_CALL_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input || {}),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      const err = new Error(`Apify call failed [${res.status}]: ${body.slice(0, 300)}`) as Error & { status?: number };
+      err.status = res.status;
+      throw err;
+    }
+    const data = (await res.json()) as unknown;
+    if (!Array.isArray(data)) throw new Error("Apify returned non-array dataset");
+    return data as RawLead[];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function callApify(actorId: string, input: Record<string, unknown>, token: string): Promise<RawLead[]> {
   if (!actorId) return [];
-  const url = `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}/run-sync-get-dataset-items?token=${encodeURIComponent(token)}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input || {}),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Apify call failed [${res.status}]: ${body.slice(0, 300)}`);
+  try {
+    return await callApifyOnce(actorId, input, token);
+  } catch (e) {
+    const err = e as Error & { status?: number; name?: string };
+    // Retry once on 5xx / 524 / abort — those are the transient failures we
+    // observed. 4xx auth/validation errors bubble up unchanged.
+    const transient = err.name === "AbortError" || (err.status ?? 0) >= 500;
+    if (!transient) throw e;
+    return await callApifyOnce(actorId, input, token);
   }
-  const data = (await res.json()) as unknown;
-  if (!Array.isArray(data)) throw new Error("Apify returned non-array dataset");
-  return data as RawLead[];
 }
 
 // Returns the UTC ISO string for 00:00:00 America/New_York "today" (DST-aware).
