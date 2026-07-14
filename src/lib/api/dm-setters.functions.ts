@@ -324,7 +324,6 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
 }> {
   const geminiKey = process.env.GEMINI_API_KEY;
   const lovableKey = process.env.LOVABLE_API_KEY;
-  const useDirect = !!geminiKey;
   const per: Array<{ count: number; names: string[]; platform: "instagram" | "tiktok" | "other"; raw: unknown }> = [];
   let total = 0;
 
@@ -338,34 +337,47 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
     'Use the @username if visible, otherwise the display name. No other text.';
 
   for (const img of imageDataUrls) {
-    if (!useDirect && !lovableKey) { per.push({ count: 0, names: [], platform: "other", raw: { error: "no_api_key" } }); continue; }
+    if (!geminiKey && !lovableKey) { per.push({ count: 0, names: [], platform: "other", raw: { error: "no_api_key" } }); continue; }
     try {
       let txt = "";
-      if (useDirect) {
+      const failures: Array<{ provider: "google" | "lovable"; status?: number; error?: string; body?: string }> = [];
+      if (geminiKey) {
         const m = img.match(/^data:([^;]+);base64,(.+)$/);
         const mime = m?.[1] ?? "image/png";
         const b64 = m?.[2] ?? "";
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              systemInstruction: { parts: [{ text: systemPrompt }] },
-              contents: [{
-                role: "user",
-                parts: [
-                  { text: "Count outbound DMs and list recipient names for this screenshot." },
-                  { inline_data: { mime_type: mime, data: b64 } },
-                ],
-              }],
-            }),
-          },
-        );
-        if (!res.ok) { per.push({ count: 0, names: [], platform: "other", raw: { status: res.status, provider: "google" } }); continue; }
-        const j = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-        txt = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-      } else {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                contents: [{
+                  role: "user",
+                  parts: [
+                    { text: "Count outbound DMs and list recipient names for this screenshot." },
+                    { inline_data: { mime_type: mime, data: b64 } },
+                  ],
+                }],
+              }),
+            },
+          );
+          if (res.ok) {
+            const j = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+            txt = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+          } else {
+            const body = await res.text().catch(() => "");
+            failures.push({ provider: "google", status: res.status, body: body.slice(0, 400) });
+          }
+        } catch (e) {
+          failures.push({ provider: "google", error: (e as Error).message });
+        }
+      }
+
+      // If the direct Gemini key is quota/rate-limited (429) or otherwise fails,
+      // fall back to the Lovable AI Gateway instead of silently logging 0 DMs.
+      if (!txt && lovableKey) {
         const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
@@ -383,9 +395,18 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
             ],
           }),
         });
-        if (!res.ok) { per.push({ count: 0, names: [], platform: "other", raw: { status: res.status, provider: "lovable" } }); continue; }
-        const j = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
-        txt = j.choices?.[0]?.message?.content ?? "";
+        if (res.ok) {
+          const j = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+          txt = j.choices?.[0]?.message?.content ?? "";
+        } else {
+          const body = await res.text().catch(() => "");
+          failures.push({ provider: "lovable", status: res.status, body: body.slice(0, 400) });
+        }
+      }
+
+      if (!txt) {
+        per.push({ count: 0, names: [], platform: "other", raw: { error: "ai_unavailable", failures } });
+        continue;
       }
       const m = txt.match(/\{[\s\S]*\}/);
       const parsed = m ? JSON.parse(m[0]) as { platform?: unknown; count?: number; names?: unknown } : { platform: "other", count: 0, names: [] };
@@ -396,12 +417,18 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
       const rawPlatform = String(parsed.platform ?? "").toLowerCase();
       const detectedPlatform: "instagram" | "tiktok" | "other" = rawPlatform === "instagram" ? "instagram" : rawPlatform === "tiktok" ? "tiktok" : "other";
       total += c;
-      per.push({ count: c, names: namesArr, platform: detectedPlatform, raw: { text: txt, provider: useDirect ? "google" : "lovable" } });
+      per.push({ count: c, names: namesArr, platform: detectedPlatform, raw: { text: txt, provider: failures.length ? "fallback" : (geminiKey ? "google" : "lovable"), failures } });
     } catch (e) {
       per.push({ count: 0, names: [], platform: "other", raw: { error: (e as Error).message } });
     }
   }
   return { total, per };
+}
+
+function aiResultFailed(raw: unknown) {
+  if (!raw || typeof raw !== "object") return false;
+  const obj = raw as { text?: unknown; error?: unknown; status?: unknown; failures?: unknown };
+  return !obj.text && (obj.error != null || obj.status != null || obj.failures != null);
 }
 
 export const logDmScreenshots = createServerFn({ method: "POST" })
@@ -412,10 +439,17 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
     const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name").eq("user_id", context.userId).maybeSingle();
     if (!me) throw new Error("Not a DM setter");
 
-    // Upsert today's log
     const date = todayKey();
     const { data: existing } = await supabaseAdmin
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).eq("log_date", date).maybeSingle();
+
+    // AI count + name extraction
+    const { total, per } = await countDmsWithAI(data.images);
+    if (per.length > 0 && per.every((p) => p.count === 0 && p.names.length === 0 && aiResultFailed(p.raw))) {
+      throw new Error("AI could not read the screenshots right now. Please try again in a few minutes.");
+    }
+
+    // Upsert today's log only after AI responds, so failed reads don't create a 0-DM log.
     let logId = existing?.id;
     if (!logId) {
       const { data: created, error: cerr } = await supabaseAdmin.from("dm_daily_logs").insert({
@@ -424,9 +458,6 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
       if (cerr) throw new Error(cerr.message);
       logId = created.id;
     }
-
-    // AI count + name extraction
-    const { total, per } = await countDmsWithAI(data.images);
 
     // For each image: collect its candidate names (dedupe within batch across images),
     // then insert new-unique recipients. Count = sum over images of (names ? new_unique_from_that_image : raw_count).
