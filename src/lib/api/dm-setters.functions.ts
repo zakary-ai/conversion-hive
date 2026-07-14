@@ -425,12 +425,6 @@ async function countDmsWithAI(imageDataUrls: string[]): Promise<{
   return { total, per };
 }
 
-function aiResultFailed(raw: unknown) {
-  if (!raw || typeof raw !== "object") return false;
-  const obj = raw as { text?: unknown; error?: unknown; status?: unknown; failures?: unknown };
-  return !obj.text && (obj.error != null || obj.status != null || obj.failures != null);
-}
-
 export const logDmScreenshots = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => LogImagesSchema.parse(d))
@@ -445,7 +439,12 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
 
     // AI count + name extraction
     const { total, per } = await countDmsWithAI(data.images);
-    if (per.length > 0 && per.every((p) => p.count === 0 && p.names.length === 0 && aiResultFailed(p.raw))) {
+    const allImagesFailed = per.length > 0 && per.every((p) => {
+      if (p.count !== 0 || p.names.length !== 0 || !p.raw || typeof p.raw !== "object") return false;
+      const raw = p.raw as { text?: unknown; error?: unknown; status?: unknown; failures?: unknown };
+      return !raw.text && (raw.error != null || raw.status != null || raw.failures != null);
+    });
+    if (allImagesFailed) {
       throw new Error("AI could not read the screenshots right now. Please try again in a few minutes.");
     }
 
