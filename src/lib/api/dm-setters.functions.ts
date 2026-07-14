@@ -18,8 +18,11 @@ function slugify(input: string) {
   return `${base}-${rand}`;
 }
 
+// DM "day" starts at 8:00 AM America/New_York. Shifting the clock back 8h
+// means the ET calendar date only advances at 8am ET, so uploads reset then.
 function todayKey(tz = "America/New_York") {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const shifted = new Date(Date.now() - 8 * 60 * 60 * 1000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(shifted);
 }
 
 export const DEFAULT_DM_PASSWORD = "ConversionLab1095!";
