@@ -277,10 +277,15 @@ async function computeStatsFor(setterId: string, range?: { from?: string; to?: s
 
 export const getMyDmStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator(z.object({
+    from: z.string().datetime().nullable().optional(),
+    to: z.string().datetime().nullable().optional(),
+  }).optional().parse)
+  .handler(async ({ data, context }) => {
+    const range = data?.from || data?.to ? { from: data?.from ?? undefined, to: data?.to ?? undefined } : undefined;
     const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name, commission_rate").eq("user_id", context.userId).maybeSingle();
     if (!me) throw new Error("Not a DM setter");
-    const stats = await computeStatsFor(me.id, undefined, Number(me.commission_rate ?? 0.075));
+    const stats = await computeStatsFor(me.id, range, Number(me.commission_rate ?? 0.075));
 
     // Today's log
     const { data: log } = await context.supabase
@@ -288,13 +293,16 @@ export const getMyDmStats = createServerFn({ method: "GET" })
     // Recent logs
     const { data: recent } = await context.supabase
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).order("log_date", { ascending: false }).limit(14);
-    // Recent recipients (most recent 100)
-    const { data: recipients } = await context.supabase
+    // Recent recipients (most recent 100), filtered by range if provided
+    let recipQ = context.supabase
       .from("dm_recipients")
       .select("id, name_original, platform, created_at")
       .eq("dm_setter_id", me.id)
       .order("created_at", { ascending: false })
       .limit(100);
+    if (range?.from) recipQ = recipQ.gte("created_at", range.from);
+    if (range?.to) recipQ = recipQ.lt("created_at", range.to);
+    const { data: recipients } = await recipQ;
     const { count: recipientCount } = await context.supabase
       .from("dm_recipients")
       .select("id", { count: "exact", head: true })
