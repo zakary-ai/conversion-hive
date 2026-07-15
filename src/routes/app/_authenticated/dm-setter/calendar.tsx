@@ -28,6 +28,37 @@ function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+const OUTCOME_LABEL: Record<string, string> = {
+  closed: "Closed",
+  no_show: "No Show",
+  disqualified: "Disqualified",
+  not_interested: "Not Interested",
+  rescheduled: "Rescheduled",
+  pending: "Pending",
+};
+
+function outcomeBadge(b: Row) {
+  const isPast = new Date(b.slot_start).getTime() < Date.now();
+  if (b.outcome) {
+    const label = OUTCOME_LABEL[b.outcome] ?? b.outcome;
+    const cls =
+      b.outcome === "closed"
+        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+        : b.outcome === "no_show"
+        ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+        : b.outcome === "disqualified" || b.outcome === "not_interested"
+        ? "bg-red-500/15 text-red-400 border-red-500/30"
+        : "bg-muted text-foreground/70";
+    return <Badge variant="outline" className={`text-[10px] ${cls}`}>{label}</Badge>;
+  }
+  return (
+    <Badge variant="outline" className="text-[10px] text-muted-foreground">
+      {isPast ? "Awaiting outcome" : "Scheduled"}
+    </Badge>
+  );
+}
+
+
 function DmSetterCalendar() {
   const { data, isLoading } = useQuery({ queryKey: ["my-dm-bookings"], queryFn: () => listMyDmBookings() });
   const rows = (data?.rows ?? []) as Row[];
