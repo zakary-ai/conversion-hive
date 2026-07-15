@@ -56,10 +56,10 @@ const KITCHEN_RE = /kitchen\s+(remodel|renovat)/i;
 const MAX_CITIES_PER_RUN = 6;
 // Wall-clock budget for the entire scrape phase so the finally block always
 // runs and writes scraper_runs before the Worker gets killed.
-const SCRAPE_WALL_BUDGET_MS = 240_000; // 4 minutes
+const SCRAPE_WALL_BUDGET_MS = 270_000; // 4.5 minutes
 // Per-Apify call timeout — Apify's sync endpoint frequently hangs and returns
 // 524. Abort early so we can retry or move to the next city.
-const APIFY_CALL_TIMEOUT_MS = 75_000;
+const APIFY_CALL_TIMEOUT_MS = 130_000;
 
 function pickField(row: RawLead, key: string | undefined, fallback: string): unknown {
   if (key && key in row) return row[key];
