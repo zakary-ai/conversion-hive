@@ -38,15 +38,15 @@ function DmSetterCalendar() {
   const upcoming = useMemo(() => rows.filter((r) => new Date(r.slot_start).getTime() > Date.now()).slice(0, 5), [rows]);
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div>
+    <div className="space-y-6 max-w-4xl mx-auto px-4">
+      <div className="text-center">
         <h1 className="text-2xl font-display font-semibold">Calendar</h1>
         <p className="text-sm text-muted-foreground">Calls booked by leads you referred.</p>
       </div>
 
-      {isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
+      {isLoading && <div className="text-sm text-muted-foreground text-center">Loading…</div>}
 
-      <div className="grid md:grid-cols-[auto_1fr] gap-4">
+      <div className="grid md:grid-cols-[auto_1fr] gap-4 justify-items-center md:justify-items-start">
         <Card className="p-2 w-fit">
           <Calendar
             mode="single"
