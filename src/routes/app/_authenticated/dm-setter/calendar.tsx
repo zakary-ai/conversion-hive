@@ -122,11 +122,15 @@ function DmSetterCalendar() {
           <div className="text-sm font-medium mb-2">Upcoming calls</div>
           <div className="space-y-1 text-xs">
             {upcoming.map((b) => (
-              <div key={b.id} className="flex justify-between border-b border-border/40 py-1">
-                <span>{b.applicant_name}</span>
-                <span className="text-muted-foreground">{new Date(b.slot_start).toLocaleString()}</span>
+              <div key={b.id} className="flex justify-between items-center gap-2 border-b border-border/40 py-1">
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="truncate">{b.applicant_name}</span>
+                  {outcomeBadge(b)}
+                </span>
+                <span className="text-muted-foreground shrink-0">{new Date(b.slot_start).toLocaleString()}</span>
               </div>
             ))}
+
           </div>
         </Card>
       )}
