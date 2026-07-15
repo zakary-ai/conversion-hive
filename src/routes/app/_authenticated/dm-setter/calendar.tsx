@@ -28,6 +28,37 @@ function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+const OUTCOME_LABEL: Record<string, string> = {
+  closed: "Closed",
+  no_show: "No Show",
+  disqualified: "Disqualified",
+  not_interested: "Not Interested",
+  rescheduled: "Rescheduled",
+  pending: "Pending",
+};
+
+function outcomeBadge(b: Row) {
+  const isPast = new Date(b.slot_start).getTime() < Date.now();
+  if (b.outcome) {
+    const label = OUTCOME_LABEL[b.outcome] ?? b.outcome;
+    const cls =
+      b.outcome === "closed"
+        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+        : b.outcome === "no_show"
+        ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+        : b.outcome === "disqualified" || b.outcome === "not_interested"
+        ? "bg-red-500/15 text-red-400 border-red-500/30"
+        : "bg-muted text-foreground/70";
+    return <Badge variant="outline" className={`text-[10px] ${cls}`}>{label}</Badge>;
+  }
+  return (
+    <Badge variant="outline" className="text-[10px] text-muted-foreground">
+      {isPast ? "Awaiting outcome" : "Scheduled"}
+    </Badge>
+  );
+}
+
+
 function DmSetterCalendar() {
   const { data, isLoading } = useQuery({ queryKey: ["my-dm-bookings"], queryFn: () => listMyDmBookings() });
   const rows = (data?.rows ?? []) as Row[];
@@ -68,11 +99,11 @@ function DmSetterCalendar() {
             return (
               <Card key={b.id} className="p-4 flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
-                  <div className="font-medium flex items-center gap-2">
+                  <div className="font-medium flex items-center gap-2 flex-wrap">
                     <span>{b.applicant_name}</span>
-                    <Badge variant="secondary" className="text-[10px]">{b.status}</Badge>
-                    {b.outcome && <Badge variant="outline" className="text-[10px]">{b.outcome}</Badge>}
+                    {outcomeBadge(b)}
                   </div>
+
                   <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
                     <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {time}</span>
                     {b.applicant_email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {b.applicant_email}</span>}
@@ -91,11 +122,15 @@ function DmSetterCalendar() {
           <div className="text-sm font-medium mb-2">Upcoming calls</div>
           <div className="space-y-1 text-xs">
             {upcoming.map((b) => (
-              <div key={b.id} className="flex justify-between border-b border-border/40 py-1">
-                <span>{b.applicant_name}</span>
-                <span className="text-muted-foreground">{new Date(b.slot_start).toLocaleString()}</span>
+              <div key={b.id} className="flex justify-between items-center gap-2 border-b border-border/40 py-1">
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="truncate">{b.applicant_name}</span>
+                  {outcomeBadge(b)}
+                </span>
+                <span className="text-muted-foreground shrink-0">{new Date(b.slot_start).toLocaleString()}</span>
               </div>
             ))}
+
           </div>
         </Card>
       )}
