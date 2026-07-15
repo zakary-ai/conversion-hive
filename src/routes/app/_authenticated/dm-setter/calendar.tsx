@@ -99,11 +99,11 @@ function DmSetterCalendar() {
             return (
               <Card key={b.id} className="p-4 flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
-                  <div className="font-medium flex items-center gap-2">
+                  <div className="font-medium flex items-center gap-2 flex-wrap">
                     <span>{b.applicant_name}</span>
-                    <Badge variant="secondary" className="text-[10px]">{b.status}</Badge>
-                    {b.outcome && <Badge variant="outline" className="text-[10px]">{b.outcome}</Badge>}
+                    {outcomeBadge(b)}
                   </div>
+
                   <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
                     <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {time}</span>
                     {b.applicant_email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {b.applicant_email}</span>}
