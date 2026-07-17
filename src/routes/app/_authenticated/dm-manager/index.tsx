@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getMyDmTeam, inviteDmSetterAsManager } from "@/lib/api/dm-setters.functions";
+import { getMyDmTeam, inviteDmSetterAsManager, deleteDmSetterAsManager } from "@/lib/api/dm-setters.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Copy, UserPlus } from "lucide-react";
+import { Copy, UserPlus, Trash2 } from "lucide-react";
 import { SupportButton } from "@/components/support-button";
 import { toast } from "sonner";
 
@@ -54,6 +54,15 @@ function DmManagerHome() {
       toast.success("Setter invited — email sent");
       setInviteOpen(false);
       setForm({ full_name: "", email: "", commission_rate: 0.075 });
+      qc.invalidateQueries({ queryKey: ["my-dm-team"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeSetter = useMutation({
+    mutationFn: (id: string) => deleteDmSetterAsManager({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Setter removed");
       qc.invalidateQueries({ queryKey: ["my-dm-team"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -196,8 +205,21 @@ function DmManagerHome() {
         <div className="space-y-3">
           {data.team.map((row) => (
             <Card key={row.setter.id}>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
                 <CardTitle className="text-base">{row.setter.full_name}</CardTitle>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  disabled={removeSetter.isPending && removeSetter.variables === row.setter.id}
+                  onClick={() => {
+                    if (confirm(`Remove ${row.setter.full_name} from your team? This will delete their setter record.`)) {
+                      removeSetter.mutate(row.setter.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent className="grid grid-cols-2 md:grid-cols-6 gap-3 text-sm">
                 <Stat label="DMs today" value={row.today_dms} />

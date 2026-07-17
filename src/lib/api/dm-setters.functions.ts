@@ -910,3 +910,29 @@ export const inviteDmSetterAsManager = createServerFn({ method: "POST" })
     });
     return { id: row.id, apply_slug: row.apply_slug };
   });
+
+export const deleteDmSetterAsManager = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: me } = await supabaseAdmin
+      .from("dm_setters")
+      .select("id, is_manager")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!me || !me.is_manager) throw new Error("Only DM managers can remove setters");
+
+    const { data: target } = await supabaseAdmin
+      .from("dm_setters")
+      .select("id, manager_id, is_manager")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!target) throw new Error("Setter not found");
+    if (target.is_manager) throw new Error("Cannot remove another manager");
+    if (target.manager_id !== me.id) throw new Error("This setter is not on your team");
+
+    const { error } = await supabaseAdmin.from("dm_setters").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
