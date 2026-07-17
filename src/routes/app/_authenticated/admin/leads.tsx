@@ -109,8 +109,12 @@ function AdminLeads() {
     <div className="space-y-6 max-w-7xl">
       <AdminLeadsTabs />
       <PageHeader title="All leads" description={`${total.toLocaleString()} total`} action={
-        <Button onClick={() => { setEditing(null); setEditOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add lead</Button>
+        <div className="flex gap-2">
+          <CsvImportButton onDone={invalidateLeads} />
+          <Button onClick={() => { setEditing(null); setEditOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add lead</Button>
+        </div>
       } />
+
 
       <Card className="p-4 flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
