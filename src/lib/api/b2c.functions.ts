@@ -870,23 +870,8 @@ export const rescheduleCloserBooking = createServerFn({ method: "POST" })
     const start = new Date(data.slot_start);
     const end = new Date(start.getTime() + SLOT * 60_000);
 
-    // Capacity check — same logic as createCloserBooking
-    const { data: activeClosers } = await supabaseAdmin
-      .from("closers").select("id").eq("active", true);
-    const totalActive = (activeClosers ?? []).length;
-    const { data: same } = await supabaseAdmin
-      .from("closer_bookings").select("id, assigned_closer_id")
-      .eq("slot_start", start.toISOString())
-      .in("status", ["pending_assignment", "assigned"]);
-    const others = (same ?? []).filter((r) => r.id !== data.booking_id);
-    if (totalActive > 0 && others.length >= totalActive) {
-      throw new Error("That time slot is full. Pick another.");
-    }
-    // Same-closer conflict if assigned
-    if (booking.assigned_closer_id) {
-      const closerConflict = others.find((r) => r.assigned_closer_id === booking.assigned_closer_id);
-      if (closerConflict) throw new Error("That closer is already booked at this time.");
-    }
+    // Admin reschedule: allow ANY time — no capacity or closer conflict checks.
+
 
     // Delete the old calendar event (we'll recreate if assigned)
     if (booking.google_calendar_event_id) {
