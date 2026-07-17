@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
-import { listAllLeads, listClients, createLead, adminUpdateLead, deleteLead, bulkDeleteLeads, getLeadDetail } from "@/lib/api/cl.functions";
+import { listAllLeads, listClients, createLead, adminUpdateLead, deleteLead, bulkDeleteLeads, getLeadDetail, bulkImportLeads } from "@/lib/api/cl.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
