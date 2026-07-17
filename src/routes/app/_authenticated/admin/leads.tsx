@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Search, Phone, Mail, Building2, ChevronDown, User as UserIcon, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Phone, Mail, Building2, ChevronDown, User as UserIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminLeadsTabs } from "@/components/admin-leads-tabs";
