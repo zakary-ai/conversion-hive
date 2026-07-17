@@ -59,6 +59,15 @@ function DmManagerHome() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const removeSetter = useMutation({
+    mutationFn: (id: string) => deleteDmSetterAsManager({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Setter removed");
+      qc.invalidateQueries({ queryKey: ["my-dm-team"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (isLoading) {
     return (
       <div className="rounded-lg border border-border bg-card p-4 text-foreground">
