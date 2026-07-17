@@ -1287,6 +1287,45 @@ export const bulkDeleteLeads = createServerFn({ method: "POST" })
     return { ok: true, count: data.ids.length };
   });
 
+const BulkImportInput = z.object({
+  rows: z.array(LeadInput).min(1).max(5000),
+});
+export const bulkImportLeads = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(BulkImportInput.parse)
+  .handler(async ({ data, context }) => {
+    const normPhone = (p?: string | null) => (p ?? "").replace(/\D/g, "");
+    const { data: existing, error: exErr } = await context.supabase
+      .from("leads")
+      .select("phone")
+      .not("phone", "is", null);
+    if (exErr) throw new Error(exErr.message);
+    const existingSet = new Set((existing ?? []).map((r) => normPhone(r.phone)).filter(Boolean));
+
+    const toInsert: typeof data.rows = [];
+    const seenInBatch = new Set<string>();
+    let duplicates = 0;
+    let missingPhone = 0;
+    for (const r of data.rows) {
+      const np = normPhone(r.phone);
+      if (!np) { missingPhone++; toInsert.push(r); continue; }
+      if (existingSet.has(np) || seenInBatch.has(np)) { duplicates++; continue; }
+      seenInBatch.add(np);
+      toInsert.push(r);
+    }
+
+    let inserted = 0;
+    for (let i = 0; i < toInsert.length; i += 500) {
+      const chunk = toInsert.slice(i, i + 500);
+      if (!chunk.length) continue;
+      const { error } = await context.supabase.from("leads").insert(chunk);
+      if (error) throw new Error(error.message);
+      inserted += chunk.length;
+    }
+    return { inserted, duplicates, missingPhone, total: data.rows.length };
+  });
+
+
 export const getLeadDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ lead_id: z.string().uuid() }).parse)
