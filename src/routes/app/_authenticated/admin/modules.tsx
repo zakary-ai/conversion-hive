@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { listModules, createModule, updateModule, deleteModule, reorderModules, generateQuizFromTranscript } from "@/lib/api/cl.functions";
+import { listModules, createModule, updateModule, deleteModule, reorderModules, generateQuizFromTranscript, generateModuleMetaFromTranscript } from "@/lib/api/cl.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
