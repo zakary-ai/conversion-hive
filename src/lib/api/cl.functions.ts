@@ -2214,6 +2214,47 @@ export const generateQuizFromTranscript = createServerFn({ method: "POST" })
     return { inserted: rows.length };
   });
 
+export const generateModuleMetaFromTranscript = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    transcript: z.string().min(50).max(100_000),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+
+    const system = `You write concise metadata for training modules. Output ONLY valid JSON matching: {"title": string, "description": string}. Title: 3-8 words, no quotes, no trailing punctuation. Description: 1-2 sentences (max ~240 chars) summarizing what the learner will take away.`;
+    const user = `Transcript:\n\n${data.transcript}`;
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`AI gateway error ${res.status}: ${text.slice(0, 200)}`);
+    }
+    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const content = json.choices?.[0]?.message?.content ?? "{}";
+    let parsed: { title?: string; description?: string };
+    try { parsed = JSON.parse(content); } catch { throw new Error("AI returned invalid JSON"); }
+    const title = String(parsed.title ?? "").trim().slice(0, 120);
+    const description = String(parsed.description ?? "").trim().slice(0, 1000);
+    if (!title) throw new Error("AI returned no title");
+    return { title, description };
+  });
+
 // ---------- Account deletion requests ----------
 // Users request deletion; admin reviews and approves/rejects.
 export const requestAccountDeletion = createServerFn({ method: "POST" })

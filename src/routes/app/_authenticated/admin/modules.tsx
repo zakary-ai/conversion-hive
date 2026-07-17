@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { listModules, createModule, updateModule, deleteModule, reorderModules, generateQuizFromTranscript } from "@/lib/api/cl.functions";
+import { listModules, createModule, updateModule, deleteModule, reorderModules, generateQuizFromTranscript, generateModuleMetaFromTranscript } from "@/lib/api/cl.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -248,11 +248,49 @@ function ModuleDialog({ open, onOpenChange, module: m }: { open: boolean; onOpen
     setIsActive(m?.is_active ?? true);
   }
 
+  const [transcript, setTranscript] = useState("");
+  const [transcriptName, setTranscriptName] = useState<string | null>(null);
+  const [autoGen, setAutoGen] = useState(!m);
+  const [quizCount, setQuizCount] = useState(5);
+  const [generating, setGenerating] = useState(false);
+
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { title, description, video_url: videoUrl, order_index: orderIndex, is_active: isActive };
-      if (m) await updateModule({ data: { ...payload, id: m.id } });
-      else await createModule({ data: payload });
+      let finalTitle = title;
+      let finalDescription = description;
+
+      // For new modules with a transcript + autoGen, generate title/description first
+      if (!m && autoGen && transcript.length >= 50 && (!finalTitle || !finalDescription)) {
+        setGenerating(true);
+        try {
+          const meta = await generateModuleMetaFromTranscript({ data: { transcript } });
+          if (!finalTitle) { finalTitle = meta.title; setTitle(meta.title); }
+          if (!finalDescription) { finalDescription = meta.description; setDescription(meta.description); }
+        } finally {
+          setGenerating(false);
+        }
+      }
+
+      const payload = { title: finalTitle, description: finalDescription, video_url: videoUrl, order_index: orderIndex, is_active: isActive };
+      let moduleId = m?.id;
+      if (m) {
+        await updateModule({ data: { ...payload, id: m.id } });
+      } else {
+        const row = await createModule({ data: payload });
+        moduleId = (row as { id: string }).id;
+      }
+
+      // Generate quiz from transcript for new modules
+      if (!m && autoGen && transcript.length >= 50 && moduleId) {
+        setGenerating(true);
+        try {
+          await generateQuizFromTranscript({ data: { module_id: moduleId, transcript, count: quizCount, replace: false } });
+        } catch (e) {
+          toast.warning(`Module created but quiz generation failed: ${(e as Error).message}`);
+        } finally {
+          setGenerating(false);
+        }
+      }
     },
     onSuccess: () => {
       toast.success(m ? "Updated" : "Created");
@@ -284,13 +322,76 @@ function ModuleDialog({ open, onOpenChange, module: m }: { open: boolean; onOpen
     }
   }
 
+  async function handleTranscriptFile(file: File) {
+    try {
+      const text = await file.text();
+      setTranscript(text);
+      setTranscriptName(file.name);
+      toast.success("Transcript loaded");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  const busy = save.isPending || generating;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{m ? "Edit module" : "New module"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-          <div><Label>Description</Label><Textarea rows={4} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} /></div>
+          {!m && (
+            <div className="rounded-md border border-dashed p-3 space-y-2 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2"><Sparkles className="h-4 w-4" />Transcript (auto-generate title, description & quiz)</Label>
+                <div className="flex items-center gap-2">
+                  <Switch checked={autoGen} onCheckedChange={setAutoGen} />
+                  <span className="text-xs text-muted-foreground">Auto</span>
+                </div>
+              </div>
+              <Textarea
+                rows={4}
+                value={transcript}
+                onChange={(e) => { setTranscript(e.target.value); if (!e.target.value) setTranscriptName(null); }}
+                placeholder="Paste transcript text or upload a .txt/.vtt/.srt file…"
+              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-input cursor-pointer hover:bg-accent">
+                  <Upload className="h-4 w-4" />
+                  Upload transcript
+                  <input
+                    type="file"
+                    accept=".txt,.vtt,.srt,.md,text/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleTranscriptFile(e.target.files[0])}
+                  />
+                </label>
+                {transcriptName && <span className="text-xs text-muted-foreground truncate">{transcriptName}</span>}
+                <span className="text-xs text-muted-foreground ml-auto">{transcript.length.toLocaleString()} chars</span>
+              </div>
+              {autoGen && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs">Quiz questions:</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={15}
+                    value={quizCount}
+                    onChange={(e) => setQuizCount(Math.max(1, Math.min(15, parseInt(e.target.value) || 5)))}
+                    className="w-20 h-8"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          <div>
+            <Label>Title {!m && autoGen && transcript.length >= 50 && !title && <span className="text-xs text-muted-foreground">(auto-generated on save)</span>}</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div>
+            <Label>Description {!m && autoGen && transcript.length >= 50 && !description && <span className="text-xs text-muted-foreground">(auto-generated on save)</span>}</Label>
+            <Textarea rows={3} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} />
+          </div>
           <div>
             <Label>Video</Label>
             <div className="space-y-2">
@@ -319,7 +420,13 @@ function ModuleDialog({ open, onOpenChange, module: m }: { open: boolean; onOpen
           </div>
           <div><Label>Order</Label><Input type="number" value={orderIndex} onChange={(e) => setOrderIndex(parseInt(e.target.value) || 0)} /></div>
           <div className="flex items-center gap-2"><Switch checked={isActive} onCheckedChange={setIsActive} /><Label>Active</Label></div>
-          <Button onClick={() => save.mutate()} disabled={!title || save.isPending || uploading} className="w-full">Save</Button>
+          <Button
+            onClick={() => save.mutate()}
+            disabled={busy || uploading || (!m && autoGen && transcript.length < 50 && !title) || (!(!m && autoGen && transcript.length >= 50) && !title)}
+            className="w-full"
+          >
+            {generating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating…</> : save.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</> : "Save"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
