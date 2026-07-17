@@ -553,20 +553,49 @@ function CsvImportButton({ onDone }: { onDone: () => void }) {
         try {
           const text = await file.text();
           const parsed = parseCsv(text);
+          // Detect name + phone columns heuristically from the first row's keys
+          const keys = parsed[0] ? Object.keys(parsed[0]) : [];
+          const findKey = (preds: ((k: string) => boolean)[]) => {
+            for (const p of preds) { const k = keys.find(p); if (k) return k; }
+            return null;
+          };
+          const nameKey = findKey([
+            (k) => k === "name" || k === "full name" || k === "full_name" || k === "fullname",
+            (k) => k === "contact" || k === "contact name" || k === "lead" || k === "lead name",
+            (k) => k.includes("name"),
+          ]);
+          const firstKey = findKey([(k) => k === "first name" || k === "first_name" || k === "firstname" || k === "first"]);
+          const lastKey = findKey([(k) => k === "last name" || k === "last_name" || k === "lastname" || k === "last"]);
+          const phoneKey = findKey([
+            (k) => k === "phone" || k === "phone number" || k === "phone_number" || k === "mobile" || k === "cell" || k === "cell phone" || k === "telephone" || k === "tel",
+            (k) => k.includes("phone") || k.includes("mobile") || k.includes("cell"),
+          ]);
+          const digits = (s: string) => (s || "").replace(/\D/g, "");
           const mapped = parsed.map((r) => {
-            const status = r.status && STATUS_SET.has(r.status) ? r.status : "New";
+            let name = "";
+            if (nameKey) name = r[nameKey] || "";
+            if (!name && (firstKey || lastKey)) name = `${firstKey ? r[firstKey] || "" : ""} ${lastKey ? r[lastKey] || "" : ""}`.trim();
+            let phone = phoneKey ? r[phoneKey] || "" : "";
+            // Fallback: scan all values for a plausible phone (>=7 digits)
+            if (!phone) {
+              for (const v of Object.values(r)) {
+                if (digits(v).length >= 7) { phone = v; break; }
+              }
+            }
             return {
-              name: (r.name || r["full name"] || r["full_name"] || "").slice(0, 200),
-              phone: (r.phone || r["phone number"] || r.mobile || "") || null,
-              email: (r.email || "") || null,
-              company: (r.company || r.business || "") || null,
-              source: (r.source || "csv-import") || null,
-              status: status as Status,
-              notes: (r.notes || r.note || "") || null,
+              name: name.slice(0, 200),
+              phone: phone || null,
+              email: null,
+              company: null,
+              source: "csv-import",
+              status: "New" as Status,
+              notes: null,
               assigned_user_id: null,
             };
-          }).filter((r) => r.name.length > 0);
+          }).filter((r) => r.name.length > 0 || (r.phone && digits(r.phone).length >= 7))
+            .map((r) => ({ ...r, name: r.name || "(no name)" }));
           if (!mapped.length) { failures.push(`${file.name}: no valid rows`); continue; }
+
           totalRows += mapped.length;
           // chunk client-side to keep server payloads reasonable
           for (let i = 0; i < mapped.length; i += 1000) {
