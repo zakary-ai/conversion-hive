@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
-import { listAllLeads, listClients, createLead, adminUpdateLead, deleteLead, bulkDeleteLeads, getLeadDetail } from "@/lib/api/cl.functions";
+import { listAllLeads, listClients, createLead, adminUpdateLead, deleteLead, bulkDeleteLeads, getLeadDetail, bulkImportLeads } from "@/lib/api/cl.functions";
 import { PageHeader, StatusPill } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Search, Phone, Mail, Building2, ChevronDown, User as UserIcon, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Phone, Mail, Building2, ChevronDown, User as UserIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AdminLeadsTabs } from "@/components/admin-leads-tabs";
@@ -109,8 +109,12 @@ function AdminLeads() {
     <div className="space-y-6 max-w-7xl">
       <AdminLeadsTabs />
       <PageHeader title="All leads" description={`${total.toLocaleString()} total`} action={
-        <Button onClick={() => { setEditing(null); setEditOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add lead</Button>
+        <div className="flex gap-2">
+          <CsvImportButton onDone={invalidateLeads} />
+          <Button onClick={() => { setEditing(null); setEditOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add lead</Button>
+        </div>
       } />
+
 
       <Card className="p-4 flex gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
@@ -495,3 +499,115 @@ function LeadDialog({ open, onOpenChange, lead, clients }: { open: boolean; onOp
     </Dialog>
   );
 }
+
+const STATUS_SET = new Set<string>(STATUSES);
+
+function parseCsv(text: string): Record<string, string>[] {
+  // Simple CSV parser supporting quotes and commas within quotes
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { cur.push(field); field = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (field.length || cur.length) { cur.push(field); rows.push(cur); }
+        cur = []; field = "";
+        if (c === "\r" && text[i + 1] === "\n") i++;
+      } else field += c;
+    }
+  }
+  if (field.length || cur.length) { cur.push(field); rows.push(cur); }
+  if (!rows.length) return [];
+  const headers = rows[0].map((h) => h.trim().toLowerCase());
+  return rows.slice(1)
+    .filter((r) => r.some((v) => v && v.trim().length))
+    .map((r) => {
+      const o: Record<string, string> = {};
+      headers.forEach((h, idx) => { o[h] = (r[idx] ?? "").trim(); });
+      return o;
+    });
+}
+
+function CsvImportButton({ onDone }: { onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const inputRef = (globalThis as unknown as { document: Document }).document
+    ? { current: null as HTMLInputElement | null }
+    : { current: null as HTMLInputElement | null };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    setBusy(true);
+    let totalRows = 0, totalInserted = 0, totalDupes = 0, totalMissingPhone = 0;
+    const failures: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        try {
+          const text = await file.text();
+          const parsed = parseCsv(text);
+          const mapped = parsed.map((r) => {
+            const status = r.status && STATUS_SET.has(r.status) ? r.status : "New";
+            return {
+              name: (r.name || r["full name"] || r["full_name"] || "").slice(0, 200),
+              phone: (r.phone || r["phone number"] || r.mobile || "") || null,
+              email: (r.email || "") || null,
+              company: (r.company || r.business || "") || null,
+              source: (r.source || "csv-import") || null,
+              status: status as Status,
+              notes: (r.notes || r.note || "") || null,
+              assigned_user_id: null,
+            };
+          }).filter((r) => r.name.length > 0);
+          if (!mapped.length) { failures.push(`${file.name}: no valid rows`); continue; }
+          totalRows += mapped.length;
+          // chunk client-side to keep server payloads reasonable
+          for (let i = 0; i < mapped.length; i += 1000) {
+            const chunk = mapped.slice(i, i + 1000);
+            const res = await bulkImportLeads({ data: { rows: chunk } });
+            totalInserted += res.inserted;
+            totalDupes += res.duplicates;
+            totalMissingPhone += res.missingPhone;
+          }
+        } catch (e) {
+          failures.push(`${file.name}: ${(e as Error).message}`);
+        }
+      }
+      toast.success(`Imported ${totalInserted} of ${totalRows} · ${totalDupes} duplicate${totalDupes === 1 ? "" : "s"} skipped${totalMissingPhone ? ` · ${totalMissingPhone} without phone` : ""}`);
+      if (failures.length) failures.forEach((f) => toast.error(f));
+      onDone();
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={(el) => { inputRef.current = el; }}
+        type="file"
+        accept=".csv,text/csv"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      <Button
+        variant="outline"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+      >
+        {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+        Import CSV
+      </Button>
+    </>
+  );
+}
+
