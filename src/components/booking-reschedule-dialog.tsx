@@ -63,18 +63,23 @@ export function BookingRescheduleDialog({
           </div>
 
           <div className="rounded-xl border border-border bg-card p-3 space-y-2">
-            <Label htmlFor="reschedule-time">Time</Label>
-            <Input
-              id="reschedule-time"
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              step={300}
-            />
+            <Label htmlFor="reschedule-time">Pick any time</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="reschedule-time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                step={60}
+                className="flex-1"
+              />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">24h format</span>
+            </div>
             <p className="text-xs text-muted-foreground">
-              Any date and time is allowed. Interpreted in your local timezone.
+              Any date and time is allowed — not restricted to availability windows. Interpreted in your local timezone.
             </p>
           </div>
+
         </div>
 
         <DialogFooter>
