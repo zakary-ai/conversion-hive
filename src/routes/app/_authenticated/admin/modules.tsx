@@ -121,16 +121,40 @@ function SortableRow({ module: m, onEdit, onDelete, onQuiz }: { module: Module; 
 function BulkUpload({ nextOrder }: { nextOrder: number }) {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
+  const [progress, setProgress] = useState<{ done: number; total: number; label: string }>({ done: 0, total: 0, label: "" });
 
-  async function handleFiles(files: FileList) {
-    if (!files.length) return;
+  function baseName(name: string) {
+    return name.replace(/\.[^.]+$/, "").trim();
+  }
+  function isTranscript(f: File) {
+    return /\.(txt|vtt|srt|md)$/i.test(f.name);
+  }
+  function isVideo(f: File) {
+    return f.type.startsWith("video/") || /\.(mp4|mov|webm|mkv|m4v|avi)$/i.test(f.name);
+  }
+
+  async function handleFiles(fileList: FileList) {
+    if (!fileList.length) return;
+    const files = Array.from(fileList);
+    const videos = files.filter(isVideo);
+    const transcripts = files.filter(isTranscript);
+    const transcriptMap = new Map<string, File>();
+    for (const t of transcripts) transcriptMap.set(baseName(t.name).toLowerCase(), t);
+
+    if (videos.length === 0) {
+      toast.error("Select at least one video file");
+      return;
+    }
+
     setBusy(true);
-    setProgress({ done: 0, total: files.length });
+    setProgress({ done: 0, total: videos.length, label: "" });
     let order = nextOrder;
     let failures = 0;
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+
+    for (let i = 0; i < videos.length; i++) {
+      const file = videos[i];
+      const base = baseName(file.name);
+      setProgress({ done: i, total: videos.length, label: file.name });
       try {
         const ext = file.name.split(".").pop() || "mp4";
         const path = `${crypto.randomUUID()}.${ext}`;
@@ -139,28 +163,57 @@ function BulkUpload({ nextOrder }: { nextOrder: number }) {
           upsert: false,
         });
         if (upErr) throw upErr;
-        const title = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || `Module ${order + 1}`;
-        await createModule({ data: { title, description: "", video_url: `storage:${path}`, order_index: order, is_active: true } });
+
+        const transcriptFile = transcriptMap.get(base.toLowerCase());
+        let transcriptText = "";
+        if (transcriptFile) {
+          try { transcriptText = await transcriptFile.text(); } catch { /* ignore */ }
+        }
+
+        let title = base.replace(/[_-]+/g, " ").trim() || `Module ${order + 1}`;
+        let description = "";
+
+        if (transcriptText.length >= 50) {
+          try {
+            const meta = await generateModuleMetaFromTranscript({ data: { transcript: transcriptText } });
+            if (meta.title) title = meta.title;
+            if (meta.description) description = meta.description;
+          } catch (e) {
+            toast.warning(`${file.name}: title/description generation failed: ${(e as Error).message}`);
+          }
+        }
+
+        const row = await createModule({ data: { title, description, video_url: `storage:${path}`, order_index: order, is_active: true } });
+        const moduleId = (row as { id: string }).id;
         order++;
+
+        if (transcriptText.length >= 50 && moduleId) {
+          try {
+            await generateQuizFromTranscript({ data: { module_id: moduleId, transcript: transcriptText, count: 5, replace: false } });
+          } catch (e) {
+            toast.warning(`${file.name}: quiz generation failed: ${(e as Error).message}`);
+          }
+        }
       } catch (e) {
         failures++;
         toast.error(`${file.name}: ${(e as Error).message}`);
       }
-      setProgress({ done: i + 1, total: files.length });
+      setProgress({ done: i + 1, total: videos.length, label: "" });
     }
     setBusy(false);
     qc.invalidateQueries({ queryKey: ["modules"] });
-    if (failures === 0) toast.success(`Uploaded ${files.length} module${files.length === 1 ? "" : "s"}`);
+    const paired = videos.filter((v) => transcriptMap.has(baseName(v.name).toLowerCase())).length;
+    if (failures === 0) toast.success(`Uploaded ${videos.length} module${videos.length === 1 ? "" : "s"}${paired ? ` (${paired} with transcript)` : ""}`);
     else toast.warning(`Completed with ${failures} failure(s)`);
   }
 
   return (
-    <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-input cursor-pointer hover:bg-accent">
+    <label className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-input cursor-pointer hover:bg-accent" title="Select video files + optional matching transcript files (.txt/.vtt/.srt/.md with the same base name)">
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-      {busy ? `Uploading ${progress.done}/${progress.total}…` : "Bulk upload"}
+      {busy ? `Uploading ${progress.done}/${progress.total}${progress.label ? `: ${progress.label}` : "…"}` : "Bulk upload"}
       <input
         type="file"
-        accept="video/*"
+        accept="video/*,.txt,.vtt,.srt,.md,text/*"
         multiple
         className="hidden"
         disabled={busy}
