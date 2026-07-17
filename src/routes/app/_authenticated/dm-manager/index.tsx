@@ -15,13 +15,32 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/_authenticated/dm-manager/")({
   component: DmManagerHome,
+  errorComponent: ({ error, reset }) => {
+    console.error("[dm-manager] route error:", error);
+    return (
+      <div className="max-w-md space-y-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-foreground">
+        <div className="font-semibold">Something went wrong loading your dashboard</div>
+        <div className="text-sm text-muted-foreground break-words">
+          {error instanceof Error ? error.message : "Unknown error"}
+        </div>
+        <Button size="sm" onClick={reset}>Try again</Button>
+      </div>
+    );
+  },
 });
 
 function DmManagerHome() {
   const qc = useQueryClient();
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["my-dm-team"],
-    queryFn: () => getMyDmTeam(),
+    queryFn: async () => {
+      try {
+        return await getMyDmTeam();
+      } catch (e) {
+        console.error("[dm-manager] getMyDmTeam failed:", e);
+        throw e;
+      }
+    },
     retry: 1,
   });
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -42,15 +61,17 @@ function DmManagerHome() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span className="h-3 w-3 rounded-full bg-primary/60 animate-pulse" />
-        Loading your team…
+      <div className="rounded-lg border border-border bg-card p-4 text-foreground">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="h-3 w-3 rounded-full bg-primary/60 animate-pulse" />
+          Loading your team…
+        </div>
       </div>
     );
   }
   if (isError || !data) {
     return (
-      <div className="max-w-md space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+      <div className="max-w-md space-y-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-foreground">
         <div className="font-semibold">Couldn't load your dashboard</div>
         <div className="text-sm text-muted-foreground break-words">
           {error instanceof Error ? error.message : "Unknown error"}

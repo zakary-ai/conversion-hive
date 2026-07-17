@@ -600,9 +600,18 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me } = await supabaseAdmin.from("dm_setters").select("*").eq("user_id", context.userId).maybeSingle();
+    const { data: me, error: meErr } = await supabaseAdmin.from("dm_setters").select("*").eq("user_id", context.userId).maybeSingle();
+    if (meErr) console.error("[getMyDmTeam] fetch self failed:", meErr);
     if (!me) throw new Error("Not a DM setter");
-    const { stats: myStats } = await computeStatsFor(me.id, undefined, Number(me.commission_rate ?? 0.075));
+
+    let myStats;
+    try {
+      const r = await computeStatsFor(me.id, undefined, Number(me.commission_rate ?? 0.075));
+      myStats = r.stats;
+    } catch (e) {
+      console.error("[getMyDmTeam] computeStatsFor failed:", e);
+      myStats = { applied: 0, booked: 0, no_show: 0, disqualified: 0, not_interested: 0, closed: 0, total_revenue: 0, total_commission: 0 };
+    }
     const { data: myLog } = await supabaseAdmin
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).eq("log_date", todayKey()).maybeSingle();
     if (!me.is_manager) return { manager: me, myStats, myLog, team: [] };
