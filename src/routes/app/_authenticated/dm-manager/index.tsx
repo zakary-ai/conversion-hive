@@ -205,8 +205,21 @@ function DmManagerHome() {
         <div className="space-y-3">
           {data.team.map((row) => (
             <Card key={row.setter.id}>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
                 <CardTitle className="text-base">{row.setter.full_name}</CardTitle>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  disabled={removeSetter.isPending && removeSetter.variables === row.setter.id}
+                  onClick={() => {
+                    if (confirm(`Remove ${row.setter.full_name} from your team? This will delete their setter record.`)) {
+                      removeSetter.mutate(row.setter.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent className="grid grid-cols-2 md:grid-cols-6 gap-3 text-sm">
                 <Stat label="DMs today" value={row.today_dms} />
