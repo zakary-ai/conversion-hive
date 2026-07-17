@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getMyDmTeam, inviteDmSetterAsManager } from "@/lib/api/dm-setters.functions";
+import { getMyDmTeam, inviteDmSetterAsManager, deleteDmSetterAsManager } from "@/lib/api/dm-setters.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
