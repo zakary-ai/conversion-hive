@@ -296,11 +296,32 @@ function ApplyPage() {
   );
 }
 
-function BookingStep({ appId, token, onBooked }: { appId: string; token: string; onBooked: () => void }) {
-  const tz = useMemo(
+const COMMON_TZS = [
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Phoenix",
+  "America/Los_Angeles",
+  "America/Anchorage",
+  "Pacific/Honolulu",
+  "America/Toronto",
+  "America/Vancouver",
+  "America/Mexico_City",
+  "Europe/London",
+  "Europe/Berlin",
+  "Australia/Sydney",
+];
+
+function BookingStep({ appId, token, onBooked, mode = "new" }: { appId: string; token: string; onBooked: () => void; mode?: "new" | "reapply" }) {
+  const detected = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
     [],
   );
+  const [tz, setTz] = useState<string>(detected);
+  const tzOptions = useMemo(() => {
+    const set = new Set<string>([detected, ...COMMON_TZS]);
+    return Array.from(set);
+  }, [detected]);
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
