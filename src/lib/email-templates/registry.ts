@@ -7,6 +7,9 @@ import { template as setterInvite } from './setter-invite'
 import { template as adminInvite } from './admin-invite'
 import { template as bookingConfirmation } from './booking-confirmation'
 import { template as bookingReceived } from './booking-received'
+import { template as bookingRescheduled } from './booking-rescheduled'
+import { template as bookingUnbooked } from './booking-unbooked'
+import { template as bookingDeclined } from './booking-declined'
 
 
 
@@ -28,4 +31,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'admin-invite': adminInvite,
   'booking-confirmation': bookingConfirmation,
   'booking-received': bookingReceived,
+  'booking-rescheduled': bookingRescheduled,
+  'booking-unbooked': bookingUnbooked,
+  'booking-declined': bookingDeclined,
 }
