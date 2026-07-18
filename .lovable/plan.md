@@ -1,85 +1,77 @@
-## Support Tickets / Suggestions
+# B2C Booking Improvements
 
-In-app ticket system so any signed-in user (setter, closer, DM setter, DM manager, admin) can submit feedback, suggestions, or issues, and admins can respond in a thread. Includes media attachments (5MB max per file).
+## 1. Timezone picker on the apply page
 
-### User side
+In `src/routes/apply.tsx` `BookingStep`:
+- Convert `tz` from a memo to state; default to `Intl.DateTimeFormat().resolvedOptions().timeZone`.
+- Add a `<Select>` above the calendar: "Detected", then ET/CT/MT/PT/AKT/HT plus a small international group (London, Berlin, Dubai, Singapore, Sydney).
+- Slot query already keys on `tz` — the change flows through automatically.
 
-- New sidebar + bottom-nav item **"Support"** on every role (`/app/support`).
-- **New ticket** dialog:
-  - **Category** select: Feedback, Suggestion, Issue/Bug, Other
-  - **Subject** (required, max 120 chars)
-  - **Message** (textarea, required, max 4000 chars)
-  - **Attachments** (optional): up to 5 files, **5 MB max each**, images/video/pdf. Client-side size + type check before upload; server also enforces.
-- **My tickets** list: subject, category badge, status (open / awaiting user / resolved), last update.
-- Ticket thread view: all messages with attachment thumbnails/links, reply box (also supports attachments, same 5 MB limit) unless resolved.
+## 2. "Thanks for applying" email on booking
 
-### Admin side
+In `createCloserBooking` (`src/lib/api/b2c.functions.ts`), after successful insert, fire the existing `booking-received` template via `sendTransactional` inside try/catch. Idempotency key: `booking-received-<booking_id>`. Copy: "Thanks for applying — you'll receive a follow-up email once an interviewer is assigned."
 
-- New admin sidebar item **"Tickets"** (`/app/admin/tickets`), shared across B2B/B2C.
-- List with filters (status, category, search) + unread indicator.
-- Detail view: submitter name/email/role, category, subject, full threaded conversation with attachments, admin reply box (with attachments), status controls (open / awaiting user / resolved), delete.
+## 3. Reschedule: status, audit fields, email, manual admin action
 
-### Notifications
+Migration adds to `closer_bookings`:
+- `previous_slot_start timestamptz`
+- `rescheduled_at timestamptz`
+- `unbooked_at timestamptz`
 
-- Admin reply or status change → notification for ticket owner.
-- User reply → notification for admins (reuses existing `notifications` table + bell).
+`rescheduleCloserBooking`:
+- Capture previous slot, set `status = 'rescheduled'`, `rescheduled_at = now()`, `previous_slot_start = old`.
+- Always send the new `booking-rescheduled` email to the applicant (old + new time), independent of closer assignment.
 
-### Data model (new tables)
+New template `booking-rescheduled.tsx` registered in `registry.ts`.
 
-```text
-support_tickets
-  id, user_id, category (feedback|suggestion|issue|other),
-  subject, status (open|awaiting_user|resolved),
-  last_message_at, created_at, updated_at
+New admin server fn `markBookingRescheduled` (admin-only) — flips status to `rescheduled` and sends the same email without changing time. Surfaced as a menu item in `BookingCard` in `admin/bookings.tsx`.
 
-support_ticket_messages
-  id, ticket_id, author_id, is_admin, body, created_at
+## 4. Auto "unbooked" sweep at 5 minutes
 
-support_ticket_attachments
-  id, message_id, ticket_id, storage_path, filename,
-  content_type, size_bytes, created_at
-```
+New route `src/routes/api/public/hooks/mark-unbooked.ts` — scans `closer_bookings` where `status = 'pending_assignment'` AND `slot_start < now()`, sets `status = 'unbooked'`, `unbooked_at = now()`. Every 5 minutes is safe: worst-case a booking sits 5 minutes past its slot time before flipping, which is fine, and the sweep is a cheap indexed query. Booking-slot-timed cron would require per-row scheduling and is not worth the complexity.
 
-RLS:
-- Users: read/insert own tickets + messages + attachments on their tickets.
-- Admins: full read/write, status updates, delete.
-- GRANTs to `authenticated` + `service_role`.
+For each newly-unbooked booking, look up the linked application's `credit_score_range` and send one of two templates:
+- Credit `"600-650"` (unqualified filter) → `booking-declined.tsx`: "Thank you for applying, but we've decided to move in another direction." No reapply link.
+- All other credit ranges → `booking-unbooked.tsx`: "Sorry, all our interviewers are booked at the moment. We invite you to reapply." Contains reapply link `https://.../apply?reapply=<booking_token>`.
 
-### Storage
+pg_cron scheduled via `supabase--insert` calling `https://project--77a6d453-2ccb-4bdc-b7a5-7900dd491db2.lovable.app/api/public/hooks/mark-unbooked` every 5 minutes with `apikey` header.
 
-- New private bucket **`support-uploads`** (created via storage tool).
-- Path convention: `{ticket_id}/{message_id}/{uuid}-{filename}`.
-- RLS on `storage.objects`: user can read/insert files under tickets they own; admins can read/insert/delete all.
-- **5 MB per file** enforced in client (pre-upload check), server function (size in metadata row), and a storage policy check on `size_bytes`.
+UI surfacing:
+- Admin bookings page: `unbooked` status included in History section with a red badge.
+- DM setter calendar (`dm-setter/calendar.tsx`) + DM setter lead lists: red "Unbooked" outcome badge alongside existing outcome badges.
 
-### Server functions (`src/lib/api/support.functions.ts`)
+## 5. Reapply flow with 5-day expiry
 
-- `createTicket({ category, subject, message, attachments? })` — attachments are `{ path, filename, content_type, size_bytes }[]` already uploaded to storage via signed flow.
-- `listMyTickets()` / `getMyTicket({ id })` — returns thread + signed URLs for attachments.
-- `replyToTicket({ id, body, attachments? })`
-- `adminListTickets({ status?, category?, search? })`
-- `adminGetTicket({ id })`
-- `adminReplyToTicket({ id, body, attachments? })`
-- `adminUpdateTicketStatus({ id, status })`
-- `adminDeleteTicket({ id })` — also removes storage objects.
+`applications` table — add:
+- `status text` (values used: `submitted` default, `reapplied`)
+- No token field needed; the existing `booking_token` from `applications` is reused as the reapply key.
 
-Upload flow: client uploads directly to `support-uploads` bucket using authenticated Supabase client, then passes the resulting paths + sizes into the create/reply server function, which inserts attachment rows after validating size ≤ 5 MB and ownership.
+`booking-unbooked` email builds link `?reapply=<application.booking_token>`.
 
-### Files to add
+New server fn `resolveReapplyToken` (public):
+- Looks up application by `booking_token`.
+- Finds the most recent `unbooked` booking for that application.
+- Rejects if `unbooked_at` is older than 5 days.
+- Returns application row + a fresh short-lived nonce for the follow-up call.
 
-- `supabase/migrations/*_support_tickets.sql`
-- `src/lib/api/support.functions.ts`
-- `src/routes/app/_authenticated/support.tsx`
-- `src/routes/app/_authenticated/admin/tickets.tsx`
+`apply.tsx`:
+- Recognize `?reapply=<token>`; when present, skip the form step, prefill from returned application data, jump to `BookingStep`.
+- Show a small banner: "Welcome back — pick a new time."
+- If token invalid/expired, show a friendly "This link has expired — please apply again" and offer a link to `/apply`.
 
-### Files to edit
+New server fn `createReapplyBooking`:
+- Validates token + 5-day window again server-side.
+- Updates `applications.status = 'reapplied'` (keeps every other field intact).
+- Inserts a new `closer_bookings` row (fresh `pending_assignment`) — the prior `unbooked` row stays for history.
+- Sends the standard `booking-received` email.
 
-- `src/components/app-sidebar.tsx` — Support on every role menu, Tickets on admin menus.
-- `src/components/bottom-nav.tsx` — Support entry where it fits.
-- `src/integrations/supabase/types.ts` — regenerated after migration.
+Admin visibility:
+- Applications list badge for `reapplied` status.
 
-### Assumed defaults (tell me if wrong)
+## Technical details
 
-- Categories: Feedback / Suggestion / Issue / Other.
-- Attachments: images, video, PDF; up to 5 files per message; 5 MB each.
-- Shared admin inbox (any admin can respond; no per-admin assignment).
+- One migration: three new columns on `closer_bookings`, one new column on `applications`, no enum changes (status values remain free-text as they are today). No new tables.
+- Three new email templates registered in `registry.ts`: `booking-rescheduled`, `booking-unbooked`, `booking-declined`.
+- One new public hook route + pg_cron entry (5-minute cadence).
+- Two new server fns: `markBookingRescheduled`, `resolveReapplyToken`, `createReapplyBooking`. All existing auth/RLS unchanged.
+- Reapply expiry enforced server-side (5 days from `unbooked_at`); the client just renders the expired-state message.

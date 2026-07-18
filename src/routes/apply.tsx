@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking, getPublicBookingWindow } from "@/lib/api/b2c.functions";
+import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking, getPublicBookingWindow, resolveReapplyToken, createReapplyBooking } from "@/lib/api/b2c.functions";
 import { resolveDmSlug } from "@/lib/api/dm-setters.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,10 @@ import { cn } from "@/lib/utils";
 import { z } from "zod";
 
 export const Route = createFileRoute("/apply")({
-  validateSearch: z.object({ dm: z.string().min(1).max(80).optional() }).parse,
+  validateSearch: z.object({
+    dm: z.string().min(1).max(80).optional(),
+    reapply: z.string().uuid().optional(),
+  }).parse,
   head: () => ({
     meta: [
       { title: "Apply Now — Remote Sales Opportunity" },
@@ -42,15 +45,24 @@ function toDateKey(d: Date, tz: string) {
 }
 
 function ApplyPage() {
-  const { dm: dmSlug } = Route.useSearch();
+  const { dm: dmSlug, reapply: reapplyToken } = Route.useSearch();
   const pageRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState<Step>("form");
-  const [appInfo, setAppInfo] = useState<{ id: string; token: string } | null>(null);
+  const [step, setStep] = useState<Step>(reapplyToken ? "book" : "form");
+  const [appInfo, setAppInfo] = useState<{ id: string; token: string } | null>(
+    reapplyToken ? { id: "reapply", token: reapplyToken } : null,
+  );
 
   const { data: dmSetter } = useQuery({
     queryKey: ["dm-slug", dmSlug],
     queryFn: () => resolveDmSlug({ data: { slug: dmSlug! } }),
     enabled: !!dmSlug,
+  });
+
+  const reapplyQuery = useQuery({
+    queryKey: ["reapply", reapplyToken],
+    queryFn: () => resolveReapplyToken({ data: { token: reapplyToken! } }),
+    enabled: !!reapplyToken,
+    retry: false,
   });
 
   const [form, setForm] = useState({
@@ -230,12 +242,41 @@ function ApplyPage() {
           </Card>
         )}
 
-        {step === "book" && appInfo && (
+        {reapplyToken && reapplyQuery.isError && (
+          <Card className="p-8 text-center bg-card border-border">
+            <h2 className="text-2xl font-display font-semibold">Link expired</h2>
+            <p className="mt-3 text-muted-foreground">
+              {reapplyQuery.error instanceof Error ? reapplyQuery.error.message : "This reapply link is no longer valid."}
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">Please <a className="text-primary underline" href="/apply">apply again</a> to book a new time.</p>
+          </Card>
+        )}
+
+        {reapplyToken && reapplyQuery.isLoading && (
+          <Card className="p-8 text-center bg-card border-border text-sm text-muted-foreground">Loading…</Card>
+        )}
+
+        {step === "book" && appInfo && !reapplyToken && (
           <BookingStep
+            mode="new"
             appId={appInfo.id}
             token={appInfo.token}
             onBooked={() => setStep("done")}
           />
+        )}
+
+        {step === "book" && reapplyToken && reapplyQuery.data && (
+          <div className="space-y-3">
+            <Card className="p-4 bg-primary/10 border-primary/30 text-sm">
+              Welcome back{reapplyQuery.data.full_name ? `, ${reapplyQuery.data.full_name}` : ""} — pick a new time below.
+            </Card>
+            <BookingStep
+              mode="reapply"
+              appId={reapplyQuery.data.application_id}
+              token={reapplyToken}
+              onBooked={() => setStep("done")}
+            />
+          </div>
         )}
 
         {step === "done" && (
@@ -255,11 +296,32 @@ function ApplyPage() {
   );
 }
 
-function BookingStep({ appId, token, onBooked }: { appId: string; token: string; onBooked: () => void }) {
-  const tz = useMemo(
+const COMMON_TZS = [
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Phoenix",
+  "America/Los_Angeles",
+  "America/Anchorage",
+  "Pacific/Honolulu",
+  "America/Toronto",
+  "America/Vancouver",
+  "America/Mexico_City",
+  "Europe/London",
+  "Europe/Berlin",
+  "Australia/Sydney",
+];
+
+function BookingStep({ appId, token, onBooked, mode = "new" }: { appId: string; token: string; onBooked: () => void; mode?: "new" | "reapply" }) {
+  const detected = useMemo(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
     [],
   );
+  const [tz, setTz] = useState<string>(detected);
+  const tzOptions = useMemo(() => {
+    const set = new Set<string>([detected, ...COMMON_TZS]);
+    return Array.from(set);
+  }, [detected]);
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -304,9 +366,10 @@ function BookingStep({ appId, token, onBooked }: { appId: string; token: string;
 
 
   const book = useMutation({
-    mutationFn: (iso: string) => createCloserBooking({ data: {
-      application_id: appId, token, slot_start: iso,
-    } }),
+    mutationFn: (iso: string) =>
+      mode === "reapply"
+        ? createReapplyBooking({ data: { token, slot_start: iso } })
+        : createCloserBooking({ data: { application_id: appId, token, slot_start: iso } }),
     onSuccess: () => onBooked(),
     onError: (e: Error) => setErr(e.message),
   });
@@ -323,6 +386,19 @@ function BookingStep({ appId, token, onBooked }: { appId: string; token: string;
       </div>
 
       <div className="space-y-3">
+        <div className="rounded-xl border border-border bg-card p-3">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Your time zone</Label>
+          <Select value={tz} onValueChange={(v) => { setTz(v); setPicked(null); }}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {tzOptions.map((z) => (
+                <SelectItem key={z} value={z}>{z.replace(/_/g, " ")}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="mt-2 text-xs text-muted-foreground">Times below are shown in this time zone.</p>
+        </div>
+
         <div className="rounded-xl border border-border bg-card p-2 flex justify-center">
           <Calendar
             mode="single"

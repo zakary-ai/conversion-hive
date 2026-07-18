@@ -584,10 +584,13 @@ export type Database = {
           outcome: string | null
           outcome_at: string | null
           outcome_notes: string | null
+          previous_slot_start: string | null
           reminder_sent_at: string | null
+          rescheduled_at: string | null
           slot_end: string
           slot_start: string
           status: string
+          unbooked_at: string | null
           updated_at: string
           zoom_join_url: string | null
           zoom_meeting_id: string | null
@@ -622,10 +625,13 @@ export type Database = {
           outcome?: string | null
           outcome_at?: string | null
           outcome_notes?: string | null
+          previous_slot_start?: string | null
           reminder_sent_at?: string | null
+          rescheduled_at?: string | null
           slot_end: string
           slot_start: string
           status?: string
+          unbooked_at?: string | null
           updated_at?: string
           zoom_join_url?: string | null
           zoom_meeting_id?: string | null
@@ -660,10 +666,13 @@ export type Database = {
           outcome?: string | null
           outcome_at?: string | null
           outcome_notes?: string | null
+          previous_slot_start?: string | null
           reminder_sent_at?: string | null
+          rescheduled_at?: string | null
           slot_end?: string
           slot_start?: string
           status?: string
+          unbooked_at?: string | null
           updated_at?: string
           zoom_join_url?: string | null
           zoom_meeting_id?: string | null
@@ -1798,6 +1807,7 @@ export type Database = {
         | "Follow Up"
         | "Booked"
         | "Not Interested"
+        | "Reapplied"
       lead_status:
         | "New"
         | "Contacted"
@@ -1957,6 +1967,7 @@ export const Constants = {
         "Follow Up",
         "Booked",
         "Not Interested",
+        "Reapplied",
       ],
       lead_status: [
         "New",

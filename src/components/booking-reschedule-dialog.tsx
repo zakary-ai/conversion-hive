@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { rescheduleCloserBooking } from "@/lib/api/b2c.functions";
+import { rescheduleCloserBooking, markBookingRescheduled } from "@/lib/api/b2c.functions";
 
 export function BookingRescheduleDialog({
   bookingId,
@@ -40,6 +40,17 @@ export function BookingRescheduleDialog({
       qc.invalidateQueries({ queryKey: ["bookings-for-date"] });
       setDate(undefined);
       setTime("09:00");
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const markOnly = useMutation({
+    mutationFn: () => markBookingRescheduled({ data: { booking_id: bookingId } }),
+    onSuccess: () => {
+      toast.success("Marked as rescheduled");
+      qc.invalidateQueries({ queryKey: ["closer-bookings"] });
+      qc.invalidateQueries({ queryKey: ["bookings-for-date"] });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -82,14 +93,24 @@ export function BookingRescheduleDialog({
 
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
           <Button
-            disabled={!iso || reschedule.isPending}
-            onClick={() => iso && reschedule.mutate(iso)}
+            variant="secondary"
+            disabled={markOnly.isPending}
+            onClick={() => markOnly.mutate()}
+            title="Mark this booking as rescheduled without changing the time (notifies the applicant)"
           >
-            {reschedule.isPending ? "Saving…" : "Confirm new time"}
+            {markOnly.isPending ? "Marking…" : "Mark as rescheduled"}
           </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button
+              disabled={!iso || reschedule.isPending}
+              onClick={() => iso && reschedule.mutate(iso)}
+            >
+              {reschedule.isPending ? "Saving…" : "Confirm new time"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
