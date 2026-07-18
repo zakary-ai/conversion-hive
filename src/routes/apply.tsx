@@ -242,12 +242,41 @@ function ApplyPage() {
           </Card>
         )}
 
-        {step === "book" && appInfo && (
+        {reapplyToken && reapplyQuery.isError && (
+          <Card className="p-8 text-center bg-card border-border">
+            <h2 className="text-2xl font-display font-semibold">Link expired</h2>
+            <p className="mt-3 text-muted-foreground">
+              {reapplyQuery.error instanceof Error ? reapplyQuery.error.message : "This reapply link is no longer valid."}
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">Please <a className="text-primary underline" href="/apply">apply again</a> to book a new time.</p>
+          </Card>
+        )}
+
+        {reapplyToken && reapplyQuery.isLoading && (
+          <Card className="p-8 text-center bg-card border-border text-sm text-muted-foreground">Loading…</Card>
+        )}
+
+        {step === "book" && appInfo && !reapplyToken && (
           <BookingStep
+            mode="new"
             appId={appInfo.id}
             token={appInfo.token}
             onBooked={() => setStep("done")}
           />
+        )}
+
+        {step === "book" && reapplyToken && reapplyQuery.data && (
+          <div className="space-y-3">
+            <Card className="p-4 bg-primary/10 border-primary/30 text-sm">
+              Welcome back{reapplyQuery.data.full_name ? `, ${reapplyQuery.data.full_name}` : ""} — pick a new time below.
+            </Card>
+            <BookingStep
+              mode="reapply"
+              appId={reapplyQuery.data.application_id}
+              token={reapplyToken}
+              onBooked={() => setStep("done")}
+            />
+          </div>
         )}
 
         {step === "done" && (
