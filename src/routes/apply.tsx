@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking, getPublicBookingWindow } from "@/lib/api/b2c.functions";
+import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking, getPublicBookingWindow, resolveReapplyToken, createReapplyBooking } from "@/lib/api/b2c.functions";
 import { resolveDmSlug } from "@/lib/api/dm-setters.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,10 @@ import { cn } from "@/lib/utils";
 import { z } from "zod";
 
 export const Route = createFileRoute("/apply")({
-  validateSearch: z.object({ dm: z.string().min(1).max(80).optional() }).parse,
+  validateSearch: z.object({
+    dm: z.string().min(1).max(80).optional(),
+    reapply: z.string().uuid().optional(),
+  }).parse,
   head: () => ({
     meta: [
       { title: "Apply Now — Remote Sales Opportunity" },

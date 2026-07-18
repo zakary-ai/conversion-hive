@@ -65,6 +65,7 @@ import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksRunDailyCycleRouteImport } from './routes/api/public/hooks/run-daily-cycle'
 import { Route as ApiPublicHooksPurgeDmScreenshotsRouteImport } from './routes/api/public/hooks/purge-dm-screenshots'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
+import { Route as ApiPublicHooksMarkUnbookedRouteImport } from './routes/api/public/hooks/mark-unbooked'
 import { Route as ApiPublicHooksDistributeLeadsRouteImport } from './routes/api/public/hooks/distribute-leads'
 import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
 import { Route as AppAuthenticatedAdminClientsUserIdRouteImport } from './routes/app/_authenticated/admin/clients.$userId'
@@ -386,6 +387,12 @@ const ApiPublicHooksOpenphoneRoute = ApiPublicHooksOpenphoneRouteImport.update({
   path: '/api/public/hooks/openphone',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksMarkUnbookedRoute =
+  ApiPublicHooksMarkUnbookedRouteImport.update({
+    id: '/api/public/hooks/mark-unbooked',
+    path: '/api/public/hooks/mark-unbooked',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDistributeLeadsRoute =
   ApiPublicHooksDistributeLeadsRouteImport.update({
     id: '/api/public/hooks/distribute-leads',
@@ -428,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/app/support': typeof AppAuthenticatedSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
+  '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
@@ -487,6 +495,7 @@ export interface FileRoutesByTo {
   '/app/support': typeof AppAuthenticatedSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
+  '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
@@ -549,6 +558,7 @@ export interface FileRoutesById {
   '/app/_authenticated/support': typeof AppAuthenticatedSupportRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
+  '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
@@ -611,6 +621,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
+    | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/run-daily-cycle'
@@ -670,6 +681,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
+    | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/run-daily-cycle'
@@ -731,6 +743,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/support'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
+    | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/run-daily-cycle'
@@ -783,6 +796,7 @@ export interface RootRouteChildren {
   ApiPublicConfirmBookingRoute: typeof ApiPublicConfirmBookingRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
+  ApiPublicHooksMarkUnbookedRoute: typeof ApiPublicHooksMarkUnbookedRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksPurgeDmScreenshotsRoute: typeof ApiPublicHooksPurgeDmScreenshotsRoute
   ApiPublicHooksRunDailyCycleRoute: typeof ApiPublicHooksRunDailyCycleRoute
@@ -1187,6 +1201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOpenphoneRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/mark-unbooked': {
+      id: '/api/public/hooks/mark-unbooked'
+      path: '/api/public/hooks/mark-unbooked'
+      fullPath: '/api/public/hooks/mark-unbooked'
+      preLoaderRoute: typeof ApiPublicHooksMarkUnbookedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/distribute-leads': {
       id: '/api/public/hooks/distribute-leads'
       path: '/api/public/hooks/distribute-leads'
@@ -1342,6 +1363,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicConfirmBookingRoute: ApiPublicConfirmBookingRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
+  ApiPublicHooksMarkUnbookedRoute: ApiPublicHooksMarkUnbookedRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksPurgeDmScreenshotsRoute: ApiPublicHooksPurgeDmScreenshotsRoute,
   ApiPublicHooksRunDailyCycleRoute: ApiPublicHooksRunDailyCycleRoute,
