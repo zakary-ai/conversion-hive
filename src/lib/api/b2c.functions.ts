@@ -960,10 +960,193 @@ export const rescheduleCloserBooking = createServerFn({ method: "POST" })
       zoom_join_url: newZoomUrl,
       zoom_meeting_id: newZoomId,
       google_calendar_event_id: newCalId,
+      status: "rescheduled",
+      previous_slot_start: (booking.slot_start as string) ?? null,
+      rescheduled_at: new Date().toISOString(),
     }).eq("id", data.booking_id);
     if (uerr) throw new Error(uerr.message);
 
+    // Always email applicant with the new time (independent of closer assignment).
+    if (booking.applicant_email) {
+      try {
+        const { sendTransactional } = await import("@/lib/email/transactional.server");
+        await sendTransactional({
+          templateName: "booking-rescheduled",
+          recipientEmail: booking.applicant_email as string,
+          idempotencyKey: `booking-rescheduled-${data.booking_id}-${start.getTime()}`,
+          templateData: {
+            name: booking.applicant_name,
+            previousLabel: booking.slot_start ? formatScheduledLabel(booking.slot_start as string) : null,
+            newLabel: formatScheduledLabel(start.toISOString()),
+          },
+        });
+      } catch (e) {
+        console.warn("[booking-rescheduled] send failed", e);
+      }
+    }
+
     return { ok: true };
+  });
+
+// Admin: mark a booking as rescheduled without changing the slot (out-of-band coordination).
+export const markBookingRescheduled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ booking_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: booking, error: berr } = await supabaseAdmin
+      .from("closer_bookings").select("*").eq("id", data.booking_id).single();
+    if (berr || !booking) throw new Error(berr?.message || "Booking not found");
+    const { error: uerr } = await supabaseAdmin.from("closer_bookings").update({
+      status: "rescheduled",
+      rescheduled_at: new Date().toISOString(),
+    }).eq("id", data.booking_id);
+    if (uerr) throw new Error(uerr.message);
+    if (booking.applicant_email) {
+      try {
+        const { sendTransactional } = await import("@/lib/email/transactional.server");
+        await sendTransactional({
+          templateName: "booking-rescheduled",
+          recipientEmail: booking.applicant_email as string,
+          idempotencyKey: `booking-marked-rescheduled-${data.booking_id}-${Date.now()}`,
+          templateData: {
+            name: booking.applicant_name,
+            newLabel: formatScheduledLabel(booking.slot_start as string),
+          },
+        });
+      } catch (e) {
+        console.warn("[booking-rescheduled] send failed", e);
+      }
+    }
+    return { ok: true };
+  });
+
+// Public: validate a reapply token and return the associated application.
+export const resolveReapplyToken = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ token: z.string().uuid() }).parse)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: app } = await supabaseAdmin
+      .from("applications")
+      .select("id, booking_token, full_name, email, phone, dm_setter_id")
+      .eq("booking_token", data.token)
+      .maybeSingle();
+    if (!app) throw new Error("This reapply link is invalid.");
+
+    const { data: latestUnbooked } = await supabaseAdmin
+      .from("closer_bookings")
+      .select("id, unbooked_at")
+      .eq("application_id", app.id)
+      .eq("status", "unbooked")
+      .order("unbooked_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!latestUnbooked || !latestUnbooked.unbooked_at) {
+      throw new Error("This reapply link is no longer valid.");
+    }
+    const ageMs = Date.now() - new Date(latestUnbooked.unbooked_at as string).getTime();
+    if (ageMs > 5 * 24 * 60 * 60 * 1000) {
+      throw new Error("This reapply link has expired. Please apply again.");
+    }
+
+    return {
+      application_id: app.id as string,
+      full_name: app.full_name as string,
+      email: (app.email as string | null) ?? null,
+      phone: (app.phone as string | null) ?? null,
+    };
+  });
+
+// Public: book a new interview time under an existing (reapply) application.
+export const createReapplyBooking = createServerFn({ method: "POST" })
+  .inputValidator(z.object({
+    token: z.string().uuid(),
+    slot_start: z.string().datetime(),
+  }).parse)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: app } = await supabaseAdmin
+      .from("applications")
+      .select("id, booking_token, full_name, phone, email, dm_setter_id")
+      .eq("booking_token", data.token)
+      .maybeSingle();
+    if (!app) throw new Error("Invalid reapply link.");
+    if (!app.email) throw new Error("Application missing email");
+
+    // Re-verify the 5-day window based on the most recent unbooked row.
+    const { data: latestUnbooked } = await supabaseAdmin
+      .from("closer_bookings")
+      .select("id, unbooked_at")
+      .eq("application_id", app.id)
+      .eq("status", "unbooked")
+      .order("unbooked_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!latestUnbooked || !latestUnbooked.unbooked_at) {
+      throw new Error("This reapply link is no longer valid.");
+    }
+    const ageMs = Date.now() - new Date(latestUnbooked.unbooked_at as string).getTime();
+    if (ageMs > 5 * 24 * 60 * 60 * 1000) {
+      throw new Error("This reapply link has expired.");
+    }
+
+    const { slot_minutes: SLOT } = await getB2cSettingsRow();
+    const start = new Date(data.slot_start);
+    const end = new Date(start.getTime() + SLOT * 60_000);
+
+    // Capacity check (same as public booking)
+    const { data: activeClosers } = await supabaseAdmin
+      .from("closers").select("id").eq("active", true);
+    const totalActive = (activeClosers ?? []).length;
+    const { data: same } = await supabaseAdmin
+      .from("closer_bookings").select("id").eq("slot_start", start.toISOString())
+      .in("status", ["pending_assignment", "assigned"]);
+    if ((same ?? []).length >= totalActive) {
+      throw new Error("That time slot just filled up. Please pick another.");
+    }
+
+    const { data: booking, error } = await supabaseAdmin
+      .from("closer_bookings")
+      .insert({
+        application_id: app.id,
+        slot_start: start.toISOString(),
+        slot_end: end.toISOString(),
+        status: "pending_assignment",
+        applicant_name: app.full_name,
+        applicant_email: app.email,
+        applicant_phone: app.phone,
+        dm_setter_id: (app as { dm_setter_id: string | null }).dm_setter_id ?? null,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    // Flip the application status to 'Reapplied' (all other fields preserved).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabaseAdmin.from("applications") as any)
+      .update({ status: "Reapplied" }).eq("id", app.id);
+
+    // Booking-received email
+    try {
+      const { sendTransactional } = await import("@/lib/email/transactional.server");
+      await sendTransactional({
+        templateName: "booking-received",
+        recipientEmail: app.email,
+        idempotencyKey: `booking-received-${booking.id}`,
+        templateData: {
+          name: app.full_name,
+          scheduledAt: start.toISOString(),
+          scheduledLabel: formatScheduledLabel(start.toISOString()),
+          durationMinutes: SLOT,
+        },
+      });
+    } catch (e) {
+      console.warn("[booking-received/reapply] send failed", e);
+    }
+
+    return { id: booking.id };
   });
 
 
