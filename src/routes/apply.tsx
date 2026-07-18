@@ -45,15 +45,24 @@ function toDateKey(d: Date, tz: string) {
 }
 
 function ApplyPage() {
-  const { dm: dmSlug } = Route.useSearch();
+  const { dm: dmSlug, reapply: reapplyToken } = Route.useSearch();
   const pageRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState<Step>("form");
-  const [appInfo, setAppInfo] = useState<{ id: string; token: string } | null>(null);
+  const [step, setStep] = useState<Step>(reapplyToken ? "book" : "form");
+  const [appInfo, setAppInfo] = useState<{ id: string; token: string } | null>(
+    reapplyToken ? { id: "reapply", token: reapplyToken } : null,
+  );
 
   const { data: dmSetter } = useQuery({
     queryKey: ["dm-slug", dmSlug],
     queryFn: () => resolveDmSlug({ data: { slug: dmSlug! } }),
     enabled: !!dmSlug,
+  });
+
+  const reapplyQuery = useQuery({
+    queryKey: ["reapply", reapplyToken],
+    queryFn: () => resolveReapplyToken({ data: { token: reapplyToken! } }),
+    enabled: !!reapplyToken,
+    retry: false,
   });
 
   const [form, setForm] = useState({
