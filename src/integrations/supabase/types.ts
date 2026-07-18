@@ -1807,6 +1807,7 @@ export type Database = {
         | "Follow Up"
         | "Booked"
         | "Not Interested"
+        | "Reapplied"
       lead_status:
         | "New"
         | "Contacted"
@@ -1966,6 +1967,7 @@ export const Constants = {
         "Follow Up",
         "Booked",
         "Not Interested",
+        "Reapplied",
       ],
       lead_status: [
         "New",
