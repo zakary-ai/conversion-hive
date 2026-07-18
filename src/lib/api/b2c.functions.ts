@@ -354,6 +354,25 @@ export const createCloserBooking = createServerFn({ method: "POST" })
       .select("id, slot_start")
       .single();
     if (error) throw new Error(error.message);
+
+    // Fire "thanks for applying" email (best-effort — never blocks booking)
+    try {
+      const { sendTransactional } = await import("@/lib/email/transactional.server");
+      await sendTransactional({
+        templateName: "booking-received",
+        recipientEmail: app.email,
+        idempotencyKey: `booking-received-${booking.id}`,
+        templateData: {
+          name: app.full_name,
+          scheduledAt: start.toISOString(),
+          scheduledLabel: formatScheduledLabel(start.toISOString()),
+          durationMinutes: SLOT,
+        },
+      });
+    } catch (e) {
+      console.warn("[booking-received] send failed", e);
+    }
+
     return { id: booking.id };
   });
 
