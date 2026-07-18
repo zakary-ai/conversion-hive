@@ -366,9 +366,10 @@ function BookingStep({ appId, token, onBooked, mode = "new" }: { appId: string; 
 
 
   const book = useMutation({
-    mutationFn: (iso: string) => createCloserBooking({ data: {
-      application_id: appId, token, slot_start: iso,
-    } }),
+    mutationFn: (iso: string) =>
+      mode === "reapply"
+        ? createReapplyBooking({ data: { token, slot_start: iso } })
+        : createCloserBooking({ data: { application_id: appId, token, slot_start: iso } }),
     onSuccess: () => onBooked(),
     onError: (e: Error) => setErr(e.message),
   });
