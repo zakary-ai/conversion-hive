@@ -386,6 +386,19 @@ function BookingStep({ appId, token, onBooked, mode = "new" }: { appId: string; 
       </div>
 
       <div className="space-y-3">
+        <div className="rounded-xl border border-border bg-card p-3">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Your time zone</Label>
+          <Select value={tz} onValueChange={(v) => { setTz(v); setPicked(null); }}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {tzOptions.map((z) => (
+                <SelectItem key={z} value={z}>{z.replace(/_/g, " ")}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="mt-2 text-xs text-muted-foreground">Times below are shown in this time zone.</p>
+        </div>
+
         <div className="rounded-xl border border-border bg-card p-2 flex justify-center">
           <Calendar
             mode="single"
