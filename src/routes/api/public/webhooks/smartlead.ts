@@ -9,6 +9,7 @@ type ObMessageDirection = Database["public"]["Enums"]["ob_message_direction"];
 type ObActivityType = Database["public"]["Enums"]["ob_activity_type"];
 type ObSuppressionReason = Database["public"]["Enums"]["ob_suppression_reason"];
 type ObMembershipStatus = Database["public"]["Enums"]["ob_membership_status"];
+type ObCampaignChannel = Database["public"]["Enums"]["ob_campaign_channel"];
 
 // Smartlead webhook receiver.
 // Configure in Smartlead → Settings → Webhooks → add this URL with events:
@@ -43,15 +44,6 @@ function asDate(value: unknown): string | null {
 function asString(value: unknown): string | null {
   if (typeof value === "string") return value || null;
   if (typeof value === "number") return String(value);
-  return null;
-}
-
-function asInt(value: unknown): number | null {
-  if (typeof value === "number" && Number.isInteger(value)) return value;
-  if (typeof value === "string") {
-    const n = parseInt(value, 10);
-    if (!isNaN(n)) return n;
-  }
   return null;
 }
 
@@ -185,24 +177,39 @@ function getLinkUrl(payload: SmartleadPayload): string | null {
   return asString(payload.link_url || payload.clicked_link);
 }
 
-function validEnum(value: string | null, allowed: string[]): string | null {
+function parseLeadStatus(value: string | null): ObLeadStatus | null {
   if (!value) return null;
   const normalized = value.toLowerCase().replace(/\s+/g, "_");
-  return allowed.includes(normalized) ? normalized : null;
+  const allowed: ObLeadStatus[] = [
+    "new", "queued", "in_sequence", "replied", "positive", "meeting_booked", "discovery_scheduled",
+    "not_interested", "unsubscribed", "disqualified", "closed",
+  ];
+  return allowed.includes(normalized as ObLeadStatus) ? (normalized as ObLeadStatus) : null;
 }
 
-const LEAD_STATUS_VALUES = [
-  "new", "queued", "in_sequence", "replied", "positive", "meeting_booked", "discovery_scheduled",
-  "not_interested", "unsubscribed", "disqualified", "closed",
-];
+function parseConversationCategory(value: string | null): ObConversationCategory | null {
+  if (!value) return null;
+  const normalized = value.toLowerCase().replace(/\s+/g, "_");
+  const allowed: ObConversationCategory[] = [
+    "uncategorized", "positive", "question", "objection", "info_requested", "out_of_office",
+    "not_interested", "wrong_person", "unsubscribe", "meeting_booked",
+  ];
+  return allowed.includes(normalized as ObConversationCategory) ? (normalized as ObConversationCategory) : null;
+}
 
-const CONVERSATION_CATEGORY_VALUES = [
-  "uncategorized", "positive", "question", "objection", "info_requested", "out_of_office",
-  "not_interested", "wrong_person", "unsubscribe", "meeting_booked",
-];
+function parseCampaignStatus(value: string | null): ObCampaignStatus | null {
+  if (!value) return null;
+  const normalized = value.toLowerCase().replace(/\s+/g, "_");
+  const allowed: ObCampaignStatus[] = ["active", "paused", "completed"];
+  return allowed.includes(normalized as ObCampaignStatus) ? (normalized as ObCampaignStatus) : null;
+}
 
-const CAMPAIGN_STATUS_VALUES = ["active", "paused", "completed"];
-const MEMBERSHIP_STATUS_VALUES = ["pending", "active", "paused", "stopped", "finished"];
+function parseSuppressionReason(value: string | null): ObSuppressionReason | null {
+  if (!value) return null;
+  const normalized = value.toLowerCase().replace(/\s+/g, "_");
+  const allowed: ObSuppressionReason[] = ["unsubscribed", "complained", "bounced", "customer", "do_not_contact", "manual"];
+  return allowed.includes(normalized as ObSuppressionReason) ? (normalized as ObSuppressionReason) : null;
+}
 
 function categoryToLeadStatus(category: string | null): ObLeadStatus | null {
   if (!category) return null;
@@ -221,8 +228,7 @@ function categoryToLeadStatus(category: string | null): ObLeadStatus | null {
 }
 
 function mapReplyCategory(category: string | null): ObConversationCategory {
-  if (!category) return "uncategorized";
-  return (validEnum(category, CONVERSATION_CATEGORY_VALUES) as ObConversationCategory) || "uncategorized";
+  return parseConversationCategory(category) || "uncategorized";
 }
 
 export const Route = createFileRoute("/api/public/webhooks/smartlead")({
@@ -254,6 +260,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
         const campaignId = getCampaignId(payload);
         const messageId = getMessageId(payload);
         const threadId = getThreadId(payload);
+        const now = new Date().toISOString();
 
         // Record the raw event first.
         const { error: insertError } = await supabaseAdmin.from("ob_webhook_events").insert({
@@ -262,7 +269,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
           external_event_id: eventId,
           payload: payload as unknown as never,
           processed: false,
-          received_at: new Date().toISOString(),
+          received_at: now,
         });
         if (insertError) {
           console.error("smartlead webhook event insert failed", insertError);
@@ -291,7 +298,6 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
         }
 
         if (!leadInternalId && eventType.startsWith("lead")) {
-          // Some lead-level events may not include an email; try campaign + lead_id.
           if (campaignId && campaignInternalId) {
             const { data: membership } = await supabaseAdmin
               .from("ob_campaign_memberships")
@@ -303,10 +309,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
           }
         }
 
-        const now = new Date().toISOString();
-
-        // Helper: ensure conversation exists for a lead/channel pair.
-        async function ensureConversation(channel: "email" | "linkedin" | "call", identifier: string | null): Promise<string | null> {
+        async function ensureConversation(channel: ObCampaignChannel, identifier: string | null): Promise<string | null> {
           if (!leadInternalId) return null;
           let conversationId: string | null = null;
           if (identifier) {
@@ -346,8 +349,8 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
 
         async function updateLeadStatus(status: ObLeadStatus, category?: string | null) {
           if (!leadInternalId) return;
-          const update: { status?: ObLeadStatus; updated_at?: string } = { updated_at: now };
-          if (validEnum(status, LEAD_STATUS_VALUES)) update.status = status;
+          const update: { status?: ObLeadStatus; updated_at: string } = { updated_at: now };
+          if (parseLeadStatus(status)) update.status = status;
           await supabaseAdmin.from("ob_leads").update(update).eq("id", leadInternalId);
 
           if (category) {
@@ -355,7 +358,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
             if (conversationId) {
               await supabaseAdmin
                 .from("ob_conversations")
-                .update({ category: mapReplyCategory(category) as ObConversationCategory, updated_at: now })
+                .update({ category: mapReplyCategory(category), updated_at: now })
                 .eq("id", conversationId);
             }
           }
@@ -381,7 +384,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
               if (conversationId) {
                 await supabaseAdmin.from("ob_messages").insert({
                   conversation_id: conversationId,
-                  direction: "outbound",
+                  direction: "outbound" as ObMessageDirection,
                   from_email: senderEmail,
                   to_email: leadEmail,
                   subject: getSubject(payload),
@@ -406,7 +409,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
                   {
                     lead_id: leadInternalId,
                     campaign_id: campaignInternalId,
-                    status: "active",
+                    status: "active" as ObMembershipStatus,
                     smartlead_lead_id: payload.lead_id ? String(payload.lead_id) : null,
                   },
                   { onConflict: "lead_id, campaign_id" },
@@ -434,7 +437,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
               if (conversationId) {
                 await supabaseAdmin.from("ob_messages").insert({
                   conversation_id: conversationId,
-                  direction: "inbound",
+                  direction: "inbound" as ObMessageDirection,
                   from_email: leadEmail,
                   to_email: senderEmail,
                   subject: getSubject(payload),
@@ -464,7 +467,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
               await recordActivity("note", "Lead unsubscribed via email");
               if (leadEmail) {
                 await supabaseAdmin.from("ob_suppression_list").upsert(
-                  { email: leadEmail, reason: "unsubscribed" },
+                  { email: leadEmail, reason: "unsubscribed" as ObSuppressionReason },
                   { onConflict: "email" },
                 );
               }
@@ -484,7 +487,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
               await recordActivity("note", "Email bounced");
               if (leadEmail) {
                 await supabaseAdmin.from("ob_suppression_list").upsert(
-                  { email: leadEmail, reason: "bounced" },
+                  { email: leadEmail, reason: "bounced" as ObSuppressionReason },
                   { onConflict: "email" },
                 );
               }
@@ -492,11 +495,11 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
             }
 
             case "campaign_status_changed": {
-              const status = validEnum(getCampaignStatus(payload), CAMPAIGN_STATUS_VALUES);
+              const status = parseCampaignStatus(getCampaignStatus(payload));
               if (campaignInternalId && status) {
                 await supabaseAdmin
                   .from("ob_campaigns")
-                  .update({ status: status as never, updated_at: now })
+                  .update({ status: status, updated_at: now })
                   .eq("id", campaignInternalId);
               }
               break;
@@ -513,7 +516,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
               if (conversationId) {
                 await supabaseAdmin.from("ob_messages").insert({
                   conversation_id: conversationId,
-                  direction: "inbound",
+                  direction: "inbound" as ObMessageDirection,
                   from_email: leadEmail,
                   to_email: senderEmail,
                   subject: getSubject(payload),
@@ -538,7 +541,6 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
             }
           }
 
-          // Mark processed if we have the webhook event row.
           if (eventId) {
             await supabaseAdmin
               .from("ob_webhook_events")
@@ -556,7 +558,6 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
               .eq("source", "smartlead")
               .eq("external_event_id", eventId);
           }
-          // Still return 200 so Smartlead doesn't retry indefinitely.
           return Response.json({ ok: true, processed: false, error: errorText });
         }
 
