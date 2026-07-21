@@ -395,7 +395,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
                 });
                 await supabaseAdmin
                   .from("ob_conversations")
-                  .update({ last_outbound_at: sentAt, updated_at: now })
+                  .update({ last_outbound_at: sentAt })
                   .eq("id", conversationId);
               }
               if (leadInternalId) {
