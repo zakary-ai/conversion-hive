@@ -1585,7 +1585,7 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
     const todayEndISO = todayEnd.toISOString();
 
     const [clients, leads, contactedToday, commissions, callsBookedToday, callsGoingLiveToday, upcomingCalls] = await Promise.all([
-      supabase.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "client"),
+      supabase.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "dm_setter"),
       supabase.from("leads").select("id", { count: "exact", head: true }),
       supabase.from("leads").select("id", { count: "exact", head: true }).gte("contacted_at", todayStartISO),
       supabase.from("commissions").select("amount"),
