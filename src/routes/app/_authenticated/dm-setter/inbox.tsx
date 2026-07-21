@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ExternalLink, Loader2, Send, XCircle, User } from "lucide-react";
+import { Loader2, Send, XCircle, User } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
