@@ -71,6 +71,7 @@ const dmSetterItems = [
 const dmManagerItems = [
   { title: "Home", url: "/app/dm-manager", icon: LayoutDashboard },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
+  { title: "Inbox", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
