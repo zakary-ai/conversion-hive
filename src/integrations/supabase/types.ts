@@ -2318,6 +2318,7 @@ export type Database = {
         | "dm_setter"
         | "dm_setter_manager"
         | "setter"
+        | "b2b_setter"
       application_credit:
         | "Below 600"
         | "600-650"
@@ -2559,6 +2560,7 @@ export const Constants = {
         "dm_setter",
         "dm_setter_manager",
         "setter",
+        "b2b_setter",
       ],
       application_credit: [
         "Below 600",
