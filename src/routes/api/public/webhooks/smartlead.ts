@@ -344,9 +344,9 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
           return conversationId;
         }
 
-        async function updateLeadStatus(status: string, category?: string | null) {
+        async function updateLeadStatus(status: ObLeadStatus, category?: string | null) {
           if (!leadInternalId) return;
-          const update: { status?: string; updated_at?: string } = { updated_at: now };
+          const update: { status?: ObLeadStatus; updated_at?: string } = { updated_at: now };
           if (validEnum(status, LEAD_STATUS_VALUES)) update.status = status;
           await supabaseAdmin.from("ob_leads").update(update).eq("id", leadInternalId);
 
@@ -355,18 +355,18 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
             if (conversationId) {
               await supabaseAdmin
                 .from("ob_conversations")
-                .update({ category: mapReplyCategory(category), updated_at: now })
+                .update({ category: mapReplyCategory(category) as ObConversationCategory, updated_at: now })
                 .eq("id", conversationId);
             }
           }
         }
 
-        async function recordActivity(type: string, detail: string | null) {
+        async function recordActivity(type: ObActivityType, detail: string | null) {
           if (!leadInternalId) return;
           await supabaseAdmin.from("ob_outreach_activities").insert({
             lead_id: leadInternalId,
             setter_id: null,
-            type: type as never,
+            type,
             detail: detail,
             occurred_at: now,
           });
