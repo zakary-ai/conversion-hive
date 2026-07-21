@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Send, XCircle, Inbox, MessageCircle, HelpCircle, AlertCircle, Calendar, Archive, Mail, Search, ArrowLeft, UserX } from "lucide-react";
+import { Loader2, Send, XCircle, Inbox, MessageCircle, HelpCircle, AlertCircle, Calendar, Archive, Mail, Search, ArrowLeft, UserX, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
