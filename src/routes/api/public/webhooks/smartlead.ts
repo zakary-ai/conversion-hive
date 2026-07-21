@@ -314,25 +314,28 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
           return new Response("Missing event type", { status: 400 });
         }
         const eventId = getEventId(payload);
-        const leadEmail = getLeadEmail(payload);
-        const senderEmail = getSenderEmail(payload);
+        const leadEmail = getLeadEmailForEvent(payload, eventType);
+        const senderEmail = getSenderEmailForEvent(payload, eventType);
         const campaignId = getCampaignId(payload);
         const messageId = getMessageId(payload);
+        const statsId = getStatsId(payload);
         const threadId = getThreadId(payload);
         const now = new Date().toISOString();
 
 
         // Find the matching campaign and lead by external IDs / email.
         let campaignInternalId: string | null = null;
+        let campaignSetterId: string | null = null;
         let leadInternalId: string | null = null;
 
         if (campaignId) {
           const { data: campaign } = await supabaseAdmin
             .from("ob_campaigns")
-            .select("id")
+            .select("id, setter_id")
             .eq("smartlead_campaign_id", campaignId)
             .maybeSingle();
           campaignInternalId = campaign?.id ?? null;
+          campaignSetterId = campaign?.setter_id ?? null;
         }
 
         if (leadEmail) {
@@ -342,6 +345,12 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
             .eq("email", leadEmail)
             .maybeSingle();
           leadInternalId = lead?.id ?? null;
+          if (leadInternalId && !lead?.owner_setter_id && campaignSetterId) {
+            await supabaseAdmin
+              .from("ob_leads")
+              .update({ owner_setter_id: campaignSetterId, updated_at: now })
+              .eq("id", leadInternalId);
+          }
         }
 
         if (!leadInternalId && eventType.startsWith("lead")) {
@@ -354,6 +363,36 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
               .maybeSingle();
             if (membership) leadInternalId = membership.lead_id;
           }
+        }
+
+        if (!leadInternalId && leadEmail && campaignSetterId) {
+          const explicitName = splitName(payload.lead_name || `${asString(payload.first_name) || ""} ${asString(payload.last_name) || ""}`);
+          const fallbackName = splitName(payload.to_name);
+          const { data: createdLead } = await supabaseAdmin
+            .from("ob_leads")
+            .insert({
+              first_name: explicitName.firstName || fallbackName.firstName,
+              last_name: explicitName.lastName || fallbackName.lastName,
+              email: leadEmail,
+              status: "replied" as ObLeadStatus,
+              owner_setter_id: campaignSetterId,
+              source: "smartlead_webhook",
+            })
+            .select("id")
+            .single();
+          leadInternalId = createdLead?.id ?? null;
+        }
+
+        if (campaignInternalId && leadInternalId) {
+          await supabaseAdmin.from("ob_campaign_memberships").upsert(
+            {
+              lead_id: leadInternalId,
+              campaign_id: campaignInternalId,
+              status: "active" as ObMembershipStatus,
+              smartlead_lead_id: payload.lead_id ? String(payload.lead_id) : asString(payload.leadMap),
+            },
+            { onConflict: "lead_id, campaign_id" },
+          );
         }
 
         async function ensureConversation(channel: ObCampaignChannel, identifier: string | null): Promise<string | null> {
@@ -439,6 +478,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
                   body_text: getBodyText(payload),
                   sent_at: sentAt,
                   smartlead_message_id: messageId,
+                  smartlead_stats_id: statsId,
                 });
                 await supabaseAdmin
                   .from("ob_conversations")
@@ -492,6 +532,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
                   body_text: getBodyText(payload),
                   sent_at: receivedAt,
                   smartlead_message_id: messageId,
+                  smartlead_stats_id: statsId,
                 });
                 await supabaseAdmin
                   .from("ob_conversations")
@@ -570,6 +611,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
                   body_text: getBodyText(payload),
                   sent_at: receivedAt,
                   smartlead_message_id: messageId,
+                  smartlead_stats_id: statsId,
                 });
                 await supabaseAdmin
                   .from("ob_conversations")
