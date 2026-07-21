@@ -143,11 +143,11 @@ function CreateDialog({ open, onOpenChange, setters, onDone }: any) {
 function AddLeadsDialog({ campaignId, onClose, onDone }: any) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const { data, isLoading } = useSuspenseQuery(queryOptions({
-    queryKey: ["ob-leads-for-campaign", search],
+  const { data, isLoading } = useQuery({
+    queryKey: ["ob-leads-for-campaign", search, campaignId],
     queryFn: () => obListLeads({ data: { page: 0, pageSize: 100, search, status: "new", ownerSetterId: "all", emailStatus: "all", niche: "" } }),
     enabled: !!campaignId,
-  } as any));
+  });
 
   const m = useMutation({
     mutationFn: () => obAddLeadsToCampaign({ data: { campaignId: campaignId!, leadIds: Array.from(selected) } }),
