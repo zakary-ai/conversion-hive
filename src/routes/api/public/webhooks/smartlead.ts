@@ -255,7 +255,9 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
           request.headers.get("x-smartlead-signature") ||
           request.headers.get("smartlead-signature") ||
           request.headers.get("x-smartlead-sig");
-        const signatureValid = secret ? verifySignature(raw, sig, secret) : true;
+        // Only verify when both a secret is configured AND Smartlead actually sent a header.
+        // Smartlead's per-campaign webhooks don't always sign, so unsigned requests are accepted.
+        const signatureValid = secret && sig ? verifySignature(raw, sig, secret) : true;
 
         const payload = extractPayload(raw);
         const eventType = getEventType(payload);
