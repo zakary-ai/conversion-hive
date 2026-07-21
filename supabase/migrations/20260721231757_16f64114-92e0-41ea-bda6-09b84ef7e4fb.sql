@@ -1,0 +1,3 @@
+UPDATE public.ob_leads SET email='zakydeleo11@gmail.com', first_name='Zakary', last_name='DeLeo' WHERE email='alex@deleohq.com';
+UPDATE public.ob_messages SET from_email='zakydeleo11@gmail.com', to_email='alex@deleohq.com' WHERE direction='inbound' AND from_email='alex@deleohq.com';
+UPDATE public.ob_messages SET from_email='alex@deleohq.com', to_email='zakydeleo11@gmail.com' WHERE direction='outbound' AND from_email='zakydeleo11@gmail.com';

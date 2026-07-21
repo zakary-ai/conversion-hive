@@ -138,12 +138,18 @@ function getEventType(payload: SmartleadPayload): string | null {
 }
 
 function getLeadEmail(payload: SmartleadPayload): string | null {
-  return normalizeEmail(payload.lead_email || payload.email || payload.reply_email || payload.recipient_email || payload.to_email);
+  return normalizeEmail(
+    (payload as any).sl_lead_email || payload.lead_email || payload.email || payload.reply_email || payload.recipient_email || payload.to_email,
+  );
 }
 
 function getLeadEmailForEvent(payload: SmartleadPayload, eventType: string): string | null {
   if (["email_reply", "manual_reply_sent", "untracked_replies"].includes(eventType)) {
-    return normalizeEmail(payload.lead_email || payload.email || payload.reply_email || payload.from_email || payload.recipient_email || payload.to_email);
+    // For reply events, Smartlead's payload is oriented from OUR mailbox's POV:
+    //   from_email = our mailbox, to_email/sl_lead_email = the lead.
+    return normalizeEmail(
+      (payload as any).sl_lead_email || payload.lead_email || payload.email || payload.reply_email || payload.to_email || payload.recipient_email,
+    );
   }
   return getLeadEmail(payload);
 }
@@ -154,10 +160,12 @@ function getSenderEmail(payload: SmartleadPayload): string | null {
 
 function getSenderEmailForEvent(payload: SmartleadPayload, eventType: string): string | null {
   if (["email_reply", "manual_reply_sent", "untracked_replies"].includes(eventType)) {
-    return normalizeEmail(payload.to_email || payload.sender_email || payload.recipient_email);
+    // Our mailbox = from_email on Smartlead reply payloads.
+    return normalizeEmail(payload.from_email || payload.sender_email);
   }
   return getSenderEmail(payload);
 }
+
 
 function getCampaignId(payload: SmartleadPayload): string | null {
   const id = payload.campaign_id;
@@ -176,8 +184,9 @@ function getStatsId(payload: SmartleadPayload): string | null {
 }
 
 function getThreadId(payload: SmartleadPayload): string | null {
-  return asString(payload.thread_id || payload.conversation_id);
+  return asString((payload as any).stats_thread_id || (payload as any).sl_email_lead_map_id || payload.thread_id || payload.conversation_id);
 }
+
 
 function getSubject(payload: SmartleadPayload): string | null {
   return asString(payload.subject || payload.email_subject);
