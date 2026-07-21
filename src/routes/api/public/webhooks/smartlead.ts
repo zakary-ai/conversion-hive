@@ -184,8 +184,9 @@ function getStatsId(payload: SmartleadPayload): string | null {
 }
 
 function getThreadId(payload: SmartleadPayload): string | null {
-  return asString(payload.thread_id || payload.conversation_id);
+  return asString((payload as any).stats_thread_id || (payload as any).sl_email_lead_map_id || payload.thread_id || payload.conversation_id);
 }
+
 
 function getSubject(payload: SmartleadPayload): string | null {
   return asString(payload.subject || payload.email_subject);
