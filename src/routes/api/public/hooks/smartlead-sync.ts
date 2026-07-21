@@ -83,17 +83,26 @@ async function syncCampaign(
       if (!rows.length) break;
 
       for (const row of rows) {
-        // Try to detect a "has reply" flag / last reply time
+        // Try to detect a "has reply" flag / last reply time.
+        // Smartlead payloads vary: sometimes fields live on the row, sometimes
+        // on row.lead, sometimes on row.campaign_lead_map.
         const lead = row.lead || row;
-        const lastReplyRaw = row.last_reply_time || row.reply_time || lead?.last_reply_time || null;
-        const replyCount = Number(row.reply_count ?? row.replies ?? lead?.reply_count ?? 0);
-        const hasReply = replyCount > 0 || !!lastReplyRaw;
+        const clm = row.campaign_lead_map || row.campaign_lead || {};
+        const statusStr = String(row.status || clm.status || lead?.status || "").toUpperCase();
+        const lastReplyRaw =
+          row.last_reply_time || row.reply_time || row.last_reply_time_utc ||
+          clm.last_reply_time || clm.last_reply_time_utc ||
+          lead?.last_reply_time || lead?.last_reply_time_utc || null;
+        const replyCount = Number(
+          row.reply_count ?? row.replies ?? clm.reply_count ?? lead?.reply_count ?? 0,
+        );
+        const hasReply = replyCount > 0 || !!lastReplyRaw || statusStr.includes("REPLIED") || statusStr === "REPLY";
         if (!hasReply) continue;
         const lastReply = asDate(lastReplyRaw);
         // Skip if we've already synced past this reply time.
         if (lastReply && lastReply < lookback) continue;
 
-        const slLeadId = asString(row.lead_id ?? row.id ?? lead?.id);
+        const slLeadId = asString(row.lead_id ?? row.id ?? clm.lead_id ?? lead?.id);
         if (!slLeadId) continue;
         const leadEmail = normalizeEmail(row.email ?? lead?.email);
         if (!leadEmail) continue;
