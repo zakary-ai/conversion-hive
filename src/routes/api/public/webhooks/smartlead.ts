@@ -260,7 +260,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
           source: "smartlead",
           event_type: eventType,
           external_event_id: eventId,
-          payload: payload as Record<string, unknown>,
+          payload: payload as unknown as Record<string, unknown>,
           processed: false,
           received_at: new Date().toISOString(),
         });
@@ -292,7 +292,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
 
         if (!leadInternalId && eventType.startsWith("lead")) {
           // Some lead-level events may not include an email; try campaign + lead_id.
-          if (campaignId) {
+          if (campaignId && campaignInternalId) {
             const { data: membership } = await supabaseAdmin
               .from("ob_campaign_memberships")
               .select("lead_id")
