@@ -538,7 +538,6 @@ export const obSendReply = createServerFn({ method: "POST" })
           `/campaigns/${smartleadCampaignId}/reply-email-thread`,
           { method: "POST", body: JSON.stringify({
             email_stats_id: last.smartlead_stats_id,
-            email_body: data.bodyHtml,
             reply_message_id: last.smartlead_message_id ?? undefined,
             reply_email_time: new Date().toISOString(),
             reply_email_body: data.bodyHtml,
