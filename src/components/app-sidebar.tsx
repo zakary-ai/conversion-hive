@@ -14,6 +14,7 @@ import logo from "@/assets/logo.png";
 const clientItems = [
   { title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard },
   { title: "Leads", url: "/app/leads", icon: Briefcase },
+  { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
@@ -60,7 +61,7 @@ const closerItems = [
 const dmSetterItems = [
   { title: "Home", url: "/app/dm-setter", icon: LayoutDashboard },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
-  { title: "Inbox", url: "/app/dm-setter/inbox", icon: Inbox },
+  { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
@@ -71,7 +72,7 @@ const dmSetterItems = [
 const dmManagerItems = [
   { title: "Home", url: "/app/dm-manager", icon: LayoutDashboard },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
-  { title: "Inbox", url: "/app/dm-setter/inbox", icon: Inbox },
+  { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
