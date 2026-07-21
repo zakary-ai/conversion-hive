@@ -43,7 +43,7 @@ type SyncSummary = {
 };
 
 async function syncCampaign(
-  supabaseAdmin: ReturnType<typeof import("@supabase/supabase-js").createClient>,
+  supabaseAdmin: any,
   apiKey: string,
   campaign: {
     id: string;
