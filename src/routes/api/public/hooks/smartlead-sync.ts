@@ -259,6 +259,19 @@ async function syncCampaign(
 export const Route = createFileRoute("/api/public/hooks/smartlead-sync")({
   server: {
     handlers: {
+      GET: async ({ request }) => {
+        const apiKey = process.env.SMARTLEAD_API_KEY;
+        if (!apiKey) return new Response("no key", { status: 500 });
+        const url = new URL(request.url);
+        const cid = url.searchParams.get("campaign") || "3700632";
+        const leadId = url.searchParams.get("lead");
+        if (leadId) {
+          const r = await fetch(`${SMARTLEAD_BASE}/leads/${encodeURIComponent(leadId)}/message-history?campaign_id=${cid}&api_key=${apiKey}`);
+          return new Response(await r.text(), { headers: { "Content-Type": "application/json" } });
+        }
+        const r = await fetch(`${SMARTLEAD_BASE}/campaigns/${cid}/leads?api_key=${apiKey}&limit=3&offset=0`);
+        return new Response(await r.text(), { headers: { "Content-Type": "application/json" } });
+      },
       POST: async () => {
         const apiKey = process.env.SMARTLEAD_API_KEY;
         if (!apiKey) {
