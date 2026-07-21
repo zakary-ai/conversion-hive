@@ -358,7 +358,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
             if (conversationId) {
               await supabaseAdmin
                 .from("ob_conversations")
-                .update({ category: mapReplyCategory(category), updated_at: now })
+                .update({ category: mapReplyCategory(category) })
                 .eq("id", conversationId);
             }
           }
