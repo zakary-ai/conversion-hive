@@ -279,9 +279,6 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
         if (!eventType) {
           return new Response("Missing event type", { status: 400 });
         }
-
-
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const eventId = getEventId(payload);
         const leadEmail = getLeadEmail(payload);
         const senderEmail = getSenderEmail(payload);
@@ -290,18 +287,6 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
         const threadId = getThreadId(payload);
         const now = new Date().toISOString();
 
-        // Record the raw event first.
-        const { error: insertError } = await supabaseAdmin.from("ob_webhook_events").insert({
-          source: "smartlead",
-          event_type: eventType,
-          external_event_id: eventId,
-          payload: payload as unknown as never,
-          processed: false,
-          received_at: now,
-        });
-        if (insertError) {
-          console.error("smartlead webhook event insert failed", insertError);
-        }
 
         // Find the matching campaign and lead by external IDs / email.
         let campaignInternalId: string | null = null;
