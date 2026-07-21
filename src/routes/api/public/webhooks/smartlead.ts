@@ -1,5 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
+import type { Database } from "@/integrations/supabase/types";
+
+type ObLeadStatus = Database["public"]["Enums"]["ob_lead_status"];
+type ObConversationCategory = Database["public"]["Enums"]["ob_conversation_category"];
+type ObCampaignStatus = Database["public"]["Enums"]["ob_campaign_status"];
+type ObMessageDirection = Database["public"]["Enums"]["ob_message_direction"];
+type ObActivityType = Database["public"]["Enums"]["ob_activity_type"];
+type ObSuppressionReason = Database["public"]["Enums"]["ob_suppression_reason"];
+type ObMembershipStatus = Database["public"]["Enums"]["ob_membership_status"];
 
 // Smartlead webhook receiver.
 // Configure in Smartlead → Settings → Webhooks → add this URL with events:
