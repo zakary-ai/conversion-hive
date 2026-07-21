@@ -452,7 +452,6 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
                     last_inbound_at: receivedAt,
                     needs_response: true,
                     category: mapReplyCategory(category),
-                    updated_at: now,
                   })
                   .eq("id", conversationId);
               }
