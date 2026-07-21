@@ -251,23 +251,34 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
       POST: async ({ request }) => {
         const raw = await request.text();
         const secret = process.env.SMARTLEAD_WEBHOOK_SECRET;
-        if (secret) {
-          const sig =
-            request.headers.get("x-smartlead-signature") ||
-            request.headers.get("smartlead-signature") ||
-            request.headers.get("x-smartlead-sig");
-          if (!verifySignature(raw, sig, secret)) {
-            return new Response("Invalid signature", { status: 401 });
-          }
-        }
+        const sig =
+          request.headers.get("x-smartlead-signature") ||
+          request.headers.get("smartlead-signature") ||
+          request.headers.get("x-smartlead-sig");
+        const signatureValid = secret ? verifySignature(raw, sig, secret) : true;
 
         const payload = extractPayload(raw);
         const eventType = getEventType(payload);
+
+        // Always log the incoming request for debugging — even bad signatures / unknown events.
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const debugNow = new Date().toISOString();
+        await supabaseAdmin.from("ob_webhook_events").insert({
+          source: "smartlead",
+          event_type: eventType || "unknown",
+          external_event_id: getEventId(payload),
+          payload: payload as unknown as never,
+          processed: false,
+          error: !signatureValid ? `invalid_signature (header=${sig ? "present" : "missing"})` : (!eventType ? "missing_event_type" : null),
+          received_at: debugNow,
+        });
+
+        if (!signatureValid) {
+          return new Response("Invalid signature", { status: 401 });
+        }
         if (!eventType) {
           return new Response("Missing event type", { status: 400 });
         }
-
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const eventId = getEventId(payload);
         const leadEmail = getLeadEmail(payload);
         const senderEmail = getSenderEmail(payload);
@@ -276,18 +287,6 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
         const threadId = getThreadId(payload);
         const now = new Date().toISOString();
 
-        // Record the raw event first.
-        const { error: insertError } = await supabaseAdmin.from("ob_webhook_events").insert({
-          source: "smartlead",
-          event_type: eventType,
-          external_event_id: eventId,
-          payload: payload as unknown as never,
-          processed: false,
-          received_at: now,
-        });
-        if (insertError) {
-          console.error("smartlead webhook event insert failed", insertError);
-        }
 
         // Find the matching campaign and lead by external IDs / email.
         let campaignInternalId: string | null = null;
