@@ -14,6 +14,7 @@ import logo from "@/assets/logo.png";
 const clientItems = [
   { title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard },
   { title: "Leads", url: "/app/leads", icon: Briefcase },
+  { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
