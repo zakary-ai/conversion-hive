@@ -1707,7 +1707,7 @@ export const listClients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const { data: clientRoles } = await supabase.from("user_roles").select("user_id").eq("role", "client");
+    const { data: clientRoles } = await supabase.from("user_roles").select("user_id").eq("role", "b2b_setter");
     const ids = (clientRoles ?? []).map((r) => r.user_id);
     if (ids.length === 0) return [];
     const { data: profiles } = await supabase.from("profiles").select("*").in("user_id", ids);
