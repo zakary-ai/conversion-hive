@@ -57,7 +57,7 @@ export const listScraperSetters = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "client");
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "dm_setter");
     const ids = (roles ?? []).map((r) => r.user_id as string);
     if (ids.length === 0) return [];
     const { data: profiles } = await supabaseAdmin

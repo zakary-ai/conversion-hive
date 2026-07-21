@@ -12,7 +12,7 @@ function normalizeE164(input: string): string {
 }
 
 async function assertAdmin(
-  supabase: { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" | "client" }) => unknown },
+  supabase: { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" | "b2b_setter" }) => unknown },
   userId: string,
 ) {
   const res = await (supabase.rpc("has_role", { _user_id: userId, _role: "admin" }) as Promise<{ data: boolean | null }>);

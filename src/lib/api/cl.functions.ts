@@ -35,7 +35,7 @@ export const getMe = createServerFn({ method: "GET" })
       profile,
       mustChangePassword: !!profile?.must_change_password,
       isAdmin: roleSet.has("admin"),
-      isClient: roleSet.has("client"),
+      isClient: roleSet.has("b2b_setter"),
       isCloser: roleSet.has("closer"),
       isDmSetter: roleSet.has("dm_setter"),
       isDmSetterManager: roleSet.has("dm_setter_manager"),
@@ -1395,13 +1395,13 @@ export const getAppointmentSetter = createServerFn({ method: "GET" })
     } : null;
   });
 
-// Admin: list all users with the setter (client) role, for attaching to appointments.
+// Admin: list all DM setters (B2C) for attaching to appointments.
 export const listSetters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
     if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
-    const { data: clientRoles } = await context.supabase.from("user_roles").select("user_id").eq("role", "client");
+    const { data: clientRoles } = await context.supabase.from("user_roles").select("user_id").eq("role", "dm_setter");
     const ids = (clientRoles ?? []).map((r: { user_id: string }) => r.user_id);
     if (ids.length === 0) return [];
     const { data: profs } = await context.supabase
@@ -1585,7 +1585,7 @@ export const getAdminDashboard = createServerFn({ method: "GET" })
     const todayEndISO = todayEnd.toISOString();
 
     const [clients, leads, contactedToday, commissions, callsBookedToday, callsGoingLiveToday, upcomingCalls] = await Promise.all([
-      supabase.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "client"),
+      supabase.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "dm_setter"),
       supabase.from("leads").select("id", { count: "exact", head: true }),
       supabase.from("leads").select("id", { count: "exact", head: true }).gte("contacted_at", todayStartISO),
       supabase.from("commissions").select("amount"),
@@ -1707,7 +1707,7 @@ export const listClients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const { data: clientRoles } = await supabase.from("user_roles").select("user_id").eq("role", "client");
+    const { data: clientRoles } = await supabase.from("user_roles").select("user_id").eq("role", "b2b_setter");
     const ids = (clientRoles ?? []).map((r) => r.user_id);
     if (ids.length === 0) return [];
     const { data: profiles } = await supabase.from("profiles").select("*").in("user_id", ids);
@@ -1850,6 +1850,12 @@ export const inviteClient = createServerFn({ method: "POST" })
       company_name: data.company_name ?? "",
       must_change_password: true,
     }).eq("user_id", newUserId);
+
+    // Ensure the new user carries the b2b_setter role (overrides the default 'client' fallback from handle_new_user).
+    await supabaseAdmin.from("user_roles")
+      .upsert({ user_id: newUserId, role: "b2b_setter" }, { onConflict: "user_id,role" });
+    await supabaseAdmin.from("user_roles")
+      .delete().eq("user_id", newUserId).eq("role", "client");
 
     // Seed the new setter's account with leads from the unassigned pool
     // up to their daily quota (default 75) so they have work waiting on first sign-in.
