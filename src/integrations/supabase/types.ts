@@ -1362,6 +1362,521 @@ export type Database = {
         }
         Relationships: []
       }
+      ob_appointments: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          outcome_notes: string | null
+          scheduled_at: string
+          setter_id: string | null
+          status: Database["public"]["Enums"]["ob_appointment_status"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          outcome_notes?: string | null
+          scheduled_at: string
+          setter_id?: string | null
+          status?: Database["public"]["Enums"]["ob_appointment_status"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          outcome_notes?: string | null
+          scheduled_at?: string
+          setter_id?: string | null
+          status?: Database["public"]["Enums"]["ob_appointment_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ob_appointments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "ob_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ob_call_attempts: {
+        Row: {
+          callback_at: string | null
+          created_at: string
+          id: string
+          lead_id: string
+          notes: string | null
+          outcome: Database["public"]["Enums"]["ob_call_outcome"]
+          setter_id: string | null
+        }
+        Insert: {
+          callback_at?: string | null
+          created_at?: string
+          id?: string
+          lead_id: string
+          notes?: string | null
+          outcome: Database["public"]["Enums"]["ob_call_outcome"]
+          setter_id?: string | null
+        }
+        Update: {
+          callback_at?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          outcome?: Database["public"]["Enums"]["ob_call_outcome"]
+          setter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ob_call_attempts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "ob_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ob_campaign_memberships: {
+        Row: {
+          added_at: string
+          campaign_id: string
+          id: string
+          lead_id: string
+          smartlead_lead_id: string | null
+          status: Database["public"]["Enums"]["ob_membership_status"]
+        }
+        Insert: {
+          added_at?: string
+          campaign_id: string
+          id?: string
+          lead_id: string
+          smartlead_lead_id?: string | null
+          status?: Database["public"]["Enums"]["ob_membership_status"]
+        }
+        Update: {
+          added_at?: string
+          campaign_id?: string
+          id?: string
+          lead_id?: string
+          smartlead_lead_id?: string | null
+          status?: Database["public"]["Enums"]["ob_membership_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ob_campaign_memberships_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ob_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ob_campaign_memberships_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "ob_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ob_campaigns: {
+        Row: {
+          channel: Database["public"]["Enums"]["ob_campaign_channel"]
+          created_at: string
+          id: string
+          name: string
+          setter_id: string | null
+          smartlead_campaign_id: string | null
+          status: Database["public"]["Enums"]["ob_campaign_status"]
+          updated_at: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["ob_campaign_channel"]
+          created_at?: string
+          id?: string
+          name: string
+          setter_id?: string | null
+          smartlead_campaign_id?: string | null
+          status?: Database["public"]["Enums"]["ob_campaign_status"]
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["ob_campaign_channel"]
+          created_at?: string
+          id?: string
+          name?: string
+          setter_id?: string | null
+          smartlead_campaign_id?: string | null
+          status?: Database["public"]["Enums"]["ob_campaign_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ob_companies: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          domain: string | null
+          google_maps_url: string | null
+          google_rating: number | null
+          google_review_count: number | null
+          id: string
+          name: string
+          niche: string | null
+          normalized_name: string | null
+          owner_setter_id: string | null
+          phone: string | null
+          selection_reason: string | null
+          source: string | null
+          state: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          domain?: string | null
+          google_maps_url?: string | null
+          google_rating?: number | null
+          google_review_count?: number | null
+          id?: string
+          name: string
+          niche?: string | null
+          normalized_name?: string | null
+          owner_setter_id?: string | null
+          phone?: string | null
+          selection_reason?: string | null
+          source?: string | null
+          state?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          domain?: string | null
+          google_maps_url?: string | null
+          google_rating?: number | null
+          google_review_count?: number | null
+          id?: string
+          name?: string
+          niche?: string | null
+          normalized_name?: string | null
+          owner_setter_id?: string | null
+          phone?: string | null
+          selection_reason?: string | null
+          source?: string | null
+          state?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      ob_conversations: {
+        Row: {
+          category: Database["public"]["Enums"]["ob_conversation_category"]
+          channel: Database["public"]["Enums"]["ob_campaign_channel"]
+          created_at: string
+          id: string
+          last_inbound_at: string | null
+          last_outbound_at: string | null
+          lead_id: string
+          needs_response: boolean
+          smartlead_thread_identifier: string | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["ob_conversation_category"]
+          channel?: Database["public"]["Enums"]["ob_campaign_channel"]
+          created_at?: string
+          id?: string
+          last_inbound_at?: string | null
+          last_outbound_at?: string | null
+          lead_id: string
+          needs_response?: boolean
+          smartlead_thread_identifier?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["ob_conversation_category"]
+          channel?: Database["public"]["Enums"]["ob_campaign_channel"]
+          created_at?: string
+          id?: string
+          last_inbound_at?: string | null
+          last_outbound_at?: string | null
+          lead_id?: string
+          needs_response?: boolean
+          smartlead_thread_identifier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ob_conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "ob_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ob_leads: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          email: string | null
+          email_status: Database["public"]["Enums"]["ob_email_status"]
+          first_name: string | null
+          id: string
+          last_name: string | null
+          lead_score: number | null
+          linkedin_url: string | null
+          owner_setter_id: string | null
+          phone: string | null
+          selection_reason: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["ob_lead_status"]
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          email?: string | null
+          email_status?: Database["public"]["Enums"]["ob_email_status"]
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          lead_score?: number | null
+          linkedin_url?: string | null
+          owner_setter_id?: string | null
+          phone?: string | null
+          selection_reason?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["ob_lead_status"]
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          email?: string | null
+          email_status?: Database["public"]["Enums"]["ob_email_status"]
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          lead_score?: number | null
+          linkedin_url?: string | null
+          owner_setter_id?: string | null
+          phone?: string | null
+          selection_reason?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["ob_lead_status"]
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ob_leads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ob_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ob_linkedin_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          lead_id: string
+          setter_id: string | null
+          status: Database["public"]["Enums"]["ob_linkedin_task_status"]
+          suggested_message: string | null
+          task_type: Database["public"]["Enums"]["ob_linkedin_task_type"]
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          lead_id: string
+          setter_id?: string | null
+          status?: Database["public"]["Enums"]["ob_linkedin_task_status"]
+          suggested_message?: string | null
+          task_type: Database["public"]["Enums"]["ob_linkedin_task_type"]
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          lead_id?: string
+          setter_id?: string | null
+          status?: Database["public"]["Enums"]["ob_linkedin_task_status"]
+          suggested_message?: string | null
+          task_type?: Database["public"]["Enums"]["ob_linkedin_task_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ob_linkedin_tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "ob_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ob_messages: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          conversation_id: string
+          created_at: string
+          direction: Database["public"]["Enums"]["ob_message_direction"]
+          from_email: string | null
+          id: string
+          sent_at: string | null
+          smartlead_message_id: string | null
+          smartlead_stats_id: string | null
+          subject: string | null
+          to_email: string | null
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          conversation_id: string
+          created_at?: string
+          direction: Database["public"]["Enums"]["ob_message_direction"]
+          from_email?: string | null
+          id?: string
+          sent_at?: string | null
+          smartlead_message_id?: string | null
+          smartlead_stats_id?: string | null
+          subject?: string | null
+          to_email?: string | null
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          conversation_id?: string
+          created_at?: string
+          direction?: Database["public"]["Enums"]["ob_message_direction"]
+          from_email?: string | null
+          id?: string
+          sent_at?: string | null
+          smartlead_message_id?: string | null
+          smartlead_stats_id?: string | null
+          subject?: string | null
+          to_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ob_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ob_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ob_outreach_activities: {
+        Row: {
+          detail: string | null
+          id: string
+          lead_id: string
+          occurred_at: string
+          setter_id: string | null
+          type: Database["public"]["Enums"]["ob_activity_type"]
+        }
+        Insert: {
+          detail?: string | null
+          id?: string
+          lead_id: string
+          occurred_at?: string
+          setter_id?: string | null
+          type: Database["public"]["Enums"]["ob_activity_type"]
+        }
+        Update: {
+          detail?: string | null
+          id?: string
+          lead_id?: string
+          occurred_at?: string
+          setter_id?: string | null
+          type?: Database["public"]["Enums"]["ob_activity_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ob_outreach_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "ob_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ob_suppression_list: {
+        Row: {
+          created_at: string
+          domain: string | null
+          email: string | null
+          id: string
+          linkedin_url: string | null
+          phone: string | null
+          reason: Database["public"]["Enums"]["ob_suppression_reason"]
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          email?: string | null
+          id?: string
+          linkedin_url?: string | null
+          phone?: string | null
+          reason?: Database["public"]["Enums"]["ob_suppression_reason"]
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          email?: string | null
+          id?: string
+          linkedin_url?: string | null
+          phone?: string | null
+          reason?: Database["public"]["Enums"]["ob_suppression_reason"]
+        }
+        Relationships: []
+      }
+      ob_webhook_events: {
+        Row: {
+          error: string | null
+          event_type: string | null
+          external_event_id: string | null
+          id: string
+          payload: Json | null
+          processed: boolean
+          received_at: string
+          source: string
+        }
+        Insert: {
+          error?: string | null
+          event_type?: string | null
+          external_event_id?: string | null
+          id?: string
+          payload?: Json | null
+          processed?: boolean
+          received_at?: string
+          source?: string
+        }
+        Update: {
+          error?: string | null
+          event_type?: string | null
+          external_event_id?: string | null
+          id?: string
+          payload?: Json | null
+          processed?: boolean
+          received_at?: string
+          source?: string
+        }
+        Relationships: []
+      }
       openphone_number_pool: {
         Row: {
           assigned_at: string | null
@@ -1748,7 +2263,16 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ob_lead_timeline: {
+        Row: {
+          kind: string | null
+          lead_id: string | null
+          meta: Json | null
+          ref_id: string | null
+          ts: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_email: {
@@ -1793,6 +2317,7 @@ export type Database = {
         | "closer"
         | "dm_setter"
         | "dm_setter_manager"
+        | "setter"
       application_credit:
         | "Below 600"
         | "600-650"
@@ -1822,6 +2347,82 @@ export type Database = {
         | "Lost"
         | "No Show"
         | "Disqualified"
+      ob_activity_type:
+        | "email_sent"
+        | "email_reply"
+        | "call_attempt"
+        | "call_connected"
+        | "linkedin_connect_sent"
+        | "linkedin_connect_accepted"
+        | "linkedin_message"
+        | "note"
+        | "status_change"
+      ob_appointment_status:
+        | "scheduled"
+        | "attended"
+        | "no_show"
+        | "rescheduled"
+        | "cancelled"
+      ob_call_outcome:
+        | "no_answer"
+        | "voicemail"
+        | "connected"
+        | "booked"
+        | "bad_number"
+        | "callback_scheduled"
+      ob_campaign_channel: "email" | "linkedin" | "call"
+      ob_campaign_status: "active" | "paused" | "completed"
+      ob_conversation_category:
+        | "uncategorized"
+        | "positive"
+        | "question"
+        | "objection"
+        | "info_requested"
+        | "out_of_office"
+        | "not_interested"
+        | "wrong_person"
+        | "unsubscribe"
+        | "meeting_booked"
+      ob_email_status:
+        | "unverified"
+        | "valid"
+        | "invalid"
+        | "catch_all"
+        | "unknown"
+        | "role_based"
+      ob_lead_status:
+        | "new"
+        | "queued"
+        | "in_sequence"
+        | "replied"
+        | "positive"
+        | "meeting_booked"
+        | "discovery_scheduled"
+        | "not_interested"
+        | "unsubscribed"
+        | "disqualified"
+        | "closed"
+      ob_linkedin_task_status: "pending" | "done" | "skipped"
+      ob_linkedin_task_type:
+        | "send_connection"
+        | "review_accepted"
+        | "send_first_message"
+        | "follow_up"
+        | "book_call"
+      ob_membership_status:
+        | "pending"
+        | "active"
+        | "paused"
+        | "stopped"
+        | "finished"
+      ob_message_direction: "inbound" | "outbound"
+      ob_suppression_reason:
+        | "unsubscribed"
+        | "complained"
+        | "bounced"
+        | "customer"
+        | "do_not_contact"
+        | "manual"
       support_ticket_category: "feedback" | "suggestion" | "issue" | "other"
       support_ticket_status: "open" | "awaiting_user" | "resolved"
     }
@@ -1951,7 +2552,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "client", "closer", "dm_setter", "dm_setter_manager"],
+      app_role: [
+        "admin",
+        "client",
+        "closer",
+        "dm_setter",
+        "dm_setter_manager",
+        "setter",
+      ],
       application_credit: [
         "Below 600",
         "600-650",
@@ -1983,6 +2591,91 @@ export const Constants = {
         "Lost",
         "No Show",
         "Disqualified",
+      ],
+      ob_activity_type: [
+        "email_sent",
+        "email_reply",
+        "call_attempt",
+        "call_connected",
+        "linkedin_connect_sent",
+        "linkedin_connect_accepted",
+        "linkedin_message",
+        "note",
+        "status_change",
+      ],
+      ob_appointment_status: [
+        "scheduled",
+        "attended",
+        "no_show",
+        "rescheduled",
+        "cancelled",
+      ],
+      ob_call_outcome: [
+        "no_answer",
+        "voicemail",
+        "connected",
+        "booked",
+        "bad_number",
+        "callback_scheduled",
+      ],
+      ob_campaign_channel: ["email", "linkedin", "call"],
+      ob_campaign_status: ["active", "paused", "completed"],
+      ob_conversation_category: [
+        "uncategorized",
+        "positive",
+        "question",
+        "objection",
+        "info_requested",
+        "out_of_office",
+        "not_interested",
+        "wrong_person",
+        "unsubscribe",
+        "meeting_booked",
+      ],
+      ob_email_status: [
+        "unverified",
+        "valid",
+        "invalid",
+        "catch_all",
+        "unknown",
+        "role_based",
+      ],
+      ob_lead_status: [
+        "new",
+        "queued",
+        "in_sequence",
+        "replied",
+        "positive",
+        "meeting_booked",
+        "discovery_scheduled",
+        "not_interested",
+        "unsubscribed",
+        "disqualified",
+        "closed",
+      ],
+      ob_linkedin_task_status: ["pending", "done", "skipped"],
+      ob_linkedin_task_type: [
+        "send_connection",
+        "review_accepted",
+        "send_first_message",
+        "follow_up",
+        "book_call",
+      ],
+      ob_membership_status: [
+        "pending",
+        "active",
+        "paused",
+        "stopped",
+        "finished",
+      ],
+      ob_message_direction: ["inbound", "outbound"],
+      ob_suppression_reason: [
+        "unsubscribed",
+        "complained",
+        "bounced",
+        "customer",
+        "do_not_contact",
+        "manual",
       ],
       support_ticket_category: ["feedback", "suggestion", "issue", "other"],
       support_ticket_status: ["open", "awaiting_user", "resolved"],
