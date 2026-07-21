@@ -260,7 +260,7 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
           source: "smartlead",
           event_type: eventType,
           external_event_id: eventId,
-          payload: payload as unknown as Record<string, unknown>,
+          payload: payload as unknown as never,
           processed: false,
           received_at: new Date().toISOString(),
         });
