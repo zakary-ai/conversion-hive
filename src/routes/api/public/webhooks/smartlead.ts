@@ -92,6 +92,13 @@ type SmartleadPayload = {
   reply_plaintext?: string;
   reply_html?: string;
   reply_text?: string;
+  stats_id?: string | number;
+  email_stats_id?: string | number;
+  leadMap?: string | number;
+  lead_name?: string;
+  first_name?: string;
+  last_name?: string;
+  to_name?: string;
   sent_time?: string;
   received_time?: string;
   created_at?: string;
@@ -134,8 +141,22 @@ function getLeadEmail(payload: SmartleadPayload): string | null {
   return normalizeEmail(payload.lead_email || payload.email || payload.reply_email || payload.recipient_email || payload.to_email);
 }
 
+function getLeadEmailForEvent(payload: SmartleadPayload, eventType: string): string | null {
+  if (["email_reply", "manual_reply_sent", "untracked_replies"].includes(eventType)) {
+    return normalizeEmail(payload.lead_email || payload.email || payload.reply_email || payload.from_email || payload.recipient_email || payload.to_email);
+  }
+  return getLeadEmail(payload);
+}
+
 function getSenderEmail(payload: SmartleadPayload): string | null {
   return normalizeEmail(payload.from_email || payload.sender_email);
+}
+
+function getSenderEmailForEvent(payload: SmartleadPayload, eventType: string): string | null {
+  if (["email_reply", "manual_reply_sent", "untracked_replies"].includes(eventType)) {
+    return normalizeEmail(payload.to_email || payload.sender_email || payload.recipient_email);
+  }
+  return getSenderEmail(payload);
 }
 
 function getCampaignId(payload: SmartleadPayload): string | null {
@@ -148,6 +169,10 @@ function getMessageId(payload: SmartleadPayload): string | null {
   const id = payload.message_id;
   if (id === null || id === undefined) return null;
   return String(id);
+}
+
+function getStatsId(payload: SmartleadPayload): string | null {
+  return asString(payload.stats_id || payload.email_stats_id);
 }
 
 function getThreadId(payload: SmartleadPayload): string | null {
@@ -177,6 +202,13 @@ function getReceivedAt(payload: SmartleadPayload): string | null {
 function getCategory(payload: SmartleadPayload): string | null {
   const cat = asString(payload.category || payload.lead_category);
   return cat ? cat.toLowerCase().replace(/\s+/g, "_") : null;
+}
+
+function splitName(name: unknown): { firstName: string | null; lastName: string | null } {
+  if (typeof name !== "string") return { firstName: null, lastName: null };
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return { firstName: null, lastName: null };
+  return { firstName: parts[0] ?? null, lastName: parts.length > 1 ? parts.slice(1).join(" ") : null };
 }
 
 function getLeadStatus(payload: SmartleadPayload): string | null {
