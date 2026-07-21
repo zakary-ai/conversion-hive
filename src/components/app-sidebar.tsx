@@ -30,6 +30,8 @@ const adminB2BItems = [
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/app/admin/b2b-commissions", icon: DollarSign },
+  { title: "Outbound Leads", url: "/app/admin/outbound/leads", icon: Inbox },
+  { title: "Campaigns", url: "/app/admin/outbound/campaigns", icon: Briefcase },
   { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
   { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },
   { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
@@ -58,6 +60,7 @@ const closerItems = [
 const dmSetterItems = [
   { title: "Home", url: "/app/dm-setter", icon: LayoutDashboard },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
+  { title: "Inbox", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
@@ -68,6 +71,7 @@ const dmSetterItems = [
 const dmManagerItems = [
   { title: "Home", url: "/app/dm-manager", icon: LayoutDashboard },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
+  { title: "Inbox", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
