@@ -1485,6 +1485,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["ob_campaign_channel"]
           created_at: string
           id: string
+          last_synced_at: string | null
           name: string
           setter_id: string | null
           smartlead_campaign_id: string | null
@@ -1495,6 +1496,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["ob_campaign_channel"]
           created_at?: string
           id?: string
+          last_synced_at?: string | null
           name: string
           setter_id?: string | null
           smartlead_campaign_id?: string | null
@@ -1505,6 +1507,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["ob_campaign_channel"]
           created_at?: string
           id?: string
+          last_synced_at?: string | null
           name?: string
           setter_id?: string | null
           smartlead_campaign_id?: string | null

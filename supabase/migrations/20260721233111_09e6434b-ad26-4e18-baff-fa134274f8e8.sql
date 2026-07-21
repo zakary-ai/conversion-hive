@@ -1,0 +1,3 @@
+ALTER TABLE public.ob_campaigns ADD COLUMN IF NOT EXISTS last_synced_at timestamptz;
+CREATE INDEX IF NOT EXISTS ob_messages_smartlead_message_id_idx ON public.ob_messages (smartlead_message_id) WHERE smartlead_message_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS ob_conversations_smartlead_thread_identifier_idx ON public.ob_conversations (smartlead_thread_identifier) WHERE smartlead_thread_identifier IS NOT NULL;
