@@ -135,7 +135,7 @@ async function countAvailablePool(): Promise<number> {
 }
 
 async function loadEnabledSetters(): Promise<Setter[]> {
-  const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "client");
+  const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id").eq("role", "dm_setter");
   const clientIds = (roles ?? []).map((r) => r.user_id as string);
   if (clientIds.length === 0) return [];
   const { data: profiles } = await supabaseAdmin
