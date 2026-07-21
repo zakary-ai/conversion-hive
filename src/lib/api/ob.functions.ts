@@ -51,7 +51,7 @@ export const obListSetters = createServerFn({ method: "GET" })
     const { data: roleRows } = await supabaseAdmin
       .from("user_roles")
       .select("user_id, role")
-      .in("role", ["dm_setter", "dm_setter_manager", "setter"] as any);
+      .in("role", ["b2b_setter"] as any);
     const ids = Array.from(new Set((roleRows ?? []).map((r) => r.user_id)));
     if (!ids.length) return [];
     const { data: profiles } = await supabaseAdmin
