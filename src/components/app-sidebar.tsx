@@ -30,6 +30,8 @@ const adminB2BItems = [
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/app/admin/b2b-commissions", icon: DollarSign },
+  { title: "Outbound Leads", url: "/app/admin/outbound/leads", icon: Inbox },
+  { title: "Campaigns", url: "/app/admin/outbound/campaigns", icon: Briefcase },
   { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
   { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },
   { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
