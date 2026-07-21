@@ -21,9 +21,20 @@ type ObCampaignChannel = Database["public"]["Enums"]["ob_campaign_channel"];
 
 function verifySignature(rawBody: string, header: string | null, secret: string): boolean {
   if (!header) return false;
-  const expected = createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
+  const expectedHex = createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
+  const expected = `sha256=${expectedHex}`;
+  const provided = header.trim().toLowerCase();
   try {
-    return timingSafeEqual(Buffer.from(header), Buffer.from(expected));
+    const providedBuffer = Buffer.from(provided);
+    const expectedBuffer = Buffer.from(expected);
+    if (providedBuffer.length === expectedBuffer.length && timingSafeEqual(providedBuffer, expectedBuffer)) {
+      return true;
+    }
+
+    const providedHex = provided.startsWith("sha256=") ? provided.slice("sha256=".length) : provided;
+    const providedHexBuffer = Buffer.from(providedHex);
+    const expectedHexBuffer = Buffer.from(expectedHex);
+    return providedHexBuffer.length === expectedHexBuffer.length && timingSafeEqual(providedHexBuffer, expectedHexBuffer);
   } catch {
     return false;
   }
@@ -76,6 +87,8 @@ type SmartleadPayload = {
   body?: string;
   body_html?: string;
   body_text?: string;
+  reply_body?: string;
+  preview_text?: string;
   reply_plaintext?: string;
   reply_html?: string;
   reply_text?: string;
@@ -84,6 +97,7 @@ type SmartleadPayload = {
   created_at?: string;
   sent_at?: string;
   received_at?: string;
+  time_replied?: string;
   timestamp?: string | number;
   category?: string;
   lead_category?: string;
@@ -145,11 +159,11 @@ function getSubject(payload: SmartleadPayload): string | null {
 }
 
 function getBodyHtml(payload: SmartleadPayload): string | null {
-  return asString(payload.body_html || payload.reply_html || payload.body);
+  return asString(payload.body_html || payload.reply_html || payload.reply_body || payload.body);
 }
 
 function getBodyText(payload: SmartleadPayload): string | null {
-  return asString(payload.reply_plaintext || payload.reply_text || payload.body_text || payload.body);
+  return asString(payload.reply_plaintext || payload.reply_text || payload.preview_text || payload.body_text || payload.reply_body || payload.body);
 }
 
 function getSentAt(payload: SmartleadPayload): string | null {
@@ -157,7 +171,7 @@ function getSentAt(payload: SmartleadPayload): string | null {
 }
 
 function getReceivedAt(payload: SmartleadPayload): string | null {
-  return asDate(payload.received_time || payload.received_at || payload.timestamp);
+  return asDate(payload.received_time || payload.received_at || payload.time_replied || payload.timestamp);
 }
 
 function getCategory(payload: SmartleadPayload): string | null {
