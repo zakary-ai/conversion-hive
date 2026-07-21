@@ -1851,6 +1851,12 @@ export const inviteClient = createServerFn({ method: "POST" })
       must_change_password: true,
     }).eq("user_id", newUserId);
 
+    // Ensure the new user carries the b2b_setter role (overrides the default 'client' fallback from handle_new_user).
+    await supabaseAdmin.from("user_roles")
+      .upsert({ user_id: newUserId, role: "b2b_setter" }, { onConflict: "user_id,role" });
+    await supabaseAdmin.from("user_roles")
+      .delete().eq("user_id", newUserId).eq("role", "client");
+
     // Seed the new setter's account with leads from the unassigned pool
     // up to their daily quota (default 75) so they have work waiting on first sign-in.
     try {
