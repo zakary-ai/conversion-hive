@@ -175,8 +175,10 @@ async function syncCampaign(
         for (const m of history) {
           const type = (asString(m.type) || asString(m.email_type) || "").toUpperCase();
           const isReply = type === "REPLY" || m.direction === "inbound" || m.is_reply === true;
-          const isSent = type === "SENT" || m.direction === "outbound" || (!isReply && (m.email_body || m.body));
-          if (!isReply && !isSent) continue;
+          // Only sync inbound replies. Outbound sends are logged locally by obSendReply;
+          // re-inserting them from Smartlead history causes duplicate/empty rows.
+          if (!isReply) continue;
+          const isSent = false;
 
           const smartleadMessageId = asString(m.message_id ?? m.stats_id ?? m.id);
           const sentAt = asDate(m.time ?? m.sent_time ?? m.reply_time ?? m.created_at) || new Date().toISOString();
