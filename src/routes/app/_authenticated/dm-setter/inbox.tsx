@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ExternalLink, Loader2, Send, XCircle, User } from "lucide-react";
+import { Loader2, Send, XCircle, User } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -46,15 +46,8 @@ function InboxPage() {
       <PageHeader
         title="Email"
         description="Unified conversations across your leads"
-        action={
-          <Button asChild variant="outline">
-            <a href="https://app.smartlead.ai" target="_blank" rel="noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open Smartlead Inbox
-            </a>
-          </Button>
-        }
       />
+
       <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 min-h-[70vh]">
         <Card className="p-2 flex flex-col overflow-hidden">
           <div className="flex flex-wrap gap-1 p-1 mb-2">
