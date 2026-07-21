@@ -1395,13 +1395,13 @@ export const getAppointmentSetter = createServerFn({ method: "GET" })
     } : null;
   });
 
-// Admin: list all users with the setter (client) role, for attaching to appointments.
+// Admin: list all DM setters (B2C) for attaching to appointments.
 export const listSetters = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data: roles } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
     if (!(roles ?? []).some((r) => r.role === "admin")) throw new Error("Forbidden");
-    const { data: clientRoles } = await context.supabase.from("user_roles").select("user_id").eq("role", "client");
+    const { data: clientRoles } = await context.supabase.from("user_roles").select("user_id").eq("role", "dm_setter");
     const ids = (clientRoles ?? []).map((r: { user_id: string }) => r.user_id);
     if (ids.length === 0) return [];
     const { data: profs } = await context.supabase
