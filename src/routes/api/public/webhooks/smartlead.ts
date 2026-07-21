@@ -204,9 +204,9 @@ const CONVERSATION_CATEGORY_VALUES = [
 const CAMPAIGN_STATUS_VALUES = ["active", "paused", "completed"];
 const MEMBERSHIP_STATUS_VALUES = ["pending", "active", "paused", "stopped", "finished"];
 
-function categoryToLeadStatus(category: string | null): string | null {
+function categoryToLeadStatus(category: string | null): ObLeadStatus | null {
   if (!category) return null;
-  const map: Record<string, string> = {
+  const map: Record<string, ObLeadStatus> = {
     positive: "positive",
     question: "replied",
     objection: "replied",
@@ -220,9 +220,9 @@ function categoryToLeadStatus(category: string | null): string | null {
   return map[category] || null;
 }
 
-function mapReplyCategory(category: string | null): string {
+function mapReplyCategory(category: string | null): ObConversationCategory {
   if (!category) return "uncategorized";
-  return validEnum(category, CONVERSATION_CATEGORY_VALUES) || "uncategorized";
+  return (validEnum(category, CONVERSATION_CATEGORY_VALUES) as ObConversationCategory) || "uncategorized";
 }
 
 export const Route = createFileRoute("/api/public/webhooks/smartlead")({
