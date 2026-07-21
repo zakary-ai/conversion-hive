@@ -1,77 +1,98 @@
-# B2C Booking Improvements
 
-## 1. Timezone picker on the apply page
+## Outbound Lead Management — schema + admin listing
 
-In `src/routes/apply.tsx` `BookingStep`:
-- Convert `tz` from a memo to state; default to `Intl.DateTimeFormat().resolvedOptions().timeZone`.
-- Add a `<Select>` above the calendar: "Detected", then ET/CT/MT/PT/AKT/HT plus a small international group (London, Berlin, Dubai, Singapore, Sydney).
-- Slot query already keys on `tz` — the change flows through automatically.
+Adds the full outbound data model with `ob_` prefix so it doesn't collide with the existing inbound `leads` / `appointments` tables. Backend + one admin table only — no other UI yet.
 
-## 2. "Thanks for applying" email on booking
+### 1. New role & section
 
-In `createCloserBooking` (`src/lib/api/b2c.functions.ts`), after successful insert, fire the existing `booking-received` template via `sendTransactional` inside try/catch. Idempotency key: `booking-received-<booking_id>`. Copy: "Thanks for applying — you'll receive a follow-up email once an interviewer is assigned."
+- Add `setter` to the `app_role` enum (distinct from `dm_setter`). This is the "normal setters who have the dials" audience for this system.
+- Add a top-level nav section labeled **Emails** available to `admin` and `setter` (and `dm_setter_manager` if you want visibility — I'll default to admin + setter; say the word to include managers).
+- Route: `/app/emails` (setter's own dashboard) and `/app/admin/emails/leads` (admin listing built in this pass).
 
-## 3. Reschedule: status, audit fields, email, manual admin action
+> Confirm before I run the migration: is `setter` a brand-new role, or should I reuse `closer`? Your wording implies new. I'll assume new unless you say otherwise.
 
-Migration adds to `closer_bookings`:
-- `previous_slot_start timestamptz`
-- `rescheduled_at timestamptz`
-- `unbooked_at timestamptz`
+### 2. Tables (all prefixed `ob_`)
 
-`rescheduleCloserBooking`:
-- Capture previous slot, set `status = 'rescheduled'`, `rescheduled_at = now()`, `previous_slot_start = old`.
-- Always send the new `booking-rescheduled` email to the applicant (old + new time), independent of closer assignment.
+Exact fields from your spec, with the two colliding names renamed:
 
-New template `booking-rescheduled.tsx` registered in `registry.ts`.
+- `ob_companies`
+- `ob_leads` (was `leads`)
+- `ob_campaigns`
+- `ob_campaign_memberships` — unique `(lead_id, campaign_id)`
+- `ob_conversations`
+- `ob_messages`
+- `ob_outreach_activities`
+- `ob_call_attempts`
+- `ob_linkedin_tasks`
+- `ob_appointments` (was `appointments`)
+- `ob_suppression_list` — indexes on `email`, `domain`
+- `ob_webhook_events` — unique `(source, external_event_id)` where present
 
-New admin server fn `markBookingRescheduled` (admin-only) — flips status to `rescheduled` and sends the same email without changing time. Surfaced as a menu item in `BookingCard` in `admin/bookings.tsx`.
+All enums created as Postgres enums (`ob_email_status`, `ob_lead_status`, `ob_campaign_channel`, `ob_membership_status`, `ob_conversation_category`, `ob_message_direction`, `ob_activity_type`, `ob_call_outcome`, `ob_linkedin_task_type`, `ob_linkedin_task_status`, `ob_appointment_status`, `ob_suppression_reason`, `ob_campaign_status`).
 
-## 4. Auto "unbooked" sweep at 5 minutes
+Every table gets `created_at`; `ob_leads` and `ob_campaigns` also get `updated_at` with the existing `update_updated_at_column()` trigger.
 
-New route `src/routes/api/public/hooks/mark-unbooked.ts` — scans `closer_bookings` where `status = 'pending_assignment'` AND `slot_start < now()`, sets `status = 'unbooked'`, `unbooked_at = now()`. Every 5 minutes is safe: worst-case a booking sits 5 minutes past its slot time before flipping, which is fine, and the sweep is a cheap indexed query. Booking-slot-timed cron would require per-row scheduling and is not worth the complexity.
+`owner_setter_id` on `ob_companies` and `ob_leads` references `profiles.user_id` (matches how the rest of the app maps ownership to auth users).
 
-For each newly-unbooked booking, look up the linked application's `credit_score_range` and send one of two templates:
-- Credit `"600-650"` (unqualified filter) → `booking-declined.tsx`: "Thank you for applying, but we've decided to move in another direction." No reapply link.
-- All other credit ranges → `booking-unbooked.tsx`: "Sorry, all our interviewers are booked at the moment. We invite you to reapply." Contains reapply link `https://.../apply?reapply=<booking_token>`.
+### 3. RLS (per your answer: setter sees own, admin sees all)
 
-pg_cron scheduled via `supabase--insert` calling `https://project--77a6d453-2ccb-4bdc-b7a5-7900dd491db2.lovable.app/api/public/hooks/mark-unbooked` every 5 minutes with `apikey` header.
+For `ob_companies`, `ob_leads`, `ob_campaigns`, `ob_appointments`, `ob_call_attempts`, `ob_linkedin_tasks`, `ob_outreach_activities`:
 
-UI surfacing:
-- Admin bookings page: `unbooked` status included in History section with a red badge.
-- DM setter calendar (`dm-setter/calendar.tsx`) + DM setter lead lists: red "Unbooked" outcome badge alongside existing outcome badges.
+- SELECT / INSERT / UPDATE / DELETE where `owner_setter_id = auth.uid()` OR `setter_id = auth.uid()`.
+- Admin (`has_role(auth.uid(),'admin')`) full access.
 
-## 5. Reapply flow with 5-day expiry
+For `ob_campaign_memberships`, `ob_conversations`, `ob_messages`: access if the parent lead is owned by the caller, or admin.
 
-`applications` table — add:
-- `status text` (values used: `submitted` default, `reapplied`)
-- No token field needed; the existing `booking_token` from `applications` is reused as the reapply key.
+`ob_suppression_list` and `ob_webhook_events`: admin-only via `has_role`; server code uses `supabaseAdmin`.
 
-`booking-unbooked` email builds link `?reapply=<application.booking_token>`.
+GRANTs to `authenticated` and `service_role` on every table (no `anon`).
 
-New server fn `resolveReapplyToken` (public):
-- Looks up application by `booking_token`.
-- Finds the most recent `unbooked` booking for that application.
-- Rejects if `unbooked_at` is older than 5 days.
-- Returns application row + a fresh short-lived nonce for the follow-up call.
+### 4. Timeline view
 
-`apply.tsx`:
-- Recognize `?reapply=<token>`; when present, skip the form step, prefill from returned application data, jump to `BookingStep`.
-- Show a small banner: "Welcome back — pick a new time."
-- If token invalid/expired, show a friendly "This link has expired — please apply again" and offer a link to `/apply`.
+Postgres view `ob_lead_timeline` unioning, for a given `lead_id`:
 
-New server fn `createReapplyBooking`:
-- Validates token + 5-day window again server-side.
-- Updates `applications.status = 'reapplied'` (keeps every other field intact).
-- Inserts a new `closer_bookings` row (fresh `pending_assignment`) — the prior `unbooked` row stays for history.
-- Sends the standard `booking-received` email.
+```text
+messages           → ts=sent_at,      kind='message',    ref=id, meta={direction, subject}
+outreach_activities→ ts=occurred_at,  kind='activity',   ref=id, meta={type, detail}
+call_attempts      → ts=created_at,   kind='call',       ref=id, meta={outcome, notes}
+linkedin_tasks     → ts=completed_at OR due_date, kind='linkedin', meta={task_type,status}
+appointments       → ts=scheduled_at, kind='appointment',meta={status, outcome_notes}
+```
 
-Admin visibility:
-- Applications list badge for `reapplied` status.
+Ordered `ts DESC`. RLS piggybacks on the underlying tables. A thin server fn `getLeadTimeline({ leadId })` wraps it with `requireSupabaseAuth` for the client.
 
-## Technical details
+### 5. Smartlead integration setup (secrets only, no sync yet)
 
-- One migration: three new columns on `closer_bookings`, one new column on `applications`, no enum changes (status values remain free-text as they are today). No new tables.
-- Three new email templates registered in `registry.ts`: `booking-rescheduled`, `booking-unbooked`, `booking-declined`.
-- One new public hook route + pg_cron entry (5-minute cadence).
-- Two new server fns: `markBookingRescheduled`, `resolveReapplyToken`, `createReapplyBooking`. All existing auth/RLS unchanged.
-- Reapply expiry enforced server-side (5 days from `unbooked_at`); the client just renders the expired-state message.
+Add two secrets so the schema is ready for webhook writes:
+
+- `SMARTLEAD_API_KEY` — user pastes from Smartlead settings.
+- `SMARTLEAD_WEBHOOK_SECRET` — shared secret for verifying inbound webhooks.
+
+Also scaffold the webhook receiver stub at `src/routes/api/public/webhooks/smartlead.ts` that:
+
+- HMAC-verifies against `SMARTLEAD_WEBHOOK_SECRET`.
+- Inserts raw payload into `ob_webhook_events` with `processed=false`.
+- Returns 200. No lead/conversation upserts yet — that's the next phase.
+
+Callback URL to paste into Smartlead: `https://project--77a6d453-2ccb-4bdc-b7a5-7900dd491db2.lovable.app/api/public/webhooks/smartlead`.
+
+### 6. Admin leads listing (only UI in this pass)
+
+- Route: `/app/admin/emails/leads`
+- Table columns: name, company, title, email + email_status badge, phone, status, owner (setter name), lead score, updated_at.
+- Server fn `listObLeads({ search, status, ownerSetterId, limit, offset })` under `requireSupabaseAuth` + admin check.
+- Basic filters (status dropdown, owner dropdown, search box). No create/edit yet — this is a read-only inventory table so you can confirm the schema and RLS work before we build the setter-facing UI, sequences, and Smartlead sync.
+
+### Not in this pass (called out so scope is clear)
+
+- Setter-facing dashboard, inbox, sequence builder, dialer UI.
+- Smartlead campaign/lead sync (create-in-Smartlead when adding to a campaign).
+- Timeline rendering component.
+- Unsubscribe handling + auto-suppression writes from webhook events.
+- Bulk CSV import into `ob_leads`.
+
+### Technical notes
+
+- All migration SQL runs in a single `supabase--migration` call: enums → tables → GRANTs → ENABLE RLS → policies → view → trigger.
+- No changes to existing inbound tables.
+- New `setter` role added to `app_role`; `handle_new_user()` is not modified in this pass — new setters will be assigned the role manually by an admin (or say the word and I'll add an invite flow next).
