@@ -1,0 +1,1 @@
+UPDATE public.user_roles SET role = 'b2b_setter'::public.app_role WHERE role = 'client'::public.app_role;
