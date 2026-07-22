@@ -65,23 +65,43 @@ function hasContent(m: any): boolean {
   return raw.length > 0;
 }
 
+function awaitingReply(c: any): boolean {
+  if (!c.last_inbound_at) return false;
+  if (!c.last_outbound_at) return true;
+  return new Date(c.last_inbound_at).getTime() > new Date(c.last_outbound_at).getTime();
+}
+
+const PAGE_SIZE = 20;
+
 function InboxPage() {
   const qc = useQueryClient();
+  const [tab, setTab] = useState<"inbox" | "not_interested">("inbox");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
   const { data: convs, isFetching } = useSuspenseQuery(convsOpts(tagFilter));
   const { data: tags } = useSuspenseQuery(tagsOpts);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return convs;
-    const q = search.toLowerCase();
+    const q = search.trim().toLowerCase();
     return (convs as any[]).filter((c) => {
+      const status = c.lead?.status;
+      const isNI = status === "not_interested" || status === "disqualified";
+      if (tab === "not_interested" ? !isNI : isNI) return false;
+      if (!q) return true;
       const name = [c.lead?.first_name, c.lead?.last_name].filter(Boolean).join(" ").toLowerCase();
       return name.includes(q) || (c.lead?.email || "").toLowerCase().includes(q) || (c.lead?.company?.name || "").toLowerCase().includes(q);
     });
-  }, [convs, search]);
+  }, [convs, search, tab]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage],
+  );
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["ob-convs"] });
@@ -96,6 +116,12 @@ function InboxPage() {
     if (selectedId) await qc.refetchQueries({ queryKey: ["ob-conv", selectedId] });
     setRefreshing(false);
   };
+
+  const inboxCount = (convs as any[]).filter((c) => {
+    const s = c.lead?.status;
+    return s !== "not_interested" && s !== "disqualified";
+  }).length;
+  const niCount = (convs as any[]).length - inboxCount;
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
@@ -116,17 +142,37 @@ function InboxPage() {
           <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search mail"
             className="pl-9 h-9 bg-muted/40 border-transparent focus-visible:bg-background"
           />
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-1 px-4 pt-2 border-b border-border">
+        {[
+          { id: "inbox" as const, label: "Inbox", count: inboxCount },
+          { id: "not_interested" as const, label: "Not interested", count: niCount },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => { setTab(t.id); setPage(1); setSelectedId(null); }}
+            className={cn(
+              "px-3 h-9 text-sm font-medium border-b-2 -mb-px transition-colors",
+              tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.label}
+            <span className="ml-1.5 text-xs opacity-70">{t.count}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Tag filter bar */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto">
         <button
-          onClick={() => setTagFilter(null)}
+          onClick={() => { setTagFilter(null); setPage(1); }}
           className={cn(
             "shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-colors",
             tagFilter === null ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted",
@@ -137,7 +183,7 @@ function InboxPage() {
         {(tags as any[]).map((t) => (
           <button
             key={t.id}
-            onClick={() => setTagFilter(t.id)}
+            onClick={() => { setTagFilter(t.id); setPage(1); }}
             className={cn(
               "shrink-0 inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-colors",
               tagFilter === t.id ? "text-white" : "hover:bg-muted",
@@ -153,72 +199,105 @@ function InboxPage() {
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-[380px_1fr] min-h-0">
         {/* Message list */}
-        <div className={cn("border-r border-border overflow-y-auto", selectedId && "hidden md:block")}>
-          {isFetching && !filtered.length && (
-            <div className="p-6 text-sm text-muted-foreground flex items-center justify-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-            </div>
-          )}
-          {!isFetching && filtered.length === 0 && (
-            <div className="p-10 text-center text-sm text-muted-foreground">
-              <Mail className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              No conversations
-            </div>
-          )}
-          <ul className="divide-y divide-border">
-            {filtered.map((c: any) => {
-              const name = [c.lead?.first_name, c.lead?.last_name].filter(Boolean).join(" ") || c.lead?.email || "Unknown";
-              const selected = selectedId === c.id;
-              return (
-                <li key={c.id}>
-                  <button
-                    onClick={() => setSelectedId(c.id)}
-                    className={cn(
-                      "w-full text-left px-3 py-3 flex gap-3 hover:bg-muted/40 transition-colors",
-                      selected && "bg-primary/10 hover:bg-primary/10",
-                    )}
-                  >
-                    <div className={cn(
-                      "h-9 w-9 shrink-0 rounded-full grid place-items-center text-xs font-semibold",
-                      c.needs_response ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
-                    )}>
-                      {initials(name)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className={cn("truncate text-sm", c.needs_response ? "font-semibold" : "font-medium")}>{name}</span>
-                          {c.needs_response && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-destructive text-destructive-foreground shrink-0">
-                              Awaiting reply
-                            </span>
-                          )}
-                        </div>
-                        <span className={cn("text-[11px] shrink-0", c.needs_response ? "text-primary font-medium" : "text-muted-foreground")}>
-                          {formatTimeShort(c.last_inbound_at || c.last_outbound_at)}
-                        </span>
-                      </div>
-                      <div className="truncate text-xs text-muted-foreground">{c.lead?.email}</div>
-                      {(c.tags as any[])?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {(c.tags as any[]).map((t) => (
-                            <span
-                              key={t.id}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
-                              style={{ backgroundColor: t.color + "22", color: t.color }}
-                            >
-                              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.color }} />
-                              {t.name}
-                            </span>
-                          ))}
-                        </div>
+        <div className={cn("border-r border-border overflow-y-auto flex flex-col", selectedId && "hidden md:flex")}>
+          <div className="flex-1">
+            {isFetching && !paged.length && (
+              <div className="p-6 text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+              </div>
+            )}
+            {!isFetching && paged.length === 0 && (
+              <div className="p-10 text-center text-sm text-muted-foreground">
+                <Mail className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                No conversations
+              </div>
+            )}
+            <ul className="divide-y divide-border">
+              {paged.map((c: any) => {
+                const name = [c.lead?.first_name, c.lead?.last_name].filter(Boolean).join(" ") || c.lead?.email || "Unknown";
+                const selected = selectedId === c.id;
+                const awaiting = awaitingReply(c);
+                return (
+                  <li key={c.id}>
+                    <button
+                      onClick={() => setSelectedId(c.id)}
+                      className={cn(
+                        "w-full text-left px-3 py-3 flex gap-3 hover:bg-muted/40 transition-colors",
+                        selected && "bg-primary/10 hover:bg-primary/10",
                       )}
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                    >
+                      <div className={cn(
+                        "h-9 w-9 shrink-0 rounded-full grid place-items-center text-xs font-semibold",
+                        awaiting ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
+                      )}>
+                        {initials(name)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={cn("truncate text-sm", awaiting ? "font-semibold" : "font-medium")}>{name}</span>
+                            {awaiting && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-destructive text-destructive-foreground shrink-0">
+                                Awaiting reply
+                              </span>
+                            )}
+                          </div>
+                          <span className={cn("text-[11px] shrink-0", awaiting ? "text-primary font-medium" : "text-muted-foreground")}>
+                            {formatTimeShort(c.last_inbound_at || c.last_outbound_at)}
+                          </span>
+                        </div>
+                        <div className="truncate text-xs text-muted-foreground">{c.lead?.email}</div>
+                        {(c.tags as any[])?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {(c.tags as any[]).map((t) => (
+                              <span
+                                key={t.id}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                                style={{ backgroundColor: t.color + "22", color: t.color }}
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.color }} />
+                                {t.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+          {filtered.length > 0 && (
+            <div className="border-t border-border px-3 py-2 flex items-center justify-between text-xs bg-background sticky bottom-0">
+              <span className="text-muted-foreground">
+                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Prev
+                </Button>
+                <span className="px-2 text-muted-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Detail pane */}
@@ -243,6 +322,7 @@ function InboxPage() {
     </div>
   );
 }
+
 
 function ManageTagsPopover({ tags, onChange }: { tags: any[]; onChange: () => void }) {
   const [name, setName] = useState("");
