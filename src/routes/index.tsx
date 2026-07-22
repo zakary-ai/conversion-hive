@@ -1,8 +1,10 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { ArrowRight, Target, Zap, LineChart, CheckCircle2, XCircle, Phone, Calendar, TrendingUp } from "lucide-react";
+import { ArrowRight, Linkedin, Users, MessageSquare, Calendar, CheckCircle2, XCircle, Handshake, TrendingUp, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import { Capacitor } from "@capacitor/core";
+
+const CALENDLY_URL = "https://calendly.com/zakary-deleo/conversion-lab-onboarding";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -13,10 +15,10 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Conversion Lab — Client acquisition systems for kitchen remodelers" },
-      { name: "description", content: "We help kitchen remodelers turn ad spend into booked appointments and real revenue with a complete client acquisition system — not just leads." },
-      { property: "og:title", content: "Conversion Lab — Client acquisition for kitchen remodelers" },
-      { property: "og:description", content: "Predictable booked appointments for kitchen remodelers. Ads, follow-up, and sales process — built as one system." },
+      { title: "Conversion Lab — LinkedIn connection systems for contractors" },
+      { name: "description", content: "We build contractors a LinkedIn connection-making system that turns real relationships into booked strategy calls and signed projects — no cold ads, no lead-form spam." },
+      { property: "og:title", content: "Conversion Lab — LinkedIn client acquisition for contractors" },
+      { property: "og:description", content: "The best leads come from connections. We build contractors a LinkedIn automation system that turns your network into booked calls." },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -40,7 +42,7 @@ function LandingPage() {
               <Link to="/app/auth">Sign in</Link>
             </Button>
             <Button asChild>
-              <Link to="/apply">Book a call <ArrowRight className="ml-1 h-4 w-4" /></Link>
+              <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">Book a call <ArrowRight className="ml-1 h-4 w-4" /></a>
             </Button>
           </nav>
         </header>
@@ -49,22 +51,22 @@ function LandingPage() {
         <main className="mx-auto max-w-6xl px-6 pb-24 pt-16 sm:pt-24">
           <section className="flex flex-col items-center text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
-              <Target className="h-3.5 w-3.5 text-primary" />
-              Built for kitchen remodelers
+              <Linkedin className="h-3.5 w-3.5 text-primary" />
+              Built for contractors
             </div>
             <h1 className="font-display text-5xl font-semibold tracking-tight sm:text-6xl">
-              Stop buying leads.
+              The best jobs don't come from ads.
               <br />
               <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-                Start building a client acquisition system.
+                They come from connections.
               </span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-              Most kitchen remodelers don't need another marketing agency. They need a predictable way to turn attention into booked appointments — and booked appointments into real revenue.
+              We build contractors a LinkedIn connection-making system that turns real relationships — developers, GCs, architects, property managers, and homeowners — into booked strategy calls and signed projects.
             </p>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
               <Button size="lg" asChild>
-                <Link to="/apply">Book your strategy call <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">Book your strategy call <ArrowRight className="ml-2 h-4 w-4" /></a>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link to="/app/auth">Sign in</Link>
@@ -76,18 +78,18 @@ function LandingPage() {
           <section className="mt-32 grid gap-8 md:grid-cols-2">
             <div>
               <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-                On paper, the ads are "working."
+                Cold ads don't build contractors.
               </h2>
               <p className="mt-4 text-muted-foreground">
-                Leads are coming in. Forms are being filled out. People are clicking. But in reality?
+                You already know it — the jobs that actually move the needle come from someone who knew someone. But you can't scale a coffee meeting.
               </p>
             </div>
             <ul className="space-y-3">
               {[
-                "Leads aren't becoming conversations",
-                "Conversations aren't becoming appointments",
-                "Appointments aren't turning into revenue",
-                "The ad spend never justifies itself",
+                "Lead forms flood you with tire-kickers and price shoppers",
+                "Referrals are great, but unpredictable and impossible to forecast",
+                "You don't have time to sit on LinkedIn all day sending messages",
+                "The right decision-makers are on LinkedIn — you're just not reaching them",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 rounded-lg border border-border bg-card/40 p-4">
                   <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
@@ -101,29 +103,29 @@ function LandingPage() {
           <section className="mt-32">
             <div className="text-center">
               <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-                We don't just run ads.
+                A connection-making system, on autopilot.
               </h2>
               <p className="mt-4 text-muted-foreground">
-                We build the entire path from first impression to paying customer — three pieces, one system.
+                We build the entire path from stranger on LinkedIn to booked strategy call — three pieces, one system.
               </p>
             </div>
 
             <div className="mt-12 grid gap-6 md:grid-cols-3">
               {[
                 {
-                  icon: Target,
-                  title: "The campaign",
-                  body: "Ad strategy, messaging, creative direction, targeting, and landing pages built around your offer and market — not templates.",
+                  icon: Network,
+                  title: "Targeting",
+                  body: "We identify the exact decision-makers worth knowing in your market — developers, GCs, architects, property managers, high-net-worth homeowners — and build lists of the right people to connect with.",
                 },
                 {
-                  icon: Zap,
-                  title: "The follow-up",
-                  body: "Speed wins. New leads are contacted fast, tracked properly, and moved into a real conversation before they go cold or book with a competitor.",
+                  icon: Handshake,
+                  title: "Connection automation",
+                  body: "Your LinkedIn quietly sends personalized connection requests and follow-ups every day. No spam, no bots — just a steady stream of new, relevant relationships being built in the background.",
                 },
                 {
-                  icon: LineChart,
-                  title: "The sales process",
-                  body: "Leads don't sit in a spreadsheet. They're organized, followed up with, and pushed toward a clear next step — every time.",
+                  icon: Calendar,
+                  title: "Booked calls",
+                  body: "Warm conversations get routed to your calendar with a clear next step. You spend your time on real opportunities, not chasing cold leads.",
                 },
               ].map(({ icon: Icon, title, body }) => (
                 <div key={title} className="rounded-2xl border border-border bg-card/60 p-6 backdrop-blur">
@@ -137,22 +139,22 @@ function LandingPage() {
             </div>
           </section>
 
-          {/* Better questions */}
+          {/* Why LinkedIn */}
           <section className="mt-32 rounded-3xl border border-border bg-card/40 p-8 sm:p-12">
             <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-              We ask better questions.
+              Why LinkedIn, and why now.
             </h2>
             <p className="mt-4 max-w-2xl text-muted-foreground">
-              "How do we get more leads?" is the wrong starting point. Real growth comes from answering the questions most agencies skip.
+              Every developer, GC, architect, and property owner worth working with is already on LinkedIn. Most contractors aren't. That's the opening.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {[
-                "Who is the best type of client for your business?",
-                "What offer would make that person take action now?",
-                "What does follow-up look like in the first five minutes?",
-                "What happens if they don't answer?",
-                "How are calls booked?",
-                "How do we know which campaigns actually produce revenue?",
+                "You reach the actual decision-maker — not a form submission",
+                "Your name shows up before the project even goes out to bid",
+                "Every connection compounds — your network grows every single day",
+                "You stop competing on price and start competing on relationship",
+                "Zero ad spend — the platform itself is the distribution",
+                "It runs whether you're on a jobsite, on vacation, or asleep",
               ].map((q) => (
                 <div key={q} className="flex items-start gap-3 rounded-lg border border-border bg-background/40 p-4">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -167,17 +169,17 @@ function LandingPage() {
             <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
               <h3 className="font-display text-xl font-semibold">This isn't for you if…</h3>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li className="flex gap-2"><XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> You want a magic button where ads go live and customers show up with zero follow-up.</li>
-                <li className="flex gap-2"><XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> You're not willing to look at your offer or sales process.</li>
-                <li className="flex gap-2"><XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> You want random leads without a system to convert them.</li>
+                <li className="flex gap-2"><XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> You want cheap, transactional leads at any cost.</li>
+                <li className="flex gap-2"><XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> You're not willing to have real conversations with real people.</li>
+                <li className="flex gap-2"><XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> You expect signed contracts in week one with zero involvement.</li>
               </ul>
             </div>
             <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
               <h3 className="font-display text-xl font-semibold">This is for you if…</h3>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You do quality kitchen remodels and know your customers are valuable.</li>
-                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You want predictable, qualified opportunities — not lead-form spam.</li>
-                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You're ready to build a real system, not chase another quick fix.</li>
+                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You run a contracting business and do work you're proud of.</li>
+                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You want to be top-of-mind with developers, GCs, and decision-makers.</li>
+                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You'd rather build a network that pays you for years than buy a lead once.</li>
               </ul>
             </div>
           </section>
@@ -189,14 +191,14 @@ function LandingPage() {
                 How the strategy call works
               </h2>
               <p className="mt-4 text-muted-foreground">
-                One call. Zero pressure. You'll leave with a clear picture of where your biggest gaps are.
+                One call. Zero pressure. You'll leave with a clear picture of what your LinkedIn could be doing for you.
               </p>
             </div>
             <div className="mt-12 grid gap-6 md:grid-cols-3">
               {[
-                { icon: Phone, step: "01", title: "Audit", body: "We look at your offer, market, sales process, and what you've already tried." },
-                { icon: Calendar, step: "02", title: "Map", body: "We map out the biggest gaps — ads, offer, follow-up, or the system connecting them." },
-                { icon: TrendingUp, step: "03", title: "Plan", body: "You leave knowing whether paid campaigns make sense right now, and what needs to be in place." },
+                { icon: Users, step: "01", title: "Audit", body: "We look at your business, who your ideal clients really are, and what your current LinkedIn presence is (or isn't) doing." },
+                { icon: MessageSquare, step: "02", title: "Map", body: "We map out the exact people worth connecting with and the messaging that will actually get replies from decision-makers." },
+                { icon: TrendingUp, step: "03", title: "Plan", body: "You leave with a clear plan for what a connection-making system would look like for your business — and whether it fits." },
               ].map(({ icon: Icon, step, title, body }) => (
                 <div key={step} className="rounded-2xl border border-border bg-card/60 p-6">
                   <div className="flex items-center justify-between">
@@ -213,16 +215,16 @@ function LandingPage() {
           {/* Final CTA */}
           <section className="mt-32 rounded-3xl border border-border bg-gradient-to-br from-primary/15 via-card/60 to-card/40 p-8 text-center sm:p-16">
             <h2 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-              Stop guessing with ads.
+              Stop buying leads.
               <br />
-              <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Build a client acquisition system.</span>
+              <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">Start building connections.</span>
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-muted-foreground">
-              The kitchen remodelers who win with ads aren't the ones with the biggest budgets. They're the ones with the clearest offer, the fastest follow-up, and the best system for turning interest into appointments.
+              The contractors who win the next decade aren't the ones with the biggest ad budgets. They're the ones with the strongest networks — and they built them on purpose.
             </p>
             <div className="mt-10">
               <Button size="lg" asChild>
-                <Link to="/apply">Book your strategy call <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">Book your strategy call <ArrowRight className="ml-2 h-4 w-4" /></a>
               </Button>
             </div>
           </section>
