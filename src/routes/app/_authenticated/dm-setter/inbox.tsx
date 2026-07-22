@@ -186,7 +186,14 @@ function InboxPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className={cn("truncate text-sm", c.needs_response ? "font-semibold" : "font-medium")}>{name}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={cn("truncate text-sm", c.needs_response ? "font-semibold" : "font-medium")}>{name}</span>
+                          {c.needs_response && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-destructive text-destructive-foreground shrink-0">
+                              Awaiting reply
+                            </span>
+                          )}
+                        </div>
                         <span className={cn("text-[11px] shrink-0", c.needs_response ? "text-primary font-medium" : "text-muted-foreground")}>
                           {formatTimeShort(c.last_inbound_at || c.last_outbound_at)}
                         </span>
