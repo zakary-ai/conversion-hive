@@ -178,7 +178,7 @@ function LandingPage() {
               <h3 className="font-display text-xl font-semibold">This is for you if…</h3>
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You run a contracting business and do work you're proud of.</li>
-                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You want to be top-of-mind with developers, GCs, and decision-makers.</li>
+                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You want to be top-of-mind with decision-makers.</li>
                 <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> You'd rather build a network that pays you for years than buy a lead once.</li>
               </ul>
             </div>
