@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2, Send, XCircle, Mail, Search, ArrowLeft, UserX, MoreHorizontal,
-  Tag as TagIcon, Plus, X, Check,
+  Tag as TagIcon, Plus, X, Check, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
