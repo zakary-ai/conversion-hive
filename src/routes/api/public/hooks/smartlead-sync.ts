@@ -197,6 +197,12 @@ async function syncCampaign(
           const from = normalizeEmail(m.from ?? m.from_email);
           const to = normalizeEmail(m.to ?? m.to_email);
 
+          // Skip empty-body inbound rows — Smartlead sometimes emits placeholder
+          // reply events with no content that would otherwise create phantom
+          // "awaiting reply" state.
+          if (!(bodyText && bodyText.trim()) && !(bodyHtml && bodyHtml.trim())) continue;
+
+
           // Dedupe.
           if (smartleadMessageId) {
             const { data: dupe } = await supabaseAdmin
