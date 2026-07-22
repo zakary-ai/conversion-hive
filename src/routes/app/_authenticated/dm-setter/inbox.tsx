@@ -102,6 +102,16 @@ function InboxPage() {
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
         <Mail className="h-5 w-5 text-primary" />
         <h1 className="text-lg font-semibold">Inbox</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleRefresh}
+          disabled={refreshing || isFetching}
+          title="Refresh inbox"
+          className="h-9 w-9 shrink-0"
+        >
+          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+        </Button>
         <div className="ml-auto relative w-full max-w-md">
           <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
