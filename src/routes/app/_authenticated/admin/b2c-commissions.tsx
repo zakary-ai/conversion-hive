@@ -194,10 +194,19 @@ function B2cCommissionsPage() {
 
       <ManualEntriesCard />
 
-      <PayoutsSheet open={payoutsOpen} onOpenChange={setPayoutsOpen} rows={rows} />
+      <PayoutsSheetWithManual open={payoutsOpen} onOpenChange={setPayoutsOpen} rows={rows} />
       <AddDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
+}
+
+function PayoutsSheetWithManual({ open, onOpenChange, rows }: { open: boolean; onOpenChange: (v: boolean) => void; rows: Row[] }) {
+  const { data: manual = [] } = useQuery({
+    queryKey: ["b2c-manual-commissions"],
+    queryFn: () => listB2cManualCommissions(),
+    enabled: open,
+  });
+  return <PayoutsSheet open={open} onOpenChange={onOpenChange} rows={rows} manual={manual as ManualEntry[]} />;
 }
 
 
