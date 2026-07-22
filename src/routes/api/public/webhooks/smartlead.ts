@@ -200,6 +200,19 @@ function getBodyText(payload: SmartleadPayload): string | null {
   return asString(payload.reply_plaintext || payload.reply_text || payload.preview_text || payload.body_text || payload.reply_body || payload.body);
 }
 
+function hasMeaningfulBody(html: string | null, text: string | null): boolean {
+  const visibleText = (text || "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const visibleHtml = (html || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return visibleText.length > 0 || visibleHtml.length > 0;
+}
+
 function getSentAt(payload: SmartleadPayload): string | null {
   return asDate(payload.sent_time || payload.sent_at || payload.created_at || payload.timestamp);
 }
@@ -525,36 +538,68 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
               break;
             }
 
-            case "email_reply":
-            case "manual_reply_sent": {
+            case "email_reply": {
               const receivedAt = getReceivedAt(payload) || now;
               const category = getCategory(payload);
               const conversationId = await ensureConversation("email", threadId);
               if (conversationId) {
-                await supabaseAdmin.from("ob_messages").insert({
-                  conversation_id: conversationId,
-                  direction: "inbound" as ObMessageDirection,
-                  from_email: leadEmail,
-                  to_email: senderEmail,
-                  subject: getSubject(payload),
-                  body_html: getBodyHtml(payload),
-                  body_text: getBodyText(payload),
-                  sent_at: receivedAt,
-                  smartlead_message_id: messageId,
-                  smartlead_stats_id: statsId,
-                });
-                await supabaseAdmin
-                  .from("ob_conversations")
-                  .update({
-                    last_inbound_at: receivedAt,
-                    needs_response: true,
-                    category: mapReplyCategory(category),
-                  })
-                  .eq("id", conversationId);
+                const bodyHtml = getBodyHtml(payload);
+                const bodyText = getBodyText(payload);
+                if (hasMeaningfulBody(bodyHtml, bodyText)) {
+                  await supabaseAdmin.from("ob_messages").insert({
+                    conversation_id: conversationId,
+                    direction: "inbound" as ObMessageDirection,
+                    from_email: leadEmail,
+                    to_email: senderEmail,
+                    subject: getSubject(payload),
+                    body_html: bodyHtml,
+                    body_text: bodyText,
+                    sent_at: receivedAt,
+                    smartlead_message_id: messageId,
+                    smartlead_stats_id: statsId,
+                  });
+                  await supabaseAdmin
+                    .from("ob_conversations")
+                    .update({
+                      last_inbound_at: receivedAt,
+                      needs_response: true,
+                      category: mapReplyCategory(category),
+                    })
+                    .eq("id", conversationId);
+                }
               }
               const leadStatus = categoryToLeadStatus(category) || "replied";
               await updateLeadStatus(leadStatus, category);
               await recordActivity("email_reply", `Replied: ${getBodyText(payload)?.slice(0, 200) || "reply received"}`);
+              break;
+            }
+
+            case "manual_reply_sent": {
+              const sentAt = getSentAt(payload) || getReceivedAt(payload) || now;
+              const conversationId = await ensureConversation("email", threadId);
+              if (conversationId) {
+                const bodyHtml = getBodyHtml(payload);
+                const bodyText = getBodyText(payload);
+                if (hasMeaningfulBody(bodyHtml, bodyText)) {
+                  await supabaseAdmin.from("ob_messages").insert({
+                    conversation_id: conversationId,
+                    direction: "outbound" as ObMessageDirection,
+                    from_email: senderEmail,
+                    to_email: leadEmail,
+                    subject: getSubject(payload),
+                    body_html: bodyHtml,
+                    body_text: bodyText,
+                    sent_at: sentAt,
+                    smartlead_message_id: messageId,
+                    smartlead_stats_id: statsId,
+                  });
+                }
+                await supabaseAdmin
+                  .from("ob_conversations")
+                  .update({ last_outbound_at: sentAt, needs_response: false })
+                  .eq("id", conversationId);
+              }
+              await recordActivity("email_sent", "Manual reply sent");
               break;
             }
 
@@ -610,22 +655,26 @@ export const Route = createFileRoute("/api/public/webhooks/smartlead")({
               const receivedAt = getReceivedAt(payload) || now;
               const conversationId = await ensureConversation("email", threadId);
               if (conversationId) {
-                await supabaseAdmin.from("ob_messages").insert({
-                  conversation_id: conversationId,
-                  direction: "inbound" as ObMessageDirection,
-                  from_email: leadEmail,
-                  to_email: senderEmail,
-                  subject: getSubject(payload),
-                  body_html: getBodyHtml(payload),
-                  body_text: getBodyText(payload),
-                  sent_at: receivedAt,
-                  smartlead_message_id: messageId,
-                  smartlead_stats_id: statsId,
-                });
-                await supabaseAdmin
-                  .from("ob_conversations")
-                  .update({ last_inbound_at: receivedAt, needs_response: true })
-                  .eq("id", conversationId);
+                const bodyHtml = getBodyHtml(payload);
+                const bodyText = getBodyText(payload);
+                if (hasMeaningfulBody(bodyHtml, bodyText)) {
+                  await supabaseAdmin.from("ob_messages").insert({
+                    conversation_id: conversationId,
+                    direction: "inbound" as ObMessageDirection,
+                    from_email: leadEmail,
+                    to_email: senderEmail,
+                    subject: getSubject(payload),
+                    body_html: bodyHtml,
+                    body_text: bodyText,
+                    sent_at: receivedAt,
+                    smartlead_message_id: messageId,
+                    smartlead_stats_id: statsId,
+                  });
+                  await supabaseAdmin
+                    .from("ob_conversations")
+                    .update({ last_inbound_at: receivedAt, needs_response: true })
+                    .eq("id", conversationId);
+                }
               }
               await updateLeadStatus("replied", null);
               await recordActivity("email_reply", "Untracked reply received");
