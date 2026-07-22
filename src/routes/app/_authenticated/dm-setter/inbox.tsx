@@ -1,47 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { obListConversations, obGetConversation, obSendReply, obSetCategory, obQuickAction } from "@/lib/api/ob.functions";
-import { Card } from "@/components/ui/card";
+import {
+  obListConversations, obGetConversation, obSendReply, obQuickAction,
+  obListTags, obCreateTag, obDeleteTag, obToggleTagOnConversation,
+} from "@/lib/api/ob.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Send, XCircle, Inbox, MessageCircle, HelpCircle, AlertCircle, Calendar, Archive, Mail, Search, ArrowLeft, UserX, MoreHorizontal } from "lucide-react";
+import {
+  Loader2, Send, XCircle, Mail, Search, ArrowLeft, UserX, MoreHorizontal,
+  Tag as TagIcon, Plus, X, Check,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-const TABS = [
-  { key: "needs_response", label: "Needs response", icon: Inbox },
-  { key: "positive", label: "Positive", icon: MessageCircle },
-  { key: "question", label: "Question", icon: HelpCircle },
-  { key: "objection", label: "Objection", icon: AlertCircle },
-  { key: "meeting_booked", label: "Meetings", icon: Calendar },
-  { key: "other", label: "Other", icon: Archive },
-] as const;
-
-const CATEGORY_LABEL: Record<string, string> = {
-  uncategorized: "Uncategorized",
-  positive: "Positive",
-  question: "Question",
-  objection: "Objection",
-  info_requested: "Info requested",
-  out_of_office: "Out of office",
-  not_interested: "Not interested",
-  wrong_person: "Wrong person",
-  unsubscribe: "Unsubscribe",
-  meeting_booked: "Meeting booked",
-};
-
-const listOpts = (tab: string) => queryOptions({
-  queryKey: ["ob-convs", tab],
-  queryFn: () => obListConversations({ data: { tab } }),
+const convsOpts = (tagId: string | null) => queryOptions({
+  queryKey: ["ob-convs", tagId ?? "all"],
+  queryFn: () => obListConversations({ data: { tagId: tagId ?? undefined } }),
+});
+const tagsOpts = queryOptions({
+  queryKey: ["ob-tags"],
+  queryFn: () => obListTags(),
 });
 
 export const Route = createFileRoute("/app/_authenticated/dm-setter/inbox")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(listOpts("needs_response")),
+  loader: ({ context }) => Promise.all([
+    context.queryClient.ensureQueryData(convsOpts(null)),
+    context.queryClient.ensureQueryData(tagsOpts),
+  ]),
   component: InboxPage,
 });
+
+const TAG_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#64748b"];
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -61,21 +53,25 @@ function formatTimeShort(iso?: string | null): string {
 
 function stripQuotedReply(html: string): { visible: string; quoted: string | null } {
   if (!html) return { visible: "", quoted: null };
-  // Split on Gmail's quote container
   const idx = html.search(/<div[^>]*class="[^"]*gmail_quote[^"]*"/i);
   if (idx > 0) return { visible: html.slice(0, idx), quoted: html.slice(idx) };
-  // Fallback: "On <date> ... wrote:"
   const m = html.match(/<[^>]+>On\s+[^<]{5,80}wrote:<\/[^>]+>/i);
   if (m && m.index && m.index > 0) return { visible: html.slice(0, m.index), quoted: html.slice(m.index) };
   return { visible: html, quoted: null };
 }
 
+function hasContent(m: any): boolean {
+  const raw = (m.body_html || m.body_text || "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
+  return raw.length > 0;
+}
+
 function InboxPage() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<typeof TABS[number]["key"]>("needs_response");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const { data: convs, isFetching } = useSuspenseQuery(listOpts(tab));
+  const { data: convs, isFetching } = useSuspenseQuery(convsOpts(tagFilter));
+  const { data: tags } = useSuspenseQuery(tagsOpts);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return convs;
@@ -88,6 +84,7 @@ function InboxPage() {
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["ob-convs"] });
+    qc.invalidateQueries({ queryKey: ["ob-tags"] });
     if (selectedId) qc.invalidateQueries({ queryKey: ["ob-conv", selectedId] });
   };
 
@@ -95,7 +92,7 @@ function InboxPage() {
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
         <Mail className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-semibold">Email</h1>
+        <h1 className="text-lg font-semibold">Inbox</h1>
         <div className="ml-auto relative w-full max-w-md">
           <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -107,43 +104,37 @@ function InboxPage() {
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-[220px_360px_1fr] min-h-0">
-        {/* Sidebar folders */}
-        <div className="hidden md:flex flex-col border-r border-border bg-muted/20 py-3 px-2 gap-0.5">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            const active = tab === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => { setTab(t.key); setSelectedId(null); }}
-                className={cn(
-                  "flex items-center gap-3 rounded-full pl-4 pr-3 py-2 text-sm font-medium text-left transition-colors",
-                  active ? "bg-primary/15 text-primary" : "hover:bg-muted text-foreground/80",
-                )}
-              >
-                <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
-                <span className="flex-1 truncate">{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* Tag filter bar */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto">
+        <button
+          onClick={() => setTagFilter(null)}
+          className={cn(
+            "shrink-0 px-3 h-7 rounded-full text-xs font-medium border transition-colors",
+            tagFilter === null ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted",
+          )}
+        >
+          All
+        </button>
+        {(tags as any[]).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTagFilter(t.id)}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-1.5 px-3 h-7 rounded-full text-xs font-medium border transition-colors",
+              tagFilter === t.id ? "text-white" : "hover:bg-muted",
+            )}
+            style={tagFilter === t.id ? { backgroundColor: t.color, borderColor: t.color } : { borderColor: t.color + "60" }}
+          >
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
+            {t.name}
+          </button>
+        ))}
+        <ManageTagsPopover tags={tags as any[]} onChange={invalidate} />
+      </div>
 
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-[380px_1fr] min-h-0">
         {/* Message list */}
         <div className={cn("border-r border-border overflow-y-auto", selectedId && "hidden md:block")}>
-          {/* Mobile tab bar */}
-          <div className="md:hidden flex overflow-x-auto gap-1 p-2 border-b border-border">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => { setTab(t.key); setSelectedId(null); }}
-                className={cn("px-3 py-1.5 text-xs rounded-full whitespace-nowrap", tab === t.key ? "bg-primary text-primary-foreground" : "bg-muted")}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
           {isFetching && !filtered.length && (
             <div className="p-6 text-sm text-muted-foreground flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading…
@@ -166,7 +157,6 @@ function InboxPage() {
                     className={cn(
                       "w-full text-left px-3 py-3 flex gap-3 hover:bg-muted/40 transition-colors",
                       selected && "bg-primary/10 hover:bg-primary/10",
-                      c.needs_response && !selected && "bg-background",
                     )}
                   >
                     <div className={cn(
@@ -183,10 +173,20 @@ function InboxPage() {
                         </span>
                       </div>
                       <div className="truncate text-xs text-muted-foreground">{c.lead?.email}</div>
-                      <div className="truncate text-xs text-muted-foreground mt-0.5">
-                        {c.needs_response && <span className="inline-block mr-1.5 align-middle h-1.5 w-1.5 rounded-full bg-primary" />}
-                        {CATEGORY_LABEL[c.category] || c.category}
-                      </div>
+                      {(c.tags as any[])?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {(c.tags as any[]).map((t) => (
+                            <span
+                              key={t.id}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                              style={{ backgroundColor: t.color + "22", color: t.color }}
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.color }} />
+                              {t.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </button>
                 </li>
@@ -198,7 +198,12 @@ function InboxPage() {
         {/* Detail pane */}
         <div className={cn("overflow-hidden bg-background", !selectedId && "hidden md:block")}>
           {selectedId ? (
-            <ConversationPane id={selectedId} onChange={invalidate} onBack={() => setSelectedId(null)} />
+            <ConversationPane
+              id={selectedId}
+              tags={tags as any[]}
+              onChange={invalidate}
+              onBack={() => setSelectedId(null)}
+            />
           ) : (
             <div className="h-full grid place-items-center text-center text-muted-foreground p-8">
               <div>
@@ -213,10 +218,134 @@ function InboxPage() {
   );
 }
 
-function ConversationPane({ id, onChange, onBack }: { id: string; onChange: () => void; onBack: () => void }) {
+function ManageTagsPopover({ tags, onChange }: { tags: any[]; onChange: () => void }) {
+  const [name, setName] = useState("");
+  const [color, setColor] = useState(TAG_COLORS[0]);
+  const create = useMutation({
+    mutationFn: () => obCreateTag({ data: { name: name.trim(), color } }),
+    onSuccess: () => { setName(""); onChange(); toast.success("Tag created"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => obDeleteTag({ data: { id } }),
+    onSuccess: () => { onChange(); toast.success("Tag deleted"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="shrink-0 inline-flex items-center gap-1 px-3 h-7 rounded-full text-xs font-medium border border-dashed border-border hover:bg-muted">
+          <Plus className="h-3 w-3" /> Manage tags
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72" align="start">
+        <div className="space-y-3">
+          <div>
+            <div className="text-xs font-semibold mb-1.5">New tag</div>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Tag name"
+              className="h-8 text-sm mb-2"
+              onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) create.mutate(); }}
+            />
+            <div className="flex gap-1.5 mb-2">
+              {TAG_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setColor(c)}
+                  className={cn("h-5 w-5 rounded-full border-2", color === c ? "border-foreground" : "border-transparent")}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+            <Button size="sm" className="w-full h-8" disabled={!name.trim() || create.isPending} onClick={() => create.mutate()}>
+              {create.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Add tag"}
+            </Button>
+          </div>
+          {tags.length > 0 && (
+            <div className="pt-2 border-t">
+              <div className="text-xs font-semibold mb-1.5">Your tags</div>
+              <div className="space-y-1 max-h-52 overflow-y-auto">
+                {tags.map((t) => (
+                  <div key={t.id} className="flex items-center gap-2 text-sm px-1">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+                    <span className="flex-1 truncate">{t.name}</span>
+                    <button
+                      onClick={() => del.mutate(t.id)}
+                      className="opacity-60 hover:opacity-100 hover:text-destructive"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ConversationTagPicker({
+  conversationId, tags, currentTagIds, onChange,
+}: { conversationId: string; tags: any[]; currentTagIds: Set<string>; onChange: () => void }) {
+  const toggle = useMutation({
+    mutationFn: (p: { tagId: string; assign: boolean }) =>
+      obToggleTagOnConversation({ data: { conversationId, tagId: p.tagId, assign: p.assign } }),
+    onSuccess: () => onChange(),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8">
+          <TagIcon className="h-3.5 w-3.5 mr-1.5" /> Tags
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64" align="end">
+        {tags.length === 0 ? (
+          <div className="text-xs text-muted-foreground text-center py-2">
+            No tags yet. Create one from the filter bar above.
+          </div>
+        ) : (
+          <div className="space-y-0.5 max-h-64 overflow-y-auto">
+            {tags.map((t) => {
+              const active = currentTagIds.has(t.id);
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => toggle.mutate({ tagId: t.id, assign: !active })}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted text-sm"
+                >
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+                  <span className="flex-1 text-left truncate">{t.name}</span>
+                  {active && <Check className="h-3.5 w-3.5 text-primary" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ConversationPane({ id, tags, onChange, onBack }: {
+  id: string; tags: any[]; onChange: () => void; onBack: () => void;
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ["ob-conv", id],
     queryFn: () => obGetConversation({ data: { id } }),
+  });
+  // Also refetch the parent list-level tags for this conversation
+  const listQ = useQuery({
+    queryKey: ["ob-conv-tags", id],
+    queryFn: async () => {
+      const all = await obListConversations({ data: {} });
+      return (all as any[]).find((c) => c.id === id)?.tags ?? [];
+    },
   });
   const [reply, setReply] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -224,11 +353,6 @@ function ConversationPane({ id, onChange, onBack }: { id: string; onChange: () =
   const send = useMutation({
     mutationFn: () => obSendReply({ data: { conversationId: id, bodyHtml: reply.replace(/\n/g, "<br>") } }),
     onSuccess: (r) => { toast.success(r.sentViaSmartlead ? "Reply sent" : "Reply saved"); setReply(""); onChange(); },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const setCat = useMutation({
-    mutationFn: (category: any) => obSetCategory({ data: { conversationId: id, category } }),
-    onSuccess: () => { toast.success("Updated"); onChange(); },
     onError: (e: Error) => toast.error(e.message),
   });
   const quick = useMutation({
@@ -241,26 +365,26 @@ function ConversationPane({ id, onChange, onBack }: { id: string; onChange: () =
   const c = data.conversation as any;
   const lead = c.lead;
   const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(" ") || lead.email;
-  const subject = (data.messages[0] as any)?.subject || "(no subject)";
-  const messages = data.messages as any[];
+  const allMessages = data.messages as any[];
+  const messages = allMessages.filter(hasContent);
+  const subject = messages[0]?.subject || allMessages[0]?.subject || "(no subject)";
+  const currentTags = (listQ.data as any[]) ?? [];
+  const currentTagIds = new Set(currentTags.map((t: any) => t.id));
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header: subject + actions */}
       <div className="px-4 md:px-6 pt-4 pb-3 border-b border-border">
         <div className="flex items-center gap-2 mb-2">
           <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-8 w-8">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h2 className="text-lg md:text-xl font-semibold truncate flex-1">{subject}</h2>
-          <Select value={c.category} onValueChange={(v) => setCat.mutate(v)}>
-            <SelectTrigger className="w-36 h-8 text-xs shrink-0"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <ConversationTagPicker
+            conversationId={id}
+            tags={tags}
+            currentTagIds={currentTagIds}
+            onChange={() => { onChange(); listQ.refetch(); }}
+          />
         </div>
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-muted grid place-items-center text-xs font-semibold shrink-0">
@@ -269,6 +393,20 @@ function ConversationPane({ id, onChange, onBack }: { id: string; onChange: () =
           <div className="min-w-0 flex-1">
             <div className="text-sm font-medium truncate">{leadName}</div>
             <div className="text-xs text-muted-foreground truncate">{lead.email}{lead.company?.name ? ` · ${lead.company.name}` : ""}</div>
+            {currentTags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {currentTags.map((t: any) => (
+                  <span
+                    key={t.id}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                    style={{ backgroundColor: t.color + "22", color: t.color }}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.color }} />
+                    {t.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex gap-1 shrink-0">
             <Button size="sm" variant="outline" onClick={() => quick.mutate("not_interested")} className="h-8">
@@ -281,7 +419,6 @@ function ConversationPane({ id, onChange, onBack }: { id: string; onChange: () =
         </div>
       </div>
 
-      {/* Messages - Gmail style */}
       <div className="flex-1 overflow-y-auto bg-background">
         <div className="max-w-3xl mx-auto px-4 md:px-8 py-6 space-y-6">
           {messages.length === 0 && <div className="text-sm text-muted-foreground text-center py-6">No messages yet.</div>}
@@ -311,7 +448,7 @@ function ConversationPane({ id, onChange, onBack }: { id: string; onChange: () =
                     </div>
                     <div
                       className="prose prose-sm max-w-none dark:prose-invert [&_a]:text-primary [&_a]:underline break-words text-sm leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: visible || "<em>(empty)</em>" }}
+                      dangerouslySetInnerHTML={{ __html: visible || (m.body_text ? m.body_text.replace(/\n/g, "<br>") : "") }}
                     />
                     {quoted && (
                       <div className="mt-2">
@@ -338,8 +475,6 @@ function ConversationPane({ id, onChange, onBack }: { id: string; onChange: () =
         </div>
       </div>
 
-
-      {/* Composer */}
       <div className="border-t border-border p-3 md:p-4 bg-background">
         <div className="rounded-lg border border-border focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-colors">
           <Textarea

@@ -1576,6 +1576,66 @@ export type Database = {
         }
         Relationships: []
       }
+      ob_conversation_tag_assignments: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          setter_id: string
+          tag_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          setter_id: string
+          tag_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          setter_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ob_conversation_tag_assignments_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ob_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ob_conversation_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "ob_conversation_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ob_conversation_tags: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          setter_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          setter_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          setter_id?: string
+        }
+        Relationships: []
+      }
       ob_conversations: {
         Row: {
           category: Database["public"]["Enums"]["ob_conversation_category"]

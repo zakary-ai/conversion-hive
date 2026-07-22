@@ -456,12 +456,13 @@ export const obSyncCampaignToSmartlead = createServerFn({ method: "POST" })
 // ---------- Setter Inbox ----------
 export const obListConversations = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ tab: z.string().default("needs_response") }).parse)
+  .inputValidator(z.object({
+    tagId: z.string().uuid().nullable().optional(),
+  }).parse)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
 
-    // subquery: get lead ids owned by me (or all if admin)
     let leadQ = supabaseAdmin.from("ob_leads").select("id, first_name, last_name, email, company:ob_companies(name)");
     if (!isAdmin) leadQ = leadQ.eq("owner_setter_id", context.userId);
     const { data: leads } = await leadQ;
@@ -469,19 +470,112 @@ export const obListConversations = createServerFn({ method: "POST" })
     const leadIds = leads.map((l) => l.id);
     const leadMap = new Map(leads.map((l: any) => [l.id, l]));
 
-    let q = supabaseAdmin.from("ob_conversations")
-      .select("*").in("lead_id", leadIds).order("last_inbound_at", { ascending: true, nullsFirst: false });
-
-    if (data.tab === "needs_response") q = q.eq("needs_response", true);
-    else if (data.tab === "positive") q = q.eq("category", "positive");
-    else if (data.tab === "question") q = q.eq("category", "question");
-    else if (data.tab === "objection") q = q.eq("category", "objection");
-    else if (data.tab === "meeting_booked") q = q.eq("category", "meeting_booked");
-    else if (data.tab === "other") q = q.in("category", ["out_of_office","wrong_person","not_interested","unsubscribe","info_requested","uncategorized"] as any);
-
-    const { data: convs, error } = await q.limit(300);
+    const { data: convs, error } = await supabaseAdmin.from("ob_conversations")
+      .select("*").in("lead_id", leadIds)
+      .order("last_inbound_at", { ascending: false, nullsFirst: false })
+      .limit(500);
     if (error) throw new Error(error.message);
-    return (convs ?? []).map((c) => ({ ...c, lead: leadMap.get(c.lead_id) }));
+    const convIds = (convs ?? []).map((c: any) => c.id);
+
+    const tagsByConv = new Map<string, any[]>();
+    if (convIds.length) {
+      let tagQ = supabaseAdmin.from("ob_conversation_tag_assignments")
+        .select("conversation_id, tag:ob_conversation_tags(id, name, color, setter_id)")
+        .in("conversation_id", convIds);
+      if (!isAdmin) tagQ = tagQ.eq("setter_id", context.userId);
+      const { data: tagRows } = await tagQ;
+      for (const r of (tagRows ?? []) as any[]) {
+        if (!r.tag) continue;
+        const arr = tagsByConv.get(r.conversation_id) ?? [];
+        arr.push(r.tag);
+        tagsByConv.set(r.conversation_id, arr);
+      }
+    }
+
+    let out = (convs ?? []).map((c: any) => ({
+      ...c,
+      lead: leadMap.get(c.lead_id),
+      tags: tagsByConv.get(c.id) ?? [],
+    }));
+
+    if (data?.tagId) {
+      out = out.filter((c) => c.tags.some((t: any) => t.id === data.tagId));
+    }
+    return out;
+  });
+
+// ---------- Conversation Tags ----------
+export const obListTags = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("ob_conversation_tags")
+      .select("id, name, color, setter_id")
+      .eq("setter_id", context.userId)
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const obCreateTag = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    name: z.string().min(1).max(40),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#3b82f6"),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("ob_conversation_tags")
+      .insert({ setter_id: context.userId, name: data.name.trim(), color: data.color })
+      .select("id, name, color, setter_id")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const obDeleteTag = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("ob_conversation_tags")
+      .delete()
+      .eq("id", data.id)
+      .eq("setter_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const obToggleTagOnConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    conversationId: z.string().uuid(),
+    tagId: z.string().uuid(),
+    assign: z.boolean(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.assign) {
+      const { error } = await supabaseAdmin
+        .from("ob_conversation_tag_assignments")
+        .upsert(
+          { conversation_id: data.conversationId, tag_id: data.tagId, setter_id: context.userId },
+          { onConflict: "conversation_id,tag_id" }
+        );
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin
+        .from("ob_conversation_tag_assignments")
+        .delete()
+        .eq("conversation_id", data.conversationId)
+        .eq("tag_id", data.tagId)
+        .eq("setter_id", context.userId);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
   });
 
 export const obGetConversation = createServerFn({ method: "POST" })
