@@ -70,6 +70,7 @@ function InboxPage() {
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
   const { data: convs, isFetching } = useSuspenseQuery(convsOpts(tagFilter));
   const { data: tags } = useSuspenseQuery(tagsOpts);
 
@@ -86,6 +87,14 @@ function InboxPage() {
     qc.invalidateQueries({ queryKey: ["ob-convs"] });
     qc.invalidateQueries({ queryKey: ["ob-tags"] });
     if (selectedId) qc.invalidateQueries({ queryKey: ["ob-conv", selectedId] });
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await qc.refetchQueries({ queryKey: ["ob-convs"] });
+    await qc.refetchQueries({ queryKey: ["ob-tags"] });
+    if (selectedId) await qc.refetchQueries({ queryKey: ["ob-conv", selectedId] });
+    setRefreshing(false);
   };
 
   return (
