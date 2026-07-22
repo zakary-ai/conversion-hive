@@ -485,7 +485,7 @@ function ConversationPane({ id, tags, onChange, onBack }: {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h2 className="text-lg md:text-xl font-semibold truncate flex-1">{subject}</h2>
-          {c.needs_response && (
+          {awaitingReply(c) && (
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-destructive text-destructive-foreground shrink-0">
               Awaiting reply
             </span>
