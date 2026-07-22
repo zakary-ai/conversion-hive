@@ -1073,7 +1073,9 @@ function RecordPayoutDialog({
   onOpenChange,
   unpaidGroups,
   onDone,
+  onPay,
 }: {
+
   open: boolean;
   onOpenChange: (v: boolean) => void;
   unpaidGroups: Array<{ key: string; name: string; total: number; items: PayoutItem[] }>;
