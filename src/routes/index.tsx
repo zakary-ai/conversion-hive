@@ -62,7 +62,7 @@ function LandingPage() {
               </span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-              We build contractors a LinkedIn connection-making system that turns real relationships — developers, GCs, architects, property managers, and homeowners — into booked strategy calls and signed projects.
+              We build contractors a LinkedIn connection-making system that builds real relationships with facility managers, developers, architects, property managers, and homeowners.
             </p>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
               <Button size="lg" asChild>
