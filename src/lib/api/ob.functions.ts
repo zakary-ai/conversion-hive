@@ -463,7 +463,7 @@ export const obListConversations = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
 
-    let leadQ = supabaseAdmin.from("ob_leads").select("id, first_name, last_name, email, company:ob_companies(name)");
+    let leadQ = supabaseAdmin.from("ob_leads").select("id, first_name, last_name, email, status, company:ob_companies(name)");
     if (!isAdmin) leadQ = leadQ.eq("owner_setter_id", context.userId);
     const { data: leads } = await leadQ;
     if (!leads?.length) return [];
