@@ -1076,19 +1076,20 @@ function RecordPayoutDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  unpaidGroups: Array<{ closer_id: string; name: string; total: number; rows: Row[] }>;
+  unpaidGroups: Array<{ key: string; name: string; total: number; items: PayoutItem[] }>;
   onDone: () => void;
+  onPay: (items: PayoutItem[], note: string | null) => Promise<void>;
 }) {
-  const [closerId, setCloserId] = useState<string>("");
+  const [groupKey, setGroupKey] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [note, setNote] = useState("");
 
-  const activeGroup = unpaidGroups.find((g) => g.closer_id === closerId);
+  const activeGroup = unpaidGroups.find((g) => g.key === groupKey);
 
-  const pickCloser = (id: string) => {
-    setCloserId(id);
-    const g = unpaidGroups.find((x) => x.closer_id === id);
-    setSelected(new Set(g?.rows.map((r) => r.id) ?? []));
+  const pick = (id: string) => {
+    setGroupKey(id);
+    const g = unpaidGroups.find((x) => x.key === id);
+    setSelected(new Set(g?.items.map((i) => i.key) ?? []));
   };
 
   const toggle = (id: string) => {
@@ -1100,15 +1101,14 @@ function RecordPayoutDialog({
     });
   };
 
-  const selectedTotal = activeGroup
-    ? activeGroup.rows.filter((r) => selected.has(r.id)).reduce((s, r) => s + Number(r.commission_amount ?? 0), 0)
-    : 0;
+  const chosen = activeGroup ? activeGroup.items.filter((i) => selected.has(i.key)) : [];
+  const selectedTotal = chosen.reduce((s, i) => s + i.amount, 0);
 
   const submit = useMutation({
-    mutationFn: () => recordB2cCommissionPayout({ data: { booking_ids: Array.from(selected), note: note || null } }),
+    mutationFn: () => onPay(chosen, note || null),
     onSuccess: () => {
       toast.success("Payout recorded");
-      setCloserId(""); setSelected(new Set()); setNote("");
+      setGroupKey(""); setSelected(new Set()); setNote("");
       onDone();
       onOpenChange(false);
     },
@@ -1116,17 +1116,17 @@ function RecordPayoutDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) { setCloserId(""); setSelected(new Set()); setNote(""); } onOpenChange(o); }}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { setGroupKey(""); setSelected(new Set()); setNote(""); } onOpenChange(o); }}>
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>Record a payout</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div>
             <Label>Recipient</Label>
-            <Select value={closerId} onValueChange={pickCloser}>
-              <SelectTrigger><SelectValue placeholder="Choose closer" /></SelectTrigger>
+            <Select value={groupKey} onValueChange={pick}>
+              <SelectTrigger><SelectValue placeholder="Choose recipient" /></SelectTrigger>
               <SelectContent>
                 {unpaidGroups.map((g) => (
-                  <SelectItem key={g.closer_id} value={g.closer_id}>
+                  <SelectItem key={g.key} value={g.key}>
                     {g.name} — {money(g.total)}
                   </SelectItem>
                 ))}
@@ -1136,23 +1136,22 @@ function RecordPayoutDialog({
 
           {activeGroup && (
             <div className="rounded-md border border-border divide-y divide-border max-h-64 overflow-y-auto">
-              {activeGroup.rows.map((r) => (
-                <label key={r.id} className="flex items-center gap-2 p-2 px-3 text-sm cursor-pointer">
+              {activeGroup.items.map((it) => (
+                <label key={it.key} className="flex items-center gap-2 p-2 px-3 text-sm cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={selected.has(r.id)}
-                    onChange={() => toggle(r.id)}
+                    checked={selected.has(it.key)}
+                    onChange={() => toggle(it.key)}
                     className="h-4 w-4"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="truncate text-[13px]">{r.applicant_name} · <span className="capitalize">{r.outcome}</span></div>
-                    <div className="text-[10px] text-muted-foreground">
-                      {fmtDate(r.outcome_at)}
-                      {r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}
-                      {dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}
+                    <div className="truncate text-[13px]">
+                      {it.title}
+                      {it.source === "manual" && <Badge variant="outline" className="ml-2 text-[9px]">Manual</Badge>}
                     </div>
+                    <div className="text-[10px] text-muted-foreground">{it.subtitle}</div>
                   </div>
-                  <div className="font-medium text-warning">{money(r.commission_amount)}</div>
+                  <div className="font-medium text-warning">{money(it.amount)}</div>
                 </label>
               ))}
             </div>
