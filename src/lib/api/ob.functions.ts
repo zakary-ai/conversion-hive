@@ -540,7 +540,7 @@ export const obSendReply = createServerFn({ method: "POST" })
             email_stats_id: last.smartlead_stats_id,
             reply_message_id: last.smartlead_message_id ?? undefined,
             reply_email_time: new Date().toISOString(),
-            reply_email_body: data.bodyHtml,
+            email_body: data.bodyHtml,
           }) }
         );
       } catch (e: any) {
