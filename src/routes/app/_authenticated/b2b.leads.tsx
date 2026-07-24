@@ -2,66 +2,75 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listMyClaimedLeads } from "@/lib/api/b2b-pool.functions";
-import { startBridgeCall } from "@/lib/api/calls.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogCallOutcomeDialog } from "@/components/log-call-outcome-dialog";
-import { ExternalLink, Phone, Mail, Building2, Linkedin, MapPin, PhoneCall } from "lucide-react";
-import { toast } from "sonner";
+import { B2bLeadDetailDialog } from "@/components/b2b-lead-detail-dialog";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
-function normalizeE164(input: string): string {
-  const t = input.trim();
-  if (t.startsWith("+")) return "+" + t.slice(1).replace(/\D/g, "");
-  const d = t.replace(/\D/g, "");
-  if (d.length === 10) return "+1" + d;
-  if (d.length === 11 && d.startsWith("1")) return "+" + d;
-  return "+" + d;
-}
+type Tab = "all" | "uncontacted" | "booked" | "no_answer" | "not_interested";
+const PAGE = 20;
 
-async function callViaQuo(leadId: string, phone: string) {
-  const to = normalizeE164(phone);
-  // Log attempt (non-blocking for UX)
-  startBridgeCall({ data: { lead_id: leadId } }).catch(() => {});
-
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile) {
-    // Quo/OpenPhone mobile deep link; falls back to system dialer if not installed
-    const deep = `openphone://call?to=${encodeURIComponent(to)}`;
-    const fallback = `tel:${to}`;
-    const timer = setTimeout(() => { window.location.href = fallback; }, 1200);
-    const onHide = () => { clearTimeout(timer); document.removeEventListener("visibilitychange", onHide); };
-    document.addEventListener("visibilitychange", onHide);
-    window.location.href = deep;
-  } else {
-    // Desktop: open Quo web app dialer in a new tab
-    const url = `https://my.openphone.com/inbox?dial=${encodeURIComponent(to)}`;
-    const w = window.open(url, "_blank", "noopener,noreferrer");
-    if (!w) toast.error("Popup blocked — allow popups to open Quo");
-  }
-}
-
-const opts = queryOptions({
-  queryKey: ["my-claimed-leads"],
-  queryFn: () => listMyClaimedLeads(),
-});
+const opts = (tab: Tab, search: string, offset: number) =>
+  queryOptions({
+    queryKey: ["my-claimed-leads", tab, search, offset],
+    queryFn: () => listMyClaimedLeads({ data: { tab, search: search || undefined, limit: PAGE, offset } }),
+  });
 
 export const Route = createFileRoute("/app/_authenticated/b2b/leads")({
   head: () => ({ meta: [{ title: "My Leads" }, { name: "description", content: "Leads you've claimed from the pool." }] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(opts),
+  loader: ({ context }) => context.queryClient.ensureQueryData(opts("all", "", 0)),
   component: MyLeadsPage,
 });
 
 function MyLeadsPage() {
-  const { data: leads } = useSuspenseQuery(opts);
+  const [tab, setTab] = useState<Tab>("all");
+  const [inputVal, setInputVal] = useState("");
+  const [search, setSearch] = useState("");
+  const [offset, setOffset] = useState(0);
+  const { data } = useSuspenseQuery(opts(tab, search, offset));
+
   const [preview, setPreview] = useState<any | null>(null);
   const [logOpen, setLogOpen] = useState(false);
 
+  const total = data.total;
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  const page = Math.floor(offset / PAGE) + 1;
+
   return (
     <div className="space-y-4 max-w-6xl">
-      <PageHeader title="My leads" description={`${leads.length} claimed`} />
+      <PageHeader title="My leads" description={`${total} lead${total === 1 ? "" : "s"}`} />
+
+      <Tabs value={tab} onValueChange={(v) => { setTab(v as Tab); setOffset(0); }}>
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="uncontacted">Uncontacted</TabsTrigger>
+          <TabsTrigger value="booked">Booked</TabsTrigger>
+          <TabsTrigger value="no_answer">Didn't pick up</TabsTrigger>
+          <TabsTrigger value="not_interested">Not interested</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <Card className="p-3">
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => { e.preventDefault(); setOffset(0); setSearch(inputVal); }}
+        >
+          <div className="relative flex-1">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search name, company, email, phone…" value={inputVal} onChange={(e) => setInputVal(e.target.value)} className="pl-9" />
+          </div>
+          <Button type="submit" variant="outline">Search</Button>
+          {search && (
+            <Button type="button" variant="ghost" onClick={() => { setInputVal(""); setSearch(""); setOffset(0); }}>Clear</Button>
+          )}
+        </form>
+      </Card>
+
       <Card className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
@@ -74,7 +83,7 @@ function MyLeadsPage() {
             </tr>
           </thead>
           <tbody>
-            {leads.map((l) => (
+            {data.rows.map((l: any) => (
               <tr
                 key={l.id}
                 className="border-t border-border hover:bg-muted/30 cursor-pointer"
@@ -86,19 +95,35 @@ function MyLeadsPage() {
                 <td className="p-3">{l.company || "—"}</td>
                 <td className="p-3">{l.phone || "—"}</td>
                 <td className="p-3">{l.email || "—"}</td>
-                <td className="p-3"><Badge variant={l.status === "booked" ? "default" : "secondary"}>{l.status}</Badge></td>
+                <td className="p-3">
+                  <Badge variant={l.status === "booked" ? "default" : l.status === "burned" ? "destructive" : "secondary"}>
+                    {l.status === "burned" ? "not interested" : l.didnt_pick_up ? "didn't pick up" : l.status}
+                  </Badge>
+                </td>
               </tr>
             ))}
-            {!leads.length && (
+            {!data.rows.length && (
               <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">
-                No claimed leads yet. Head to <Link to="/app/b2b/pool" className="underline">Lead Pool</Link> to claim some.
+                No leads in this view. Head to <Link to="/app/b2b/pool" className="underline">Lead Pool</Link> to claim some.
               </td></tr>
             )}
           </tbody>
         </table>
       </Card>
 
-      <LeadPreviewDialog
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-muted-foreground">Page {page} of {pages}</div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE))}>
+            <ChevronLeft className="h-4 w-4" /> Prev
+          </Button>
+          <Button size="sm" variant="outline" disabled={offset + PAGE >= total} onClick={() => setOffset(offset + PAGE)}>
+            Next <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <B2bLeadDetailDialog
         lead={preview}
         onClose={() => setPreview(null)}
         onLogOutcome={() => setLogOpen(true)}
@@ -111,70 +136,6 @@ function MyLeadsPage() {
           onClose={() => { setLogOpen(false); setPreview(null); }}
         />
       )}
-    </div>
-  );
-}
-
-function LeadPreviewDialog({ lead, onClose, onLogOutcome }: {
-  lead: any | null; onClose: () => void; onLogOutcome: () => void;
-}) {
-  return (
-    <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
-        {lead && (
-          <>
-            <DialogHeader>
-              <DialogTitle>{[lead.first_name, lead.last_name].filter(Boolean).join(" ") || "Lead"}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-3 sm:grid-cols-2 text-sm">
-              <Field icon={<Building2 className="h-4 w-4" />} label="Company" value={lead.company} />
-              <Field label="Title" value={lead.title} />
-              <Field icon={<Phone className="h-4 w-4" />} label="Phone" value={lead.phone} />
-              <Field icon={<Mail className="h-4 w-4" />} label="Email" value={lead.email} />
-              <Field
-                label="Website"
-                value={lead.website}
-                render={(v) => <a onClick={(e) => e.stopPropagation()} href={v.startsWith("http") ? v : `https://${v}`} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">{v} <ExternalLink className="h-3 w-3" /></a>}
-              />
-              <Field
-                icon={<Linkedin className="h-4 w-4" />}
-                label="LinkedIn"
-                value={lead.linkedin_url}
-                render={(v) => <a onClick={(e) => e.stopPropagation()} href={/^https?:\/\//i.test(v) ? v : `https://${v.replace(/^\/+/, "")}`} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Open profile <ExternalLink className="h-3 w-3" /></a>}
-              />
-              <Field icon={<MapPin className="h-4 w-4" />} label="Location" value={[lead.city, lead.state].filter(Boolean).join(", ") || null} />
-              <Field label="Industry" value={lead.industry} />
-              <Field label="Segment" value={lead.segment} />
-              <Field label="Lead type" value={lead.lead_type} />
-              <Field label="Company size" value={lead.company_size} />
-              <Field label="Email status" value={lead.email_status} />
-              {lead.notes && <div className="sm:col-span-2"><Field label="Notes" value={lead.notes} /></div>}
-            </div>
-            <div className="flex justify-end gap-2 pt-2 flex-wrap">
-              <Button variant="outline" onClick={onClose}>Close</Button>
-              <Button
-                variant="outline"
-                disabled={!lead.phone}
-                onClick={() => lead.phone && callViaQuo(lead.id, lead.phone)}
-              >
-                <PhoneCall className="h-4 w-4 mr-1" /> Call
-              </Button>
-              <Button onClick={onLogOutcome}>Log call outcome</Button>
-            </div>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function Field({ label, value, icon, render }: {
-  label: string; value: string | null | undefined; icon?: React.ReactNode; render?: (v: string) => React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">{icon}{label}</div>
-      <div className="mt-1 text-sm break-words">{value ? (render ? render(value) : value) : <span className="text-muted-foreground">—</span>}</div>
     </div>
   );
 }
