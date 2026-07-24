@@ -1538,40 +1538,61 @@ export const updateCommission = createServerFn({ method: "POST" })
   });
 
 // ---------- Client dashboard ----------
+function etBoundaries() {
+  const now = new Date();
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", hourCycle: "h23",
+    year:"numeric", month:"2-digit", day:"2-digit",
+    hour:"2-digit", minute:"2-digit", second:"2-digit",
+  });
+  const parts = Object.fromEntries(dtf.formatToParts(now).map(p=>[p.type,p.value])) as Record<string,string>;
+  const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  const offsetMs = asUtc - now.getTime();
+  const etNow = new Date(now.getTime() + offsetMs);
+  const todayEt = new Date(etNow); todayEt.setUTCHours(0,0,0,0);
+  const dow = etNow.getUTCDay(); // 0=Sun
+  const daysFromMon = (dow + 6) % 7;
+  const mondayEt = new Date(etNow);
+  mondayEt.setUTCDate(etNow.getUTCDate() - daysFromMon);
+  mondayEt.setUTCHours(1, 0, 0, 0);
+  if (etNow.getTime() < mondayEt.getTime()) mondayEt.setUTCDate(mondayEt.getUTCDate() - 7);
+  return {
+    todayStartIso: new Date(todayEt.getTime() - offsetMs).toISOString(),
+    weekStartIso: new Date(mondayEt.getTime() - offsetMs).toISOString(),
+  };
+}
+
 export const getClientDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const todayISO = todayStart.toISOString();
+    const { todayStartIso, weekStartIso } = etBoundaries();
 
-    const [leadsRes, contactedTodayRes, modulesRes, completionsRes, commissionsRes] = await Promise.all([
-      supabase.from("leads").select("id, status, contacted_at, created_at").eq("assigned_user_id", userId),
-      supabase.from("leads").select("id", { count: "exact", head: true }).eq("assigned_user_id", userId).gte("contacted_at", todayISO),
+    const [claimedTodayRes, contactedTodayRes, bookedWeekRes, modulesRes, completionsRes, commissionsRes] = await Promise.all([
+      supabase.from("b2b_lead_pool").select("id", { count: "exact", head: true }).eq("claimed_by", userId).gte("claimed_at", todayStartIso),
+      supabase.from("b2b_call_attempts").select("pool_lead_id", { count: "exact", head: true }).eq("setter_id", userId).gte("created_at", todayStartIso),
+      supabase.from("b2b_call_attempts").select("id", { count: "exact", head: true }).eq("setter_id", userId).eq("outcome", "booked").gte("created_at", weekStartIso),
       supabase.from("modules").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase.from("module_completions").select("id", { count: "exact", head: true }).eq("user_id", userId),
       supabase.from("commissions").select("amount").eq("user_id", userId),
     ]);
 
-    const leads = leadsRes.data ?? [];
-    const todayLeads = leads.filter((l) => new Date(l.created_at) >= todayStart).length;
-    const remaining = leads.filter((l) => l.status === "New" || !l.contacted_at).length;
     const totalModules = modulesRes.count ?? 0;
     const doneModules = completionsRes.count ?? 0;
     const progress = totalModules ? Math.round((doneModules / totalModules) * 100) : 0;
     const balance = (commissionsRes.data ?? []).reduce((s, c) => s + Number(c.amount), 0);
 
     return {
-      todayLeads,
+      claimedLeadsToday: claimedTodayRes.count ?? 0,
       contactedToday: contactedTodayRes.count ?? 0,
-      remaining,
-      totalLeads: leads.length,
+      bookedCallsThisWeek: bookedWeekRes.count ?? 0,
       progress,
       doneModules,
       totalModules,
       balance,
     };
   });
+
 
 // ---------- Admin dashboard ----------
 export const getAdminDashboard = createServerFn({ method: "GET" })

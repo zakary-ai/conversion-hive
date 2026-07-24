@@ -47,9 +47,10 @@ function ClientDashboard() {
 
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Today's leads" value={data.todayLeads} icon={Briefcase} hint="New leads added today" />
+        <StatCard label="Claimed leads today" value={data.claimedLeadsToday} icon={Briefcase} hint="Leads you claimed today" />
         <StatCard label="Contacted today" value={data.contactedToday} icon={CheckCircle2} />
-        <StatCard label="Leads remaining" value={data.remaining} icon={Clock} hint={`of ${data.totalLeads} assigned`} />
+        <StatCard label="Booked calls this week" value={data.bookedCallsThisWeek} icon={Clock} hint="Resets Monday 1 AM ET" />
+
         <button
           type="button"
           onClick={() => setBreakdownOpen(true)}

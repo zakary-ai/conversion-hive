@@ -62,7 +62,7 @@ function LeadDetailPage() {
           icon={<Linkedin className="h-4 w-4" />}
           label="LinkedIn"
           value={lead.linkedin_url}
-          render={(v) => <a href={v} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Open profile <ExternalLink className="h-3 w-3" /></a>}
+          render={(v) => <a href={/^https?:\/\//i.test(v) ? v : `https://${v.replace(/^\/+/, "")}`} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Open profile <ExternalLink className="h-3 w-3" /></a>}
         />
         <Field label="Source" value={lead.source} />
         {lead.notes && <div className="sm:col-span-2"><Field label="Notes" value={lead.notes} /></div>}
