@@ -31,10 +31,14 @@ export function LogCallOutcomeDialog({
     qc.invalidateQueries({ queryKey: ["pool-lead", lead.id] });
   };
 
+  type Payload = {
+    pool_lead_id: string;
+    outcome: "booked" | "callback_scheduled" | "no_answer" | "not_interested";
+    note?: string;
+    callback_at?: string;
+  };
   const submit = useMutation({
-    mutationFn: async (payload: Parameters<typeof logCallOutcome>[0]["data"]) => {
-      return logCallOutcome({ data: payload });
-    },
+    mutationFn: async (payload: Payload) => logCallOutcome({ data: payload }),
     onSuccess: () => { toast.success("Outcome logged"); invalidate(); close(); },
     onError: (e: Error) => toast.error(e.message),
   });
