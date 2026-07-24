@@ -5,7 +5,7 @@ import { LifeBuoy } from "lucide-react";
 export function SupportButton({ className }: { className?: string }) {
   return (
     <Button asChild variant="outline" size="sm" className={className}>
-      <Link to="/app/support">
+      <Link to="/app/tickets">
         <LifeBuoy className="h-4 w-4 mr-1.5" />
         Support
       </Link>

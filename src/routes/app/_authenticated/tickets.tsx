@@ -25,7 +25,7 @@ const MAX_SIZE = 5 * 1024 * 1024;
 
 const searchSchema = z.object({ id: z.string().uuid().optional() });
 
-export const Route = createFileRoute("/app/_authenticated/support")({
+export const Route = createFileRoute("/app/_authenticated/tickets")({
   validateSearch: searchSchema,
   component: SupportPage,
 });
@@ -52,7 +52,7 @@ async function uploadAttachments(ticketId: string, files: File[]) {
 }
 
 function SupportPage() {
-  const search = useSearch({ from: "/app/_authenticated/support" });
+  const search = useSearch({ from: "/app/_authenticated/tickets" });
   const [selected, setSelected] = useState<string | null>(search.id ?? null);
 
   return selected ? (
