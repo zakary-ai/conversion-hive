@@ -228,17 +228,25 @@ export const adminListPool = createServerFn({ method: "GET" })
   });
 
 const PoolRowSchema = z.object({
+  segment: z.string().optional().nullable(),
+  lead_type: z.string().optional().nullable(),
   first_name: z.string().optional().nullable(),
   last_name: z.string().optional().nullable(),
+  title: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
+  email_status: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   linkedin_url: z.string().optional().nullable(),
-  title: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  industry: z.string().optional().nullable(),
+  company_size: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   source: z.string().optional().nullable(),
 });
+
 
 export const adminBulkImportPool = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -262,18 +270,26 @@ export const adminBulkImportPool = createServerFn({ method: "POST" })
       if (pDigits) phoneSeen.add(pDigits);
       if (!email && !pDigits && !r.first_name && !r.last_name && !r.company) continue;
       clean.push({
+        segment: r.segment || null,
+        lead_type: r.lead_type || null,
         first_name: r.first_name || null,
         last_name: r.last_name || null,
+        title: r.title || null,
         company: r.company || null,
         website: r.website || null,
         email,
+        email_status: r.email_status || null,
         phone,
         linkedin_url: r.linkedin_url || null,
-        title: r.title || null,
+        city: r.city || null,
+        state: r.state || null,
+        industry: r.industry || null,
+        company_size: r.company_size || null,
         notes: r.notes || null,
         source: r.source || "csv-import",
         imported_by: context.userId,
       });
+
     }
     if (!clean.length) return { inserted: 0, duplicates: dupInBatch, skipped: data.rows.length - clean.length };
 
