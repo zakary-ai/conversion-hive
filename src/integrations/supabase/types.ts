@@ -248,6 +248,82 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_call_attempts: {
+        Row: {
+          id: string
+          note: string | null
+          occurred_at: string
+          outcome: Database["public"]["Enums"]["b2b_call_outcome"]
+          pool_lead_id: string
+          setter_id: string
+        }
+        Insert: {
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          outcome: Database["public"]["Enums"]["b2b_call_outcome"]
+          pool_lead_id: string
+          setter_id: string
+        }
+        Update: {
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          outcome?: Database["public"]["Enums"]["b2b_call_outcome"]
+          pool_lead_id?: string
+          setter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_call_attempts_pool_lead_id_fkey"
+            columns: ["pool_lead_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_lead_pool"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_callbacks: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          pool_lead_id: string
+          scheduled_at: string
+          setter_id: string
+          status: Database["public"]["Enums"]["b2b_callback_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          pool_lead_id: string
+          scheduled_at: string
+          setter_id: string
+          status?: Database["public"]["Enums"]["b2b_callback_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          pool_lead_id?: string
+          scheduled_at?: string
+          setter_id?: string
+          status?: Database["public"]["Enums"]["b2b_callback_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_callbacks_pool_lead_id_fkey"
+            columns: ["pool_lead_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_lead_pool"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       b2b_closer_availability_rules: {
         Row: {
           closer_id: string
@@ -342,6 +418,78 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      b2b_lead_pool: {
+        Row: {
+          archived: boolean
+          claimed_at: string | null
+          claimed_by: string | null
+          company: string | null
+          created_at: string
+          didnt_pick_up: boolean
+          email: string | null
+          first_name: string | null
+          id: string
+          imported_at: string
+          imported_by: string | null
+          last_attempt_at: string | null
+          last_name: string | null
+          linkedin_url: string | null
+          notes: string | null
+          phone: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["b2b_pool_status"]
+          title: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          archived?: boolean
+          claimed_at?: string | null
+          claimed_by?: string | null
+          company?: string | null
+          created_at?: string
+          didnt_pick_up?: boolean
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          last_attempt_at?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["b2b_pool_status"]
+          title?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          archived?: boolean
+          claimed_at?: string | null
+          claimed_by?: string | null
+          company?: string | null
+          created_at?: string
+          didnt_pick_up?: boolean
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          last_attempt_at?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["b2b_pool_status"]
+          title?: string | null
+          updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -1157,6 +1305,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          archived: boolean
           assigned_at: string | null
           assigned_user_id: string | null
           callback_at: string | null
@@ -1178,6 +1327,7 @@ export type Database = {
           status: Database["public"]["Enums"]["lead_status"]
         }
         Insert: {
+          archived?: boolean
           assigned_at?: string | null
           assigned_user_id?: string | null
           callback_at?: string | null
@@ -1199,6 +1349,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["lead_status"]
         }
         Update: {
+          archived?: boolean
           assigned_at?: string | null
           assigned_user_id?: string | null
           callback_at?: string | null
@@ -2397,6 +2548,13 @@ export type Database = {
         | "Booked"
         | "Not Interested"
         | "Reapplied"
+      b2b_call_outcome:
+        | "booked"
+        | "callback_scheduled"
+        | "no_answer"
+        | "not_interested"
+      b2b_callback_status: "scheduled" | "completed" | "missed"
+      b2b_pool_status: "unclaimed" | "claimed" | "burned" | "booked"
       lead_status:
         | "New"
         | "Contacted"
@@ -2642,6 +2800,14 @@ export const Constants = {
         "Not Interested",
         "Reapplied",
       ],
+      b2b_call_outcome: [
+        "booked",
+        "callback_scheduled",
+        "no_answer",
+        "not_interested",
+      ],
+      b2b_callback_status: ["scheduled", "completed", "missed"],
+      b2b_pool_status: ["unclaimed", "claimed", "burned", "booked"],
       lead_status: [
         "New",
         "Contacted",

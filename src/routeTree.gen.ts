@@ -45,6 +45,10 @@ import { Route as AppAuthenticatedDmSetterInboxRouteImport } from './routes/app/
 import { Route as AppAuthenticatedDmSetterCalendarRouteImport } from './routes/app/_authenticated/dm-setter/calendar'
 import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
 import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
+import { Route as AppAuthenticatedB2bPoolRouteImport } from './routes/app/_authenticated/b2b.pool'
+import { Route as AppAuthenticatedB2bLeadsRouteImport } from './routes/app/_authenticated/b2b.leads'
+import { Route as AppAuthenticatedB2bDidntPickUpRouteImport } from './routes/app/_authenticated/b2b.didnt-pick-up'
+import { Route as AppAuthenticatedB2bCallbacksRouteImport } from './routes/app/_authenticated/b2b.callbacks'
 import { Route as AppAuthenticatedAdminTicketsRouteImport } from './routes/app/_authenticated/admin/tickets'
 import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
 import { Route as AppAuthenticatedAdminScraperRouteImport } from './routes/app/_authenticated/admin/scraper'
@@ -56,6 +60,7 @@ import { Route as AppAuthenticatedAdminCommissionsRouteImport } from './routes/a
 import { Route as AppAuthenticatedAdminClosersRouteImport } from './routes/app/_authenticated/admin/closers'
 import { Route as AppAuthenticatedAdminBookingsRouteImport } from './routes/app/_authenticated/admin/bookings'
 import { Route as AppAuthenticatedAdminB2cCommissionsRouteImport } from './routes/app/_authenticated/admin/b2c-commissions'
+import { Route as AppAuthenticatedAdminB2bPoolRouteImport } from './routes/app/_authenticated/admin/b2b-pool'
 import { Route as AppAuthenticatedAdminB2bCommissionsRouteImport } from './routes/app/_authenticated/admin/b2b-commissions'
 import { Route as AppAuthenticatedAdminB2bClosersRouteImport } from './routes/app/_authenticated/admin/b2b-closers'
 import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/app/_authenticated/admin/applications'
@@ -71,6 +76,7 @@ import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public
 import { Route as ApiPublicHooksMarkUnbookedRouteImport } from './routes/api/public/hooks/mark-unbooked'
 import { Route as ApiPublicHooksDistributeLeadsRouteImport } from './routes/api/public/hooks/distribute-leads'
 import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
+import { Route as AppAuthenticatedB2bLeadsIdRouteImport } from './routes/app/_authenticated/b2b.leads.$id'
 import { Route as AppAuthenticatedAdminOutboundLeadsRouteImport } from './routes/app/_authenticated/admin/outbound.leads'
 import { Route as AppAuthenticatedAdminOutboundCampaignsRouteImport } from './routes/app/_authenticated/admin/outbound.campaigns'
 import { Route as AppAuthenticatedAdminClientsUserIdRouteImport } from './routes/app/_authenticated/admin/clients.$userId'
@@ -273,6 +279,29 @@ const AppAuthenticatedCloserCalendarRoute =
     path: '/closer/calendar',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedB2bPoolRoute = AppAuthenticatedB2bPoolRouteImport.update({
+  id: '/b2b/pool',
+  path: '/b2b/pool',
+  getParentRoute: () => AppAuthenticatedRouteRoute,
+} as any)
+const AppAuthenticatedB2bLeadsRoute =
+  AppAuthenticatedB2bLeadsRouteImport.update({
+    id: '/b2b/leads',
+    path: '/b2b/leads',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedB2bDidntPickUpRoute =
+  AppAuthenticatedB2bDidntPickUpRouteImport.update({
+    id: '/b2b/didnt-pick-up',
+    path: '/b2b/didnt-pick-up',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedB2bCallbacksRoute =
+  AppAuthenticatedB2bCallbacksRouteImport.update({
+    id: '/b2b/callbacks',
+    path: '/b2b/callbacks',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedAdminTicketsRoute =
   AppAuthenticatedAdminTicketsRouteImport.update({
     id: '/tickets',
@@ -337,6 +366,12 @@ const AppAuthenticatedAdminB2cCommissionsRoute =
   AppAuthenticatedAdminB2cCommissionsRouteImport.update({
     id: '/b2c-commissions',
     path: '/b2c-commissions',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminB2bPoolRoute =
+  AppAuthenticatedAdminB2bPoolRouteImport.update({
+    id: '/b2b-pool',
+    path: '/b2b-pool',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 const AppAuthenticatedAdminB2bCommissionsRoute =
@@ -428,6 +463,12 @@ const AppAuthenticatedAdminClientsIndexRoute =
     path: '/clients/',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
+const AppAuthenticatedB2bLeadsIdRoute =
+  AppAuthenticatedB2bLeadsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AppAuthenticatedB2bLeadsRoute,
+  } as any)
 const AppAuthenticatedAdminOutboundLeadsRoute =
   AppAuthenticatedAdminOutboundLeadsRouteImport.update({
     id: '/outbound/leads',
@@ -483,6 +524,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
   '/app/admin/b2b-commissions': typeof AppAuthenticatedAdminB2bCommissionsRoute
+  '/app/admin/b2b-pool': typeof AppAuthenticatedAdminB2bPoolRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
@@ -494,6 +536,10 @@ export interface FileRoutesByFullPath {
   '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
+  '/app/b2b/callbacks': typeof AppAuthenticatedB2bCallbacksRoute
+  '/app/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
+  '/app/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
+  '/app/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -511,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
   '/app/admin/outbound/campaigns': typeof AppAuthenticatedAdminOutboundCampaignsRoute
   '/app/admin/outbound/leads': typeof AppAuthenticatedAdminOutboundLeadsRoute
+  '/app/b2b/leads/$id': typeof AppAuthenticatedB2bLeadsIdRoute
   '/app/admin/clients/': typeof AppAuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -548,6 +595,7 @@ export interface FileRoutesByTo {
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
   '/app/admin/b2b-commissions': typeof AppAuthenticatedAdminB2bCommissionsRoute
+  '/app/admin/b2b-pool': typeof AppAuthenticatedAdminB2bPoolRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
@@ -559,6 +607,10 @@ export interface FileRoutesByTo {
   '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
+  '/app/b2b/callbacks': typeof AppAuthenticatedB2bCallbacksRoute
+  '/app/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
+  '/app/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
+  '/app/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -576,6 +628,7 @@ export interface FileRoutesByTo {
   '/app/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
   '/app/admin/outbound/campaigns': typeof AppAuthenticatedAdminOutboundCampaignsRoute
   '/app/admin/outbound/leads': typeof AppAuthenticatedAdminOutboundLeadsRoute
+  '/app/b2b/leads/$id': typeof AppAuthenticatedB2bLeadsIdRoute
   '/app/admin/clients': typeof AppAuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesById {
@@ -616,6 +669,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
   '/app/_authenticated/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
   '/app/_authenticated/admin/b2b-commissions': typeof AppAuthenticatedAdminB2bCommissionsRoute
+  '/app/_authenticated/admin/b2b-pool': typeof AppAuthenticatedAdminB2bPoolRoute
   '/app/_authenticated/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/_authenticated/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/_authenticated/admin/closers': typeof AppAuthenticatedAdminClosersRoute
@@ -627,6 +681,10 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/_authenticated/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
+  '/app/_authenticated/b2b/callbacks': typeof AppAuthenticatedB2bCallbacksRoute
+  '/app/_authenticated/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
+  '/app/_authenticated/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
+  '/app/_authenticated/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
   '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/_authenticated/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -644,6 +702,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
   '/app/_authenticated/admin/outbound/campaigns': typeof AppAuthenticatedAdminOutboundCampaignsRoute
   '/app/_authenticated/admin/outbound/leads': typeof AppAuthenticatedAdminOutboundLeadsRoute
+  '/app/_authenticated/b2b/leads/$id': typeof AppAuthenticatedB2bLeadsIdRoute
   '/app/_authenticated/admin/clients/': typeof AppAuthenticatedAdminClientsIndexRoute
 }
 export interface FileRouteTypes {
@@ -684,6 +743,7 @@ export interface FileRouteTypes {
     | '/app/admin/applications'
     | '/app/admin/b2b-closers'
     | '/app/admin/b2b-commissions'
+    | '/app/admin/b2b-pool'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
     | '/app/admin/closers'
@@ -695,6 +755,10 @@ export interface FileRouteTypes {
     | '/app/admin/scraper'
     | '/app/admin/settings'
     | '/app/admin/tickets'
+    | '/app/b2b/callbacks'
+    | '/app/b2b/didnt-pick-up'
+    | '/app/b2b/leads'
+    | '/app/b2b/pool'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-setter/calendar'
@@ -712,6 +776,7 @@ export interface FileRouteTypes {
     | '/app/admin/clients/$userId'
     | '/app/admin/outbound/campaigns'
     | '/app/admin/outbound/leads'
+    | '/app/b2b/leads/$id'
     | '/app/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -749,6 +814,7 @@ export interface FileRouteTypes {
     | '/app/admin/applications'
     | '/app/admin/b2b-closers'
     | '/app/admin/b2b-commissions'
+    | '/app/admin/b2b-pool'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
     | '/app/admin/closers'
@@ -760,6 +826,10 @@ export interface FileRouteTypes {
     | '/app/admin/scraper'
     | '/app/admin/settings'
     | '/app/admin/tickets'
+    | '/app/b2b/callbacks'
+    | '/app/b2b/didnt-pick-up'
+    | '/app/b2b/leads'
+    | '/app/b2b/pool'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-setter/calendar'
@@ -777,6 +847,7 @@ export interface FileRouteTypes {
     | '/app/admin/clients/$userId'
     | '/app/admin/outbound/campaigns'
     | '/app/admin/outbound/leads'
+    | '/app/b2b/leads/$id'
     | '/app/admin/clients'
   id:
     | '__root__'
@@ -816,6 +887,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/applications'
     | '/app/_authenticated/admin/b2b-closers'
     | '/app/_authenticated/admin/b2b-commissions'
+    | '/app/_authenticated/admin/b2b-pool'
     | '/app/_authenticated/admin/b2c-commissions'
     | '/app/_authenticated/admin/bookings'
     | '/app/_authenticated/admin/closers'
@@ -827,6 +899,10 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/scraper'
     | '/app/_authenticated/admin/settings'
     | '/app/_authenticated/admin/tickets'
+    | '/app/_authenticated/b2b/callbacks'
+    | '/app/_authenticated/b2b/didnt-pick-up'
+    | '/app/_authenticated/b2b/leads'
+    | '/app/_authenticated/b2b/pool'
     | '/app/_authenticated/closer/calendar'
     | '/app/_authenticated/closer/commissions'
     | '/app/_authenticated/dm-setter/calendar'
@@ -844,6 +920,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/clients/$userId'
     | '/app/_authenticated/admin/outbound/campaigns'
     | '/app/_authenticated/admin/outbound/leads'
+    | '/app/_authenticated/b2b/leads/$id'
     | '/app/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
 }
@@ -1128,6 +1205,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedCloserCalendarRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/b2b/pool': {
+      id: '/app/_authenticated/b2b/pool'
+      path: '/b2b/pool'
+      fullPath: '/app/b2b/pool'
+      preLoaderRoute: typeof AppAuthenticatedB2bPoolRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/b2b/leads': {
+      id: '/app/_authenticated/b2b/leads'
+      path: '/b2b/leads'
+      fullPath: '/app/b2b/leads'
+      preLoaderRoute: typeof AppAuthenticatedB2bLeadsRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/b2b/didnt-pick-up': {
+      id: '/app/_authenticated/b2b/didnt-pick-up'
+      path: '/b2b/didnt-pick-up'
+      fullPath: '/app/b2b/didnt-pick-up'
+      preLoaderRoute: typeof AppAuthenticatedB2bDidntPickUpRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/b2b/callbacks': {
+      id: '/app/_authenticated/b2b/callbacks'
+      path: '/b2b/callbacks'
+      fullPath: '/app/b2b/callbacks'
+      preLoaderRoute: typeof AppAuthenticatedB2bCallbacksRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/admin/tickets': {
       id: '/app/_authenticated/admin/tickets'
       path: '/tickets'
@@ -1203,6 +1308,13 @@ declare module '@tanstack/react-router' {
       path: '/b2c-commissions'
       fullPath: '/app/admin/b2c-commissions'
       preLoaderRoute: typeof AppAuthenticatedAdminB2cCommissionsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/b2b-pool': {
+      id: '/app/_authenticated/admin/b2b-pool'
+      path: '/b2b-pool'
+      fullPath: '/app/admin/b2b-pool'
+      preLoaderRoute: typeof AppAuthenticatedAdminB2bPoolRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
     '/app/_authenticated/admin/b2b-commissions': {
@@ -1310,6 +1422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAdminClientsIndexRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
+    '/app/_authenticated/b2b/leads/$id': {
+      id: '/app/_authenticated/b2b/leads/$id'
+      path: '/$id'
+      fullPath: '/app/b2b/leads/$id'
+      preLoaderRoute: typeof AppAuthenticatedB2bLeadsIdRouteImport
+      parentRoute: typeof AppAuthenticatedB2bLeadsRoute
+    }
     '/app/_authenticated/admin/outbound/leads': {
       id: '/app/_authenticated/admin/outbound/leads'
       path: '/outbound/leads'
@@ -1340,6 +1459,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminApplicationsRoute: typeof AppAuthenticatedAdminApplicationsRoute
   AppAuthenticatedAdminB2bClosersRoute: typeof AppAuthenticatedAdminB2bClosersRoute
   AppAuthenticatedAdminB2bCommissionsRoute: typeof AppAuthenticatedAdminB2bCommissionsRoute
+  AppAuthenticatedAdminB2bPoolRoute: typeof AppAuthenticatedAdminB2bPoolRoute
   AppAuthenticatedAdminB2cCommissionsRoute: typeof AppAuthenticatedAdminB2cCommissionsRoute
   AppAuthenticatedAdminBookingsRoute: typeof AppAuthenticatedAdminBookingsRoute
   AppAuthenticatedAdminClosersRoute: typeof AppAuthenticatedAdminClosersRoute
@@ -1368,6 +1488,7 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminB2bClosersRoute: AppAuthenticatedAdminB2bClosersRoute,
     AppAuthenticatedAdminB2bCommissionsRoute:
       AppAuthenticatedAdminB2bCommissionsRoute,
+    AppAuthenticatedAdminB2bPoolRoute: AppAuthenticatedAdminB2bPoolRoute,
     AppAuthenticatedAdminB2cCommissionsRoute:
       AppAuthenticatedAdminB2cCommissionsRoute,
     AppAuthenticatedAdminBookingsRoute: AppAuthenticatedAdminBookingsRoute,
@@ -1397,6 +1518,20 @@ const AppAuthenticatedAdminRouteRouteWithChildren =
     AppAuthenticatedAdminRouteRouteChildren,
   )
 
+interface AppAuthenticatedB2bLeadsRouteChildren {
+  AppAuthenticatedB2bLeadsIdRoute: typeof AppAuthenticatedB2bLeadsIdRoute
+}
+
+const AppAuthenticatedB2bLeadsRouteChildren: AppAuthenticatedB2bLeadsRouteChildren =
+  {
+    AppAuthenticatedB2bLeadsIdRoute: AppAuthenticatedB2bLeadsIdRoute,
+  }
+
+const AppAuthenticatedB2bLeadsRouteWithChildren =
+  AppAuthenticatedB2bLeadsRoute._addFileChildren(
+    AppAuthenticatedB2bLeadsRouteChildren,
+  )
+
 interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedAdminRouteRoute: typeof AppAuthenticatedAdminRouteRouteWithChildren
   AppAuthenticatedCalendarRoute: typeof AppAuthenticatedCalendarRoute
@@ -1406,6 +1541,10 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedProfileRoute: typeof AppAuthenticatedProfileRoute
   AppAuthenticatedSetPasswordRoute: typeof AppAuthenticatedSetPasswordRoute
   AppAuthenticatedSupportRoute: typeof AppAuthenticatedSupportRoute
+  AppAuthenticatedB2bCallbacksRoute: typeof AppAuthenticatedB2bCallbacksRoute
+  AppAuthenticatedB2bDidntPickUpRoute: typeof AppAuthenticatedB2bDidntPickUpRoute
+  AppAuthenticatedB2bLeadsRoute: typeof AppAuthenticatedB2bLeadsRouteWithChildren
+  AppAuthenticatedB2bPoolRoute: typeof AppAuthenticatedB2bPoolRoute
   AppAuthenticatedCloserCalendarRoute: typeof AppAuthenticatedCloserCalendarRoute
   AppAuthenticatedCloserCommissionsRoute: typeof AppAuthenticatedCloserCommissionsRoute
   AppAuthenticatedDmSetterCalendarRoute: typeof AppAuthenticatedDmSetterCalendarRoute
@@ -1427,6 +1566,10 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedProfileRoute: AppAuthenticatedProfileRoute,
   AppAuthenticatedSetPasswordRoute: AppAuthenticatedSetPasswordRoute,
   AppAuthenticatedSupportRoute: AppAuthenticatedSupportRoute,
+  AppAuthenticatedB2bCallbacksRoute: AppAuthenticatedB2bCallbacksRoute,
+  AppAuthenticatedB2bDidntPickUpRoute: AppAuthenticatedB2bDidntPickUpRoute,
+  AppAuthenticatedB2bLeadsRoute: AppAuthenticatedB2bLeadsRouteWithChildren,
+  AppAuthenticatedB2bPoolRoute: AppAuthenticatedB2bPoolRoute,
   AppAuthenticatedCloserCalendarRoute: AppAuthenticatedCloserCalendarRoute,
   AppAuthenticatedCloserCommissionsRoute:
     AppAuthenticatedCloserCommissionsRoute,
@@ -1488,13 +1631,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
