@@ -196,13 +196,20 @@ function CsvImportButton() {
           };
           const firstK = pick([KEY(["first_name", "first name", "firstname", "first"]), (k) => k.includes("first")]);
           const lastK = pick([KEY(["last_name", "last name", "lastname", "last"]), (k) => k.includes("last")]);
-          const nameK = pick([KEY(["name", "full_name", "full name", "contact"]), (k) => k.includes("name")]);
-          const companyK = pick([KEY(["company", "business", "organization", "org"]), (k) => k.includes("company") || k.includes("business")]);
-          const websiteK = pick([KEY(["website", "url", "site", "domain"]), (k) => k.includes("website") || k.includes("url")]);
-          const emailK = pick([KEY(["email", "email_address", "e-mail"]), (k) => k.includes("email") || k.includes("mail")]);
+          const nameK = pick([KEY(["name", "full_name", "full name", "contact"]), (k) => k === "name" || k === "full_name" || k === "contact"]);
+          const segmentK = pick([KEY(["segment"]), (k) => k.includes("segment")]);
+          const leadTypeK = pick([KEY(["lead_type", "lead type", "leadtype", "type"]), (k) => k.includes("lead_type") || k === "type"]);
+          const titleK = pick([KEY(["title", "job_title", "job title", "position"]), (k) => k.includes("title") || k.includes("position")]);
+          const companyK = pick([KEY(["company_name", "company name", "company", "business", "organization", "org"]), (k) => k.includes("company") || k.includes("business")]);
+          const websiteK = pick([KEY(["company_website", "company website", "website", "url", "site", "domain"]), (k) => k.includes("website") || k.includes("url") || k.includes("domain")]);
+          const emailK = pick([KEY(["email", "email_address", "e-mail"]), (k) => k === "email" || k.includes("email_address")]);
+          const emailStatusK = pick([KEY(["email_status", "email status"]), (k) => k.includes("email_status") || k.includes("email status")]);
           const phoneK = pick([KEY(["phone", "phone_number", "mobile", "cell", "telephone"]), (k) => k.includes("phone") || k.includes("mobile") || k.includes("cell")]);
           const liK = pick([KEY(["linkedin", "linkedin_url", "linkedin url"]), (k) => k.includes("linkedin")]);
-          const titleK = pick([KEY(["title", "job_title", "job title", "position"]), (k) => k.includes("title") || k.includes("position")]);
+          const cityK = pick([KEY(["city"]), (k) => k === "city"]);
+          const stateK = pick([KEY(["state", "region", "province"]), (k) => k === "state" || k.includes("region") || k.includes("province")]);
+          const industryK = pick([KEY(["industry"]), (k) => k.includes("industry")]);
+          const sizeK = pick([KEY(["company_size", "company size", "employees", "employee_count", "size"]), (k) => k.includes("company_size") || k.includes("employees") || k === "size"]);
           const notesK = pick([KEY(["notes", "note", "comments"]), (k) => k.includes("note") || k.includes("comment")]);
 
           const mapped = rows.map((r) => {
@@ -214,18 +221,26 @@ function CsvImportButton() {
               ln = parts.slice(1).join(" ") || "";
             }
             return {
+              segment: segmentK ? r[segmentK] || null : null,
+              lead_type: leadTypeK ? r[leadTypeK] || null : null,
               first_name: fn || null,
               last_name: ln || null,
+              title: titleK ? r[titleK] || null : null,
               company: companyK ? r[companyK] || null : null,
               website: websiteK ? r[websiteK] || null : null,
               email: emailK ? r[emailK] || null : null,
+              email_status: emailStatusK ? r[emailStatusK] || null : null,
               phone: phoneK ? r[phoneK] || null : null,
               linkedin_url: liK ? r[liK] || null : null,
-              title: titleK ? r[titleK] || null : null,
+              city: cityK ? r[cityK] || null : null,
+              state: stateK ? r[stateK] || null : null,
+              industry: industryK ? r[industryK] || null : null,
+              company_size: sizeK ? r[sizeK] || null : null,
               notes: notesK ? r[notesK] || null : null,
               source: "csv-import",
             };
           }).filter((r) => r.first_name || r.last_name || r.email || r.phone || r.company);
+
 
           totalRows += mapped.length;
           for (let i = 0; i < mapped.length; i += 500) {
