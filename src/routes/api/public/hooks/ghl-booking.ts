@@ -286,9 +286,9 @@ export const Route = createFileRoute("/api/public/hooks/ghl-booking")({
             const payload: AnyRec = {
               lead_id: leadId,
               user_id: userId,
-              name: fullName ?? (lead.name as string) ?? "Lead",
-              email: email ?? (lead.email as string | null),
-              phone: phone ?? (lead.phone as string | null),
+              name: fullName ?? ((lead as AnyRec).name as string) ?? "Lead",
+              email: email ?? ((lead as AnyRec).email as string | null),
+              phone: phone ?? ((lead as AnyRec).phone as string | null),
               scheduled_at: scheduledAt,
               status: apptStatus?.toLowerCase() === "cancelled" ? "cancelled" : "scheduled",
               type: "booking",
@@ -298,7 +298,7 @@ export const Route = createFileRoute("/api/public/hooks/ghl-booking")({
               ghl_appointment_id: ghlApptId,
             };
             if (existingId) {
-              await supabaseAdmin.from("appointments").update(payload).eq("id", existingId);
+              await supabaseAdmin.from("appointments").update(payload as never).eq("id", existingId);
             } else {
               await supabaseAdmin.from("appointments").insert(payload as never);
             }
