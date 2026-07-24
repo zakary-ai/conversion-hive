@@ -591,6 +591,7 @@ export type Database = {
           id: string
           lead_id: string | null
           openphone_call_id: string | null
+          pool_lead_id: string | null
           recording_url: string | null
           started_at: string | null
           status: string | null
@@ -611,6 +612,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           openphone_call_id?: string | null
+          pool_lead_id?: string | null
           recording_url?: string | null
           started_at?: string | null
           status?: string | null
@@ -631,6 +633,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           openphone_call_id?: string | null
+          pool_lead_id?: string | null
           recording_url?: string | null
           started_at?: string | null
           status?: string | null
@@ -647,6 +650,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_pool_lead_id_fkey"
+            columns: ["pool_lead_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_lead_pool"
             referencedColumns: ["id"]
           },
         ]

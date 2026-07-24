@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
-import { adminListPool, adminBulkImportPool, listAllCallbacksAdmin } from "@/lib/api/b2b-pool.functions";
+import { adminListPool, adminBulkImportPool, listAllCallbacksAdmin, adminGetPoolLead } from "@/lib/api/b2b-pool.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { B2bLeadDetailDialog } from "@/components/b2b-lead-detail-dialog";
 import { parseCsv } from "@/lib/csv";
 import { Upload, Loader2, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -36,7 +37,13 @@ function AdminPoolPage() {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   const [inputVal, setInputVal] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data } = useSuspenseQuery(opts(offset, status, search));
+  const detail = useQuery({
+    queryKey: ["admin-pool-lead", selectedId],
+    queryFn: () => adminGetPoolLead({ data: { id: selectedId! } }),
+    enabled: !!selectedId,
+  });
 
   const total = data.total;
   const pages = Math.max(1, Math.ceil(total / PAGE));
@@ -94,7 +101,11 @@ function AdminPoolPage() {
               </thead>
               <tbody>
                 {data.rows.map((r) => (
-                  <tr key={r.id} className="border-t border-border">
+                  <tr
+                    key={r.id}
+                    className="border-t border-border hover:bg-muted/30 cursor-pointer"
+                    onClick={() => setSelectedId(r.id)}
+                  >
                     <td className="p-3">{[r.first_name, r.last_name].filter(Boolean).join(" ") || "—"}</td>
                     <td className="p-3">{r.company || "—"}</td>
                     <td className="p-3">{r.email || "—"}</td>
@@ -128,6 +139,17 @@ function AdminPoolPage() {
           <CallbacksTable />
         </TabsContent>
       </Tabs>
+
+      <B2bLeadDetailDialog
+        lead={detail.data?.lead ?? null}
+        onClose={() => setSelectedId(null)}
+        showActions={false}
+        extraHeader={detail.data?.setter && (
+          <div className="text-xs text-muted-foreground mt-1">
+            Claimed by {detail.data.setter.full_name || detail.data.setter.email}
+          </div>
+        )}
+      />
     </div>
   );
 }

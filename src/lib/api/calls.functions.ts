@@ -26,19 +26,33 @@ async function assertAdmin(
 // assign per-setter numbers from the app anymore.
 export const startBridgeCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ lead_id: z.string().uuid() }).parse)
+  .inputValidator(
+    z.object({
+      lead_id: z.string().uuid().optional(),
+      pool_lead_id: z.string().uuid().optional(),
+    }).refine((v) => !!(v.lead_id || v.pool_lead_id), { message: "lead_id or pool_lead_id required" }).parse,
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { data: lead } = await supabase
-      .from("leads").select("id, phone, name").eq("id", data.lead_id).maybeSingle();
-    if (!lead) throw new Error("Lead not found");
-    if (!lead.phone) throw new Error("Lead has no phone number");
-
-    const toNumber = normalizeE164(lead.phone);
+    let toNumber: string = "";
+    if (data.lead_id) {
+      const { data: lead } = await supabase
+        .from("leads").select("id, phone, name").eq("id", data.lead_id).maybeSingle();
+      if (!lead) throw new Error("Lead not found");
+      if (!lead.phone) throw new Error("Lead has no phone number");
+      toNumber = normalizeE164(lead.phone);
+    } else if (data.pool_lead_id) {
+      const { data: pl } = await supabase
+        .from("b2b_lead_pool").select("id, phone, claimed_by").eq("id", data.pool_lead_id).maybeSingle();
+      if (!pl) throw new Error("Lead not found");
+      if (!pl.phone) throw new Error("Lead has no phone number");
+      toNumber = normalizeE164(pl.phone);
+    }
 
     const { data: log } = await supabase.from("call_logs").insert({
-      lead_id: lead.id,
+      lead_id: data.lead_id ?? null,
+      pool_lead_id: data.pool_lead_id ?? null,
       user_id: userId,
       openphone_call_id: null,
       direction: "outbound",
@@ -46,13 +60,21 @@ export const startBridgeCall = createServerFn({ method: "POST" })
       from_number: null,
       to_number: toNumber,
       started_at: new Date().toISOString(),
-    }).select("id").maybeSingle();
-
-    // Note: contacted_at is set when the setter records an outcome (updateLead),
-    // not when a call starts. That keeps "contacted" and "dials" in sync.
-
+    } as any).select("id").maybeSingle();
 
     return { ok: true, call_log_id: log?.id, dial: toNumber, from: null as string | null };
+  });
+
+export const listCallsForPoolLead = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ pool_lead_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await (context.supabase as any)
+      .from("call_logs").select("*")
+      .eq("pool_lead_id", data.pool_lead_id)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as any[];
   });
 
 // ---------- Call history ----------
