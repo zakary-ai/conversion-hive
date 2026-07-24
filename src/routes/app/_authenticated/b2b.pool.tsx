@@ -175,7 +175,7 @@ function LeadPreviewDialog({ lead, onClose, onClaim, claiming }: {
                 icon={<Linkedin className="h-4 w-4" />}
                 label="LinkedIn"
                 value={lead.linkedin_url}
-                render={(v) => <a onClick={(e) => e.stopPropagation()} href={v} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Open profile <ExternalLink className="h-3 w-3" /></a>}
+                render={(v) => <a onClick={(e) => e.stopPropagation()} href={/^https?:\/\//i.test(v) ? v : `https://${v.replace(/^\/+/, "")}`} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">Open profile <ExternalLink className="h-3 w-3" /></a>}
               />
               <Field icon={<MapPin className="h-4 w-4" />} label="Location" value={[lead.city, lead.state].filter(Boolean).join(", ") || null} />
               <Field label="Industry" value={lead.industry} />
