@@ -7,15 +7,17 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX,
+  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX, PhoneOff,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const clientItems = [
   { title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard },
-  { title: "Leads", url: "/app/leads", icon: Briefcase },
+  { title: "Lead Pool", url: "/app/b2b/pool", icon: Users },
+  { title: "My Leads", url: "/app/b2b/leads", icon: Briefcase },
+  { title: "Didn't Pick Up", url: "/app/b2b/didnt-pick-up", icon: PhoneOff },
+  { title: "Callbacks", url: "/app/b2b/callbacks", icon: CalendarIcon },
   { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
-  { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
   { title: "Support", url: "/app/support", icon: LifeBuoy },
@@ -25,8 +27,8 @@ const clientItems = [
 const adminB2BItems = [
   { title: "Dashboard", url: "/app/admin", icon: LayoutDashboard },
   { title: "Setters", url: "/app/admin/clients", icon: Users },
-  { title: "Closers", url: "/app/admin/b2b-closers", icon: UserPlus },
-  { title: "Leads", url: "/app/admin/leads", icon: Briefcase },
+  { title: "Lead Pool", url: "/app/admin/b2b-pool", icon: Users },
+  { title: "Leads (legacy)", url: "/app/admin/leads", icon: Briefcase },
   { title: "Bookings", url: "/app/calendar", icon: CalendarCheck },
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
