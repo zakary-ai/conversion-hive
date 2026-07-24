@@ -244,7 +244,7 @@ export const Route = createFileRoute("/api/public/hooks/ghl-booking")({
               if (timezone) patch.timezone = timezone;
               if (title) patch.context = title;
               if (ghlApptId) patch.ghl_appointment_id = ghlApptId;
-              await supabaseAdmin.from("appointments").update(patch).eq("id", apptId);
+              await supabaseAdmin.from("appointments").update(patch as never).eq("id", apptId);
             } else if (scheduledAt && userId) {
               // No existing appointment; treat like booked
               await insertAppt();
