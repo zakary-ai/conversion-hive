@@ -37,7 +37,13 @@ function AdminPoolPage() {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   const [inputVal, setInputVal] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data } = useSuspenseQuery(opts(offset, status, search));
+  const detail = useQuery({
+    queryKey: ["admin-pool-lead", selectedId],
+    queryFn: () => adminGetPoolLead({ data: { id: selectedId! } }),
+    enabled: !!selectedId,
+  });
 
   const total = data.total;
   const pages = Math.max(1, Math.ceil(total / PAGE));
