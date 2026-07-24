@@ -228,17 +228,25 @@ export const adminListPool = createServerFn({ method: "GET" })
   });
 
 const PoolRowSchema = z.object({
+  segment: z.string().optional().nullable(),
+  lead_type: z.string().optional().nullable(),
   first_name: z.string().optional().nullable(),
   last_name: z.string().optional().nullable(),
+  title: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
+  email_status: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   linkedin_url: z.string().optional().nullable(),
-  title: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  industry: z.string().optional().nullable(),
+  company_size: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   source: z.string().optional().nullable(),
 });
+
 
 export const adminBulkImportPool = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
