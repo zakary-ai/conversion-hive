@@ -198,7 +198,7 @@ export const replyToTicket = createServerFn({ method: "POST" })
         type: "support",
         title: "Support reply",
         body: `Admin replied to "${ticket.subject}"`,
-        link: `/app/support?id=${ticket.id}`,
+        link: `/app/tickets?id=${ticket.id}`,
         data: { ticket_id: ticket.id },
       });
     } else {
@@ -260,7 +260,7 @@ export const adminUpdateTicketStatus = createServerFn({ method: "POST" })
       type: "support",
       title: "Ticket status updated",
       body: `"${ticket.subject}" is now ${data.status.replace("_", " ")}`,
-      link: `/app/support?id=${ticket.id}`,
+      link: `/app/tickets?id=${ticket.id}`,
       data: { ticket_id: ticket.id, status: data.status },
     });
     return { ok: true };

@@ -52,7 +52,7 @@ async function uploadAttachments(ticketId: string, files: File[]) {
 }
 
 function SupportPage() {
-  const search = useSearch({ from: "/app/_authenticated/support" });
+  const search = useSearch({ from: "/app/_authenticated/tickets" });
   const [selected, setSelected] = useState<string | null>(search.id ?? null);
 
   return selected ? (
