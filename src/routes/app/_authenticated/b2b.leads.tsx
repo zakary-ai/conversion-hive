@@ -75,8 +75,7 @@ function MyLeadsPage() {
         <LogCallOutcomeDialog
           lead={{ id: preview.id, first_name: preview.first_name, last_name: preview.last_name }}
           open={logOpen}
-          onClose={() => setLogOpen(false)}
-          onLogged={() => { setLogOpen(false); setPreview(null); }}
+          onClose={() => { setLogOpen(false); setPreview(null); }}
         />
       )}
     </div>
