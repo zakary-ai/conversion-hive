@@ -74,6 +74,7 @@ import { Route as ApiPublicHooksRunDailyCycleRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksPurgeDmScreenshotsRouteImport } from './routes/api/public/hooks/purge-dm-screenshots'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
 import { Route as ApiPublicHooksMarkUnbookedRouteImport } from './routes/api/public/hooks/mark-unbooked'
+import { Route as ApiPublicHooksGhlBookingRouteImport } from './routes/api/public/hooks/ghl-booking'
 import { Route as ApiPublicHooksDistributeLeadsRouteImport } from './routes/api/public/hooks/distribute-leads'
 import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
 import { Route as AppAuthenticatedB2bLeadsIdRouteImport } from './routes/app/_authenticated/b2b.leads.$id'
@@ -451,6 +452,12 @@ const ApiPublicHooksMarkUnbookedRoute =
     path: '/api/public/hooks/mark-unbooked',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksGhlBookingRoute =
+  ApiPublicHooksGhlBookingRouteImport.update({
+    id: '/api/public/hooks/ghl-booking',
+    path: '/api/public/hooks/ghl-booking',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDistributeLeadsRoute =
   ApiPublicHooksDistributeLeadsRouteImport.update({
     id: '/api/public/hooks/distribute-leads',
@@ -511,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
+  '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -582,6 +590,7 @@ export interface FileRoutesByTo {
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
+  '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -656,6 +665,7 @@ export interface FileRoutesById {
   '/app/_authenticated/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
+  '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -730,6 +740,7 @@ export interface FileRouteTypes {
     | '/app/tickets'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
+    | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
@@ -801,6 +812,7 @@ export interface FileRouteTypes {
     | '/app/tickets'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
+    | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
@@ -874,6 +886,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/tickets'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
+    | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
@@ -938,6 +951,7 @@ export interface RootRouteChildren {
   ApiPublicConfirmBookingRoute: typeof ApiPublicConfirmBookingRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
+  ApiPublicHooksGhlBookingRoute: typeof ApiPublicHooksGhlBookingRoute
   ApiPublicHooksMarkUnbookedRoute: typeof ApiPublicHooksMarkUnbookedRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksPurgeDmScreenshotsRoute: typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -1408,6 +1422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMarkUnbookedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/ghl-booking': {
+      id: '/api/public/hooks/ghl-booking'
+      path: '/api/public/hooks/ghl-booking'
+      fullPath: '/api/public/hooks/ghl-booking'
+      preLoaderRoute: typeof ApiPublicHooksGhlBookingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/distribute-leads': {
       id: '/api/public/hooks/distribute-leads'
       path: '/api/public/hooks/distribute-leads'
@@ -1616,6 +1637,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicConfirmBookingRoute: ApiPublicConfirmBookingRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
+  ApiPublicHooksGhlBookingRoute: ApiPublicHooksGhlBookingRoute,
   ApiPublicHooksMarkUnbookedRoute: ApiPublicHooksMarkUnbookedRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksPurgeDmScreenshotsRoute: ApiPublicHooksPurgeDmScreenshotsRoute,
