@@ -316,13 +316,22 @@ export const adminBulkImportPool = createServerFn({ method: "POST" })
     const dupInDb = clean.length - finalRows.length;
     if (!finalRows.length) return { inserted: 0, duplicates: dupInBatch + dupInDb, skipped: 0 };
 
-    // Chunk insert
+    // Chunk insert; on unique-violation fall back to per-row inserts so one
+    // bad row doesn't fail the whole chunk.
     let inserted = 0;
+    let dupOnInsert = 0;
     for (let i = 0; i < finalRows.length; i += 500) {
       const chunk = finalRows.slice(i, i + 500);
       const { error, count } = await supabaseAdmin.from("b2b_lead_pool").insert(chunk, { count: "exact" });
-      if (error) throw new Error(error.message);
-      inserted += count ?? chunk.length;
+      if (!error) { inserted += count ?? chunk.length; continue; }
+      if ((error as any).code !== "23505") throw new Error(error.message);
+      for (const row of chunk) {
+        const { error: e1 } = await supabaseAdmin.from("b2b_lead_pool").insert(row);
+        if (!e1) inserted++;
+        else if ((e1 as any).code === "23505") dupOnInsert++;
+        else throw new Error(e1.message);
+      }
     }
-    return { inserted, duplicates: dupInBatch + dupInDb, skipped: 0 };
+    return { inserted, duplicates: dupInBatch + dupInDb + dupOnInsert, skipped: 0 };
+
   });
