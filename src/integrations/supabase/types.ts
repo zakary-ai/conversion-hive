@@ -132,6 +132,7 @@ export type Database = {
           created_at: string
           deal_amount: number | null
           email: string | null
+          ghl_appointment_id: string | null
           id: string
           lead_id: string | null
           lost_reason: string | null
@@ -158,6 +159,7 @@ export type Database = {
           created_at?: string
           deal_amount?: number | null
           email?: string | null
+          ghl_appointment_id?: string | null
           id?: string
           lead_id?: string | null
           lost_reason?: string | null
@@ -184,6 +186,7 @@ export type Database = {
           created_at?: string
           deal_amount?: number | null
           email?: string | null
+          ghl_appointment_id?: string | null
           id?: string
           lead_id?: string | null
           lost_reason?: string | null

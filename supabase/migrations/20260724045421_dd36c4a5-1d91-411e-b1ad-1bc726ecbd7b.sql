@@ -1,0 +1,2 @@
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS ghl_appointment_id text;
+CREATE INDEX IF NOT EXISTS appointments_ghl_appointment_id_idx ON public.appointments (ghl_appointment_id) WHERE ghl_appointment_id IS NOT NULL;
