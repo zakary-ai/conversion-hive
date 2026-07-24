@@ -8,9 +8,9 @@ import { useAdminChannel } from "@/components/app-sidebar";
 
 const clientItems = [
   { title: "Home", url: "/app/dashboard", icon: LayoutDashboard },
-  { title: "Leads", url: "/app/leads", icon: Briefcase },
-  { title: "Calendar", url: "/app/calendar", icon: CalendarIcon },
-  { title: "Training", url: "/app/training", icon: GraduationCap },
+  { title: "Pool", url: "/app/b2b/pool", icon: Users },
+  { title: "Leads", url: "/app/b2b/leads", icon: Briefcase },
+  { title: "Callbacks", url: "/app/b2b/callbacks", icon: CalendarIcon },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 

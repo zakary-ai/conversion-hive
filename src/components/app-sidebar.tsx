@@ -27,8 +27,8 @@ const clientItems = [
 const adminB2BItems = [
   { title: "Dashboard", url: "/app/admin", icon: LayoutDashboard },
   { title: "Setters", url: "/app/admin/clients", icon: Users },
-  { title: "Lead Pool", url: "/app/admin/b2b-pool", icon: Users },
-  { title: "Leads (legacy)", url: "/app/admin/leads", icon: Briefcase },
+  { title: "Closers", url: "/app/admin/b2b-closers", icon: UserPlus },
+  { title: "Lead Pool", url: "/app/admin/b2b-pool", icon: Briefcase },
   { title: "Bookings", url: "/app/calendar", icon: CalendarCheck },
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
