@@ -22,15 +22,18 @@ export function BookingIframeDialog({
   useEffect(() => { if (open) ensureScript(); }, [open]);
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-3xl w-[95vw] max-h-[92vh] overflow-hidden p-0">
-        <DialogHeader className="px-6 pt-6">
+      <DialogContent className="max-w-3xl w-[95vw] max-h-[92vh] overflow-hidden p-0 flex flex-col">
+        <DialogHeader className="px-6 pt-6 shrink-0">
           <DialogTitle>Book {leadName || "lead"}</DialogTitle>
         </DialogHeader>
-        <div className="px-2 pb-2">
+        <div
+          className="flex-1 min-h-0 overflow-y-auto px-2 pb-2"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           <iframe
             ref={ref}
             src={IFRAME_SRC}
-            style={{ width: "100%", border: "none", height: "70vh" }}
+            style={{ width: "100%", border: "none", height: "1400px", display: "block" }}
             scrolling="yes"
             title="Booking widget"
           />
