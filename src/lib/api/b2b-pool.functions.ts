@@ -141,7 +141,7 @@ export const logCallOutcome = createServerFn({ method: "POST" })
     else if (data.outcome === "not_interested") { patch.status = "burned"; patch.didnt_pick_up = false; }
     else if (data.outcome === "no_answer") { patch.didnt_pick_up = true; }
     else if (data.outcome === "callback_scheduled") { patch.didnt_pick_up = false; }
-    await context.supabase.from("b2b_lead_pool").update(patch).eq("id", data.pool_lead_id);
+    await (context.supabase.from("b2b_lead_pool") as any).update(patch).eq("id", data.pool_lead_id);
 
     if (data.outcome === "callback_scheduled") {
       if (!data.callback_at) throw new Error("Callback time required");
