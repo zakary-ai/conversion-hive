@@ -424,22 +424,29 @@ export type Database = {
       b2b_lead_pool: {
         Row: {
           archived: boolean
+          city: string | null
           claimed_at: string | null
           claimed_by: string | null
           company: string | null
+          company_size: string | null
           created_at: string
           didnt_pick_up: boolean
           email: string | null
+          email_status: string | null
           first_name: string | null
           id: string
           imported_at: string
           imported_by: string | null
+          industry: string | null
           last_attempt_at: string | null
           last_name: string | null
+          lead_type: string | null
           linkedin_url: string | null
           notes: string | null
           phone: string | null
+          segment: string | null
           source: string | null
+          state: string | null
           status: Database["public"]["Enums"]["b2b_pool_status"]
           title: string | null
           updated_at: string
@@ -447,22 +454,29 @@ export type Database = {
         }
         Insert: {
           archived?: boolean
+          city?: string | null
           claimed_at?: string | null
           claimed_by?: string | null
           company?: string | null
+          company_size?: string | null
           created_at?: string
           didnt_pick_up?: boolean
           email?: string | null
+          email_status?: string | null
           first_name?: string | null
           id?: string
           imported_at?: string
           imported_by?: string | null
+          industry?: string | null
           last_attempt_at?: string | null
           last_name?: string | null
+          lead_type?: string | null
           linkedin_url?: string | null
           notes?: string | null
           phone?: string | null
+          segment?: string | null
           source?: string | null
+          state?: string | null
           status?: Database["public"]["Enums"]["b2b_pool_status"]
           title?: string | null
           updated_at?: string
@@ -470,22 +484,29 @@ export type Database = {
         }
         Update: {
           archived?: boolean
+          city?: string | null
           claimed_at?: string | null
           claimed_by?: string | null
           company?: string | null
+          company_size?: string | null
           created_at?: string
           didnt_pick_up?: boolean
           email?: string | null
+          email_status?: string | null
           first_name?: string | null
           id?: string
           imported_at?: string
           imported_by?: string | null
+          industry?: string | null
           last_attempt_at?: string | null
           last_name?: string | null
+          lead_type?: string | null
           linkedin_url?: string | null
           notes?: string | null
           phone?: string | null
+          segment?: string | null
           source?: string | null
+          state?: string | null
           status?: Database["public"]["Enums"]["b2b_pool_status"]
           title?: string | null
           updated_at?: string
