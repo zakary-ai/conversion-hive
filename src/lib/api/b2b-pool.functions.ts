@@ -71,18 +71,88 @@ export const listPoolFacets = createServerFn({ method: "GET" })
   });
 
 
-// ---------- Pool: my claimed leads ----------
+// ---------- Pool: my claimed leads (with filters, search, pagination) ----------
+type MyLeadTab = "all" | "uncontacted" | "booked" | "no_answer" | "not_interested";
+
 export const listMyClaimedLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+  .inputValidator(
+    z.object({
+      tab: z.enum(["all", "uncontacted", "booked", "no_answer", "not_interested"]).optional(),
+      search: z.string().optional(),
+      limit: z.number().min(1).max(200).optional(),
+      offset: z.number().min(0).optional(),
+    }).optional().parse,
+  )
+  .handler(async ({ data, context }) => {
+    const tab: MyLeadTab = data?.tab ?? "all";
+    const limit = data?.limit ?? 20;
+    const offset = data?.offset ?? 0;
+    let q = context.supabase
       .from("b2b_lead_pool")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("claimed_by", context.userId)
-      .in("status", ["claimed", "booked"] as any)
-      .order("claimed_at", { ascending: false });
+      .eq("archived", false);
+
+    if (tab === "booked") q = q.eq("status", "booked" as any);
+    else if (tab === "not_interested") q = q.eq("status", "burned" as any);
+    else if (tab === "no_answer") q = q.eq("status", "claimed" as any).eq("didnt_pick_up", true);
+    else if (tab === "uncontacted") q = q.eq("status", "claimed" as any).is("last_attempt_at", null);
+    else q = q.in("status", ["claimed", "booked", "burned"] as any);
+
+    if (data?.search) {
+      const s = data.search.replace(/[%,]/g, "");
+      q = q.or(`first_name.ilike.%${s}%,last_name.ilike.%${s}%,company.ilike.%${s}%,email.ilike.%${s}%,phone.ilike.%${s}%`);
+    }
+
+    q = q.order("claimed_at", { ascending: false }).range(offset, offset + limit - 1);
+    const { data: rows, count, error } = await q;
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return { rows: rows ?? [], total: count ?? 0 };
+  });
+
+// ---------- Update lead notes (claimer or admin) ----------
+export const updatePoolLeadNotes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid(), notes: z.string().max(10000) }).parse)
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase as any)
+      .from("b2b_lead_pool")
+      .update({ notes: data.notes })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Admin: full lead detail (lead + attempts + callbacks + calls + setter) ----------
+export const adminGetPoolLead = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: lead, error } = await supabaseAdmin
+      .from("b2b_lead_pool").select("*").eq("id", data.id).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!lead) throw new Error("Lead not found");
+    const [{ data: attempts }, { data: callbacks }, { data: calls }] = await Promise.all([
+      supabaseAdmin.from("b2b_call_attempts").select("*").eq("pool_lead_id", data.id).order("occurred_at", { ascending: false }),
+      supabaseAdmin.from("b2b_callbacks").select("*").eq("pool_lead_id", data.id).order("scheduled_at", { ascending: false }),
+      (supabaseAdmin as any).from("call_logs").select("*").eq("pool_lead_id", data.id).order("created_at", { ascending: false }),
+    ]);
+    let setter: { user_id: string; full_name: string | null; email: string | null } | null = null;
+    if (lead.claimed_by) {
+      const { data: p } = await supabaseAdmin
+        .from("profiles").select("user_id, full_name, email").eq("user_id", lead.claimed_by).maybeSingle();
+      setter = p ?? null;
+    }
+    return {
+      lead,
+      attempts: attempts ?? [],
+      callbacks: callbacks ?? [],
+      calls: (calls ?? []) as any[],
+      setter,
+    };
   });
 
 // ---------- Pool: my didn't-pick-up queue ----------
