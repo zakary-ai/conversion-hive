@@ -152,10 +152,12 @@ function LeadPreviewDialog({ lead, onClose, onLogOutcome }: {
             </div>
             <div className="flex justify-end gap-2 pt-2 flex-wrap">
               <Button variant="outline" onClick={onClose}>Close</Button>
-              <Button variant="outline" asChild disabled={!lead.phone}>
-                <a href={lead.phone ? `tel:${lead.phone}` : undefined}>
-                  <PhoneCall className="h-4 w-4 mr-1" /> Call
-                </a>
+              <Button
+                variant="outline"
+                disabled={!lead.phone}
+                onClick={() => lead.phone && callViaQuo(lead.id, lead.phone)}
+              >
+                <PhoneCall className="h-4 w-4 mr-1" /> Call
               </Button>
               <Button onClick={onLogOutcome}>Log call outcome</Button>
             </div>
