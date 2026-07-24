@@ -139,6 +139,17 @@ function AdminPoolPage() {
           <CallbacksTable />
         </TabsContent>
       </Tabs>
+
+      <B2bLeadDetailDialog
+        lead={detail.data?.lead ?? null}
+        onClose={() => setSelectedId(null)}
+        showActions={false}
+        extraHeader={detail.data?.setter && (
+          <div className="text-xs text-muted-foreground mt-1">
+            Claimed by {detail.data.setter.full_name || detail.data.setter.email}
+          </div>
+        )}
+      />
     </div>
   );
 }
