@@ -101,7 +101,11 @@ function AdminPoolPage() {
               </thead>
               <tbody>
                 {data.rows.map((r) => (
-                  <tr key={r.id} className="border-t border-border">
+                  <tr
+                    key={r.id}
+                    className="border-t border-border hover:bg-muted/30 cursor-pointer"
+                    onClick={() => setSelectedId(r.id)}
+                  >
                     <td className="p-3">{[r.first_name, r.last_name].filter(Boolean).join(" ") || "—"}</td>
                     <td className="p-3">{r.company || "—"}</td>
                     <td className="p-3">{r.email || "—"}</td>
