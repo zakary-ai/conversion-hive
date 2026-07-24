@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { listMyClaimedLeads } from "@/lib/api/b2b-pool.functions";
+import { startBridgeCall } from "@/lib/api/calls.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,38 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LogCallOutcomeDialog } from "@/components/log-call-outcome-dialog";
 import { ExternalLink, Phone, Mail, Building2, Linkedin, MapPin, PhoneCall } from "lucide-react";
+import { toast } from "sonner";
+
+function normalizeE164(input: string): string {
+  const t = input.trim();
+  if (t.startsWith("+")) return "+" + t.slice(1).replace(/\D/g, "");
+  const d = t.replace(/\D/g, "");
+  if (d.length === 10) return "+1" + d;
+  if (d.length === 11 && d.startsWith("1")) return "+" + d;
+  return "+" + d;
+}
+
+async function callViaQuo(leadId: string, phone: string) {
+  const to = normalizeE164(phone);
+  // Log attempt (non-blocking for UX)
+  startBridgeCall({ data: { lead_id: leadId } }).catch(() => {});
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    // Quo/OpenPhone mobile deep link; falls back to system dialer if not installed
+    const deep = `openphone://call?to=${encodeURIComponent(to)}`;
+    const fallback = `tel:${to}`;
+    const timer = setTimeout(() => { window.location.href = fallback; }, 1200);
+    const onHide = () => { clearTimeout(timer); document.removeEventListener("visibilitychange", onHide); };
+    document.addEventListener("visibilitychange", onHide);
+    window.location.href = deep;
+  } else {
+    // Desktop: open Quo web app dialer in a new tab
+    const url = `https://my.openphone.com/inbox?dial=${encodeURIComponent(to)}`;
+    const w = window.open(url, "_blank", "noopener,noreferrer");
+    if (!w) toast.error("Popup blocked — allow popups to open Quo");
+  }
+}
 
 const opts = queryOptions({
   queryKey: ["my-claimed-leads"],
