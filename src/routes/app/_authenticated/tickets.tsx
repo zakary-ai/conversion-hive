@@ -25,7 +25,7 @@ const MAX_SIZE = 5 * 1024 * 1024;
 
 const searchSchema = z.object({ id: z.string().uuid().optional() });
 
-export const Route = createFileRoute("/app/_authenticated/support")({
+export const Route = createFileRoute("/app/_authenticated/tickets")({
   validateSearch: searchSchema,
   component: SupportPage,
 });

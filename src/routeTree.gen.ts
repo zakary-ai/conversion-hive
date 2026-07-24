@@ -22,7 +22,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as AppAuthRouteImport } from './routes/app/auth'
 import { Route as AppAuthenticatedRouteRouteImport } from './routes/app/_authenticated/route'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
-import { Route as AppAuthenticatedSupportRouteImport } from './routes/app/_authenticated/support'
+import { Route as AppAuthenticatedTicketsRouteImport } from './routes/app/_authenticated/tickets'
 import { Route as AppAuthenticatedSetPasswordRouteImport } from './routes/app/_authenticated/set-password'
 import { Route as AppAuthenticatedProfileRouteImport } from './routes/app/_authenticated/profile'
 import { Route as AppAuthenticatedLeadsRouteImport } from './routes/app/_authenticated/leads'
@@ -145,9 +145,9 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppAuthenticatedSupportRoute = AppAuthenticatedSupportRouteImport.update({
-  id: '/support',
-  path: '/support',
+const AppAuthenticatedTicketsRoute = AppAuthenticatedTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
   getParentRoute: () => AppAuthenticatedRouteRoute,
 } as any)
 const AppAuthenticatedSetPasswordRoute =
@@ -508,7 +508,7 @@ export interface FileRoutesByFullPath {
   '/app/leads': typeof AppAuthenticatedLeadsRoute
   '/app/profile': typeof AppAuthenticatedProfileRoute
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
-  '/app/support': typeof AppAuthenticatedSupportRoute
+  '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
@@ -579,7 +579,7 @@ export interface FileRoutesByTo {
   '/app/leads': typeof AppAuthenticatedLeadsRoute
   '/app/profile': typeof AppAuthenticatedProfileRoute
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
-  '/app/support': typeof AppAuthenticatedSupportRoute
+  '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
@@ -653,7 +653,7 @@ export interface FileRoutesById {
   '/app/_authenticated/leads': typeof AppAuthenticatedLeadsRoute
   '/app/_authenticated/profile': typeof AppAuthenticatedProfileRoute
   '/app/_authenticated/set-password': typeof AppAuthenticatedSetPasswordRoute
-  '/app/_authenticated/support': typeof AppAuthenticatedSupportRoute
+  '/app/_authenticated/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
@@ -727,7 +727,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/profile'
     | '/app/set-password'
-    | '/app/support'
+    | '/app/tickets'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/mark-unbooked'
@@ -798,7 +798,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/profile'
     | '/app/set-password'
-    | '/app/support'
+    | '/app/tickets'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/mark-unbooked'
@@ -871,7 +871,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/leads'
     | '/app/_authenticated/profile'
     | '/app/_authenticated/set-password'
-    | '/app/_authenticated/support'
+    | '/app/_authenticated/tickets'
     | '/lovable/email/suppression'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/mark-unbooked'
@@ -1044,11 +1044,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/_authenticated/support': {
-      id: '/app/_authenticated/support'
-      path: '/support'
-      fullPath: '/app/support'
-      preLoaderRoute: typeof AppAuthenticatedSupportRouteImport
+    '/app/_authenticated/tickets': {
+      id: '/app/_authenticated/tickets'
+      path: '/tickets'
+      fullPath: '/app/tickets'
+      preLoaderRoute: typeof AppAuthenticatedTicketsRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
     '/app/_authenticated/set-password': {
@@ -1540,7 +1540,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedLeadsRoute: typeof AppAuthenticatedLeadsRoute
   AppAuthenticatedProfileRoute: typeof AppAuthenticatedProfileRoute
   AppAuthenticatedSetPasswordRoute: typeof AppAuthenticatedSetPasswordRoute
-  AppAuthenticatedSupportRoute: typeof AppAuthenticatedSupportRoute
+  AppAuthenticatedTicketsRoute: typeof AppAuthenticatedTicketsRoute
   AppAuthenticatedB2bCallbacksRoute: typeof AppAuthenticatedB2bCallbacksRoute
   AppAuthenticatedB2bDidntPickUpRoute: typeof AppAuthenticatedB2bDidntPickUpRoute
   AppAuthenticatedB2bLeadsRoute: typeof AppAuthenticatedB2bLeadsRouteWithChildren
@@ -1565,7 +1565,7 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedLeadsRoute: AppAuthenticatedLeadsRoute,
   AppAuthenticatedProfileRoute: AppAuthenticatedProfileRoute,
   AppAuthenticatedSetPasswordRoute: AppAuthenticatedSetPasswordRoute,
-  AppAuthenticatedSupportRoute: AppAuthenticatedSupportRoute,
+  AppAuthenticatedTicketsRoute: AppAuthenticatedTicketsRoute,
   AppAuthenticatedB2bCallbacksRoute: AppAuthenticatedB2bCallbacksRoute,
   AppAuthenticatedB2bDidntPickUpRoute: AppAuthenticatedB2bDidntPickUpRoute,
   AppAuthenticatedB2bLeadsRoute: AppAuthenticatedB2bLeadsRouteWithChildren,
