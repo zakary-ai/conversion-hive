@@ -15,6 +15,8 @@ export const listUnclaimedPool = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
       search: z.string().optional(),
+      segment: z.string().optional(),
+      industry: z.string().optional(),
       limit: z.number().min(1).max(200).optional(),
       offset: z.number().min(0).optional(),
     }).optional().parse,
@@ -27,6 +29,8 @@ export const listUnclaimedPool = createServerFn({ method: "GET" })
       .select("*", { count: "exact" })
       .eq("status", "unclaimed")
       .eq("archived", false)
+      .not("phone", "is", null)
+      .neq("phone", "")
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
     if (data?.search) {
@@ -35,10 +39,37 @@ export const listUnclaimedPool = createServerFn({ method: "GET" })
         `first_name.ilike.%${s}%,last_name.ilike.%${s}%,company.ilike.%${s}%,email.ilike.%${s}%`,
       );
     }
+    if (data?.segment) q = q.eq("segment", data.segment);
+    if (data?.industry) q = q.eq("industry", data.industry);
     const { data: rows, count, error } = await q;
     if (error) throw new Error(error.message);
     return { rows: rows ?? [], total: count ?? 0 };
   });
+
+export const listPoolFacets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("b2b_lead_pool")
+      .select("segment, industry")
+      .eq("status", "unclaimed")
+      .eq("archived", false)
+      .not("phone", "is", null)
+      .neq("phone", "")
+      .limit(5000);
+    if (error) throw new Error(error.message);
+    const segs = new Set<string>();
+    const inds = new Set<string>();
+    (data ?? []).forEach((r: any) => {
+      if (r.segment) segs.add(r.segment);
+      if (r.industry) inds.add(r.industry);
+    });
+    return {
+      segments: Array.from(segs).sort(),
+      industries: Array.from(inds).sort(),
+    };
+  });
+
 
 // ---------- Pool: my claimed leads ----------
 export const listMyClaimedLeads = createServerFn({ method: "GET" })
