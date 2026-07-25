@@ -66,7 +66,7 @@ function LandingPage() {
             </p>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
               <Button size="lg" asChild>
-                <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">Book your strategy call <ArrowRight className="ml-2 h-4 w-4" /></a>
+                <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">Apply <ArrowRight className="ml-2 h-4 w-4" /></a>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link to="/app/auth">Sign in</Link>
@@ -224,7 +224,7 @@ function LandingPage() {
             </p>
             <div className="mt-10">
               <Button size="lg" asChild>
-                <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">Book your strategy call <ArrowRight className="ml-2 h-4 w-4" /></a>
+                <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">Apply <ArrowRight className="ml-2 h-4 w-4" /></a>
               </Button>
             </div>
           </section>
