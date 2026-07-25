@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import { Capacitor } from "@capacitor/core";
 
-const CALENDLY_URL = "https://calendly.com/zakary-deleo/conversion-lab-onboarding";
-
 export const Route = createFileRoute("/")({
   ssr: false,
   beforeLoad: () => {
