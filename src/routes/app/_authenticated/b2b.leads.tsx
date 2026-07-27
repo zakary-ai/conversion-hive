@@ -143,6 +143,8 @@ function MyLeadsPage() {
           onClose={() => { setLogOpen(false); setPreview(null); }}
         />
       )}
+
+      <BookNewLeadDialog open={bookNewOpen} onClose={() => setBookNewOpen(false)} />
     </div>
   );
 }
