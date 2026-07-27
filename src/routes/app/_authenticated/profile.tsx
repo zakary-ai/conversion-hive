@@ -15,6 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { LogOut, Trash2 } from "lucide-react";
+import { GoogleCalendarConnectCard } from "@/components/google-calendar-connect";
 import { toast } from "sonner";
 
 const TIMEZONES: { value: string; label: string }[] = [
