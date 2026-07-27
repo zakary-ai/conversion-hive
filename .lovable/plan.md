@@ -1,91 +1,59 @@
+# Google Calendar-aware B2B Booking
 
-## B2B Setter Overhaul — Lead Pool + Claim + Outcomes
+## Goal
+When a setter books a B2B appointment, the time picker only shows slots where at least one active B2B closer is free on their connected Google Calendar. Any busy event on their primary calendar blocks that time. Closers connect their own Google account via the App User Connector.
 
-Big changes to how B2B setters work leads. Existing `leads` rows get archived; a new shared pool table drives everything from here on.
+## 1. Google Calendar App User Connector
+- Use the existing `google_calendar` App User Connector (per-user OAuth) via `connector_app_user--connect_client` — user completes the client setup form once at the workspace level (client + redirect URI `https://connector-gateway.lovable.dev/api/v1/app-users/oauth2/callback`, offline access enabled).
+- Scopes requested at consent:
+  - `openid`, `userinfo.email`, `userinfo.profile`
+  - `https://www.googleapis.com/auth/calendar.freebusy` (read-only free/busy is all we need)
 
-### 1. Archive existing leads
-
-- Add `archived boolean default false` to `leads` (if not already effectively supported via `retired`) and flip every existing row to archived. All current setter/admin lead views filter `archived = false`, so they disappear from the UI entirely (admin can still see them via a hidden query if needed later).
-
-### 2. New shared lead pool
-
-New table `b2b_lead_pool` — this is the "spreadsheet" every setter picks from:
-
-```text
-id, first_name, last_name, company, website, email, phone,
-linkedin_url, title, notes, source, imported_at, imported_by (admin uid),
-claimed_by (uuid null), claimed_at (timestamptz null),
-status enum: 'unclaimed' | 'claimed' | 'burned' | 'booked',
-archived boolean default false, created_at, updated_at
+## 2. Storage for per-closer connection keys
+Migration adds:
 ```
-
-- Unique index on lower(email) where email is not null (dedupe on CSV re-import).
-- RLS:
-  - Admins full access.
-  - `b2b_setter` can SELECT unclaimed rows AND their own claimed rows.
-  - `b2b_setter` can UPDATE only to claim (`claimed_by = auth.uid()` when currently null) or update their own claimed rows.
-- Admin CSV import route (reuse existing CSV importer pattern from `/app/admin/leads`) writes into this table with phone/email dedupe.
-
-### 3. Claim flow
-
-- New route `/app/b2b-setter/pool` (setter side) — paginated table of unclaimed leads with search + a "Claim" button per row.
-- Claim = server fn `claimPoolLead({ id })` that atomically sets `claimed_by = auth.uid(), claimed_at = now(), status = 'claimed'` only if still unclaimed (WHERE claimed_by IS NULL). Returns 409 if someone beat them.
-- Once claimed, the lead appears on the setter's own leads list at `/app/b2b-setter/leads` (new).
-
-### 4. Setter lead detail + Log Call Outcome
-
-- New route `/app/b2b-setter/leads/$id` showing all fields (first/last, company, website, email, LinkedIn, title, phone, notes).
-- Button **Log call outcome** opens a dialog with 4 options:
-
-  1. **Book** — opens a dialog embedding the provided GoHighLevel iframe:
-     `https://api.leadconnectorhq.com/widget/booking/JG2Vhe5FptIczfb90H1x`
-     (with the `form_embed.js` script loaded once via a small wrapper). On close, prompt "Did the booking go through?" → if yes set status='booked' and mark pool row `status='booked'`.
-  2. **Schedule callback** — date/time picker + optional note. Creates a `b2b_callbacks` row (see below). Setter's calendar shows it; admins also see all setters' callbacks.
-  3. **Didn't pick up** — logs an attempt row and flags the lead as `didnt_pick_up = true, last_attempt_at = now()`. Lead moves into the setter's "Didn't Pick Up" queue.
-  4. **Not interested / Burn lead** — sets pool status='burned', hides from setter's active lists; row stays for admin audit.
-
-- Every outcome writes to a new `b2b_call_attempts` table (`id, pool_lead_id, setter_id, outcome, note, occurred_at`) so history is visible on the lead detail page.
-
-### 5. Callbacks table + calendar integration
-
-New `b2b_callbacks`:
-
-```text
-id, pool_lead_id, setter_id, scheduled_at, note, status enum:'scheduled'|'completed'|'missed',
-created_at, updated_at
+app_user_connections(user_id, connector_id, connection_key_ciphertext, ...)
 ```
+- Encrypted at rest with `APP_USER_CONNECTION_KEY_SECRET` (auto-provisioned).
+- `service_role` only; RLS on. Follows the standard app-user connection storage pattern.
 
-- Setter calendar (`/app/b2b-setter/calendar`, new) shows their scheduled callbacks with the lead name + click-through to lead detail.
-- Admin calendar (extend existing admin B2B calendar panel) gets a new "Callbacks" layer showing all setters' callbacks with the owning setter's name.
+## 3. Server code
+New files (all `.functions.ts` / `.server.ts` under `src/lib/`):
+- `googleCalendar.server.ts` — `encrypt/decrypt`, `saveConnectionKeyForUser`, `getConnectionKeyForUser`, `deleteConnectionKeyForUser`, and `getFreeBusy(userId, timeMin, timeMax)` calling `POST /calendar/v3/freeBusy` via `callAsAppUser`.
+- `googleCalendar.functions.ts`:
+  - `startGoogleCalendarConnect` (auth'd): calls `connectAppUser` with scopes; returns auth URL for the popup.
+  - `completeGoogleCalendarConnect` (auth'd): exchanges one-time `code` with `exchangeAppUserOAuthCode` and saves the encrypted key for `context.userId`.
+  - `disconnectGoogleCalendar` (auth'd): `disconnectAppUser` + delete row.
+  - `getMyGoogleCalendarStatus` (auth'd): boolean connected.
+  - `getB2bAvailableCloserIdsForSlot({ startISO, endISO })` (auth'd): returns closer user_ids that are free (and, later, can be used by auto-assign).
+- New public route `src/routes/oauth/google-calendar/return.tsx` — popup landing page: parses `code`, calls `completeGoogleCalendarConnect`, `postMessage`s parent, closes.
 
-### 6. Didn't Pick Up section
+## 4. Slot filtering for B2B bookings
+The B2B booking UI (`src/components/lead-booking-dialog.tsx` → `SlotPicker`) currently accepts any time. Add a new server fn:
+- `listB2bAvailableSlots({ tz, fromISO, toISO })`:
+  1. Load active `b2b_closers` with `user_id` set.
+  2. For each, look up their stored Google Calendar key. Closers without a connected calendar are treated as always-free (so booking still works during rollout) — behavior configurable via a single constant `REQUIRE_GCAL_FOR_B2B_CLOSERS` (default `false`).
+  3. Batch `freeBusy` query for the window across connected closers (Google supports up to 50 calendars per call).
+  4. Also subtract existing `appointments` rows for those closers (Google won't know about internal-only bookings until they're pushed there).
+  5. Generate 15-min candidate slots inside working hours (reuse closer declared weekly availability if present via `closer_availability_declarations` for `line = 'b2b'`; else default 9–5 in the chosen tz).
+  6. Return slots where ≥1 closer is free plus which closer_ids are free (used later by auto-assign).
 
-- New route `/app/b2b-setter/didnt-pick-up` — list of the setter's claimed leads where the latest attempt outcome is `didnt_pick_up` and status is still `claimed`. Sorted by last_attempt_at desc so oldest untouched surfaces first. Same lead detail / Log outcome flow as the main lead list.
+Update `SlotPicker` to accept an optional `availableSlots: Date[]` prop; when passed, it displays only those and disables custom entry. `lead-booking-dialog.tsx` fetches from `listB2bAvailableSlots` on mount / tz change and passes the result. Non-B2B paths stay unchanged.
 
-### 7. Sidebar changes for B2B setter role
+## 5. UI to connect Google Calendar
+On the closer profile page (`src/routes/app/_authenticated/profile.tsx`) plus the closer home (`src/routes/app/_authenticated/closer/index.tsx`), add a card:
+- If not connected: "Connect Google Calendar" button → opens popup with the auth URL, listens for the `postMessage` from the return route, refreshes status.
+- If connected: shows "Connected" + Disconnect button.
 
-Replace current B2B setter nav (`Leads`, `Email`, `Calendar`, `Training`, `Commissions`, `Support`, `Profile`) with:
+## 6. Setup steps required of you
+- Approve the `connector_app_user--connect_client` prompt for `google_calendar` (one-time, workspace-level).
+- Add the OAuth redirect `https://connector-gateway.lovable.dev/api/v1/app-users/oauth2/callback` in your Google Cloud OAuth client and enable the Calendar API + `calendar.freebusy` scope on the consent screen.
 
-```text
-Dashboard, Lead Pool, My Leads, Didn't Pick Up, Callbacks (Calendar), Inbox (existing outbound), Training, Commissions, Support, Profile
-```
+## Out of scope (for a follow-up if you want it)
+- Writing the booked appointment back to the assigned closer's Google Calendar as a real event.
+- Auto-assigning the specific closer at booking time (right now we still keep current assignment logic; free/busy just gates slot visibility).
 
-### 8. Admin side additions
-
-- New admin route `/app/admin/b2b/pool` — full view of the pool (all statuses), plus CSV import button (multi-file, phone/email dedupe, same UX as the existing admin leads importer).
-- Existing `Outbound Leads` sidebar entry stays (email/ob_ tables are unchanged). Add "Lead Pool" as a new entry.
-
-### Out of scope this pass
-
-- No changes to the outbound (`ob_*`) email tables or inbox — separate system.
-- No auto-dialer integration for Didn't Pick Up; it's just a queue view.
-- No SMS/email follow-up automation from callbacks.
-- No commission changes.
-
-### Technical notes
-
-- All schema in one migration: alter `leads`, create `b2b_lead_pool`, `b2b_callbacks`, `b2b_call_attempts`, GRANTs, RLS, policies, update triggers.
-- Archive of existing `leads` runs as a data update (insert tool) after the migration.
-- Server fns in `src/lib/api/b2b-pool.functions.ts` (`listPoolUnclaimed`, `claimPoolLead`, `listMyClaimedLeads`, `getPoolLead`, `listDidntPickUp`, `listMyCallbacks`, `listAllCallbacksAdmin`, `logCallOutcome`, `importPoolCsv`).
-- Booking iframe rendered inside a shadcn Dialog with a mounted-once script tag; height ~700px, scrollable.
-- Claim is a single UPDATE with `WHERE id = $1 AND claimed_by IS NULL RETURNING *` — race-safe without a separate lock.
+## Technical notes
+- Free/busy calls happen only server-side via `callAsAppUser` with each closer's stored `lovack_*` key — never in the browser.
+- Slot enumeration is capped (e.g. next 14 days, 15-min granularity) to keep the Google API call small and fast.
+- Cache free/busy results per closer for ~60s in memory of the server fn call to avoid duplicate requests within one page render.
