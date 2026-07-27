@@ -37,6 +37,7 @@ function MyLeadsPage() {
 
   const [preview, setPreview] = useState<any | null>(null);
   const [logOpen, setLogOpen] = useState(false);
+  const [bookNewOpen, setBookNewOpen] = useState(false);
 
   const total = data.total;
   const pages = Math.max(1, Math.ceil(total / PAGE));
@@ -44,7 +45,12 @@ function MyLeadsPage() {
 
   return (
     <div className="space-y-4 max-w-6xl">
-      <PageHeader title="My leads" description={`${total} lead${total === 1 ? "" : "s"}`} />
+      <div className="flex items-start justify-between gap-3">
+        <PageHeader title="My leads" description={`${total} lead${total === 1 ? "" : "s"}`} />
+        <Button onClick={() => setBookNewOpen(true)} className="shrink-0">
+          <Plus className="h-4 w-4 mr-1" /> Book lead
+        </Button>
+      </div>
 
       <Tabs value={tab} onValueChange={(v) => { setTab(v as Tab); setOffset(0); }}>
         <TabsList className="flex-wrap h-auto">
