@@ -43,17 +43,16 @@ export const completeGoogleCalendarConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ code: z.string().min(1) }).parse)
   .handler(async ({ data, context }) => {
-    const connectorId = "google_calendar";
     const gatewayBaseUrl = "https://connector-gateway.lovable.dev";
-    const { connectionAPIKey, connectorId } = await exchangeAppUserOAuthCode(
+    const { connectionAPIKey, connectorId: returnedConnectorId } = await exchangeAppUserOAuthCode(
       gatewayBaseUrl,
       data.code,
     );
-    if (connectorId !== "google_calendar") {
+    if (returnedConnectorId !== "google_calendar") {
       throw new Error("OAuth completion returned the wrong connector");
     }
     const { saveConnectionKeyForUser } = await import("@/lib/googleCalendar.server");
-    await saveConnectionKeyForUser(context.userId, connectorId, connectionAPIKey);
+    await saveConnectionKeyForUser(context.userId, returnedConnectorId, connectionAPIKey);
     return { ok: true };
   });
 
