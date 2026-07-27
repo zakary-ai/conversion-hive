@@ -129,7 +129,11 @@ function ProfilePage() {
         </div>
       </Card>
 
+      <GoogleCalendarConnectCard />
+
       <DeleteAccountRequestCard />
+
+
 
 
       <p className="text-center text-xs text-muted-foreground pt-2">
