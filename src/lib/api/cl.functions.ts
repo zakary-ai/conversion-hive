@@ -834,8 +834,21 @@ export const bookB2bSlotForLead = createServerFn({ method: "POST" })
       .select("id, user_id, full_name")
       .eq("active", true)
       .order("id", { ascending: true });
-    const closers = ((closerRows ?? []) as Array<{ id: string; user_id: string | null; full_name: string | null }>);
-    if (closers.length === 0) throw new Error("No B2B closers are set up yet.");
+    const allActive = ((closerRows ?? []) as Array<{ id: string; user_id: string | null; full_name: string | null }>);
+    if (allActive.length === 0) throw new Error("No B2B closers are set up yet.");
+
+    // Only closers with a connected Google Calendar are eligible — without it
+    // we can't verify they're actually free at this time.
+    const activeUserIds = allActive.map((c) => c.user_id).filter((v): v is string => !!v);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: conns2 } = await (supabaseAdmin.from("app_user_connections") as any)
+      .select("user_id")
+      .eq("connector_id", "google_calendar")
+      .in("user_id", activeUserIds.length > 0 ? activeUserIds : ["00000000-0000-0000-0000-000000000000"]);
+    const connectedSet2 = new Set(((conns2 ?? []) as Array<{ user_id: string }>).map((r) => r.user_id));
+    const closers = allActive.filter((c) => c.user_id && connectedSet2.has(c.user_id));
+    if (closers.length === 0) throw new Error("No closers with a connected calendar are available.");
+
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: overlappingAppts } = await (supabaseAdmin.from("appointments") as any)
