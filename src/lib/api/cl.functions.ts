@@ -766,6 +766,174 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
     return Array.from(found).sort();
   });
 
+// ---------- B2B setter: book a slot for a claimed lead (auto-assign closer) ----------
+export const bookB2bSlotForLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    pool_lead_id: z.string().uuid(),
+    scheduled_at: z.string().datetime(),
+    timezone: z.string().max(60).optional(),
+    note: z.string().max(2000).optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 1. Load the pool lead and verify ownership.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: lead } = await (supabaseAdmin.from("b2b_lead_pool") as any)
+      .select("id, first_name, last_name, email, phone, claimed_by")
+      .eq("id", data.pool_lead_id)
+      .maybeSingle();
+    if (!lead) throw new Error("Lead not found");
+    if (lead.claimed_by !== context.userId) throw new Error("Not your lead.");
+    if (!lead.email) throw new Error("This lead has no email on file — add one before booking.");
+
+    const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(" ").trim() || "Lead";
+    const slotStart = new Date(data.scheduled_at);
+    const slotMs = (await getSlotMinutes()) * 60_000;
+    const slotEnd = slotStart.getTime() + slotMs;
+
+    // 2. Validate the slot falls inside the global B2B window (EST).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: globalRules } = await (supabaseAdmin.from("availability_rules") as any)
+      .select("day_of_week, start_minute, end_minute");
+    const rules = ((globalRules ?? []) as Array<{ day_of_week: number; start_minute: number; end_minute: number }>);
+    const estKey = zonedDateKey(slotStart, EST_TZ);
+    const [ey, em, ed] = estKey.split("-").map(Number);
+    const dow = zonedDayOfWeek(slotStart, EST_TZ);
+    const estHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: EST_TZ, hour: "2-digit", hourCycle: "h23" }).format(slotStart));
+    const estMin = Number(new Intl.DateTimeFormat("en-US", { timeZone: EST_TZ, minute: "2-digit" }).format(slotStart));
+    const slotMinuteOfDay = estHour * 60 + estMin;
+    const inWindow = rules.some(
+      (r) => r.day_of_week === dow && slotMinuteOfDay >= r.start_minute && slotMinuteOfDay + (slotMs / 60_000) <= r.end_minute,
+    );
+    // Reconstruct the EST wall time to ensure the slot lines up with the grid.
+    const estAligned = zonedWallToUTC(ey, em, ed, Math.floor(slotMinuteOfDay / 60), slotMinuteOfDay % 60, EST_TZ);
+    if (!inWindow || estAligned.getTime() !== slotStart.getTime()) {
+      throw new Error("That time isn't available anymore.");
+    }
+    if (slotStart.getTime() < Date.now()) throw new Error("That time is in the past.");
+
+    // 3. Load active B2B closers and their conflicts.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: closerRows } = await (supabaseAdmin.from("b2b_closers") as any)
+      .select("id, user_id, full_name")
+      .eq("active", true)
+      .order("id", { ascending: true });
+    const closers = ((closerRows ?? []) as Array<{ id: string; user_id: string | null; full_name: string | null }>);
+    if (closers.length === 0) throw new Error("No B2B closers are set up yet.");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: overlappingAppts } = await (supabaseAdmin.from("appointments") as any)
+      .select("scheduled_at, b2b_closer_id, status")
+      .eq("type", "booking")
+      .gte("scheduled_at", new Date(slotStart.getTime() - slotMs).toISOString())
+      .lt("scheduled_at", new Date(slotEnd + slotMs).toISOString());
+    const appts = ((overlappingAppts ?? []) as Array<{ scheduled_at: string; b2b_closer_id: string | null; status: string | null }>);
+
+    const { getBusyIntervalsForUser } = await import("@/lib/googleCalendar.server");
+
+    // 4. Pick the first free closer.
+    let picked: { id: string; user_id: string | null; full_name: string | null } | null = null;
+    for (const c of closers) {
+      const apptConflict = appts.some((b) => {
+        if (b.b2b_closer_id !== c.id) return false;
+        if (b.status === "cancelled") return false;
+        const bs = new Date(b.scheduled_at).getTime();
+        return bs < slotEnd && bs + slotMs > slotStart.getTime();
+      });
+      if (apptConflict) continue;
+      if (c.user_id) {
+        const busy = await getBusyIntervalsForUser(
+          c.user_id,
+          new Date(slotStart.getTime() - slotMs).toISOString(),
+          new Date(slotEnd + slotMs).toISOString(),
+        );
+        const gcalConflict = busy.some((iv) => iv.start < slotEnd && iv.end > slotStart.getTime());
+        if (gcalConflict) continue;
+      }
+      picked = c;
+      break;
+    }
+    if (!picked) throw new Error("That time was just taken — pick another.");
+
+    // 5. Insert appointment as already assigned to the picked closer.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: appt, error: insErr } = await (supabaseAdmin.from("appointments") as any)
+      .insert({
+        user_id: context.userId,
+        lead_id: null,
+        type: "booking",
+        scheduled_at: slotStart.toISOString(),
+        name: leadName,
+        phone: lead.phone,
+        email: lead.email,
+        status: "assigned",
+        b2b_closer_id: picked.id,
+        timezone: data.timezone ?? null,
+        context: data.note ?? null,
+      })
+      .select("id")
+      .single();
+    if (insErr || !appt) throw new Error(insErr?.message || "Could not create appointment.");
+    const appointmentId = appt.id as string;
+
+    // 6. Zoom meeting on the picked closer's credentials (best-effort).
+    let meetingUrl: string | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: creds } = await (supabaseAdmin.from("b2b_closer_zoom_credentials") as any)
+      .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+      .eq("closer_id", picked.id)
+      .maybeSingle();
+    const slotMinutes = slotMs / 60_000;
+    meetingUrl = await createZoomMeetingOnCloserAccount({
+      accountId: (creds?.zoom_account_id as string | null) ?? null,
+      clientId: (creds?.zoom_client_id as string | null) ?? null,
+      clientSecret: (creds?.zoom_client_secret as string | null) ?? null,
+      topic: `${leadName} — Sales Call`,
+      start_time: slotStart.toISOString(),
+      duration: slotMinutes,
+    });
+    if (meetingUrl) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabaseAdmin.from("appointments") as any)
+        .update({ meeting_url: meetingUrl }).eq("id", appointmentId);
+    }
+
+    // 7. Booking confirmation email.
+    await sendBookingConfirmationEmail({
+      appointmentId,
+      recipientEmail: lead.email,
+      leadName,
+      scheduledAt: slotStart.toISOString(),
+      meetingUrl,
+      durationMinutes: slotMinutes,
+      timezone: data.timezone ?? null,
+    });
+
+    // 8. Log the call outcome as "booked" on the pool lead.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabaseAdmin.from("b2b_call_attempts") as any).insert({
+      pool_lead_id: data.pool_lead_id,
+      setter_id: context.userId,
+      outcome: "booked",
+      note: data.note ?? null,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabaseAdmin.from("b2b_lead_pool") as any)
+      .update({ status: "booked", didnt_pick_up: false, last_attempt_at: new Date().toISOString() })
+      .eq("id", data.pool_lead_id);
+
+    return {
+      appointment_id: appointmentId,
+      closer_name: picked.full_name,
+      meeting_url: meetingUrl,
+    };
+  });
+
+
+
+
 
 export const listMyAppointments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

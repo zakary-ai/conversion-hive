@@ -1,59 +1,54 @@
-# Google Calendar-aware B2B Booking
-
 ## Goal
-When a setter books a B2B appointment, the time picker only shows slots where at least one active B2B closer is free on their connected Google Calendar. Any busy event on their primary calendar blocks that time. Closers connect their own Google account via the App User Connector.
 
-## 1. Google Calendar App User Connector
-- Use the existing `google_calendar` App User Connector (per-user OAuth) via `connector_app_user--connect_client` — user completes the client setup form once at the workspace level (client + redirect URI `https://connector-gateway.lovable.dev/api/v1/app-users/oauth2/callback`, offline access enabled).
-- Scopes requested at consent:
-  - `openid`, `userinfo.email`, `userinfo.profile`
-  - `https://www.googleapis.com/auth/calendar.freebusy` (read-only free/busy is all we need)
+On setter accounts, when a call is logged as "Book," swap the embedded GoHighLevel iframe for the same native date/time picker used elsewhere in the app. Picking a slot auto-assigns whichever B2B closer is free on their Google Calendar at that time (works for 1 closer today, scales to many).
 
-## 2. Storage for per-closer connection keys
-Migration adds:
-```
-app_user_connections(user_id, connector_id, connection_key_ciphertext, ...)
-```
-- Encrypted at rest with `APP_USER_CONNECTION_KEY_SECRET` (auto-provisioned).
-- `service_role` only; RLS on. Follows the standard app-user connection storage pattern.
+## What already exists (verified)
 
-## 3. Server code
-New files (all `.functions.ts` / `.server.ts` under `src/lib/`):
-- `googleCalendar.server.ts` — `encrypt/decrypt`, `saveConnectionKeyForUser`, `getConnectionKeyForUser`, `deleteConnectionKeyForUser`, and `getFreeBusy(userId, timeMin, timeMax)` calling `POST /calendar/v3/freeBusy` via `callAsAppUser`.
-- `googleCalendar.functions.ts`:
-  - `startGoogleCalendarConnect` (auth'd): calls `connectAppUser` with scopes; returns auth URL for the popup.
-  - `completeGoogleCalendarConnect` (auth'd): exchanges one-time `code` with `exchangeAppUserOAuthCode` and saves the encrypted key for `context.userId`.
-  - `disconnectGoogleCalendar` (auth'd): `disconnectAppUser` + delete row.
-  - `getMyGoogleCalendarStatus` (auth'd): boolean connected.
-  - `getB2bAvailableCloserIdsForSlot({ startISO, endISO })` (auth'd): returns closer user_ids that are free (and, later, can be used by auto-assign).
-- New public route `src/routes/oauth/google-calendar/return.tsx` — popup landing page: parses `code`, calls `completeGoogleCalendarConnect`, `postMessage`s parent, closes.
+- `listAvailableSlots` (`src/lib/api/cl.functions.ts`) already returns slots where at least one active `b2b_closers` row is free — checks existing appointments AND that closer's Google Calendar freeBusy. Multi-closer safe.
+- `SlotPicker` component uses that endpoint with a calendar + timezone selector.
+- `b2b_lead_pool` rows have first/last name, email, phone. `appointments` table supports `b2b_closer_id`, `status`, `meeting_url`.
+- Admin's `assignB2bCloser` flow already creates a Zoom meeting on the closer's credentials and emails the lead. Reusable.
 
-## 4. Slot filtering for B2B bookings
-The B2B booking UI (`src/components/lead-booking-dialog.tsx` → `SlotPicker`) currently accepts any time. Add a new server fn:
-- `listB2bAvailableSlots({ tz, fromISO, toISO })`:
-  1. Load active `b2b_closers` with `user_id` set.
-  2. For each, look up their stored Google Calendar key. Closers without a connected calendar are treated as always-free (so booking still works during rollout) — behavior configurable via a single constant `REQUIRE_GCAL_FOR_B2B_CLOSERS` (default `false`).
-  3. Batch `freeBusy` query for the window across connected closers (Google supports up to 50 calendars per call).
-  4. Also subtract existing `appointments` rows for those closers (Google won't know about internal-only bookings until they're pushed there).
-  5. Generate 15-min candidate slots inside working hours (reuse closer declared weekly availability if present via `closer_availability_declarations` for `line = 'b2b'`; else default 9–5 in the chosen tz).
-  6. Return slots where ≥1 closer is free plus which closer_ids are free (used later by auto-assign).
+## Changes
 
-Update `SlotPicker` to accept an optional `availableSlots: Date[]` prop; when passed, it displays only those and disables custom entry. `lead-booking-dialog.tsx` fetches from `listB2bAvailableSlots` on mount / tz change and passes the result. Non-B2B paths stay unchanged.
+### 1. New server fn `bookB2bSlotForLead` in `src/lib/api/b2b-pool.functions.ts`
 
-## 5. UI to connect Google Calendar
-On the closer profile page (`src/routes/app/_authenticated/profile.tsx`) plus the closer home (`src/routes/app/_authenticated/closer/index.tsx`), add a card:
-- If not connected: "Connect Google Calendar" button → opens popup with the auth URL, listens for the `postMessage` from the return route, refreshes status.
-- If connected: shows "Connected" + Disconnect button.
+Input: `{ pool_lead_id, scheduled_at (ISO), timezone }`.
 
-## 6. Setup steps required of you
-- Approve the `connector_app_user--connect_client` prompt for `google_calendar` (one-time, workspace-level).
-- Add the OAuth redirect `https://connector-gateway.lovable.dev/api/v1/app-users/oauth2/callback` in your Google Cloud OAuth client and enable the Calendar API + `calendar.freebusy` scope on the consent screen.
+Handler (all under service role for the assignment race):
+1. Load the pool lead — require it belongs to the calling setter (claimed_by = userId) and has an email. Error clearly if email is missing.
+2. Recompute availability at that exact `scheduled_at` using the same rules as `listAvailableSlots` (global B2B window + closer conflict + gcal freeBusy + pending_assignment reservation). If slot no longer valid → throw "That time was just taken."
+3. Pick the first `b2b_closers` row (active) with no appointment conflict and no gcal conflict at that slot. Deterministic order by `id` so parallel setters don't collide on the same closer (rely on the collision check in step 4 to catch races).
+4. Insert into `appointments`: `type=booking`, `status=assigned`, `b2b_closer_id=<picked>`, `user_id=<setter>`, `lead_id=<pool_lead_id>`, `name`, `email`, `phone`, `scheduled_at`, `timezone`. Re-check no other assigned appointment exists for that closer at that scheduled_at; on unique conflict, retry with the next available closer up to N times, else throw.
+5. Create Zoom meeting on that closer's `b2b_closer_zoom_credentials` (reuse existing `createZoomMeetingOnCloserAccount` helper). Update `meeting_url`. If Zoom creds missing, leave `meeting_url` null and continue (matches admin flow behavior).
+6. Send booking confirmation email via existing `sendBookingConfirmationEmail`.
+7. Call the existing `logCallOutcome` logic inline (or duplicate the write): insert `b2b_call_attempts` row with `outcome=booked`, mark `b2b_lead_pool.status='booked'`, and set `pool_lead_id` on the corresponding `call_logs` row when present.
 
-## Out of scope (for a follow-up if you want it)
-- Writing the booked appointment back to the assigned closer's Google Calendar as a real event.
-- Auto-assigning the specific closer at booking time (right now we still keep current assignment logic; free/busy just gates slot visibility).
+Returns `{ appointment_id, closer_name, meeting_url }`.
 
-## Technical notes
-- Free/busy calls happen only server-side via `callAsAppUser` with each closer's stored `lovack_*` key — never in the browser.
-- Slot enumeration is capped (e.g. next 14 days, 15-min granularity) to keep the Google API call small and fast.
-- Cache free/busy results per closer for ~60s in memory of the server fn call to avoid duplicate requests within one page render.
+### 2. New `BookingSlotDialog` component `src/components/b2b-booking-slot-dialog.tsx`
+
+- Uses `<SlotPicker>` + a Confirm button.
+- Shows the lead name in the title and confirms the picked local time.
+- On confirm → calls `bookB2bSlotForLead`, toasts success with assigned closer + Zoom link status, closes.
+
+### 3. Wire it into `LogCallOutcomeDialog`
+
+`src/components/log-call-outcome-dialog.tsx`:
+- Replace `BookingIframeDialog` import + JSX with `BookingSlotDialog`.
+- Pass `lead` (with email) — update the `Lead` type to include email so the parent dialogs pass it down. Both callers (`LeadPreviewDialog`, My Leads list) already load email; just plumb it through.
+- Remove the "Did the booking go through?" `window.confirm` — booking success is deterministic now. On success, `onClose` and invalidate the same query keys as today.
+
+### 4. Cleanup
+
+- `src/components/booking-iframe-dialog.tsx` stays for now (unused after this change, no other callers per grep). Leave file or delete — will delete since nothing else imports it.
+
+## Multi-closer notes
+
+Everything above already iterates over all `b2b_closers` where `active=true`. Adding a second closer = create their `b2b_closers` row + connect their Google Calendar from Profile + fill in `b2b_closer_zoom_credentials`. No further code changes.
+
+## Out of scope
+
+- Changing admin B2B calendar / reschedule flows.
+- Changing B2C booking flow.
+- Any UI on the closer side beyond what's already wired.

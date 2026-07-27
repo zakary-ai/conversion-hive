@@ -102,7 +102,7 @@ function LeadDetailPage() {
       </Card>
 
       <LogCallOutcomeDialog
-        lead={{ id: lead.id, first_name: lead.first_name, last_name: lead.last_name }}
+        lead={{ id: lead.id, first_name: lead.first_name, last_name: lead.last_name, email: lead.email ?? null }}
         open={logOpen}
         onClose={() => setLogOpen(false)}
       />
