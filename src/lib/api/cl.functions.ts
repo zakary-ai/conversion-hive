@@ -788,6 +788,13 @@ export const bookB2bSlotForLead = createServerFn({ method: "POST" })
     scheduled_at: z.string().datetime(),
     timezone: z.string().max(60).optional(),
     note: z.string().max(2000).optional(),
+    // Optional lead edits applied before booking so the confirmation email
+    // and appointment row use the latest info.
+    first_name: z.string().trim().max(120).optional().nullable(),
+    last_name: z.string().trim().max(120).optional().nullable(),
+    email: z.string().trim().email().max(200).optional().nullable().or(z.literal("").transform(() => null)),
+    phone: z.string().trim().max(50).optional().nullable(),
+    company: z.string().trim().max(200).optional().nullable(),
   }).parse)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -795,11 +802,24 @@ export const bookB2bSlotForLead = createServerFn({ method: "POST" })
     // 1. Load the pool lead and verify ownership.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: lead } = await (supabaseAdmin.from("b2b_lead_pool") as any)
-      .select("id, first_name, last_name, email, phone, claimed_by")
+      .select("id, first_name, last_name, email, phone, company, claimed_by")
       .eq("id", data.pool_lead_id)
       .maybeSingle();
     if (!lead) throw new Error("Lead not found");
     if (lead.claimed_by !== context.userId) throw new Error("Not your lead.");
+
+    // Apply any edits from the booking dialog before we use the row.
+    const editPatch: Record<string, any> = {};
+    if (data.first_name !== undefined) editPatch.first_name = data.first_name || null;
+    if (data.last_name !== undefined) editPatch.last_name = data.last_name || null;
+    if (data.email !== undefined) editPatch.email = data.email ? data.email.toLowerCase() : null;
+    if (data.phone !== undefined) editPatch.phone = data.phone || null;
+    if (data.company !== undefined) editPatch.company = data.company || null;
+    if (Object.keys(editPatch).length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabaseAdmin.from("b2b_lead_pool") as any).update(editPatch).eq("id", data.pool_lead_id);
+      Object.assign(lead, editPatch);
+    }
     if (!lead.email) throw new Error("This lead has no email on file — add one before booking.");
 
     const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(" ").trim() || "Lead";
