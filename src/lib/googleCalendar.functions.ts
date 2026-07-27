@@ -8,18 +8,16 @@ import {
   disconnectAppUser,
 } from "@/integrations/lovable/appUserConnector";
 
-const GCAL_CONNECTOR_ID = "google_calendar";
-const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
-
-const GOOGLE_SCOPES = [
-  "https://www.googleapis.com/auth/userinfo.email",
-  "https://www.googleapis.com/auth/userinfo.profile",
-  "https://www.googleapis.com/auth/calendar.freebusy",
-];
-
 export const startGoogleCalendarConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const connectorId = "google_calendar";
+    const gatewayBaseUrl = "https://connector-gateway.lovable.dev";
+    const googleScopes = [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/calendar.freebusy",
+    ];
     const clientAPIKey = process.env.GOOGLE_CALENDAR_APP_USER_CONNECTOR_CLIENT_API_KEY;
     if (!clientAPIKey) throw new Error("Google Calendar connector client is not configured.");
     const request = getRequest();
@@ -27,16 +25,16 @@ export const startGoogleCalendarConnect = createServerFn({ method: "POST" })
     const returnUrl = new URL("/oauth/google-calendar/return", request.url).toString();
 
     const { getConnectionKeyForUser } = await import("@/lib/googleCalendar.server");
-    const existing = await getConnectionKeyForUser(context.userId, GCAL_CONNECTOR_ID);
+    const existing = await getConnectionKeyForUser(context.userId, connectorId);
 
     const { authorizationUrl } = await authorizeAppUserOAuth({
-      gatewayBaseUrl: GATEWAY_BASE_URL,
-      connectorId: GCAL_CONNECTOR_ID,
-      appUserId: context.userId,
+      gatewayBaseUrl,
+      connectorId,
+      appUserId: `${context.userId}:google_calendar`,
       clientAPIKey,
       returnUrl,
       connectionAPIKey: existing ?? undefined,
-      credentialsConfiguration: { scopes: GOOGLE_SCOPES },
+      credentialsConfiguration: { scopes: googleScopes },
     });
     return { authorizationUrl };
   });
@@ -45,11 +43,13 @@ export const completeGoogleCalendarConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ code: z.string().min(1) }).parse)
   .handler(async ({ data, context }) => {
+    const connectorId = "google_calendar";
+    const gatewayBaseUrl = "https://connector-gateway.lovable.dev";
     const { connectionAPIKey, connectorId } = await exchangeAppUserOAuthCode(
-      GATEWAY_BASE_URL,
+      gatewayBaseUrl,
       data.code,
     );
-    if (connectorId !== GCAL_CONNECTOR_ID) {
+    if (connectorId !== "google_calendar") {
       throw new Error("OAuth completion returned the wrong connector");
     }
     const { saveConnectionKeyForUser } = await import("@/lib/googleCalendar.server");
@@ -60,29 +60,32 @@ export const completeGoogleCalendarConnect = createServerFn({ method: "POST" })
 export const disconnectGoogleCalendar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const connectorId = "google_calendar";
+    const gatewayBaseUrl = "https://connector-gateway.lovable.dev";
     const { getConnectionKeyForUser, deleteConnectionKeyForUser } = await import(
       "@/lib/googleCalendar.server"
     );
-    const key = await getConnectionKeyForUser(context.userId, GCAL_CONNECTOR_ID);
+    const key = await getConnectionKeyForUser(context.userId, connectorId);
     if (key) {
       try {
         await disconnectAppUser({
-          gatewayBaseUrl: GATEWAY_BASE_URL,
+          gatewayBaseUrl,
           connectionAPIKey: key,
-          connectorId: GCAL_CONNECTOR_ID,
+          connectorId,
         });
       } catch (e) {
         console.error("google_calendar gateway disconnect failed:", e);
       }
     }
-    await deleteConnectionKeyForUser(context.userId, GCAL_CONNECTOR_ID);
+    await deleteConnectionKeyForUser(context.userId, connectorId);
     return { ok: true };
   });
 
 export const getMyGoogleCalendarStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const connectorId = "google_calendar";
     const { getConnectionKeyForUser } = await import("@/lib/googleCalendar.server");
-    const key = await getConnectionKeyForUser(context.userId, GCAL_CONNECTOR_ID);
+    const key = await getConnectionKeyForUser(context.userId, connectorId);
     return { connected: !!key };
   });
