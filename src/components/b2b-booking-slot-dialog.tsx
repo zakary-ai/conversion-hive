@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SlotPicker } from "@/components/slot-picker";
 import { bookB2bSlotForLead } from "@/lib/api/cl.functions";
 import { toast } from "sonner";
@@ -11,6 +13,8 @@ type Lead = {
   first_name: string | null;
   last_name: string | null;
   email: string | null;
+  phone?: string | null;
+  company?: string | null;
 };
 
 export function B2bBookingSlotDialog({
@@ -30,25 +34,43 @@ export function B2bBookingSlotDialog({
     Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
   );
 
-  const name = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim() || "lead";
+  // Editable lead details, prefilled from the lead.
+  const [firstName, setFirstName] = useState(lead.first_name ?? "");
+  const [lastName, setLastName] = useState(lead.last_name ?? "");
+  const [email, setEmail] = useState(lead.email ?? "");
+  const [phone, setPhone] = useState(lead.phone ?? "");
+  const [company, setCompany] = useState(lead.company ?? "");
+
+  useEffect(() => {
+    if (!open) return;
+    setFirstName(lead.first_name ?? "");
+    setLastName(lead.last_name ?? "");
+    setEmail(lead.email ?? "");
+    setPhone(lead.phone ?? "");
+    setCompany(lead.company ?? "");
+  }, [open, lead]);
+
+  const displayName = `${firstName} ${lastName}`.trim() || "lead";
 
   const book = useMutation({
     mutationFn: async () => {
       if (!slot) throw new Error("Pick a time first.");
+      if (!email.trim()) throw new Error("Email is required to book.");
       return bookB2bSlotForLead({
         data: {
           pool_lead_id: lead.id,
           scheduled_at: slot.toISOString(),
           timezone: tz,
+          first_name: firstName.trim() || null,
+          last_name: lastName.trim() || null,
+          email: email.trim() || null,
+          phone: phone.trim() || null,
+          company: company.trim() || null,
         },
       });
     },
     onSuccess: (res) => {
-      toast.success(
-        res.closer_name
-          ? `Booked with ${res.closer_name}`
-          : "Booked",
-      );
+      toast.success(res.closer_name ? `Booked with ${res.closer_name}` : "Booked");
       qc.invalidateQueries({ queryKey: ["my-claimed-leads"] });
       qc.invalidateQueries({ queryKey: ["my-didnt-pick-up"] });
       qc.invalidateQueries({ queryKey: ["my-callbacks"] });
@@ -77,32 +99,47 @@ export function B2bBookingSlotDialog({
       }).format(slot)
     : null;
 
-  if (!lead.email) {
-    return (
-      <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Book {name}</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This lead has no email on file. Add an email to their profile before
-            booking.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleClose}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="max-w-lg w-[95vw] max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Book {name}</DialogTitle>
+          <DialogTitle>Book {displayName}</DialogTitle>
         </DialogHeader>
-        <SlotPicker value={slot} onChange={setSlot} tz={tz} onTzChange={setTz} />
+
+        <div className="space-y-3">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Confirm lead details
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">First name</Label>
+              <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Last name</Label>
+              <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Email <span className="text-destructive">*</span></Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Phone</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Company</Label>
+              <Input value={company} onChange={(e) => setCompany(e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-border pt-3">
+          <SlotPicker value={slot} onChange={setSlot} tz={tz} onTzChange={setTz} />
+        </div>
+
         {slotLabel && (
           <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
             Booking <span className="font-medium">{slotLabel}</span>. A closer with a
