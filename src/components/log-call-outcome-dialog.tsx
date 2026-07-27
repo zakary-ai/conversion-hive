@@ -6,11 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { logCallOutcome } from "@/lib/api/b2b-pool.functions";
-import { BookingIframeDialog } from "@/components/booking-iframe-dialog";
+import { B2bBookingSlotDialog } from "@/components/b2b-booking-slot-dialog";
 import { toast } from "sonner";
 import { CalendarClock, PhoneOff, Ban, CheckCircle2 } from "lucide-react";
 
-type Lead = { id: string; first_name: string | null; last_name: string | null };
+type Lead = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+};
 
 export function LogCallOutcomeDialog({
   lead, open, onClose,
@@ -33,7 +38,7 @@ export function LogCallOutcomeDialog({
 
   type Payload = {
     pool_lead_id: string;
-    outcome: "booked" | "callback_scheduled" | "no_answer" | "not_interested";
+    outcome: "callback_scheduled" | "no_answer" | "not_interested";
     note?: string;
     callback_at?: string;
   };
@@ -125,18 +130,11 @@ export function LogCallOutcomeDialog({
         </DialogContent>
       </Dialog>
 
-      <BookingIframeDialog
+      <B2bBookingSlotDialog
+        lead={lead}
         open={open && mode === "booking"}
-        leadName={name}
-        onClose={() => {
-          // Ask if booking went through
-          const confirmed = typeof window !== "undefined" && window.confirm("Did the booking go through?");
-          if (confirmed) {
-            submit.mutate({ pool_lead_id: lead.id, outcome: "booked", note: undefined });
-          } else {
-            setMode("menu");
-          }
-        }}
+        onClose={() => setMode("menu")}
+        onBooked={() => { invalidate(); close(); }}
       />
     </>
   );
