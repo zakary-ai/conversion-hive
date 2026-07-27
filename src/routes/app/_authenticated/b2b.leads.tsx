@@ -131,7 +131,7 @@ function MyLeadsPage() {
 
       {preview && (
         <LogCallOutcomeDialog
-          lead={{ id: preview.id, first_name: preview.first_name, last_name: preview.last_name }}
+          lead={{ id: preview.id, first_name: preview.first_name, last_name: preview.last_name, email: preview.email ?? null }}
           open={logOpen}
           onClose={() => { setLogOpen(false); setPreview(null); }}
         />
