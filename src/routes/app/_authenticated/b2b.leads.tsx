@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogCallOutcomeDialog } from "@/components/log-call-outcome-dialog";
 import { B2bLeadDetailDialog } from "@/components/b2b-lead-detail-dialog";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookNewLeadDialog } from "@/components/book-new-lead-dialog";
+import { Search, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 type Tab = "all" | "uncontacted" | "booked" | "no_answer" | "not_interested";
 const PAGE = 20;
