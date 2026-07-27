@@ -679,7 +679,20 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: closers } = await (supabaseAdmin.from("b2b_closers") as any)
       .select("id, user_id").eq("active", true);
-    const closerRows = ((closers ?? []) as Array<{ id: string; user_id: string | null }>);
+    const activeClosers = ((closers ?? []) as Array<{ id: string; user_id: string | null }>);
+    if (activeClosers.length === 0) return [] as string[];
+
+    // Only count closers who have connected Google Calendar. Without a
+    // connected calendar we can't tell if they're busy, so we exclude them
+    // rather than fail-open (which would leak already-busy times).
+    const closerUserIds = activeClosers.map((c) => c.user_id).filter((v): v is string => !!v);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: conns } = await (supabaseAdmin.from("app_user_connections") as any)
+      .select("user_id")
+      .eq("connector_id", "google_calendar")
+      .in("user_id", closerUserIds.length > 0 ? closerUserIds : ["00000000-0000-0000-0000-000000000000"]);
+    const connectedSet = new Set(((conns ?? []) as Array<{ user_id: string }>).map((r) => r.user_id));
+    const closerRows = activeClosers.filter((c) => c.user_id && connectedSet.has(c.user_id));
     const closerIds = closerRows.map((c) => c.id);
     if (closerIds.length === 0) return [] as string[];
 
@@ -693,7 +706,7 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
       .lt("scheduled_at", new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString());
     const allBookings = (bookings ?? []) as Array<{ scheduled_at: string; b2b_closer_id: string | null; status: string | null }>;
 
-    // Google Calendar busy windows per closer (fail-open on error/unconnected).
+    // Google Calendar busy windows for each connected closer.
     const { getBusyIntervalsForUser } = await import("@/lib/googleCalendar.server");
     const gcalBusyByCloser = new Map<string, Array<{ start: number; end: number }>>();
     await Promise.all(
@@ -707,6 +720,7 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
         if (busy.length > 0) gcalBusyByCloser.set(c.id, busy);
       }),
     );
+
 
     // Viewer day can span 2 EST calendar days
     const estDates = new Set<string>();
