@@ -21,6 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as AppAuthRouteImport } from './routes/app/auth'
 import { Route as AppAuthenticatedRouteRouteImport } from './routes/app/_authenticated/route'
+import { Route as OauthGoogleCalendarReturnRouteImport } from './routes/oauth/google-calendar/return'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AppAuthenticatedTicketsRouteImport } from './routes/app/_authenticated/tickets'
 import { Route as AppAuthenticatedSetPasswordRouteImport } from './routes/app/_authenticated/set-password'
@@ -141,6 +142,12 @@ const AppAuthenticatedRouteRoute = AppAuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const OauthGoogleCalendarReturnRoute =
+  OauthGoogleCalendarReturnRouteImport.update({
+    id: '/oauth/google-calendar/return',
+    path: '/oauth/google-calendar/return',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -517,6 +524,7 @@ export interface FileRoutesByFullPath {
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
@@ -589,6 +597,7 @@ export interface FileRoutesByTo {
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
@@ -664,6 +673,7 @@ export interface FileRoutesById {
   '/app/_authenticated/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/app/_authenticated/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
@@ -739,6 +749,7 @@ export interface FileRouteTypes {
     | '/app/set-password'
     | '/app/tickets'
     | '/lovable/email/suppression'
+    | '/oauth/google-calendar/return'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
@@ -811,6 +822,7 @@ export interface FileRouteTypes {
     | '/app/set-password'
     | '/app/tickets'
     | '/lovable/email/suppression'
+    | '/oauth/google-calendar/return'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
@@ -885,6 +897,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/set-password'
     | '/app/_authenticated/tickets'
     | '/lovable/email/suppression'
+    | '/oauth/google-calendar/return'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
@@ -950,6 +963,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicConfirmBookingRoute: typeof ApiPublicConfirmBookingRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  OauthGoogleCalendarReturnRoute: typeof OauthGoogleCalendarReturnRoute
   ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
   ApiPublicHooksGhlBookingRoute: typeof ApiPublicHooksGhlBookingRoute
   ApiPublicHooksMarkUnbookedRoute: typeof ApiPublicHooksMarkUnbookedRoute
@@ -1050,6 +1064,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app'
       preLoaderRoute: typeof AppAuthenticatedRouteRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/oauth/google-calendar/return': {
+      id: '/oauth/google-calendar/return'
+      path: '/oauth/google-calendar/return'
+      fullPath: '/oauth/google-calendar/return'
+      preLoaderRoute: typeof OauthGoogleCalendarReturnRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
@@ -1636,6 +1657,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicConfirmBookingRoute: ApiPublicConfirmBookingRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  OauthGoogleCalendarReturnRoute: OauthGoogleCalendarReturnRoute,
   ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
   ApiPublicHooksGhlBookingRoute: ApiPublicHooksGhlBookingRoute,
   ApiPublicHooksMarkUnbookedRoute: ApiPublicHooksMarkUnbookedRoute,

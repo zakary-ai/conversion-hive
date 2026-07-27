@@ -678,8 +678,9 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
     // B2B closers (active pool). Per-closer rules are intentionally ignored.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: closers } = await (supabaseAdmin.from("b2b_closers") as any)
-      .select("id").eq("active", true);
-    const closerIds = ((closers ?? []) as Array<{ id: string }>).map((c) => c.id);
+      .select("id, user_id").eq("active", true);
+    const closerRows = ((closers ?? []) as Array<{ id: string; user_id: string | null }>);
+    const closerIds = closerRows.map((c) => c.id);
     if (closerIds.length === 0) return [] as string[];
 
 
@@ -691,6 +692,21 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
       .gte("scheduled_at", new Date(viewerDayStart.getTime() - SLOT * 60_000).toISOString())
       .lt("scheduled_at", new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString());
     const allBookings = (bookings ?? []) as Array<{ scheduled_at: string; b2b_closer_id: string | null; status: string | null }>;
+
+    // Google Calendar busy windows per closer (fail-open on error/unconnected).
+    const { getBusyIntervalsForUser } = await import("@/lib/googleCalendar.server");
+    const gcalBusyByCloser = new Map<string, Array<{ start: number; end: number }>>();
+    await Promise.all(
+      closerRows.map(async (c) => {
+        if (!c.user_id) return;
+        const busy = await getBusyIntervalsForUser(
+          c.user_id,
+          new Date(viewerDayStart.getTime() - SLOT * 60_000).toISOString(),
+          new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString(),
+        );
+        if (busy.length > 0) gcalBusyByCloser.set(c.id, busy);
+      }),
+    );
 
     // Viewer day can span 2 EST calendar days
     const estDates = new Set<string>();
@@ -718,14 +734,20 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
           const slotEnd = t + slotMs;
           let availableClosers = 0;
           for (const cid of closerIds) {
-            const conflict = allBookings.some((b) => {
+            const apptConflict = allBookings.some((b) => {
               if (b.b2b_closer_id !== cid) return false;
               if (b.status === "cancelled") return false;
               const bs = new Date(b.scheduled_at).getTime();
               return bs < slotEnd && bs + slotMs > t;
             });
-            if (!conflict) availableClosers += 1;
+            if (apptConflict) continue;
+            const gcalConflict = (gcalBusyByCloser.get(cid) ?? []).some(
+              (iv) => iv.start < slotEnd && iv.end > t,
+            );
+            if (gcalConflict) continue;
+            availableClosers += 1;
           }
+
 
           // Reserve capacity for pending (unassigned) bookings already sitting on this slot
           const pendingAtSlot = allBookings.filter((b) =>
