@@ -209,6 +209,85 @@ export const claimPoolLead = createServerFn({ method: "POST" })
     return updated;
   });
 
+// ---------- Create + auto-claim a new pool lead (setter "Book lead" flow) ----------
+export const createAndClaimPoolLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      first_name: z.string().trim().max(120).optional().nullable(),
+      last_name: z.string().trim().max(120).optional().nullable(),
+      company: z.string().trim().max(200).optional().nullable(),
+      phone: z.string().trim().max(50).optional().nullable(),
+      email: z.string().trim().email().max(200).optional().nullable().or(z.literal("").transform(() => null)),
+      notes: z.string().max(10000).optional().nullable(),
+    }).parse,
+  )
+  .handler(async ({ data, context }) => {
+    const email = data.email ? data.email.toLowerCase() : null;
+    const phone = data.phone ? data.phone.trim() : null;
+    if (!email && !phone) throw new Error("Email or phone is required.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Best-effort dedupe: if a pool lead already exists on this email/phone, claim it if free.
+    let existingId: string | null = null;
+    if (email) {
+      const { data: e } = await supabaseAdmin.from("b2b_lead_pool").select("id, claimed_by").eq("email", email).maybeSingle();
+      if (e) existingId = e.id as string;
+      if (e && e.claimed_by && e.claimed_by !== context.userId) throw new Error("A lead with this email is already claimed by someone else.");
+    }
+    if (!existingId && phone) {
+      const d = digits(phone);
+      if (d) {
+        const { data: p } = await supabaseAdmin.from("b2b_lead_pool").select("id, claimed_by, phone").not("phone", "is", null).limit(5000);
+        const hit = (p ?? []).find((r: any) => digits(r.phone) === d);
+        if (hit) {
+          if (hit.claimed_by && hit.claimed_by !== context.userId) throw new Error("A lead with this phone is already claimed by someone else.");
+          existingId = hit.id as string;
+        }
+      }
+    }
+
+    if (existingId) {
+      const { data: updated, error } = await (supabaseAdmin.from("b2b_lead_pool") as any)
+        .update({
+          first_name: data.first_name || null,
+          last_name: data.last_name || null,
+          company: data.company || null,
+          phone,
+          email,
+          notes: data.notes || null,
+          claimed_by: context.userId,
+          claimed_at: new Date().toISOString(),
+          status: "claimed",
+        })
+        .eq("id", existingId)
+        .select("*")
+        .single();
+      if (error) throw new Error(error.message);
+      return updated;
+    }
+
+    const { data: row, error } = await (supabaseAdmin.from("b2b_lead_pool") as any)
+      .insert({
+        first_name: data.first_name || null,
+        last_name: data.last_name || null,
+        company: data.company || null,
+        phone,
+        email,
+        notes: data.notes || null,
+        source: "setter-manual",
+        imported_by: context.userId,
+        claimed_by: context.userId,
+        claimed_at: new Date().toISOString(),
+        status: "claimed",
+      })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
 // ---------- Log call outcome ----------
 export const logCallOutcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
