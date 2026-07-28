@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
-import { adminListPool, adminBulkImportPool, listAllCallbacksAdmin, adminGetPoolLead } from "@/lib/api/b2b-pool.functions";
+import { adminListPool, adminBulkImportPool, listAllCallbacksAdmin, adminGetPoolLead, listPoolFacets } from "@/lib/api/b2b-pool.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
