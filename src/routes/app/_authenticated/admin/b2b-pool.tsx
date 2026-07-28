@@ -197,6 +197,59 @@ function CallbacksTable() {
   );
 }
 
+function ExportCsvButton() {
+  const { data: facets } = useQuery({ queryKey: ["pool-facets"], queryFn: () => listPoolFacets() });
+  const [segment, setSegment] = useState<string>("__all");
+  const [busy, setBusy] = useState(false);
+
+  const csvEscape = (v: any) => {
+    if (v === null || v === undefined) return "";
+    const s = typeof v === "string" ? v : String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const doExport = async () => {
+    setBusy(true);
+    try {
+      const seg = segment && segment !== "__all" ? segment : undefined;
+      const { rows } = await adminExportPool({ data: { segment: seg } });
+      if (!rows.length) { toast.info("No leads to export."); return; }
+      const headers = ["segment","lead_type","first_name","last_name","title","company","website","email","email_status","phone","linkedin_url","city","state","industry","company_size","notes","status","claimed_at","imported_at"];
+      const lines = [headers.join(",")];
+      for (const r of rows as any[]) lines.push(headers.map((h) => csvEscape(r[h])).join(","));
+      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.download = `lead-pool${seg ? `-${seg.replace(/[^a-z0-9]+/gi, "_")}` : ""}-${stamp}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${rows.length} leads`);
+    } catch (e: any) {
+      toast.error(e.message || "Export failed");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="flex gap-2 items-center">
+      <Select value={segment} onValueChange={setSegment}>
+        <SelectTrigger className="w-[180px]"><SelectValue placeholder="All segments" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all">All segments</SelectItem>
+          {(facets?.segments ?? []).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Button variant="outline" onClick={doExport} disabled={busy}>
+        {busy ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        Export CSV
+      </Button>
+    </div>
+  );
+}
+
+
+
 
 type FieldKey =
   | "segment" | "lead_type" | "first_name" | "last_name" | "name"
