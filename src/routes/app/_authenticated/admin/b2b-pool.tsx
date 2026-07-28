@@ -293,7 +293,7 @@ function CsvImportButton() {
         ln = parts.slice(1).join(" ") || null;
       }
       return {
-        segment: get(mapping.segment),
+        segment: effectiveSegment() ?? get(mapping.segment),
         lead_type: get(mapping.lead_type),
         first_name: fn,
         last_name: ln,
