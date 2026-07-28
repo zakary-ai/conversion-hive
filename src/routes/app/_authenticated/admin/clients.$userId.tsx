@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, Phone, ChevronDown, Mail, Building2, Search, CalendarIcon, AlertTriangle, UserX } from "lucide-react";
+import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, Phone, ChevronDown, Mail, Building2, Search, CalendarIcon, AlertTriangle, UserX, ArrowUpDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
