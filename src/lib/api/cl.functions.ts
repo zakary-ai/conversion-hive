@@ -2036,18 +2036,15 @@ export const getClientDetail = createServerFn({ method: "GET" })
     const bookingsScheduled = inRange(allBookings, "scheduled_at");
     const leadsInRange = inRange(allLeads, "created_at");
     const callsInRange = inRange(allCalls as Record<string, unknown>[], "started_at");
-    // Dials = leads the setter recorded an outcome on within the window.
-    // A "dial" is any lead whose status moved off "New"; we filter by
-    // last_status_change_at so it matches the Today's Leads → Contacted list
-    // and the Lead history list exactly.
-    const dialedInRange = inRange(
-      allLeads.filter((l) => l.status !== "New") as Record<string, unknown>[],
-      "last_status_change_at",
-    );
+    // Dials = actual call_logs entries in the window (Quo + in-app dials).
+    // Manual "outcome-only" rows (status = 'manual_outcome') don't count.
+    const dialCalls = (callsInRange as Array<{ status: string | null; started_at: string | null; created_at: string }>)
+      .filter((c) => c.status !== "manual_outcome");
 
     return {
       profile: profile.data,
       leads: allLeads,
+      poolLeads: poolLeads.data ?? [],
       completions: completions.data ?? [],
       attempts: attempts.data ?? [],
       commissions: commRows,
@@ -2064,7 +2061,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
         no_show: bookingsScheduled.filter((a) => a.outcome === "no_show").length,
         pending: bookingsScheduled.filter((a) => !a.outcome).length,
         leadsCount: leadsInRange.length,
-        dials: dialedInRange.length,
+        dials: dialCalls.length,
         callsWithArtifacts: (callsInRange as Array<{ counted_at: string | null }>).filter((c) => c.counted_at).length,
       },
     };
