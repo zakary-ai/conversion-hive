@@ -164,10 +164,8 @@ function SetterDetailPage() {
 
       <QuizScoresCard attempts={data.attempts as QuizAttempt[]} />
 
-      <TodaysLeadsCard
-        leads={data.leads as SetterLead[]}
-        calls={data.calls as CallRowItem[]}
-      />
+      <ClaimedLeadsCard leads={data.poolLeads as PoolLead[]} />
+
 
       <LeadHistoryCard
         leads={data.leads as SetterLead[]}
