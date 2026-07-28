@@ -997,7 +997,24 @@ function ClaimedLeadsCard({ leads }: { leads: PoolLead[] }) {
               <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
               Claimed leads ({leads.length})
             </CollapsibleTrigger>
-            {open && <SearchPopover value={query} onChange={setQuery} placeholder="Search claimed leads…" />}
+            {open && (
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+                  <SelectTrigger className="h-8 w-44 text-xs">
+                    <ArrowUpDown className="h-3.5 w-3.5 mr-1.5" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="claimed_recent">Claimed: newest</SelectItem>
+                    <SelectItem value="claimed_oldest">Claimed: oldest</SelectItem>
+                    <SelectItem value="status_asc">Status: A → Z</SelectItem>
+                    <SelectItem value="status_desc">Status: Z → A</SelectItem>
+                    <SelectItem value="name_asc">Name: A → Z</SelectItem>
+                  </SelectContent>
+                </Select>
+                <SearchPopover value={query} onChange={setQuery} placeholder="Search claimed leads…" />
+              </div>
+            )}
           </div>
           <CollapsibleContent>
             {filtered.length === 0 ? (
