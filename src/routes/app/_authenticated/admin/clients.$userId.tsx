@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { B2bLeadDetailDialog } from "@/components/b2b-lead-detail-dialog";
 
 export const Route = createFileRoute("/app/_authenticated/admin/clients/$userId")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(opts(params.userId, null, null)),
@@ -164,10 +165,8 @@ function SetterDetailPage() {
 
       <QuizScoresCard attempts={data.attempts as QuizAttempt[]} />
 
-      <TodaysLeadsCard
-        leads={data.leads as SetterLead[]}
-        calls={data.calls as CallRowItem[]}
-      />
+      <ClaimedLeadsCard leads={data.poolLeads as PoolLead[]} />
+
 
       <LeadHistoryCard
         leads={data.leads as SetterLead[]}
@@ -922,5 +921,106 @@ function SetterLeadDetailDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ---------- Claimed leads (b2b_lead_pool) ----------
+
+type PoolLead = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  company: string | null;
+  title: string | null;
+  email: string | null;
+  phone: string | null;
+  linkedin_url: string | null;
+  city: string | null;
+  state: string | null;
+  industry: string | null;
+  segment: string | null;
+  lead_type: string | null;
+  company_size: string | null;
+  status: string;
+  notes: string | null;
+  claimed_at: string | null;
+  last_attempt_at: string | null;
+  didnt_pick_up: boolean;
+  archived: boolean;
+};
+
+function ClaimedLeadsCard({ leads }: { leads: PoolLead[] }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [openLead, setOpenLead] = useState<PoolLead | null>(null);
+
+  const filtered = leads.filter((l) => {
+    if (!query) return true;
+    const s = query.toLowerCase();
+    const name = `${l.first_name ?? ""} ${l.last_name ?? ""}`.toLowerCase();
+    return (
+      name.includes(s) ||
+      (l.company ?? "").toLowerCase().includes(s) ||
+      (l.email ?? "").toLowerCase().includes(s) ||
+      (l.phone ?? "").toLowerCase().includes(s) ||
+      (l.status ?? "").toLowerCase().includes(s)
+    );
+  });
+
+  return (
+    <>
+      <Card className="overflow-x-auto">
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <div className="p-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
+            <CollapsibleTrigger className="flex items-center gap-2 font-display font-semibold hover:opacity-80">
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+              Claimed leads ({leads.length})
+            </CollapsibleTrigger>
+            {open && <SearchPopover value={query} onChange={setQuery} placeholder="Search claimed leads…" />}
+          </div>
+          <CollapsibleContent>
+            {filtered.length === 0 ? (
+              <div className="p-6 text-sm text-muted-foreground text-center">
+                {query ? "No matches." : "No leads claimed yet."}
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="text-left p-3">Name</th>
+                    <th className="text-left p-3">Company</th>
+                    <th className="text-left p-3">Status</th>
+                    <th className="text-left p-3">Claimed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((l) => {
+                    const name = [l.first_name, l.last_name].filter(Boolean).join(" ") || "—";
+                    return (
+                      <tr
+                        key={l.id}
+                        className="border-t border-border cursor-pointer hover:bg-muted/30"
+                        onClick={() => setOpenLead(l)}
+                      >
+                        <td className="p-3 font-medium">{name}</td>
+                        <td className="p-3 text-muted-foreground">{l.company ?? "—"}</td>
+                        <td className="p-3"><StatusPill status={l.status} /></td>
+                        <td className="p-3 text-muted-foreground text-xs">{fmtDate(l.claimed_at)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
+      <B2bLeadDetailDialog
+        lead={openLead}
+        onClose={() => setOpenLead(null)}
+        showActions={false}
+      />
+    </>
   );
 }

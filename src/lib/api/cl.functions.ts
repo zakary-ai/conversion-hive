@@ -1982,7 +1982,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
   }).parse)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const [profile, leads, completions, attempts, commissions, totalModules, appointments, calls] = await Promise.all([
+    const [profile, leads, completions, attempts, commissions, totalModules, appointments, calls, poolLeads] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", data.user_id).maybeSingle(),
       supabase.from("leads").select("*").eq("assigned_user_id", data.user_id).order("created_at", { ascending: false }),
       supabase.from("module_completions").select("*").eq("user_id", data.user_id),
@@ -1991,10 +1991,14 @@ export const getClientDetail = createServerFn({ method: "GET" })
       supabase.from("modules").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase.from("appointments").select("*").eq("user_id", data.user_id).order("scheduled_at", { ascending: false }),
       supabase.from("call_logs")
-        .select("id, lead_id, started_at, created_at, ended_at, duration_sec, status, direction, to_number, from_number, recording_url, transcript, transcript_status, summary, counted_at, leads:lead_id(name, company)")
+        .select("id, lead_id, pool_lead_id, started_at, created_at, ended_at, duration_sec, status, direction, to_number, from_number, recording_url, transcript, transcript_status, summary, counted_at, leads:lead_id(name, company)")
         .eq("user_id", data.user_id)
         .order("created_at", { ascending: false })
-        .limit(200),
+        .limit(500),
+      supabase.from("b2b_lead_pool")
+        .select("id, first_name, last_name, company, title, email, phone, linkedin_url, city, state, industry, segment, lead_type, company_size, status, notes, claimed_at, last_attempt_at, didnt_pick_up, archived")
+        .eq("claimed_by", data.user_id)
+        .order("claimed_at", { ascending: false }),
     ]);
     const commRows = commissions.data ?? [];
     const balance = commRows.reduce((s, c) => s + Number(c.amount), 0);
@@ -2032,18 +2036,15 @@ export const getClientDetail = createServerFn({ method: "GET" })
     const bookingsScheduled = inRange(allBookings, "scheduled_at");
     const leadsInRange = inRange(allLeads, "created_at");
     const callsInRange = inRange(allCalls as Record<string, unknown>[], "started_at");
-    // Dials = leads the setter recorded an outcome on within the window.
-    // A "dial" is any lead whose status moved off "New"; we filter by
-    // last_status_change_at so it matches the Today's Leads → Contacted list
-    // and the Lead history list exactly.
-    const dialedInRange = inRange(
-      allLeads.filter((l) => l.status !== "New") as Record<string, unknown>[],
-      "last_status_change_at",
-    );
+    // Dials = actual call_logs entries in the window (Quo + in-app dials).
+    // Manual "outcome-only" rows (status = 'manual_outcome') don't count.
+    const dialCalls = (callsInRange as Array<{ status: string | null; started_at: string | null; created_at: string }>)
+      .filter((c) => c.status !== "manual_outcome");
 
     return {
       profile: profile.data,
       leads: allLeads,
+      poolLeads: poolLeads.data ?? [],
       completions: completions.data ?? [],
       attempts: attempts.data ?? [],
       commissions: commRows,
@@ -2060,7 +2061,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
         no_show: bookingsScheduled.filter((a) => a.outcome === "no_show").length,
         pending: bookingsScheduled.filter((a) => !a.outcome).length,
         leadsCount: leadsInRange.length,
-        dials: dialedInRange.length,
+        dials: dialCalls.length,
         callsWithArtifacts: (callsInRange as Array<{ counted_at: string | null }>).filter((c) => c.counted_at).length,
       },
     };
