@@ -366,6 +366,32 @@ function CsvImportButton() {
             {files?.length ?? 0} file{(files?.length ?? 0) === 1 ? "" : "s"} · {previewRows.length} rows in first file.
             Mapping applies to all selected files.
           </div>
+          <div className="rounded-md border p-3 space-y-2">
+            <div className="text-xs font-medium">Segment for all rows</div>
+            <div className="text-[11px] text-muted-foreground">
+              Optionally set one segment applied to every imported row (overrides the mapped Segment column).
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Select value={segmentOverride || "__none"} onValueChange={(v) => setSegmentOverride(v === "__none" ? "" : v)}>
+                <SelectTrigger className="w-[240px]"><SelectValue placeholder="Use CSV column" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Use CSV column</SelectItem>
+                  {(facets.data?.segments ?? []).map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                  <SelectItem value="__custom">+ New segment…</SelectItem>
+                </SelectContent>
+              </Select>
+              {segmentOverride === "__custom" && (
+                <Input
+                  placeholder="New segment name"
+                  value={segmentCustom}
+                  onChange={(e) => setSegmentCustom(e.target.value)}
+                  className="w-[240px]"
+                />
+              )}
+            </div>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {FIELDS.map((f) => (
               <div key={f.key} className="space-y-1">
