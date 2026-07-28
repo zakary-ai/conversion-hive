@@ -407,6 +407,34 @@ export const adminListPool = createServerFn({ method: "GET" })
     };
   });
 
+// ---------- Admin: export pool as CSV rows ----------
+export const adminExportPool = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      segment: z.string().optional(),
+      status: z.enum(["all","unclaimed","claimed","burned","booked"]).optional(),
+    }).optional().parse,
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const cols = "segment,lead_type,first_name,last_name,title,company,website,email,email_status,phone,linkedin_url,city,state,industry,company_size,notes,status,claimed_at,imported_at";
+    const rows: any[] = [];
+    const pageSize = 1000;
+    for (let from = 0; ; from += pageSize) {
+      let q = supabaseAdmin.from("b2b_lead_pool").select(cols).order("imported_at", { ascending: false }).range(from, from + pageSize - 1);
+      if (data?.segment) q = q.eq("segment", data.segment);
+      if (data?.status && data.status !== "all") q = q.eq("status", data.status);
+      const { data: chunk, error } = await q;
+      if (error) throw new Error(error.message);
+      const list = chunk ?? [];
+      rows.push(...list);
+      if (list.length < pageSize) break;
+    }
+    return { rows };
+  });
+
 const PoolRowSchema = z.object({
   segment: z.string().optional().nullable(),
   lead_type: z.string().optional().nullable(),
