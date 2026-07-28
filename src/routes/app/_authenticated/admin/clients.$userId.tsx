@@ -13,6 +13,7 @@ import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock,
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { B2bLeadDetailDialog } from "@/components/b2b-lead-detail-dialog";
