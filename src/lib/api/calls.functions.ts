@@ -183,7 +183,7 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
 
     const { data: pool } = await supabaseAdmin
       .from("openphone_number_pool")
-      .select("openphone_number_id, phone_e164");
+      .select("openphone_number_id, phone_e164, assigned_user_id");
 
     // Look back 14 days
     const sinceIso = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
