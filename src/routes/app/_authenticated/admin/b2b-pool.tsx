@@ -54,7 +54,10 @@ function AdminPoolPage() {
     <div className="space-y-4 max-w-7xl">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <PageHeader title="B2B Lead Pool" description={`${total} leads · shared across all setters`} />
-        <CsvImportButton />
+        <div className="flex gap-2 flex-wrap">
+          <ExportCsvButton />
+          <CsvImportButton />
+        </div>
       </div>
 
       <Tabs defaultValue="pool">
