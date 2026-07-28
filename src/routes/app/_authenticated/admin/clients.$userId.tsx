@@ -953,20 +953,40 @@ type PoolLead = {
 function ClaimedLeadsCard({ leads }: { leads: PoolLead[] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"status_asc" | "status_desc" | "claimed_recent" | "claimed_oldest" | "name_asc">("claimed_recent");
   const [openLead, setOpenLead] = useState<PoolLead | null>(null);
 
-  const filtered = leads.filter((l) => {
-    if (!query) return true;
-    const s = query.toLowerCase();
-    const name = `${l.first_name ?? ""} ${l.last_name ?? ""}`.toLowerCase();
-    return (
-      name.includes(s) ||
-      (l.company ?? "").toLowerCase().includes(s) ||
-      (l.email ?? "").toLowerCase().includes(s) ||
-      (l.phone ?? "").toLowerCase().includes(s) ||
-      (l.status ?? "").toLowerCase().includes(s)
-    );
-  });
+  const filtered = useMemo(() => {
+    const list = leads.filter((l) => {
+      if (!query) return true;
+      const s = query.toLowerCase();
+      const name = `${l.first_name ?? ""} ${l.last_name ?? ""}`.toLowerCase();
+      return (
+        name.includes(s) ||
+        (l.company ?? "").toLowerCase().includes(s) ||
+        (l.email ?? "").toLowerCase().includes(s) ||
+        (l.phone ?? "").toLowerCase().includes(s) ||
+        (l.status ?? "").toLowerCase().includes(s)
+      );
+    });
+
+    return [...list].sort((a, b) => {
+      switch (sortBy) {
+        case "status_asc":
+          return (a.status || "").localeCompare(b.status || "");
+        case "status_desc":
+          return (b.status || "").localeCompare(a.status || "");
+        case "name_asc":
+          return (`${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "—")
+            .localeCompare(`${b.first_name ?? ""} ${b.last_name ?? ""}`.trim() || "—");
+        case "claimed_oldest":
+          return (a.claimed_at ?? "").localeCompare(b.claimed_at ?? "");
+        case "claimed_recent":
+        default:
+          return (b.claimed_at ?? "").localeCompare(a.claimed_at ?? "");
+      }
+    });
+  }, [leads, query, sortBy]);
 
   return (
     <>
