@@ -183,7 +183,7 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
 
     const { data: pool } = await supabaseAdmin
       .from("openphone_number_pool")
-      .select("openphone_number_id, phone_e164");
+      .select("openphone_number_id, phone_e164, assigned_user_id");
 
     // Look back 14 days
     const sinceIso = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
@@ -260,6 +260,76 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
       }
     }
 
+    // ---- Step 1b: for each workspace pool number, list recent Quo calls and
+    // insert a call_logs row for any that we still don't have. This captures
+    // direct calls made from the Quo app (not initiated from our in-app
+    // "Call" button).
+    let ingested = 0;
+    for (const p of poolNumbers) {
+      if (!p.assigned_user_id) continue;
+      let pageToken: string | undefined = undefined;
+      const seen: OpCall[] = [];
+      for (let page = 0; page < 5; page++) {
+        const qs = new URLSearchParams({
+          phoneNumberId: p.openphone_number_id,
+          maxResults: "50",
+          createdAfter: sinceIso,
+        });
+        if (pageToken) qs.set("pageToken", pageToken);
+        type ListRes = { data?: OpCall[]; nextPageToken?: string | null };
+        const list = (await opGet(`/v1/calls?${qs.toString()}`, apiKey)) as ListRes | null;
+        if (!list?.data) break;
+        seen.push(...list.data);
+        if (!list.nextPageToken) break;
+        pageToken = list.nextPageToken;
+      }
+      if (seen.length === 0) continue;
+
+      const ids = seen.map((c) => c.id);
+      const { data: existing } = await supabaseAdmin
+        .from("call_logs")
+        .select("openphone_call_id")
+        .in("openphone_call_id", ids);
+      const existingSet = new Set((existing ?? []).map((r) => r.openphone_call_id));
+
+      for (const c of seen) {
+        if (existingSet.has(c.id)) continue;
+        const participants = c.participants ?? (Array.isArray(c.to) ? c.to : c.to ? [c.to] : []);
+        const workspaceDigits = digits10(p.phone_e164);
+        const external = participants.find((x) => digits10(x) !== workspaceDigits) ?? participants[0] ?? null;
+        const externalDigits = digits10(external);
+
+        let pool_lead_id: string | null = null;
+        let lead_id: string | null = null;
+        if (externalDigits) {
+          const like = `%${externalDigits}`;
+          const { data: pl } = await supabaseAdmin
+            .from("b2b_lead_pool").select("id").ilike("phone", like).limit(1).maybeSingle();
+          if (pl) pool_lead_id = pl.id;
+          else {
+            const { data: ld } = await supabaseAdmin
+              .from("leads").select("id").ilike("phone", like).limit(1).maybeSingle();
+            if (ld) lead_id = ld.id;
+          }
+        }
+
+        await supabaseAdmin.from("call_logs").insert({
+          user_id: p.assigned_user_id,
+          lead_id,
+          pool_lead_id,
+          openphone_call_id: c.id,
+          direction: c.direction ?? "outbound",
+          status: c.status ?? null,
+          from_number: typeof c.from === "string" ? c.from : null,
+          to_number: Array.isArray(c.to) ? c.to[0] : (c.to ?? null),
+          duration_sec: typeof c.duration === "number" ? c.duration : null,
+          started_at: c.answeredAt || c.createdAt || null,
+          ended_at: c.completedAt ?? null,
+        } as any);
+        ingested++;
+      }
+    }
+
     // ---- Step 2: fetch artifacts for every linked row missing them.
     const { data: rows, error } = await supabaseAdmin
       .from("call_logs")
@@ -319,5 +389,5 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
       }
     }
 
-    return { ok: true, scanned, adopted, updated, txFilled, recFilled, sumFilled };
+    return { ok: true, scanned, adopted, ingested, updated, txFilled, recFilled, sumFilled };
   });
