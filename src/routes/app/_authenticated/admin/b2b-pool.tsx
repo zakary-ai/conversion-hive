@@ -194,83 +194,129 @@ function CallbacksTable() {
   );
 }
 
-const KEY = (arr: string[]) => (k: string) => arr.includes(k);
+
+type FieldKey =
+  | "segment" | "lead_type" | "first_name" | "last_name" | "name"
+  | "title" | "company" | "website" | "email" | "email_status"
+  | "phone" | "linkedin_url" | "city" | "state" | "industry"
+  | "company_size" | "notes";
+
+const FIELDS: { key: FieldKey; label: string; hint?: string; match: (k: string) => boolean }[] = [
+  { key: "first_name", label: "First name", match: (k) => ["first_name","first","firstname"].includes(k) || k.includes("first") },
+  { key: "last_name", label: "Last name", match: (k) => ["last_name","last","lastname"].includes(k) || k.includes("last") },
+  { key: "name", label: "Full name", hint: "Used only if first/last are empty", match: (k) => ["name","full_name","contact"].includes(k) },
+  { key: "company", label: "Company", match: (k) => k.includes("company") || k.includes("business") || k.includes("organization") },
+  { key: "title", label: "Title", match: (k) => k.includes("title") || k.includes("position") },
+  { key: "email", label: "Email", match: (k) => k === "email" || k.includes("email_address") || k.includes("e-mail") },
+  { key: "email_status", label: "Email status", match: (k) => k.includes("email_status") || k.includes("email status") },
+  { key: "phone", label: "Phone", match: (k) => k.includes("phone") || k.includes("mobile") || k.includes("cell") || k.includes("telephone") },
+  { key: "website", label: "Website", match: (k) => k.includes("website") || k.includes("url") && !k.includes("linkedin") || k.includes("domain") || k === "site" },
+  { key: "linkedin_url", label: "LinkedIn URL", match: (k) => k.includes("linkedin") },
+  { key: "segment", label: "Segment", match: (k) => k.includes("segment") },
+  { key: "lead_type", label: "Lead type", match: (k) => k.includes("lead_type") || k === "type" },
+  { key: "industry", label: "Industry", match: (k) => k.includes("industry") },
+  { key: "company_size", label: "Company size", match: (k) => k.includes("company_size") || k.includes("employees") || k === "size" },
+  { key: "city", label: "City", match: (k) => k === "city" },
+  { key: "state", label: "State", match: (k) => k === "state" || k.includes("region") || k.includes("province") },
+  { key: "notes", label: "Notes", match: (k) => k.includes("note") || k.includes("comment") },
+];
+
+type Mapping = Partial<Record<FieldKey, string>>;
+
+function autoMap(headers: string[]): Mapping {
+  const used = new Set<string>();
+  const m: Mapping = {};
+  for (const f of FIELDS) {
+    const h = headers.find((k) => !used.has(k) && f.match(k));
+    if (h) { m[f.key] = h; used.add(h); }
+  }
+  return m;
+}
 
 function CsvImportButton() {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const [files, setFiles] = useState<File[] | null>(null);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [sample, setSample] = useState<Record<string, string> | null>(null);
+  const [mapping, setMapping] = useState<Mapping>({});
+  const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files?.length) return;
+  const openFiles = async (fileList: FileList | null) => {
+    if (!fileList?.length) return;
+    const arr = Array.from(fileList);
+    try {
+      const text = await arr[0].text();
+      const rows = parseCsv(text);
+      if (!rows.length) { toast.error(`${arr[0].name}: empty`); return; }
+      const hdrs = Object.keys(rows[0]);
+      setHeaders(hdrs);
+      setSample(rows[0]);
+      setPreviewRows(rows);
+      setMapping(autoMap(hdrs));
+      setFiles(arr);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const close = () => { setFiles(null); setHeaders([]); setSample(null); setMapping({}); setPreviewRows([]); };
+
+  const runImport = async () => {
+    if (!files) return;
     setBusy(true);
     let totalInserted = 0, totalDupes = 0, totalRows = 0;
     const failures: string[] = [];
+    const buildMapped = (rows: Record<string, string>[]) => rows.map((r) => {
+      const get = (k?: string) => (k ? r[k] || null : null);
+      let fn = get(mapping.first_name);
+      let ln = get(mapping.last_name);
+      if (!fn && !ln && mapping.name && r[mapping.name]) {
+        const parts = r[mapping.name].trim().split(/\s+/);
+        fn = parts[0] || null;
+        ln = parts.slice(1).join(" ") || null;
+      }
+      return {
+        segment: get(mapping.segment),
+        lead_type: get(mapping.lead_type),
+        first_name: fn,
+        last_name: ln,
+        title: get(mapping.title),
+        company: get(mapping.company),
+        website: get(mapping.website),
+        email: get(mapping.email),
+        email_status: get(mapping.email_status),
+        phone: get(mapping.phone),
+        linkedin_url: get(mapping.linkedin_url),
+        city: get(mapping.city),
+        state: get(mapping.state),
+        industry: get(mapping.industry),
+        company_size: get(mapping.company_size),
+        notes: get(mapping.notes),
+        source: "csv-import",
+      };
+    }).filter((r) => r.first_name || r.last_name || r.email || r.phone || r.company);
+
     try {
-      for (const file of Array.from(files)) {
+      // First file: reuse already-parsed previewRows
+      const firstMapped = buildMapped(previewRows);
+      totalRows += firstMapped.length;
+      for (let i = 0; i < firstMapped.length; i += 500) {
+        const res = await adminBulkImportPool({ data: { rows: firstMapped.slice(i, i + 500) } });
+        totalInserted += res.inserted; totalDupes += res.duplicates;
+      }
+      for (const file of files.slice(1)) {
         try {
           const text = await file.text();
           const rows = parseCsv(text);
-          if (!rows.length) { failures.push(`${file.name}: empty`); continue; }
-          const keys = Object.keys(rows[0]);
-          const pick = (preds: ((k: string) => boolean)[]) => {
-            for (const p of preds) { const k = keys.find(p); if (k) return k; }
-            return null;
-          };
-          const firstK = pick([KEY(["first_name", "first name", "firstname", "first"]), (k) => k.includes("first")]);
-          const lastK = pick([KEY(["last_name", "last name", "lastname", "last"]), (k) => k.includes("last")]);
-          const nameK = pick([KEY(["name", "full_name", "full name", "contact"]), (k) => k === "name" || k === "full_name" || k === "contact"]);
-          const segmentK = pick([KEY(["segment"]), (k) => k.includes("segment")]);
-          const leadTypeK = pick([KEY(["lead_type", "lead type", "leadtype", "type"]), (k) => k.includes("lead_type") || k === "type"]);
-          const titleK = pick([KEY(["title", "job_title", "job title", "position"]), (k) => k.includes("title") || k.includes("position")]);
-          const companyK = pick([KEY(["company_name", "company name", "company", "business", "organization", "org"]), (k) => k.includes("company") || k.includes("business")]);
-          const websiteK = pick([KEY(["company_website", "company website", "website", "url", "site", "domain"]), (k) => k.includes("website") || k.includes("url") || k.includes("domain")]);
-          const emailK = pick([KEY(["email", "email_address", "e-mail"]), (k) => k === "email" || k.includes("email_address")]);
-          const emailStatusK = pick([KEY(["email_status", "email status"]), (k) => k.includes("email_status") || k.includes("email status")]);
-          const phoneK = pick([KEY(["phone", "phone_number", "mobile", "cell", "telephone"]), (k) => k.includes("phone") || k.includes("mobile") || k.includes("cell")]);
-          const liK = pick([KEY(["linkedin", "linkedin_url", "linkedin url"]), (k) => k.includes("linkedin")]);
-          const cityK = pick([KEY(["city"]), (k) => k === "city"]);
-          const stateK = pick([KEY(["state", "region", "province"]), (k) => k === "state" || k.includes("region") || k.includes("province")]);
-          const industryK = pick([KEY(["industry"]), (k) => k.includes("industry")]);
-          const sizeK = pick([KEY(["company_size", "company size", "employees", "employee_count", "size"]), (k) => k.includes("company_size") || k.includes("employees") || k === "size"]);
-          const notesK = pick([KEY(["notes", "note", "comments"]), (k) => k.includes("note") || k.includes("comment")]);
-
-          const mapped = rows.map((r) => {
-            let fn = firstK ? r[firstK] : "";
-            let ln = lastK ? r[lastK] : "";
-            if (!fn && !ln && nameK && r[nameK]) {
-              const parts = r[nameK].split(/\s+/);
-              fn = parts[0] || "";
-              ln = parts.slice(1).join(" ") || "";
-            }
-            return {
-              segment: segmentK ? r[segmentK] || null : null,
-              lead_type: leadTypeK ? r[leadTypeK] || null : null,
-              first_name: fn || null,
-              last_name: ln || null,
-              title: titleK ? r[titleK] || null : null,
-              company: companyK ? r[companyK] || null : null,
-              website: websiteK ? r[websiteK] || null : null,
-              email: emailK ? r[emailK] || null : null,
-              email_status: emailStatusK ? r[emailStatusK] || null : null,
-              phone: phoneK ? r[phoneK] || null : null,
-              linkedin_url: liK ? r[liK] || null : null,
-              city: cityK ? r[cityK] || null : null,
-              state: stateK ? r[stateK] || null : null,
-              industry: industryK ? r[industryK] || null : null,
-              company_size: sizeK ? r[sizeK] || null : null,
-              notes: notesK ? r[notesK] || null : null,
-              source: "csv-import",
-            };
-          }).filter((r) => r.first_name || r.last_name || r.email || r.phone || r.company);
-
-
+          const mapped = buildMapped(rows);
           totalRows += mapped.length;
           for (let i = 0; i < mapped.length; i += 500) {
-            const chunk = mapped.slice(i, i + 500);
-            const res = await adminBulkImportPool({ data: { rows: chunk } });
-            totalInserted += res.inserted;
-            totalDupes += res.duplicates;
+            const res = await adminBulkImportPool({ data: { rows: mapped.slice(i, i + 500) } });
+            totalInserted += res.inserted; totalDupes += res.duplicates;
           }
         } catch (e) {
           failures.push(`${file.name}: ${(e as Error).message}`);
@@ -279,19 +325,67 @@ function CsvImportButton() {
       toast.success(`Imported ${totalInserted} of ${totalRows} · ${totalDupes} duplicate${totalDupes === 1 ? "" : "s"} skipped`);
       failures.forEach((f) => toast.error(f));
       qc.invalidateQueries({ queryKey: ["admin-pool"] });
+      close();
     } finally {
       setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
     }
+  };
+
+  const NONE = "__none";
+  const setField = (key: FieldKey, val: string) => {
+    setMapping((m) => ({ ...m, [key]: val === NONE ? undefined : val }));
   };
 
   return (
     <>
-      <input ref={inputRef} type="file" accept=".csv,text/csv" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+      <input ref={inputRef} type="file" accept=".csv,text/csv" multiple className="hidden" onChange={(e) => openFiles(e.target.files)} />
       <Button variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>
         {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
         Import CSV
       </Button>
+
+      <Dialog open={!!files} onOpenChange={(o) => !o && !busy && close()}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Match CSV columns</DialogTitle>
+          </DialogHeader>
+          <div className="text-xs text-muted-foreground">
+            {files?.length ?? 0} file{(files?.length ?? 0) === 1 ? "" : "s"} · {previewRows.length} rows in first file.
+            Mapping applies to all selected files.
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {FIELDS.map((f) => (
+              <div key={f.key} className="space-y-1">
+                <div className="text-xs font-medium">
+                  {f.label}
+                  {f.hint && <span className="ml-1 text-muted-foreground font-normal">({f.hint})</span>}
+                </div>
+                <Select value={mapping[f.key] ?? NONE} onValueChange={(v) => setField(f.key, v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>— none —</SelectItem>
+                    {headers.map((h) => (
+                      <SelectItem key={h} value={h}>{h}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {mapping[f.key] && sample && (
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    e.g. {sample[mapping[f.key]!] || <em>empty</em>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={close} disabled={busy}>Cancel</Button>
+            <Button onClick={runImport} disabled={busy}>
+              {busy && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Import
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
