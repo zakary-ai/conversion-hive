@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
-import { adminListPool, adminBulkImportPool, listAllCallbacksAdmin, adminGetPoolLead } from "@/lib/api/b2b-pool.functions";
+import { adminListPool, adminBulkImportPool, listAllCallbacksAdmin, adminGetPoolLead, listPoolFacets } from "@/lib/api/b2b-pool.functions";
 import { PageHeader } from "@/components/ui-bits";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -241,7 +241,14 @@ function CsvImportButton() {
   const [sample, setSample] = useState<Record<string, string> | null>(null);
   const [mapping, setMapping] = useState<Mapping>({});
   const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([]);
+  const [segmentOverride, setSegmentOverride] = useState<string>("");
+  const [segmentCustom, setSegmentCustom] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const facets = useQuery({
+    queryKey: ["b2b-pool-facets"],
+    queryFn: () => listPoolFacets(),
+    enabled: !!files,
+  });
 
   const openFiles = async (fileList: FileList | null) => {
     if (!fileList?.length) return;
@@ -263,7 +270,13 @@ function CsvImportButton() {
     }
   };
 
-  const close = () => { setFiles(null); setHeaders([]); setSample(null); setMapping({}); setPreviewRows([]); };
+  const close = () => { setFiles(null); setHeaders([]); setSample(null); setMapping({}); setPreviewRows([]); setSegmentOverride(""); setSegmentCustom(""); };
+
+  const effectiveSegment = (): string | null => {
+    if (segmentOverride === "__custom") return segmentCustom.trim() || null;
+    if (segmentOverride && segmentOverride !== "__none") return segmentOverride;
+    return null;
+  };
 
   const runImport = async () => {
     if (!files) return;
@@ -280,7 +293,7 @@ function CsvImportButton() {
         ln = parts.slice(1).join(" ") || null;
       }
       return {
-        segment: get(mapping.segment),
+        segment: effectiveSegment() ?? get(mapping.segment),
         lead_type: get(mapping.lead_type),
         first_name: fn,
         last_name: ln,
@@ -352,6 +365,32 @@ function CsvImportButton() {
           <div className="text-xs text-muted-foreground">
             {files?.length ?? 0} file{(files?.length ?? 0) === 1 ? "" : "s"} · {previewRows.length} rows in first file.
             Mapping applies to all selected files.
+          </div>
+          <div className="rounded-md border p-3 space-y-2">
+            <div className="text-xs font-medium">Segment for all rows</div>
+            <div className="text-[11px] text-muted-foreground">
+              Optionally set one segment applied to every imported row (overrides the mapped Segment column).
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Select value={segmentOverride || "__none"} onValueChange={(v) => setSegmentOverride(v === "__none" ? "" : v)}>
+                <SelectTrigger className="w-[240px]"><SelectValue placeholder="Use CSV column" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Use CSV column</SelectItem>
+                  {(facets.data?.segments ?? []).map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                  <SelectItem value="__custom">+ New segment…</SelectItem>
+                </SelectContent>
+              </Select>
+              {segmentOverride === "__custom" && (
+                <Input
+                  placeholder="New segment name"
+                  value={segmentCustom}
+                  onChange={(e) => setSegmentCustom(e.target.value)}
+                  className="w-[240px]"
+                />
+              )}
+            </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {FIELDS.map((f) => (
