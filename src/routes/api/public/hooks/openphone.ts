@@ -222,6 +222,17 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
                   .select("assigned_user_id, phone_e164");
                 const hit = (pool ?? []).find((p) => digits10(p.phone_e164) === wsDigits);
                 userId = hit?.assigned_user_id ?? null;
+                // Fallback: match against profiles.openphone_number_e164 so
+                // setters whose Quo number wasn't added to the pool still
+                // get attribution.
+                if (!userId) {
+                  const { data: profs } = await supabaseAdmin
+                    .from("profiles")
+                    .select("user_id, openphone_number_e164")
+                    .not("openphone_number_e164", "is", null);
+                  const phit = (profs ?? []).find((p) => digits10(p.openphone_number_e164) === wsDigits);
+                  userId = phit?.user_id ?? null;
+                }
               }
 
               // Try to link to a b2b pool lead or lead by external number.
