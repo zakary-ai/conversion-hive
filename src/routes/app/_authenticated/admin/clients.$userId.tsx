@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { B2bLeadDetailDialog } from "@/components/b2b-lead-detail-dialog";
 
 export const Route = createFileRoute("/app/_authenticated/admin/clients/$userId")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(opts(params.userId, null, null)),
