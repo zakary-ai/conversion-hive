@@ -164,21 +164,32 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
         const callId = obj.callId || obj.id!;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        // Make sure a call_logs row exists for this openphone_call_id. Our app
-        // inserts a row at dial-time with openphone_call_id=null (the id isn't
-        // known yet). On the first webhook event for a real call we adopt the
-        // most recent un-linked dial that targets the same phone number so
-        // recordings and transcripts land on it.
+        const digits10 = (s: string | null | undefined) => (s ?? "").replace(/\D/g, "").slice(-10);
+
+        // Ensure a call_logs row exists for this openphone_call_id.
+        // Order of resolution:
+        //   1. Row already linked → nothing to do.
+        //   2. Adopt a recent in-app dial (openphone_call_id=null) targeting
+        //      the same external number.
+        //   3. Otherwise insert a fresh row for the direct Quo call and
+        //      attribute it to the setter via openphone_number_pool.
         {
           const { data: existing } = await supabaseAdmin
             .from("call_logs")
             .select("id")
             .eq("openphone_call_id", callId)
             .maybeSingle();
+
           if (!existing) {
             const toRaw = Array.isArray(obj.to) ? obj.to[0] : obj.to;
-            const toDigits = (toRaw ?? "").replace(/\D/g, "").slice(-10);
-            if (toDigits) {
+            const fromRaw = typeof obj.from === "string" ? obj.from : null;
+            const direction = typeof obj.direction === "string" ? obj.direction : "outbound";
+            const externalRaw = direction === "inbound" ? fromRaw : toRaw;
+            const workspaceRaw = direction === "inbound" ? (Array.isArray(obj.to) ? obj.to[0] : obj.to) : fromRaw;
+            const externalDigits = digits10(externalRaw);
+
+            let adopted = false;
+            if (externalDigits) {
               const sinceIso = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
               const { data: candidates } = await supabaseAdmin
                 .from("call_logs")
@@ -188,15 +199,73 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
                 .order("started_at", { ascending: false })
                 .limit(20);
               const match = (candidates ?? []).find(
-                (r) => (r.to_number ?? "").replace(/\D/g, "").slice(-10) === toDigits,
+                (r) => digits10(r.to_number) === externalDigits,
               );
               if (match) {
                 const adopt: { openphone_call_id: string; from_number?: string; direction?: string } = {
                   openphone_call_id: callId,
                 };
-                if (typeof obj.from === "string") adopt.from_number = obj.from;
+                if (fromRaw) adopt.from_number = fromRaw;
                 if (typeof obj.direction === "string") adopt.direction = obj.direction;
                 await supabaseAdmin.from("call_logs").update(adopt).eq("id", match.id);
+                adopted = true;
+              }
+            }
+
+            if (!adopted) {
+              // Attribute to setter via the workspace number that placed/received the call.
+              let userId: string | null = null;
+              const wsDigits = digits10(workspaceRaw);
+              if (wsDigits) {
+                const { data: pool } = await supabaseAdmin
+                  .from("openphone_number_pool")
+                  .select("assigned_user_id, phone_e164");
+                const hit = (pool ?? []).find((p) => digits10(p.phone_e164) === wsDigits);
+                userId = hit?.assigned_user_id ?? null;
+              }
+
+              // Try to link to a b2b pool lead or lead by external number.
+              let pool_lead_id: string | null = null;
+              let lead_id: string | null = null;
+              if (externalDigits) {
+                const like = `%${externalDigits}`;
+                const { data: pl } = await supabaseAdmin
+                  .from("b2b_lead_pool")
+                  .select("id, claimed_by")
+                  .ilike("phone", like)
+                  .limit(1)
+                  .maybeSingle();
+                if (pl) {
+                  pool_lead_id = pl.id;
+                  if (!userId && pl.claimed_by) userId = pl.claimed_by;
+                } else {
+                  const { data: ld } = await supabaseAdmin
+                    .from("leads")
+                    .select("id, assigned_user_id")
+                    .ilike("phone", like)
+                    .limit(1)
+                    .maybeSingle();
+                  if (ld) {
+                    lead_id = ld.id;
+                    if (!userId && ld.assigned_user_id) userId = ld.assigned_user_id;
+                  }
+                }
+              }
+
+              if (userId) {
+                await supabaseAdmin.from("call_logs").insert({
+                  user_id: userId,
+                  lead_id,
+                  pool_lead_id,
+                  openphone_call_id: callId,
+                  direction,
+                  status: obj.status ?? null,
+                  from_number: fromRaw,
+                  to_number: Array.isArray(obj.to) ? obj.to[0] : obj.to ?? null,
+                  duration_sec: typeof obj.duration === "number" ? obj.duration : null,
+                  started_at: obj.answeredAt || obj.createdAt || new Date().toISOString(),
+                  ended_at: obj.completedAt ?? null,
+                } as any);
               }
             }
           }
