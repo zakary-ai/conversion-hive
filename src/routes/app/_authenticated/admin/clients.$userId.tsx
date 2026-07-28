@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, Phone, ChevronDown, Mail, Building2, Search, CalendarIcon, AlertTriangle, UserX } from "lucide-react";
+import { DollarSign, GraduationCap, CheckCircle2, XCircle, Clock, CalendarClock, Phone, ChevronDown, Mail, Building2, Search, CalendarIcon, AlertTriangle, UserX, ArrowUpDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { B2bLeadDetailDialog } from "@/components/b2b-lead-detail-dialog";
@@ -952,20 +953,40 @@ type PoolLead = {
 function ClaimedLeadsCard({ leads }: { leads: PoolLead[] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"status_asc" | "status_desc" | "claimed_recent" | "claimed_oldest" | "name_asc">("claimed_recent");
   const [openLead, setOpenLead] = useState<PoolLead | null>(null);
 
-  const filtered = leads.filter((l) => {
-    if (!query) return true;
-    const s = query.toLowerCase();
-    const name = `${l.first_name ?? ""} ${l.last_name ?? ""}`.toLowerCase();
-    return (
-      name.includes(s) ||
-      (l.company ?? "").toLowerCase().includes(s) ||
-      (l.email ?? "").toLowerCase().includes(s) ||
-      (l.phone ?? "").toLowerCase().includes(s) ||
-      (l.status ?? "").toLowerCase().includes(s)
-    );
-  });
+  const filtered = useMemo(() => {
+    const list = leads.filter((l) => {
+      if (!query) return true;
+      const s = query.toLowerCase();
+      const name = `${l.first_name ?? ""} ${l.last_name ?? ""}`.toLowerCase();
+      return (
+        name.includes(s) ||
+        (l.company ?? "").toLowerCase().includes(s) ||
+        (l.email ?? "").toLowerCase().includes(s) ||
+        (l.phone ?? "").toLowerCase().includes(s) ||
+        (l.status ?? "").toLowerCase().includes(s)
+      );
+    });
+
+    return [...list].sort((a, b) => {
+      switch (sortBy) {
+        case "status_asc":
+          return (a.status || "").localeCompare(b.status || "");
+        case "status_desc":
+          return (b.status || "").localeCompare(a.status || "");
+        case "name_asc":
+          return (`${a.first_name ?? ""} ${a.last_name ?? ""}`.trim() || "—")
+            .localeCompare(`${b.first_name ?? ""} ${b.last_name ?? ""}`.trim() || "—");
+        case "claimed_oldest":
+          return (a.claimed_at ?? "").localeCompare(b.claimed_at ?? "");
+        case "claimed_recent":
+        default:
+          return (b.claimed_at ?? "").localeCompare(a.claimed_at ?? "");
+      }
+    });
+  }, [leads, query, sortBy]);
 
   return (
     <>
@@ -976,7 +997,24 @@ function ClaimedLeadsCard({ leads }: { leads: PoolLead[] }) {
               <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
               Claimed leads ({leads.length})
             </CollapsibleTrigger>
-            {open && <SearchPopover value={query} onChange={setQuery} placeholder="Search claimed leads…" />}
+            {open && (
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+                  <SelectTrigger className="h-8 w-44 text-xs">
+                    <ArrowUpDown className="h-3.5 w-3.5 mr-1.5" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="claimed_recent">Claimed: newest</SelectItem>
+                    <SelectItem value="claimed_oldest">Claimed: oldest</SelectItem>
+                    <SelectItem value="status_asc">Status: A → Z</SelectItem>
+                    <SelectItem value="status_desc">Status: Z → A</SelectItem>
+                    <SelectItem value="name_asc">Name: A → Z</SelectItem>
+                  </SelectContent>
+                </Select>
+                <SearchPopover value={query} onChange={setQuery} placeholder="Search claimed leads…" />
+              </div>
+            )}
           </div>
           <CollapsibleContent>
             {filtered.length === 0 ? (
