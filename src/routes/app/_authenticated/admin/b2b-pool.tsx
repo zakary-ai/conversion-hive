@@ -270,7 +270,13 @@ function CsvImportButton() {
     }
   };
 
-  const close = () => { setFiles(null); setHeaders([]); setSample(null); setMapping({}); setPreviewRows([]); };
+  const close = () => { setFiles(null); setHeaders([]); setSample(null); setMapping({}); setPreviewRows([]); setSegmentOverride(""); setSegmentCustom(""); };
+
+  const effectiveSegment = (): string | null => {
+    if (segmentOverride === "__custom") return segmentCustom.trim() || null;
+    if (segmentOverride && segmentOverride !== "__none") return segmentOverride;
+    return null;
+  };
 
   const runImport = async () => {
     if (!files) return;
