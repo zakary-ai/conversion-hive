@@ -1,0 +1,9 @@
+UPDATE public.profiles SET openphone_number_e164 = '+16292631024' WHERE user_id = '5565d51e-0539-44b3-b482-cdf1a6f16f96';
+UPDATE public.profiles SET openphone_number_e164 = '+13375610901' WHERE user_id = '41310d35-87f5-4885-86e4-2f02eff1f374';
+UPDATE public.profiles SET openphone_number_e164 = '+19374466737' WHERE user_id = 'dc911a8b-fe76-44a7-ad94-367440123278';
+UPDATE public.profiles SET openphone_number_e164 = '+16592563862' WHERE user_id = '61785237-0875-43d5-8bb9-92cb63586f66';
+UPDATE public.profiles SET openphone_number_e164 = '+14788873613' WHERE user_id = '97f61afb-32c7-4006-bdbb-279f351925bf';
+UPDATE public.profiles SET openphone_number_e164 = '+16592765165' WHERE user_id = 'eb9fdc57-10d2-47bf-98d8-4bcdf751f54f';
+UPDATE public.profiles SET openphone_number_e164 = '+18484208077' WHERE user_id = '59c9ea08-a096-40ec-a2e0-8e8c91cb89ad';
+UPDATE public.profiles SET openphone_number_e164 = '+17865446493' WHERE user_id = '55af8e62-9ca5-451a-b9fa-9f5ec0f7acd8';
+UPDATE public.profiles SET openphone_number_e164 = '+18339976498' WHERE user_id = '3e968302-8d00-40cd-9828-47aedc776d97';
