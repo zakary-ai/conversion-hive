@@ -241,7 +241,14 @@ function CsvImportButton() {
   const [sample, setSample] = useState<Record<string, string> | null>(null);
   const [mapping, setMapping] = useState<Mapping>({});
   const [previewRows, setPreviewRows] = useState<Record<string, string>[]>([]);
+  const [segmentOverride, setSegmentOverride] = useState<string>("");
+  const [segmentCustom, setSegmentCustom] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const facets = useQuery({
+    queryKey: ["b2b-pool-facets"],
+    queryFn: () => listPoolFacets(),
+    enabled: !!files,
+  });
 
   const openFiles = async (fileList: FileList | null) => {
     if (!fileList?.length) return;
