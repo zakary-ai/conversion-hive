@@ -77,6 +77,7 @@ import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public
 import { Route as ApiPublicHooksMarkUnbookedRouteImport } from './routes/api/public/hooks/mark-unbooked'
 import { Route as ApiPublicHooksGhlBookingRouteImport } from './routes/api/public/hooks/ghl-booking'
 import { Route as ApiPublicHooksDistributeLeadsRouteImport } from './routes/api/public/hooks/distribute-leads'
+import { Route as ApiPublicHooksBackfillGcalRouteImport } from './routes/api/public/hooks/backfill-gcal'
 import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
 import { Route as AppAuthenticatedB2bLeadsIdRouteImport } from './routes/app/_authenticated/b2b.leads.$id'
 import { Route as AppAuthenticatedAdminOutboundLeadsRouteImport } from './routes/app/_authenticated/admin/outbound.leads'
@@ -471,6 +472,12 @@ const ApiPublicHooksDistributeLeadsRoute =
     path: '/api/public/hooks/distribute-leads',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBackfillGcalRoute =
+  ApiPublicHooksBackfillGcalRouteImport.update({
+    id: '/api/public/hooks/backfill-gcal',
+    path: '/api/public/hooks/backfill-gcal',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppAuthenticatedAdminClientsIndexRoute =
   AppAuthenticatedAdminClientsIndexRouteImport.update({
     id: '/clients/',
@@ -525,6 +532,7 @@ export interface FileRoutesByFullPath {
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
+  '/api/public/hooks/backfill-gcal': typeof ApiPublicHooksBackfillGcalRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
@@ -598,6 +606,7 @@ export interface FileRoutesByTo {
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
+  '/api/public/hooks/backfill-gcal': typeof ApiPublicHooksBackfillGcalRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
@@ -674,6 +683,7 @@ export interface FileRoutesById {
   '/app/_authenticated/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
+  '/api/public/hooks/backfill-gcal': typeof ApiPublicHooksBackfillGcalRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
@@ -750,6 +760,7 @@ export interface FileRouteTypes {
     | '/app/tickets'
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
+    | '/api/public/hooks/backfill-gcal'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
@@ -823,6 +834,7 @@ export interface FileRouteTypes {
     | '/app/tickets'
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
+    | '/api/public/hooks/backfill-gcal'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
@@ -898,6 +910,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/tickets'
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
+    | '/api/public/hooks/backfill-gcal'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
@@ -964,6 +977,7 @@ export interface RootRouteChildren {
   ApiPublicConfirmBookingRoute: typeof ApiPublicConfirmBookingRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthGoogleCalendarReturnRoute: typeof OauthGoogleCalendarReturnRoute
+  ApiPublicHooksBackfillGcalRoute: typeof ApiPublicHooksBackfillGcalRoute
   ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
   ApiPublicHooksGhlBookingRoute: typeof ApiPublicHooksGhlBookingRoute
   ApiPublicHooksMarkUnbookedRoute: typeof ApiPublicHooksMarkUnbookedRoute
@@ -1457,6 +1471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDistributeLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backfill-gcal': {
+      id: '/api/public/hooks/backfill-gcal'
+      path: '/api/public/hooks/backfill-gcal'
+      fullPath: '/api/public/hooks/backfill-gcal'
+      preLoaderRoute: typeof ApiPublicHooksBackfillGcalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/_authenticated/admin/clients/': {
       id: '/app/_authenticated/admin/clients/'
       path: '/clients'
@@ -1658,6 +1679,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicConfirmBookingRoute: ApiPublicConfirmBookingRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthGoogleCalendarReturnRoute: OauthGoogleCalendarReturnRoute,
+  ApiPublicHooksBackfillGcalRoute: ApiPublicHooksBackfillGcalRoute,
   ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
   ApiPublicHooksGhlBookingRoute: ApiPublicHooksGhlBookingRoute,
   ApiPublicHooksMarkUnbookedRoute: ApiPublicHooksMarkUnbookedRoute,
