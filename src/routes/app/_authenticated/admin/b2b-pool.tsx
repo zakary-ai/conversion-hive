@@ -394,6 +394,8 @@ function CsvImportButton() {
       toast.success(`Imported ${totalInserted} of ${totalRows} · ${totalDupes} duplicate${totalDupes === 1 ? "" : "s"} skipped`);
       failures.forEach((f) => toast.error(f));
       qc.invalidateQueries({ queryKey: ["admin-pool"] });
+      qc.invalidateQueries({ queryKey: ["b2b-pool-facets"] });
+      qc.invalidateQueries({ queryKey: ["pool-facets"] });
       close();
     } finally {
       setBusy(false);
