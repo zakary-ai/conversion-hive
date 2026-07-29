@@ -947,6 +947,33 @@ export const bookB2bSlotForLead = createServerFn({ method: "POST" })
         .update({ meeting_url: meetingUrl }).eq("id", appointmentId);
     }
 
+    // 6b. Add the event to the closer's Google Calendar (best-effort).
+    if (picked.user_id) {
+      try {
+        const { createCalendarEventForUser } = await import("@/lib/googleCalendar.server");
+        const endISO = new Date(slotStart.getTime() + slotMs).toISOString();
+        const descLines = [
+          `Lead: ${leadName}`,
+          lead.email ? `Email: ${lead.email}` : null,
+          lead.phone ? `Phone: ${lead.phone}` : null,
+          lead.company ? `Company: ${lead.company}` : null,
+          meetingUrl ? `Zoom: ${meetingUrl}` : null,
+          data.note ? `\nNotes:\n${data.note}` : null,
+        ].filter(Boolean).join("\n");
+        await createCalendarEventForUser(picked.user_id, {
+          summary: `${leadName} — Sales Call`,
+          description: descLines,
+          startISO: slotStart.toISOString(),
+          endISO,
+          timezone: data.timezone ?? null,
+          attendees: lead.email ? [{ email: lead.email, displayName: leadName }] : [],
+          meetingUrl,
+        });
+      } catch (e) {
+        console.warn("[b2b-gcal-insert] failed", e);
+      }
+    }
+
     // 7. Booking confirmation email.
     await sendBookingConfirmationEmail({
       appointmentId,
