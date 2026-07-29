@@ -63,6 +63,40 @@ export const Route = createFileRoute("/api/public/hooks/backfill-gcal")({
             attendees: appt.email ? [{ email: appt.email as string, displayName: appt.name as string }] : [],
             meetingUrl: (appt.meeting_url as string | null) ?? null,
           });
+          if (!eventId) {
+            // debug path: retry raw to surface gateway error
+            try {
+              const { getConnectionKeyForUser, GATEWAY_BASE_URL, GCAL_CONNECTOR_ID } = await import("@/lib/googleCalendar.server");
+              const { callAsAppUser } = await import("@/integrations/lovable/appUserConnector");
+              const key = await getConnectionKeyForUser(closerUserId, GCAL_CONNECTOR_ID);
+              if (!key) {
+                results.push({ id: appt.id, eventId: null, debug: "no connection key" });
+                continue;
+              }
+              const res = await callAsAppUser({
+                gatewayBaseUrl: GATEWAY_BASE_URL,
+                connectionAPIKey: key,
+                connectorId: GCAL_CONNECTOR_ID,
+                path: "/calendar/v3/calendars/primary/events",
+                init: {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    summary: `${appt.name} — Sales Call`,
+                    description: descLines,
+                    start: { dateTime: start.toISOString(), timeZone: appt.timezone || "UTC" },
+                    end: { dateTime: endISO, timeZone: appt.timezone || "UTC" },
+                    location: appt.meeting_url ?? undefined,
+                  }),
+                },
+              });
+              const text = await res.text();
+              results.push({ id: appt.id, eventId: null, status: res.status, body: text.slice(0, 500) });
+            } catch (e) {
+              results.push({ id: appt.id, eventId: null, debug: String(e) });
+            }
+            continue;
+          }
           results.push({ id: appt.id, eventId });
         }
         return Response.json({ results });
