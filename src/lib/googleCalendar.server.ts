@@ -140,3 +140,53 @@ export async function getBusyIntervalsForUser(
     return [];
   }
 }
+
+/**
+ * Create an event on the user's primary Google Calendar.
+ * Returns the created event ID, or null if the user isn't connected or the API fails.
+ */
+export async function createCalendarEventForUser(
+  userId: string,
+  event: {
+    summary: string;
+    description?: string;
+    startISO: string;
+    endISO: string;
+    timezone?: string | null;
+    attendees?: Array<{ email: string; displayName?: string }>;
+    meetingUrl?: string | null;
+  },
+): Promise<string | null> {
+  const key = await getConnectionKeyForUser(userId, GCAL_CONNECTOR_ID);
+  if (!key) return null;
+  try {
+    const body: Record<string, unknown> = {
+      summary: event.summary,
+      description: event.description ?? undefined,
+      start: { dateTime: event.startISO, timeZone: event.timezone || "UTC" },
+      end: { dateTime: event.endISO, timeZone: event.timezone || "UTC" },
+    };
+    if (event.attendees && event.attendees.length > 0) body.attendees = event.attendees;
+    if (event.meetingUrl) body.location = event.meetingUrl;
+    const res = await callAsAppUser({
+      gatewayBaseUrl: GATEWAY_BASE_URL,
+      connectionAPIKey: key,
+      connectorId: GCAL_CONNECTOR_ID,
+      path: "/calendar/v3/calendars/primary/events",
+      init: {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    });
+    if (!res.ok) {
+      console.error(`gcal insert failed for user ${userId}: ${res.status} ${await res.text()}`);
+      return null;
+    }
+    const created = (await res.json()) as { id?: string };
+    return created.id ?? null;
+  } catch (e) {
+    console.error(`gcal insert error for user ${userId}:`, e);
+    return null;
+  }
+}
