@@ -17,6 +17,8 @@ export const startGoogleCalendarConnect = createServerFn({ method: "POST" })
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/userinfo.profile",
       "https://www.googleapis.com/auth/calendar.freebusy",
+      // needed to create booked-call events on the closer's calendar
+      "https://www.googleapis.com/auth/calendar.events",
     ];
     const clientAPIKey = process.env.GOOGLE_CALENDAR_APP_USER_CONNECTOR_CLIENT_API_KEY;
     if (!clientAPIKey) throw new Error("Google Calendar connector client is not configured.");
