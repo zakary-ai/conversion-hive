@@ -958,6 +958,37 @@ export const bookB2bSlotForLead = createServerFn({ method: "POST" })
       timezone: data.timezone ?? null,
     });
 
+    // 7b. Notify the assigned B2B closer with the Zoom link.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: closerRow } = await (supabaseAdmin.from("b2b_closers") as any)
+        .select("email, full_name")
+        .eq("id", picked.id)
+        .maybeSingle();
+      const closerEmail = (closerRow?.email as string | null) ?? null;
+      if (closerEmail) {
+        const { sendTransactional } = await import("@/lib/email/transactional.server");
+        const scheduledLabel = formatScheduledLabel(slotStart.toISOString(), data.timezone ?? null);
+        await sendTransactional({
+          templateName: "closer-call-closer",
+          recipientEmail: closerEmail,
+          idempotencyKey: `b2b-closer-notify-${appointmentId}`,
+          templateData: {
+            closerName: (closerRow?.full_name as string | null) ?? picked.full_name ?? null,
+            applicantName: leadName,
+            applicantEmail: lead.email,
+            applicantPhone: lead.phone,
+            scheduledAt: slotStart.toISOString(),
+            scheduledLabel,
+            meetingUrl,
+            durationMinutes: slotMinutes,
+          },
+        });
+      }
+    } catch (e) {
+      console.warn("[b2b-closer-notify] send failed", e);
+    }
+
     // 8. Log the call outcome as "booked" on the pool lead.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabaseAdmin.from("b2b_call_attempts") as any).insert({
