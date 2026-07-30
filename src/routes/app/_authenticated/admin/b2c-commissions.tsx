@@ -823,6 +823,7 @@ type PayoutItem = {
   id: string;
   recipient_key: string;
   recipient_name: string;
+  role: string;
   amount: number;
   paid_at: string | null;
   paid_note: string | null;
@@ -834,6 +835,7 @@ type PayoutItem = {
 function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onOpenChange: (v: boolean) => void; rows: Row[]; manual: ManualEntry[] }) {
   const qc = useQueryClient();
   const [bucket, setBucket] = useState<PayoutBucket | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [recordOpen, setRecordOpen] = useState(false);
 
   const items = useMemo<PayoutItem[]>(() => {
@@ -849,6 +851,7 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
         id: r.id,
         recipient_key: `closer:${r.closers.id}`,
         recipient_name: r.closers.full_name,
+        role: "closer_b2c",
         amount: amt,
         paid_at: r.commission_paid_at ?? null,
         paid_note: r.commission_payout_note ?? null,
@@ -867,6 +870,7 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
         id: m.id,
         recipient_key: `user:${m.user_id}`,
         recipient_name: `${m.user_name} · ${ROLE_LABEL[m.role] ?? m.role}`,
+        role: m.role,
         amount: amt,
         paid_at: m.paid_at ?? null,
         paid_note: m.paid_note ?? null,
@@ -878,8 +882,20 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
     return out;
   }, [rows, manual]);
 
-  const unpaid = useMemo(() => items.filter((i) => !i.paid_at), [items]);
-  const paid = useMemo(() => items.filter((i) => !!i.paid_at), [items]);
+  const roleOptions = [
+    { value: "all", label: "All roles" },
+    { value: "dm_setter", label: "DM Setters" },
+    { value: "dm_manager", label: "DM Setter Managers" },
+    { value: "closer_b2c", label: "Closers" },
+  ];
+
+  const filteredItems = useMemo(() => {
+    if (roleFilter === "all") return items;
+    return items.filter((i) => i.role === roleFilter);
+  }, [items, roleFilter]);
+
+  const unpaid = useMemo(() => filteredItems.filter((i) => !i.paid_at), [filteredItems]);
+  const paid = useMemo(() => filteredItems.filter((i) => !!i.paid_at), [filteredItems]);
   const totalUnpaid = unpaid.reduce((s, i) => s + i.amount, 0);
   const totalPaid = paid.reduce((s, i) => s + i.amount, 0);
 
@@ -953,6 +969,18 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
             </div>
           </SheetHeader>
           <div className="mt-4 space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <Label className="text-xs text-muted-foreground whitespace-nowrap">Filter by role</Label>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="h-8 w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {roleOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <button type="button" onClick={() => setBucket(bucket === "unpaid" ? null : "unpaid")} className="text-left">
                 <Card className={`p-3 hover:border-warning/60 transition-colors ${bucket === "unpaid" ? "border-warning/70 ring-1 ring-warning/40" : ""}`}>
@@ -970,8 +998,8 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
               </button>
             </div>
 
-            {items.length === 0 && (
-              <Card className="p-6 text-center text-sm text-muted-foreground">No approved commissions yet.</Card>
+            {filteredItems.length === 0 && (
+              <Card className="p-6 text-center text-sm text-muted-foreground">No approved commissions in this role.</Card>
             )}
 
             {bucket !== null && (
