@@ -969,6 +969,18 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
             </div>
           </SheetHeader>
           <div className="mt-4 space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <Label className="text-xs text-muted-foreground whitespace-nowrap">Filter by role</Label>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="h-8 w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {roleOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <button type="button" onClick={() => setBucket(bucket === "unpaid" ? null : "unpaid")} className="text-left">
                 <Card className={`p-3 hover:border-warning/60 transition-colors ${bucket === "unpaid" ? "border-warning/70 ring-1 ring-warning/40" : ""}`}>
