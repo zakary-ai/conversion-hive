@@ -859,7 +859,42 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
         title: `${r.applicant_name} · ${r.outcome}`,
         subtitle: `${fmtDate(r.outcome_at)}${r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}${dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}`,
       });
+      const dmAmt = Number(r.dm_setter_commission_amount ?? 0);
+      if (r.dm_setter && dmAmt > 0 && (r.dm_setter_commission_status ?? "pending") === "approved") {
+        out.push({
+          key: `ds:${r.id}`,
+          source: "booking_dm_setter",
+          id: r.id,
+          recipient_key: `dm:${r.dm_setter.id}`,
+          recipient_name: `${r.dm_setter.full_name} · DM Setter`,
+          role: "dm_setter",
+          amount: dmAmt,
+          paid_at: r.dm_setter_commission_paid_at ?? null,
+          paid_note: null,
+          when: r.outcome_at ?? null,
+          title: `${r.applicant_name} · ${r.outcome}`,
+          subtitle: `${fmtDate(r.outcome_at)}${dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}`,
+        });
+      }
+      const mgrAmt = Number(r.dm_setter_manager_commission_amount ?? 0);
+      if (r.dm_setter_manager && mgrAmt > 0 && (r.dm_setter_manager_commission_status ?? "pending") === "approved") {
+        out.push({
+          key: `dmgr:${r.id}`,
+          source: "booking_dm_manager",
+          id: r.id,
+          recipient_key: `dmgr:${r.dm_setter_manager.id}`,
+          recipient_name: `${r.dm_setter_manager.full_name} · DM Setter Manager`,
+          role: "dm_manager",
+          amount: mgrAmt,
+          paid_at: r.dm_setter_manager_commission_paid_at ?? null,
+          paid_note: null,
+          when: r.outcome_at ?? null,
+          title: `${r.applicant_name} · ${r.outcome}`,
+          subtitle: `${fmtDate(r.outcome_at)}${dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}`,
+        });
+      }
     }
+
     for (const m of manual) {
       if ((m.status ?? "pending") !== "approved") continue;
       const amt = Number(m.amount ?? 0);
