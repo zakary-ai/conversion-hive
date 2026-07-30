@@ -819,7 +819,7 @@ type PayoutBucket = "unpaid" | "paid";
 
 type PayoutItem = {
   key: string;
-  source: "booking" | "manual";
+  source: "booking" | "manual" | "booking_dm_setter" | "booking_dm_manager";
   id: string;
   recipient_key: string;
   recipient_name: string;
