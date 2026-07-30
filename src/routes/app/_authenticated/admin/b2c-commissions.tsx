@@ -998,8 +998,8 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
               </button>
             </div>
 
-            {items.length === 0 && (
-              <Card className="p-6 text-center text-sm text-muted-foreground">No approved commissions yet.</Card>
+            {filteredItems.length === 0 && (
+              <Card className="p-6 text-center text-sm text-muted-foreground">No approved commissions in this role.</Card>
             )}
 
             {bucket !== null && (
