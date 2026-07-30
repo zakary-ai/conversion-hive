@@ -823,6 +823,7 @@ type PayoutItem = {
   id: string;
   recipient_key: string;
   recipient_name: string;
+  role: string;
   amount: number;
   paid_at: string | null;
   paid_note: string | null;
