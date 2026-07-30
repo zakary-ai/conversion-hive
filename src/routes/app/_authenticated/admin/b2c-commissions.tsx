@@ -9,6 +9,8 @@ import {
   approveDmSetterCommission,
   recordB2cCommissionPayout,
   undoB2cCommissionPayout,
+  setDmBookingCommissionPaid,
+
   listB2cManualLookups,
   addB2cManualCommission,
   listB2cManualCommissions,
