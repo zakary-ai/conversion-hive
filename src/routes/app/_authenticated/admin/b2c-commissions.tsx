@@ -841,24 +841,24 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
   const items = useMemo<PayoutItem[]>(() => {
     const out: PayoutItem[] = [];
     for (const r of rows) {
-      if (!r.closers) continue;
-      if ((r.commission_status ?? "pending") !== "approved") continue;
       const amt = Number(r.commission_amount ?? 0);
-      if (amt <= 0) continue;
-      out.push({
-        key: `b:${r.id}`,
-        source: "booking",
-        id: r.id,
-        recipient_key: `closer:${r.closers.id}`,
-        recipient_name: r.closers.full_name,
-        role: "closer_b2c",
-        amount: amt,
-        paid_at: r.commission_paid_at ?? null,
-        paid_note: r.commission_payout_note ?? null,
-        when: r.outcome_at ?? null,
-        title: `${r.applicant_name} · ${r.outcome}`,
-        subtitle: `${fmtDate(r.outcome_at)}${r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}${dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}`,
-      });
+      if (r.closers && (r.commission_status ?? "pending") === "approved" && amt > 0) {
+        out.push({
+          key: `b:${r.id}`,
+          source: "booking",
+          id: r.id,
+          recipient_key: `closer:${r.closers.id}`,
+          recipient_name: r.closers.full_name,
+          role: "closer_b2c",
+          amount: amt,
+          paid_at: r.commission_paid_at ?? null,
+          paid_note: r.commission_payout_note ?? null,
+          when: r.outcome_at ?? null,
+          title: `${r.applicant_name} · ${r.outcome}`,
+          subtitle: `${fmtDate(r.outcome_at)}${r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}${dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}`,
+        });
+      }
+
       const dmAmt = Number(r.dm_setter_commission_amount ?? 0);
       if (r.dm_setter && dmAmt > 0 && (r.dm_setter_commission_status ?? "pending") === "approved") {
         out.push({
