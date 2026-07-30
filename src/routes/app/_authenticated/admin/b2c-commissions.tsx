@@ -835,6 +835,7 @@ type PayoutItem = {
 function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onOpenChange: (v: boolean) => void; rows: Row[]; manual: ManualEntry[] }) {
   const qc = useQueryClient();
   const [bucket, setBucket] = useState<PayoutBucket | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [recordOpen, setRecordOpen] = useState(false);
 
   const items = useMemo<PayoutItem[]>(() => {
@@ -881,8 +882,20 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
     return out;
   }, [rows, manual]);
 
-  const unpaid = useMemo(() => items.filter((i) => !i.paid_at), [items]);
-  const paid = useMemo(() => items.filter((i) => !!i.paid_at), [items]);
+  const roleOptions = [
+    { value: "all", label: "All roles" },
+    { value: "dm_setter", label: "DM Setters" },
+    { value: "dm_manager", label: "DM Setter Managers" },
+    { value: "closer_b2c", label: "Closers" },
+  ];
+
+  const filteredItems = useMemo(() => {
+    if (roleFilter === "all") return items;
+    return items.filter((i) => i.role === roleFilter);
+  }, [items, roleFilter]);
+
+  const unpaid = useMemo(() => filteredItems.filter((i) => !i.paid_at), [filteredItems]);
+  const paid = useMemo(() => filteredItems.filter((i) => !!i.paid_at), [filteredItems]);
   const totalUnpaid = unpaid.reduce((s, i) => s + i.amount, 0);
   const totalPaid = paid.reduce((s, i) => s + i.amount, 0);
 
