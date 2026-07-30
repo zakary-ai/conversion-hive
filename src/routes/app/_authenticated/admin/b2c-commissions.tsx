@@ -9,6 +9,8 @@ import {
   approveDmSetterCommission,
   recordB2cCommissionPayout,
   undoB2cCommissionPayout,
+  setDmBookingCommissionPaid,
+
   listB2cManualLookups,
   addB2cManualCommission,
   listB2cManualCommissions,
@@ -819,7 +821,7 @@ type PayoutBucket = "unpaid" | "paid";
 
 type PayoutItem = {
   key: string;
-  source: "booking" | "manual";
+  source: "booking" | "manual" | "booking_dm_setter" | "booking_dm_manager";
   id: string;
   recipient_key: string;
   recipient_name: string;
@@ -841,25 +843,60 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
   const items = useMemo<PayoutItem[]>(() => {
     const out: PayoutItem[] = [];
     for (const r of rows) {
-      if (!r.closers) continue;
-      if ((r.commission_status ?? "pending") !== "approved") continue;
       const amt = Number(r.commission_amount ?? 0);
-      if (amt <= 0) continue;
-      out.push({
-        key: `b:${r.id}`,
-        source: "booking",
-        id: r.id,
-        recipient_key: `closer:${r.closers.id}`,
-        recipient_name: r.closers.full_name,
-        role: "closer_b2c",
-        amount: amt,
-        paid_at: r.commission_paid_at ?? null,
-        paid_note: r.commission_payout_note ?? null,
-        when: r.outcome_at ?? null,
-        title: `${r.applicant_name} · ${r.outcome}`,
-        subtitle: `${fmtDate(r.outcome_at)}${r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}${dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}`,
-      });
+      if (r.closers && (r.commission_status ?? "pending") === "approved" && amt > 0) {
+        out.push({
+          key: `b:${r.id}`,
+          source: "booking",
+          id: r.id,
+          recipient_key: `closer:${r.closers.id}`,
+          recipient_name: r.closers.full_name,
+          role: "closer_b2c",
+          amount: amt,
+          paid_at: r.commission_paid_at ?? null,
+          paid_note: r.commission_payout_note ?? null,
+          when: r.outcome_at ?? null,
+          title: `${r.applicant_name} · ${r.outcome}`,
+          subtitle: `${fmtDate(r.outcome_at)}${r.commission_percent != null ? ` · ${r.commission_percent}%` : ""}${dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}`,
+        });
+      }
+
+      const dmAmt = Number(r.dm_setter_commission_amount ?? 0);
+      if (r.dm_setter && dmAmt > 0 && (r.dm_setter_commission_status ?? "pending") === "approved") {
+        out.push({
+          key: `ds:${r.id}`,
+          source: "booking_dm_setter",
+          id: r.id,
+          recipient_key: `dm:${r.dm_setter.id}`,
+          recipient_name: `${r.dm_setter.full_name} · DM Setter`,
+          role: "dm_setter",
+          amount: dmAmt,
+          paid_at: r.dm_setter_commission_paid_at ?? null,
+          paid_note: null,
+          when: r.outcome_at ?? null,
+          title: `${r.applicant_name} · ${r.outcome}`,
+          subtitle: `${fmtDate(r.outcome_at)}${dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}`,
+        });
+      }
+      const mgrAmt = Number(r.dm_setter_manager_commission_amount ?? 0);
+      if (r.dm_setter_manager && mgrAmt > 0 && (r.dm_setter_manager_commission_status ?? "pending") === "approved") {
+        out.push({
+          key: `dmgr:${r.id}`,
+          source: "booking_dm_manager",
+          id: r.id,
+          recipient_key: `dmgr:${r.dm_setter_manager.id}`,
+          recipient_name: `${r.dm_setter_manager.full_name} · DM Setter Manager`,
+          role: "dm_manager",
+          amount: mgrAmt,
+          paid_at: r.dm_setter_manager_commission_paid_at ?? null,
+          paid_note: null,
+          when: r.outcome_at ?? null,
+          title: `${r.applicant_name} · ${r.outcome}`,
+          subtitle: `${fmtDate(r.outcome_at)}${dealVolume(r) > 0 ? ` of ${money(dealVolume(r))}` : ""}`,
+        });
+      }
     }
+
     for (const m of manual) {
       if ((m.status ?? "pending") !== "approved") continue;
       const amt = Number(m.amount ?? 0);
@@ -922,6 +959,11 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
   const setItemsPaid = async (list: PayoutItem[], note: string | null, paid: boolean) => {
     const bookingIds = list.filter((i) => i.source === "booking").map((i) => i.id);
     const manualIds = list.filter((i) => i.source === "manual").map((i) => i.id);
+    const dmIds = list.filter((i) => i.source === "booking_dm_setter").map((i) => i.id);
+    const mgrIds = list.filter((i) => i.source === "booking_dm_manager").map((i) => i.id);
+    if (dmIds.length > 0) await setDmBookingCommissionPaid({ data: { booking_ids: dmIds, role: "setter", paid } });
+    if (mgrIds.length > 0) await setDmBookingCommissionPaid({ data: { booking_ids: mgrIds, role: "manager", paid } });
+
     if (bookingIds.length > 0) {
       if (paid) await recordB2cCommissionPayout({ data: { booking_ids: bookingIds, note } });
       else await undoB2cCommissionPayout({ data: { booking_ids: bookingIds } });

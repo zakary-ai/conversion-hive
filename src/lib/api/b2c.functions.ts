@@ -1641,6 +1641,28 @@ export const undoB2cCommissionPayout = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Admin: mark DM setter / manager booking commissions paid ----------
+export const setDmBookingCommissionPaid = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    booking_ids: z.array(z.string().uuid()).min(1),
+    role: z.enum(["setter", "manager"]),
+    paid: z.boolean(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const col = data.role === "setter" ? "dm_setter_commission_paid_at" : "dm_setter_manager_commission_paid_at";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any)
+      .update({ [col]: data.paid ? new Date().toISOString() : null })
+      .in("id", data.booking_ids);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
+
 // ---------- Admin: B2C booking calendar settings & availability ----------
 export const getB2cSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
