@@ -957,6 +957,11 @@ function PayoutsSheet({ open, onOpenChange, rows, manual }: { open: boolean; onO
   const setItemsPaid = async (list: PayoutItem[], note: string | null, paid: boolean) => {
     const bookingIds = list.filter((i) => i.source === "booking").map((i) => i.id);
     const manualIds = list.filter((i) => i.source === "manual").map((i) => i.id);
+    const dmIds = list.filter((i) => i.source === "booking_dm_setter").map((i) => i.id);
+    const mgrIds = list.filter((i) => i.source === "booking_dm_manager").map((i) => i.id);
+    if (dmIds.length > 0) await setDmBookingCommissionPaid({ data: { booking_ids: dmIds, role: "setter", paid } });
+    if (mgrIds.length > 0) await setDmBookingCommissionPaid({ data: { booking_ids: mgrIds, role: "manager", paid } });
+
     if (bookingIds.length > 0) {
       if (paid) await recordB2cCommissionPayout({ data: { booking_ids: bookingIds, note } });
       else await undoB2cCommissionPayout({ data: { booking_ids: bookingIds } });
