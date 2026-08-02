@@ -46,6 +46,7 @@ import { Route as AppAuthenticatedDmSetterInboxRouteImport } from './routes/app/
 import { Route as AppAuthenticatedDmSetterCalendarRouteImport } from './routes/app/_authenticated/dm-setter/calendar'
 import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
 import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
+import { Route as AppAuthenticatedB2bRecordingsRouteImport } from './routes/app/_authenticated/b2b.recordings'
 import { Route as AppAuthenticatedB2bPoolRouteImport } from './routes/app/_authenticated/b2b.pool'
 import { Route as AppAuthenticatedB2bLeadsRouteImport } from './routes/app/_authenticated/b2b.leads'
 import { Route as AppAuthenticatedB2bDidntPickUpRouteImport } from './routes/app/_authenticated/b2b.didnt-pick-up'
@@ -287,6 +288,12 @@ const AppAuthenticatedCloserCalendarRoute =
   AppAuthenticatedCloserCalendarRouteImport.update({
     id: '/closer/calendar',
     path: '/closer/calendar',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedB2bRecordingsRoute =
+  AppAuthenticatedB2bRecordingsRouteImport.update({
+    id: '/b2b/recordings',
+    path: '/b2b/recordings',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
 const AppAuthenticatedB2bPoolRoute = AppAuthenticatedB2bPoolRouteImport.update({
@@ -572,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/app/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
   '/app/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
   '/app/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
+  '/app/b2b/recordings': typeof AppAuthenticatedB2bRecordingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -647,6 +655,7 @@ export interface FileRoutesByTo {
   '/app/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
   '/app/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
   '/app/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
+  '/app/b2b/recordings': typeof AppAuthenticatedB2bRecordingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -725,6 +734,7 @@ export interface FileRoutesById {
   '/app/_authenticated/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
   '/app/_authenticated/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
   '/app/_authenticated/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
+  '/app/_authenticated/b2b/recordings': typeof AppAuthenticatedB2bRecordingsRoute
   '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/_authenticated/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
@@ -803,6 +813,7 @@ export interface FileRouteTypes {
     | '/app/b2b/didnt-pick-up'
     | '/app/b2b/leads'
     | '/app/b2b/pool'
+    | '/app/b2b/recordings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-setter/calendar'
@@ -878,6 +889,7 @@ export interface FileRouteTypes {
     | '/app/b2b/didnt-pick-up'
     | '/app/b2b/leads'
     | '/app/b2b/pool'
+    | '/app/b2b/recordings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-setter/calendar'
@@ -955,6 +967,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/b2b/didnt-pick-up'
     | '/app/_authenticated/b2b/leads'
     | '/app/_authenticated/b2b/pool'
+    | '/app/_authenticated/b2b/recordings'
     | '/app/_authenticated/closer/calendar'
     | '/app/_authenticated/closer/commissions'
     | '/app/_authenticated/dm-setter/calendar'
@@ -1266,6 +1279,13 @@ declare module '@tanstack/react-router' {
       path: '/closer/calendar'
       fullPath: '/app/closer/calendar'
       preLoaderRoute: typeof AppAuthenticatedCloserCalendarRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/b2b/recordings': {
+      id: '/app/_authenticated/b2b/recordings'
+      path: '/b2b/recordings'
+      fullPath: '/app/b2b/recordings'
+      preLoaderRoute: typeof AppAuthenticatedB2bRecordingsRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
     '/app/_authenticated/b2b/pool': {
@@ -1629,6 +1649,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedB2bDidntPickUpRoute: typeof AppAuthenticatedB2bDidntPickUpRoute
   AppAuthenticatedB2bLeadsRoute: typeof AppAuthenticatedB2bLeadsRouteWithChildren
   AppAuthenticatedB2bPoolRoute: typeof AppAuthenticatedB2bPoolRoute
+  AppAuthenticatedB2bRecordingsRoute: typeof AppAuthenticatedB2bRecordingsRoute
   AppAuthenticatedCloserCalendarRoute: typeof AppAuthenticatedCloserCalendarRoute
   AppAuthenticatedCloserCommissionsRoute: typeof AppAuthenticatedCloserCommissionsRoute
   AppAuthenticatedDmSetterCalendarRoute: typeof AppAuthenticatedDmSetterCalendarRoute
@@ -1654,6 +1675,7 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedB2bDidntPickUpRoute: AppAuthenticatedB2bDidntPickUpRoute,
   AppAuthenticatedB2bLeadsRoute: AppAuthenticatedB2bLeadsRouteWithChildren,
   AppAuthenticatedB2bPoolRoute: AppAuthenticatedB2bPoolRoute,
+  AppAuthenticatedB2bRecordingsRoute: AppAuthenticatedB2bRecordingsRoute,
   AppAuthenticatedCloserCalendarRoute: AppAuthenticatedCloserCalendarRoute,
   AppAuthenticatedCloserCommissionsRoute:
     AppAuthenticatedCloserCommissionsRoute,
