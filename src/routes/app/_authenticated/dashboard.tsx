@@ -45,6 +45,8 @@ function ClientDashboard() {
         <SupportButton />
       </div>
 
+      <QuoCallsCard />
+
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Claimed leads today" value={data.claimedLeadsToday} icon={Briefcase} hint="Leads you claimed today" />
