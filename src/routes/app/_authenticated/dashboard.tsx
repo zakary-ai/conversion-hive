@@ -246,7 +246,7 @@ function QuoCallsCard() {
   const all = data?.all;
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 sm:p-6">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Calls · live from Quo</div>
