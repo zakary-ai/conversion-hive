@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Briefcase, Calendar as CalendarIcon, Settings,
-  GraduationCap, UserCog, CalendarCheck, UserPlus, DollarSign, MessageCircle, Camera,
+  GraduationCap, UserCog, CalendarCheck, UserPlus, DollarSign, MessageCircle, Camera, Mic,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminChannel } from "@/components/app-sidebar";
@@ -10,7 +10,7 @@ const clientItems = [
   { title: "Home", url: "/app/dashboard", icon: LayoutDashboard },
   { title: "Pool", url: "/app/b2b/pool", icon: Users },
   { title: "Leads", url: "/app/b2b/leads", icon: Briefcase },
-  { title: "Callbacks", url: "/app/b2b/callbacks", icon: CalendarIcon },
+  { title: "Calls", url: "/app/b2b/recordings", icon: Mic },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
