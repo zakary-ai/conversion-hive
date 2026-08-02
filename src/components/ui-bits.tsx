@@ -21,7 +21,6 @@ export function StatCard({
       </div>
     </Card>
 
-    </Card>
   );
 }
 
