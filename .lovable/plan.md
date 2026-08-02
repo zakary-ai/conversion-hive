@@ -1,54 +1,53 @@
 ## Goal
 
-On setter accounts, when a call is logged as "Book," swap the embedded GoHighLevel iframe for the same native date/time picker used elsewhere in the app. Picking a slot auto-assigns whichever B2B closer is free on their Google Calendar at that time (works for 1 closer today, scales to many).
+Setter accounts get (1) call metrics pulled from Quo — dials today, connected calls + talk time, week and all-time totals — and (2) a Recording Hub where they can browse/play every recording from their Quo number, searchable by phone number or lead name.
 
-## What already exists (verified)
+## Verified current state
 
-- `listAvailableSlots` (`src/lib/api/cl.functions.ts`) already returns slots where at least one active `b2b_closers` row is free — checks existing appointments AND that closer's Google Calendar freeBusy. Multi-closer safe.
-- `SlotPicker` component uses that endpoint with a calendar + timezone selector.
-- `b2b_lead_pool` rows have first/last name, email, phone. `appointments` table supports `b2b_closer_id`, `status`, `meeting_url`.
-- Admin's `assignB2bCloser` flow already creates a Zoom meeting on the closer's credentials and emails the lead. Reusable.
+- `call_logs` already stores `openphone_call_id`, `direction`, `status`, `duration_sec`, `recording_url`, `transcript`, `summary`, `user_id`, `lead_id`, `pool_lead_id`.
+- Ingestion today is the webhook `src/routes/api/public/hooks/openphone.ts` (attributes direct Quo calls to setters via `openphone_number_pool`, falling back to `profiles.openphone_number_e164`), plus an admin-only reconciliation fn `backfillOpenphoneArtifacts` in `src/lib/api/calls.functions.ts`.
+- Setter dashboard (`getClientDashboard`) currently shows claimed leads / contacted / booked — no call data at all. Admin's `getClientDetail` is the only place counting dials.
+- A code comment in the existing backfill notes Quo's `/v1/calls` list needs the external participant number, so a plain "list all calls for a number" pull may not be available. Step 1 below verifies this against the live API before the sync design is locked.
 
-## Changes
+## Plan
 
-### 1. New server fn `bookB2bSlotForLead` in `src/lib/api/b2b-pool.functions.ts`
+### 1. Verify the Quo calls API (first step, before writing the sync)
 
-Input: `{ pool_lead_id, scheduled_at (ISO), timezone }`.
+Probe `GET /v1/calls` with `phoneNumberId` and a date window using `OPENPHONE_API_KEY`. If listing by number works, the sync is a straight per-number pull. If it truly requires `participants`, the sync instead reconciles per known external number (claimed pool leads + existing `call_logs` rows) and the webhook stays the primary source of new calls. Either way the app reads from `call_logs`, so nothing downstream changes.
 
-Handler (all under service role for the assignment race):
-1. Load the pool lead — require it belongs to the calling setter (claimed_by = userId) and has an email. Error clearly if email is missing.
-2. Recompute availability at that exact `scheduled_at` using the same rules as `listAvailableSlots` (global B2B window + closer conflict + gcal freeBusy + pending_assignment reservation). If slot no longer valid → throw "That time was just taken."
-3. Pick the first `b2b_closers` row (active) with no appointment conflict and no gcal conflict at that slot. Deterministic order by `id` so parallel setters don't collide on the same closer (rely on the collision check in step 4 to catch races).
-4. Insert into `appointments`: `type=booking`, `status=assigned`, `b2b_closer_id=<picked>`, `user_id=<setter>`, `lead_id=<pool_lead_id>`, `name`, `email`, `phone`, `scheduled_at`, `timezone`. Re-check no other assigned appointment exists for that closer at that scheduled_at; on unique conflict, retry with the next available closer up to N times, else throw.
-5. Create Zoom meeting on that closer's `b2b_closer_zoom_credentials` (reuse existing `createZoomMeetingOnCloserAccount` helper). Update `meeting_url`. If Zoom creds missing, leave `meeting_url` null and continue (matches admin flow behavior).
-6. Send booking confirmation email via existing `sendBookingConfirmationEmail`.
-7. Call the existing `logCallOutcome` logic inline (or duplicate the write): insert `b2b_call_attempts` row with `outcome=booked`, mark `b2b_lead_pool.status='booked'`, and set `pool_lead_id` on the corresponding `call_logs` row when present.
+### 2. Background sync route + cron
 
-Returns `{ appointment_id, closer_name, meeting_url }`.
+New `src/routes/api/public/hooks/sync-quo-calls.ts`:
+- For every setter number (`openphone_number_pool` + `profiles.openphone_number_e164`), pull calls from the last ~3 days.
+- Upsert `call_logs` on `openphone_call_id`: direction, status, from/to, `duration_sec`, `started_at`/`ended_at`, and attribute `user_id` from the number mapping. Adopt matching unlinked in-app dial rows instead of duplicating them.
+- Fetch recording / transcript / summary for rows still missing them and patch.
+- Scheduled with `pg_cron` + `pg_net` every 5 minutes (anon `apikey` header). Reuses the existing helper logic rather than duplicating parsers.
 
-### 2. New `BookingSlotDialog` component `src/components/b2b-booking-slot-dialog.tsx`
+### 3. Setter-facing server functions (`src/lib/api/calls.functions.ts`)
 
-- Uses `<SlotPicker>` + a Confirm button.
-- Shows the lead name in the title and confirms the picked local time.
-- On confirm → calls `bookB2bSlotForLead`, toasts success with assigned closer + Zoom link status, closes.
+- `getMyCallStats` — from `call_logs` for `auth.uid()` excluding `status = 'manual_outcome'`: dials today, connected today, talk-time today, plus week-to-date and all-time dials/connected/talk time. Day/week boundaries use the existing ET helpers.
+- `listMyRecordings` — paginated (20/page), newest first, `search` matches phone number digits or lead name (joins `leads` and `b2b_lead_pool`), optional "has recording only" toggle.
+- `syncMyCalls` — manual refresh button: runs the same sync limited to the caller's number, then returns fresh counts.
 
-### 3. Wire it into `LogCallOutcomeDialog`
+RLS on `call_logs` already scopes setters to their own rows; I'll confirm and only add a policy if a read path is missing.
 
-`src/components/log-call-outcome-dialog.tsx`:
-- Replace `BookingIframeDialog` import + JSX with `BookingSlotDialog`.
-- Pass `lead` (with email) — update the `Lead` type to include email so the parent dialogs pass it down. Both callers (`LeadPreviewDialog`, My Leads list) already load email; just plumb it through.
-- Remove the "Did the booking go through?" `window.confirm` — booking success is deterministic now. On success, `onClose` and invalidate the same query keys as today.
+### 4. Dashboard overhaul (`src/routes/app/_authenticated/dashboard.tsx`)
 
-### 4. Cleanup
+Add a "Calls (from Quo)" block above the existing lead cards:
+- Today: Dials · Connected · Talk time
+- This week and All time rows beneath
+- "Last synced X min ago" + Refresh button wired to `syncMyCalls`
+- Existing claimed/contacted/booked cards stay.
 
-- `src/components/booking-iframe-dialog.tsx` stays for now (unused after this change, no other callers per grep). Leave file or delete — will delete since nothing else imports it.
+### 5. Recording Hub
 
-## Multi-closer notes
+New route `src/routes/app/_authenticated/b2b.recordings.tsx`:
+- Search box (number or lead name), pagination, sort by newest / longest.
+- Each row: lead name (or bare number when unmatched), number, date/time, duration, direction, inline `<audio>` player for `recording_url`, and expandable transcript + AI summary when present.
+- Tapping the lead name links to that lead's detail when it's matched.
+- Added to `app-sidebar.tsx` and `bottom-nav.tsx` for setters (bottom nav swaps in "Calls"; the sidebar keeps all items).
 
-Everything above already iterates over all `b2b_closers` where `active=true`. Adding a second closer = create their `b2b_closers` row + connect their Google Calendar from Profile + fill in `b2b_closer_zoom_credentials`. No further code changes.
+## Notes
 
-## Out of scope
-
-- Changing admin B2B calendar / reschedule flows.
-- Changing B2C booking flow.
-- Any UI on the closer side beyond what's already wired.
+- Recordings are Quo-hosted URLs; some expire — the player will show a graceful "recording unavailable" state rather than a broken control.
+- Unmatched calls still appear (per your choice), labeled by number only.

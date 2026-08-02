@@ -7,7 +7,11 @@ import { SupportButton } from "@/components/support-button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Briefcase, CheckCircle2, Clock, GraduationCap, DollarSign, ArrowRight, ListChecks } from "lucide-react";
+import { Briefcase, CheckCircle2, Clock, GraduationCap, DollarSign, ArrowRight, ListChecks, Phone, PhoneCall, Timer, RefreshCw, Mic } from "lucide-react";
+import { getMyCallStats, syncMyCalls } from "@/lib/api/calls.functions";
+import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { meQueryOptions } from "./route";
 
 const dashboardOpts = queryOptions({
@@ -44,6 +48,8 @@ function ClientDashboard() {
         />
         <SupportButton />
       </div>
+
+      <QuoCallsCard />
 
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -196,5 +202,97 @@ function QuickLink({ to, icon: Icon, label }: { to: string; icon: typeof Briefca
       <span className="flex items-center gap-2 text-sm"><Icon className="h-4 w-4 text-primary" />{label}</span>
       <ArrowRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
     </Link>
+  );
+}
+
+function fmtDuration(sec: number): string {
+  if (!sec) return "0m";
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return `${sec}s`;
+}
+
+function QuoCallsCard() {
+  const qc = useQueryClient();
+  const [syncing, setSyncing] = useState(false);
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-call-stats"],
+    queryFn: () => getMyCallStats(),
+    refetchInterval: 5 * 60_000,
+  });
+
+  const refresh = async () => {
+    setSyncing(true);
+    try {
+      const res = await syncMyCalls();
+      if (!res.ok) {
+        toast.error("No Quo number is linked to your account yet — ask an admin to assign one.");
+      } else {
+        toast.success("Synced with Quo");
+      }
+      await qc.invalidateQueries({ queryKey: ["my-call-stats"] });
+      await qc.invalidateQueries({ queryKey: ["my-recordings"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const today = data?.today;
+  const week = data?.week;
+  const all = data?.all;
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">Calls · live from Quo</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {data?.lastSyncedAt ? `Last updated ${new Date(data.lastSyncedAt).toLocaleTimeString()}` : "Syncing every 5 minutes"}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={refresh} disabled={syncing}>
+            <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/app/b2b/recordings"><Mic className="h-4 w-4 mr-1" /> Recordings</Link>
+          </Button>
+        </div>
+      </div>
+
+      {isLoading || !data ? (
+        <div className="text-sm text-muted-foreground">Loading call data…</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-4">
+            <StatCard label="Dials today" value={today!.dials} icon={Phone} />
+            <StatCard label="Connected today" value={today!.connected} icon={PhoneCall} />
+            <StatCard label="Talk time today" value={fmtDuration(today!.talkSec)} icon={Timer} />
+          </div>
+          <div className="mt-4 grid sm:grid-cols-2 gap-3 text-sm">
+            <div className="rounded-lg border p-3">
+              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">This week</div>
+              <div className="text-muted-foreground">
+                <span className="text-foreground font-semibold">{week!.dials}</span> dials ·{" "}
+                <span className="text-foreground font-semibold">{week!.connected}</span> connected ·{" "}
+                <span className="text-foreground font-semibold">{fmtDuration(week!.talkSec)}</span> talk time
+              </div>
+            </div>
+            <div className="rounded-lg border p-3">
+              <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">All time</div>
+              <div className="text-muted-foreground">
+                <span className="text-foreground font-semibold">{all!.dials}</span> dials ·{" "}
+                <span className="text-foreground font-semibold">{all!.connected}</span> connected ·{" "}
+                <span className="text-foreground font-semibold">{fmtDuration(all!.talkSec)}</span> talk time
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </Card>
   );
 }

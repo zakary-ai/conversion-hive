@@ -391,3 +391,186 @@ export const backfillOpenphoneArtifacts = createServerFn({ method: "POST" })
 
     return { ok: true, scanned, adopted, ingested, updated, txFilled, recFilled, sumFilled };
   });
+
+// ---------- Setter call stats (sourced from Quo) ----------
+function etBoundaries() {
+  const now = new Date();
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = Object.fromEntries(dtf.formatToParts(now).map((p) => [p.type, p.value])) as Record<string, string>;
+  const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  const offsetMs = asUtc - now.getTime();
+  const etNow = new Date(now.getTime() + offsetMs);
+  const todayEt = new Date(etNow); todayEt.setUTCHours(0, 0, 0, 0);
+  const dow = etNow.getUTCDay();
+  const daysFromMon = (dow + 6) % 7;
+  const mondayEt = new Date(etNow);
+  mondayEt.setUTCDate(etNow.getUTCDate() - daysFromMon);
+  mondayEt.setUTCHours(1, 0, 0, 0);
+  if (etNow.getTime() < mondayEt.getTime()) mondayEt.setUTCDate(mondayEt.getUTCDate() - 7);
+  return {
+    todayStartIso: new Date(todayEt.getTime() - offsetMs).toISOString(),
+    weekStartIso: new Date(mondayEt.getTime() - offsetMs).toISOString(),
+  };
+}
+
+type StatRow = { started_at: string | null; created_at: string; duration_sec: number | null; status: string | null; direction: string | null };
+
+function bucket(rows: StatRow[]) {
+  const dials = rows.length;
+  const connected = rows.filter((r) => (r.duration_sec ?? 0) > 0).length;
+  const talkSec = rows.reduce((s, r) => s + (r.duration_sec ?? 0), 0);
+  return { dials, connected, talkSec };
+}
+
+export const getMyCallStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { todayStartIso, weekStartIso } = etBoundaries();
+
+    const { data, error } = await supabase
+      .from("call_logs")
+      .select("started_at, created_at, duration_sec, status, direction")
+      .eq("user_id", userId)
+      .neq("status", "manual_outcome")
+      .order("started_at", { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+
+    const rows = (data ?? []) as StatRow[];
+    const at = (r: StatRow) => new Date(r.started_at ?? r.created_at).getTime();
+    const todayMs = new Date(todayStartIso).getTime();
+    const weekMs = new Date(weekStartIso).getTime();
+
+    const outbound = rows.filter((r) => !(r.direction ?? "").startsWith("in"));
+
+    const { data: lastSynced } = await supabase
+      .from("call_logs")
+      .select("updated_at")
+      .eq("user_id", userId)
+      .not("openphone_call_id", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return {
+      today: bucket(outbound.filter((r) => at(r) >= todayMs)),
+      week: bucket(outbound.filter((r) => at(r) >= weekMs)),
+      all: bucket(outbound),
+      inboundToday: rows.filter((r) => (r.direction ?? "").startsWith("in") && at(r) >= todayMs).length,
+      lastSyncedAt: lastSynced?.updated_at ?? null,
+    };
+  });
+
+// ---------- Recording hub ----------
+export type RecordingRow = {
+  id: string;
+  openphone_call_id: string | null;
+  lead_id: string | null;
+  pool_lead_id: string | null;
+  direction: string | null;
+  status: string | null;
+  from_number: string | null;
+  to_number: string | null;
+  duration_sec: number | null;
+  started_at: string | null;
+  created_at: string;
+  recording_url: string | null;
+  transcript: string | null;
+  transcript_status: string | null;
+  summary: string | null;
+  leads: { name: string | null; company: string | null } | null;
+  pool: { first_name: string | null; last_name: string | null; company: string | null } | null;
+};
+
+export const listMyRecordings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      search: z.string().trim().max(120).optional(),
+      page: z.number().int().min(1).default(1),
+      pageSize: z.number().int().min(5).max(50).default(20),
+      sort: z.enum(["newest", "longest"]).default("newest"),
+      recordedOnly: z.boolean().default(false),
+    }).parse,
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const from = (data.page - 1) * data.pageSize;
+    const to = from + data.pageSize - 1;
+
+    let q = supabase
+      .from("call_logs")
+      .select(
+        "id, openphone_call_id, lead_id, pool_lead_id, direction, status, from_number, to_number, duration_sec, started_at, created_at, recording_url, transcript, transcript_status, summary, leads:lead_id(name, company), pool:pool_lead_id(first_name, last_name, company)",
+        { count: "exact" },
+      )
+      .eq("user_id", userId)
+      .neq("status", "manual_outcome");
+
+    if (data.recordedOnly) q = q.not("recording_url", "is", null);
+
+    const search = (data.search ?? "").trim();
+    if (search) {
+      const digits = search.replace(/\D/g, "");
+      const ors: string[] = [];
+      if (digits.length >= 3) {
+        ors.push(`to_number.ilike.%${digits}%`, `from_number.ilike.%${digits}%`);
+      }
+      if (/[a-z]/i.test(search)) {
+        const [leadsRes, poolRes] = await Promise.all([
+          supabase.from("leads").select("id").eq("assigned_user_id", userId).ilike("name", `%${search}%`).limit(200),
+          supabase.from("b2b_lead_pool").select("id")
+            .eq("claimed_by", userId)
+            .or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,company.ilike.%${search}%`)
+            .limit(200),
+        ]);
+        const leadIds = (leadsRes.data ?? []).map((r) => r.id);
+        const poolIds = (poolRes.data ?? []).map((r) => r.id);
+        if (leadIds.length) ors.push(`lead_id.in.(${leadIds.join(",")})`);
+        if (poolIds.length) ors.push(`pool_lead_id.in.(${poolIds.join(",")})`);
+      }
+      if (ors.length === 0) return { rows: [], total: 0, page: data.page, pageSize: data.pageSize };
+      q = q.or(ors.join(","));
+    }
+
+    q = data.sort === "longest"
+      ? q.order("duration_sec", { ascending: false, nullsFirst: false })
+      : q.order("started_at", { ascending: false, nullsFirst: false });
+
+    const { data: rows, count, error } = await q.range(from, to);
+    if (error) throw new Error(error.message);
+
+    return {
+      rows: (rows ?? []) as unknown as RecordingRow[],
+      total: count ?? 0,
+      page: data.page,
+      pageSize: data.pageSize,
+    };
+  });
+
+// ---------- Manual refresh from Quo (setter-facing) ----------
+export const syncMyCalls = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: profile } = await supabase
+      .from("profiles").select("openphone_number_e164").eq("user_id", userId).maybeSingle();
+
+    let number = profile?.openphone_number_e164 ?? null;
+    if (!number) {
+      const { data: pool } = await supabase
+        .from("openphone_number_pool").select("phone_e164").eq("assigned_user_id", userId).limit(1);
+      number = pool?.[0]?.phone_e164 ?? null;
+    }
+    if (!number) return { ok: false, reason: "no_number" as const };
+
+    const { syncQuoCalls } = await import("@/lib/quo-sync.server");
+    const sinceIso = new Date(Date.now() - 24 * 3600_000).toISOString();
+    const result = await syncQuoCalls({ sinceIso, onlyNumberE164: number, maxConversationPages: 3, maxArtifacts: 25 });
+    return { ok: true as const, ...result };
+  });

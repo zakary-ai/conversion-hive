@@ -7,7 +7,7 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX, PhoneOff,
+  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX, PhoneOff, Mic,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -17,6 +17,7 @@ const clientItems = [
   { title: "My Leads", url: "/app/b2b/leads", icon: Briefcase },
   { title: "Didn't Pick Up", url: "/app/b2b/didnt-pick-up", icon: PhoneOff },
   { title: "Callbacks", url: "/app/b2b/callbacks", icon: CalendarIcon },
+  { title: "Recordings", url: "/app/b2b/recordings", icon: Mic },
   { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
