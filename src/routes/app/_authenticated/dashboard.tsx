@@ -246,7 +246,7 @@ function QuoCallsCard() {
   const all = data?.all;
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 sm:p-6">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
           <div className="text-xs uppercase tracking-widest text-muted-foreground">Calls · live from Quo</div>
@@ -268,11 +268,12 @@ function QuoCallsCard() {
         <div className="text-sm text-muted-foreground">Loading call data…</div>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-4">
-            <StatCard label="Dials today" value={today!.dials} icon={Phone} />
-            <StatCard label="Connected today" value={today!.connected} icon={PhoneCall} />
-            <StatCard label="Talk time today" value={fmtDuration(today!.talkSec)} icon={Timer} />
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <StatCard label="Dials" value={today!.dials} icon={Phone} hint="Today" />
+            <StatCard label="Connected" value={today!.connected} icon={PhoneCall} hint="Today" />
+            <StatCard label="Talk time" value={fmtDuration(today!.talkSec)} icon={Timer} hint="Today" />
           </div>
+
           <div className="mt-4 grid sm:grid-cols-2 gap-3 text-sm">
             <div className="rounded-lg border p-3">
               <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">This week</div>

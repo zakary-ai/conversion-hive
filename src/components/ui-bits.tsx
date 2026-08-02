@@ -6,20 +6,21 @@ export function StatCard({
   label, value, icon: Icon, hint, className,
 }: { label: string; value: string | number; icon?: LucideIcon; hint?: string; className?: string }) {
   return (
-    <Card className={cn("p-5 bg-card border-border", className)}>
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">{label}</div>
-          <div className="mt-2 text-3xl font-semibold font-display tracking-tight">{value}</div>
-          {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+    <Card className={cn("p-4 sm:p-5 bg-card border-border", className)}>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-muted-foreground leading-tight">{label}</div>
+          <div className="mt-1.5 sm:mt-2 text-2xl sm:text-3xl font-semibold font-display tracking-tight tabular-nums truncate">{value}</div>
+          {hint && <div className="mt-1 text-[10px] sm:text-xs text-muted-foreground leading-tight">{hint}</div>}
         </div>
         {Icon && (
-          <div className="h-9 w-9 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
+          <div className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
             <Icon className="h-4 w-4" />
           </div>
         )}
       </div>
     </Card>
+
   );
 }
 
