@@ -68,6 +68,7 @@ import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/
 import { Route as AppAuthenticatedAdminAdminsRouteImport } from './routes/app/_authenticated/admin/admins'
 import { Route as AppAuthenticatedAdminAccountDeletionsRouteImport } from './routes/app/_authenticated/admin/account-deletions'
 import { Route as ApiPublicWebhooksSmartleadRouteImport } from './routes/api/public/webhooks/smartlead'
+import { Route as ApiPublicHooksSyncQuoCallsRouteImport } from './routes/api/public/hooks/sync-quo-calls'
 import { Route as ApiPublicHooksSmartleadSyncRouteImport } from './routes/api/public/hooks/smartlead-sync'
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
@@ -419,6 +420,12 @@ const ApiPublicWebhooksSmartleadRoute =
     path: '/api/public/webhooks/smartlead',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSyncQuoCallsRoute =
+  ApiPublicHooksSyncQuoCallsRouteImport.update({
+    id: '/api/public/hooks/sync-quo-calls',
+    path: '/api/public/hooks/sync-quo-calls',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSmartleadSyncRoute =
   ApiPublicHooksSmartleadSyncRouteImport.update({
     id: '/api/public/hooks/smartlead-sync',
@@ -542,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
+  '/api/public/hooks/sync-quo-calls': typeof ApiPublicHooksSyncQuoCallsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
   '/app/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
@@ -616,6 +624,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
+  '/api/public/hooks/sync-quo-calls': typeof ApiPublicHooksSyncQuoCallsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
   '/app/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
@@ -693,6 +702,7 @@ export interface FileRoutesById {
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
+  '/api/public/hooks/sync-quo-calls': typeof ApiPublicHooksSyncQuoCallsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
   '/app/_authenticated/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/_authenticated/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
@@ -770,6 +780,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
+    | '/api/public/hooks/sync-quo-calls'
     | '/api/public/webhooks/smartlead'
     | '/app/admin/account-deletions'
     | '/app/admin/admins'
@@ -844,6 +855,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
+    | '/api/public/hooks/sync-quo-calls'
     | '/api/public/webhooks/smartlead'
     | '/app/admin/account-deletions'
     | '/app/admin/admins'
@@ -920,6 +932,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
+    | '/api/public/hooks/sync-quo-calls'
     | '/api/public/webhooks/smartlead'
     | '/app/_authenticated/admin/account-deletions'
     | '/app/_authenticated/admin/admins'
@@ -987,6 +1000,7 @@ export interface RootRouteChildren {
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
   ApiPublicHooksSendCallRemindersRoute: typeof ApiPublicHooksSendCallRemindersRoute
   ApiPublicHooksSmartleadSyncRoute: typeof ApiPublicHooksSmartleadSyncRoute
+  ApiPublicHooksSyncQuoCallsRoute: typeof ApiPublicHooksSyncQuoCallsRoute
   ApiPublicWebhooksSmartleadRoute: typeof ApiPublicWebhooksSmartleadRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -1408,6 +1422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksSmartleadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sync-quo-calls': {
+      id: '/api/public/hooks/sync-quo-calls'
+      path: '/api/public/hooks/sync-quo-calls'
+      fullPath: '/api/public/hooks/sync-quo-calls'
+      preLoaderRoute: typeof ApiPublicHooksSyncQuoCallsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/smartlead-sync': {
       id: '/api/public/hooks/smartlead-sync'
       path: '/api/public/hooks/smartlead-sync'
@@ -1689,6 +1710,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
   ApiPublicHooksSendCallRemindersRoute: ApiPublicHooksSendCallRemindersRoute,
   ApiPublicHooksSmartleadSyncRoute: ApiPublicHooksSmartleadSyncRoute,
+  ApiPublicHooksSyncQuoCallsRoute: ApiPublicHooksSyncQuoCallsRoute,
   ApiPublicWebhooksSmartleadRoute: ApiPublicWebhooksSmartleadRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
