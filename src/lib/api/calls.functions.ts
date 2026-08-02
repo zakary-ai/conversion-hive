@@ -467,6 +467,26 @@ export const getMyCallStats = createServerFn({ method: "GET" })
   });
 
 // ---------- Recording hub ----------
+export type RecordingRow = {
+  id: string;
+  openphone_call_id: string | null;
+  lead_id: string | null;
+  pool_lead_id: string | null;
+  direction: string | null;
+  status: string | null;
+  from_number: string | null;
+  to_number: string | null;
+  duration_sec: number | null;
+  started_at: string | null;
+  created_at: string;
+  recording_url: string | null;
+  transcript: string | null;
+  transcript_status: string | null;
+  summary: string | null;
+  leads: { name: string | null; company: string | null } | null;
+  pool: { first_name: string | null; last_name: string | null; company: string | null } | null;
+};
+
 export const listMyRecordings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -526,7 +546,7 @@ export const listMyRecordings = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     return {
-      rows: (rows ?? []) as unknown as Array<Record<string, unknown>>,
+      rows: (rows ?? []) as unknown as RecordingRow[],
       total: count ?? 0,
       page: data.page,
       pageSize: data.pageSize,
