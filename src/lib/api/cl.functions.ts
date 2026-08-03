@@ -2049,7 +2049,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
       supabase.from("modules").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase.from("appointments").select("*").eq("user_id", data.user_id).order("scheduled_at", { ascending: false }),
       supabase.from("call_logs")
-        .select("id, lead_id, pool_lead_id, started_at, created_at, ended_at, duration_sec, status, direction, to_number, from_number, recording_url, transcript, transcript_status, summary, counted_at, leads:lead_id(name, company)")
+        .select("id, lead_id, pool_lead_id, started_at, created_at, ended_at, duration_sec, status, direction, to_number, from_number, openphone_call_id, recording_url, transcript, transcript_status, summary, counted_at, leads:lead_id(name, company)")
         .eq("user_id", data.user_id)
         .order("created_at", { ascending: false })
         .limit(500),
@@ -2094,10 +2094,13 @@ export const getClientDetail = createServerFn({ method: "GET" })
     const bookingsScheduled = inRange(allBookings, "scheduled_at");
     const leadsInRange = inRange(allLeads, "created_at");
     const callsInRange = inRange(allCalls as Record<string, unknown>[], "started_at");
-    // Dials = actual call_logs entries in the window (Quo + in-app dials).
-    // Manual "outcome-only" rows (status = 'manual_outcome') don't count.
-    const dialCalls = (callsInRange as Array<{ status: string | null; started_at: string | null; created_at: string }>)
-      .filter((c) => c.status !== "manual_outcome");
+    // Dials = real calls in the window. Manual "outcome-only" rows
+    // (status = 'manual_outcome') and unconfirmed in-app click-throughs
+    // (still 'initiated' with no Quo call id) don't count, so this matches Quo.
+    const dialCalls = (callsInRange as Array<{ status: string | null; openphone_call_id: string | null; started_at: string | null; created_at: string }>)
+      .filter((c) => c.status !== "manual_outcome")
+      .filter((c) => Boolean(c.openphone_call_id) || (c.status ?? "") !== "initiated");
+
 
     return {
       profile: profile.data,

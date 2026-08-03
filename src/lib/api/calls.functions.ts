@@ -417,13 +417,28 @@ function etBoundaries() {
   };
 }
 
-type StatRow = { started_at: string | null; created_at: string; duration_sec: number | null; status: string | null; direction: string | null };
+type StatRow = {
+  started_at: string | null;
+  created_at: string;
+  duration_sec: number | null;
+  status: string | null;
+  direction: string | null;
+  openphone_call_id: string | null;
+};
 
 function bucket(rows: StatRow[]) {
   const dials = rows.length;
   const connected = rows.filter((r) => (r.duration_sec ?? 0) > 0).length;
   const talkSec = rows.reduce((s, r) => s + (r.duration_sec ?? 0), 0);
   return { dials, connected, talkSec };
+}
+
+// A row created by tapping "Call" in the app stays `initiated` with no Quo call
+// id until Quo confirms the dial. Those are click-throughs (double taps,
+// numbers Quo refused to dial) and must not be counted, otherwise our dial
+// totals run ahead of what the setter sees in Quo.
+function isRealCall(r: StatRow) {
+  return Boolean(r.openphone_call_id) || (r.status ?? "") !== "initiated";
 }
 
 export const getMyCallStats = createServerFn({ method: "GET" })
@@ -434,19 +449,20 @@ export const getMyCallStats = createServerFn({ method: "GET" })
 
     const { data, error } = await supabase
       .from("call_logs")
-      .select("started_at, created_at, duration_sec, status, direction")
+      .select("started_at, created_at, duration_sec, status, direction, openphone_call_id")
       .eq("user_id", userId)
       .neq("status", "manual_outcome")
       .order("started_at", { ascending: false })
       .limit(5000);
     if (error) throw new Error(error.message);
 
-    const rows = (data ?? []) as StatRow[];
+    const rows = ((data ?? []) as StatRow[]).filter(isRealCall);
     const at = (r: StatRow) => new Date(r.started_at ?? r.created_at).getTime();
     const todayMs = new Date(todayStartIso).getTime();
     const weekMs = new Date(weekStartIso).getTime();
 
     const outbound = rows.filter((r) => !(r.direction ?? "").startsWith("in"));
+
 
     const { data: lastSynced } = await supabase
       .from("call_logs")

@@ -88,42 +88,26 @@ export async function syncQuoCalls(opts: QuoSyncOptions): Promise<QuoSyncResult>
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const sinceMs = new Date(opts.sinceIso).getTime();
-  const maxPages = opts.maxConversationPages ?? 4;
+  const maxPages = opts.maxConversationPages ?? 8;
   const maxArtifacts = opts.maxArtifacts ?? 40;
 
   const result: QuoSyncResult = {
     numbers: 0, conversations: 0, callsSeen: 0, inserted: 0, adopted: 0, updated: 0, artifacts: 0,
   };
 
-  // ---- number -> setter attribution map
-  const owner = new Map<string, string>(); // digits10 -> user_id
-  const [{ data: pool }, { data: profiles }] = await Promise.all([
-    supabaseAdmin.from("openphone_number_pool").select("phone_e164, assigned_user_id"),
-    supabaseAdmin.from("profiles").select("user_id, openphone_number_e164").not("openphone_number_e164", "is", null),
-  ]);
-  // profiles first, pool wins on conflict (explicit assignment)
-  const profileCounts = new Map<string, number>();
-  for (const p of profiles ?? []) {
-    const d = digits10(p.openphone_number_e164);
-    if (!d) continue;
-    profileCounts.set(d, (profileCounts.get(d) ?? 0) + 1);
-    owner.set(d, p.user_id);
-  }
-  // ambiguous profile mappings (same number on 2+ setters) are dropped
-  for (const [d, n] of profileCounts) if (n > 1) owner.delete(d);
-  for (const p of pool ?? []) {
-    const d = digits10(p.phone_e164);
-    if (d && p.assigned_user_id) owner.set(d, p.assigned_user_id);
-  }
+  // ---- number -> setter attribution map (Quo's own assignments win)
+  const { fetchQuoPhoneNumbers, buildQuoOwnerMap } = await import("@/lib/quo-numbers.server");
+  const allNumbers = await fetchQuoPhoneNumbers(apiKey);
+  const owner = await buildQuoOwnerMap(supabaseAdmin as never, allNumbers);
 
   // ---- workspace numbers
-  const numbersRes = await quoGet<{ data?: QuoPhoneNumber[] }>("/v1/phone-numbers", apiKey);
-  let numbers = numbersRes?.data ?? [];
+  let numbers: QuoPhoneNumber[] = allNumbers;
   const onlyDigits = opts.onlyNumberE164 ? digits10(opts.onlyNumberE164) : null;
   if (onlyDigits) numbers = numbers.filter((n) => digits10(n.number) === onlyDigits);
   // only numbers we can attribute to a setter
   numbers = numbers.filter((n) => owner.has(digits10(n.number)));
   result.numbers = numbers.length;
+
 
   for (const num of numbers) {
     const workspaceE164 = num.number ?? "";
