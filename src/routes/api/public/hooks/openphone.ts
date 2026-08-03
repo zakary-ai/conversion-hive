@@ -188,13 +188,29 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
             const workspaceRaw = direction === "inbound" ? (Array.isArray(obj.to) ? obj.to[0] : obj.to) : fromRaw;
             const externalDigits = digits10(externalRaw);
 
+            // Attribute to the setter first — Quo's own per-number user
+            // assignment is the source of truth, with the stored pool /
+            // profile columns as fallback.
+            let userId: string | null = null;
+            const wsDigits = digits10(workspaceRaw);
+            if (wsDigits) {
+              const { fetchQuoPhoneNumbers, buildQuoOwnerMap } = await import("@/lib/quo-numbers.server");
+              const apiKey = process.env.OPENPHONE_API_KEY;
+              const quoNumbers = apiKey ? await fetchQuoPhoneNumbers(apiKey) : [];
+              const owner = await buildQuoOwnerMap(supabaseAdmin as never, quoNumbers);
+              userId = owner.get(wsDigits) ?? null;
+            }
+
+            // Adopt a recent in-app dial from the SAME setter only; adopting
+            // another setter's row silently moved dials between people.
             let adopted = false;
-            if (externalDigits) {
+            if (externalDigits && userId) {
               const sinceIso = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
               const { data: candidates } = await supabaseAdmin
                 .from("call_logs")
                 .select("id, to_number")
                 .is("openphone_call_id", null)
+                .eq("user_id", userId)
                 .gte("started_at", sinceIso)
                 .order("started_at", { ascending: false })
                 .limit(20);
@@ -213,27 +229,7 @@ export const Route = createFileRoute("/api/public/hooks/openphone")({
             }
 
             if (!adopted) {
-              // Attribute to setter via the workspace number that placed/received the call.
-              let userId: string | null = null;
-              const wsDigits = digits10(workspaceRaw);
-              if (wsDigits) {
-                const { data: pool } = await supabaseAdmin
-                  .from("openphone_number_pool")
-                  .select("assigned_user_id, phone_e164");
-                const hit = (pool ?? []).find((p) => digits10(p.phone_e164) === wsDigits);
-                userId = hit?.assigned_user_id ?? null;
-                // Fallback: match against profiles.openphone_number_e164 so
-                // setters whose Quo number wasn't added to the pool still
-                // get attribution.
-                if (!userId) {
-                  const { data: profs } = await supabaseAdmin
-                    .from("profiles")
-                    .select("user_id, openphone_number_e164")
-                    .not("openphone_number_e164", "is", null);
-                  const phit = (profs ?? []).find((p) => digits10(p.openphone_number_e164) === wsDigits);
-                  userId = phit?.user_id ?? null;
-                }
-              }
+
 
               // Try to link to a b2b pool lead or lead by external number.
               let pool_lead_id: string | null = null;
