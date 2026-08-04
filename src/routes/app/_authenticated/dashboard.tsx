@@ -274,6 +274,13 @@ function QuoCallsCard() {
             <StatCard label="Talk time" value={fmtDuration(today!.talkSec)} icon={Timer} hint="Today" />
           </div>
 
+          {data.unconnectedAttemptsToday > 0 && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              + {data.unconnectedAttemptsToday} tap{data.unconnectedAttemptsToday === 1 ? "" : "s"} today that Quo never
+              dialed (invalid or unsupported numbers) — these aren't counted as dials.
+            </div>
+          )}
+
           <div className="mt-4 grid sm:grid-cols-2 gap-3 text-sm">
             <div className="rounded-lg border p-3">
               <div className="text-xs uppercase tracking-widest text-muted-foreground mb-1">This week</div>
