@@ -478,6 +478,12 @@ export const getMyCallStats = createServerFn({ method: "GET" })
       week: bucket(outbound.filter((r) => at(r) >= weekMs)),
       all: bucket(outbound),
       inboundToday: rows.filter((r) => (r.direction ?? "").startsWith("in") && at(r) >= todayMs).length,
+      // Taps on "Call" that Quo never turned into a real call (invalid /
+      // unsupported numbers, double taps). Shown as a hint so the dial count
+      // matching Quo is explainable to the setter.
+      unconnectedAttemptsToday: ((data ?? []) as StatRow[]).filter(
+        (r) => !isRealCall(r) && at(r) >= todayMs,
+      ).length,
       lastSyncedAt: lastSynced?.updated_at ?? null,
     };
   });
