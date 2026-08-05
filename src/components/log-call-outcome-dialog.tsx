@@ -135,6 +135,11 @@ export function LogCallOutcomeDialog({
           {mode !== "menu" && (
             <DialogFooter>
               <Button variant="ghost" onClick={reset}>Back</Button>
+              {mode === "email" && (
+                <Button disabled={!email.trim() || sendInfo.isPending} onClick={() => sendInfo.mutate()}>
+                  {sendInfo.isPending ? "Sending…" : "Send email"}
+                </Button>
+              )}
               {mode === "callback" && (
                 <Button
                   disabled={!callbackAt || submit.isPending}
