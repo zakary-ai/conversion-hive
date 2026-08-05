@@ -2187,6 +2187,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          b2b_booking_slug: string | null
           company_name: string | null
           created_at: string
           daily_lead_quota: number
@@ -2203,6 +2204,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          b2b_booking_slug?: string | null
           company_name?: string | null
           created_at?: string
           daily_lead_quota?: number
@@ -2219,6 +2221,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          b2b_booking_slug?: string | null
           company_name?: string | null
           created_at?: string
           daily_lead_quota?: number
@@ -2614,6 +2617,7 @@ export type Database = {
         | "callback_scheduled"
         | "no_answer"
         | "not_interested"
+        | "info_emailed"
       b2b_callback_status: "scheduled" | "completed" | "missed"
       b2b_pool_status: "unclaimed" | "claimed" | "burned" | "booked"
       lead_status:
@@ -2866,6 +2870,7 @@ export const Constants = {
         "callback_scheduled",
         "no_answer",
         "not_interested",
+        "info_emailed",
       ],
       b2b_callback_status: ["scheduled", "completed", "missed"],
       b2b_pool_status: ["unclaimed", "claimed", "burned", "booked"],

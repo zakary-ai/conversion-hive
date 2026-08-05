@@ -659,125 +659,8 @@ export const listAvailableSlots = createServerFn({ method: "GET" })
     tz: z.string().max(60).optional(),
   }).parse)
   .handler(async ({ data }) => {
-    const viewerTz = data.tz || EST_TZ;
-    const [vy, vm, vd] = data.date.split("-").map(Number);
-    const viewerDayStart = zonedWallToUTC(vy, vm, vd, 0, 0, viewerTz);
-    const viewerDayEnd = zonedWallToUTC(vy, vm, vd + 1, 0, 0, viewerTz);
-
-    const { slot_minutes: SLOT, days_out } = await getB2bSettingsRow();
-    if (viewerDayStart.getTime() > Date.now() + days_out * 24 * 60 * 60 * 1000) return [] as string[];
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Global B2B window
-    const { data: globalRules } = await (supabaseAdmin as never as { from: (t: string) => { select: (c: string) => Promise<{ data: Array<{ day_of_week: number; start_minute: number; end_minute: number }> | null }> } })
-      .from("availability_rules").select("day_of_week, start_minute, end_minute");
-
-    if (!globalRules || globalRules.length === 0) return [] as string[];
-
-    // B2B closers (active pool). Per-closer rules are intentionally ignored.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closers } = await (supabaseAdmin.from("b2b_closers") as any)
-      .select("id, user_id").eq("active", true);
-    const activeClosers = ((closers ?? []) as Array<{ id: string; user_id: string | null }>);
-    if (activeClosers.length === 0) return [] as string[];
-
-    // Only count closers who have connected Google Calendar. Without a
-    // connected calendar we can't tell if they're busy, so we exclude them
-    // rather than fail-open (which would leak already-busy times).
-    const closerUserIds = activeClosers.map((c) => c.user_id).filter((v): v is string => !!v);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: conns } = await (supabaseAdmin.from("app_user_connections") as any)
-      .select("user_id")
-      .eq("connector_id", "google_calendar")
-      .in("user_id", closerUserIds.length > 0 ? closerUserIds : ["00000000-0000-0000-0000-000000000000"]);
-    const connectedSet = new Set(((conns ?? []) as Array<{ user_id: string }>).map((r) => r.user_id));
-    const closerRows = activeClosers.filter((c) => c.user_id && connectedSet.has(c.user_id));
-    const closerIds = closerRows.map((c) => c.id);
-    if (closerIds.length === 0) return [] as string[];
-
-
-    // Existing appointments overlapping the viewer window
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: bookings } = await (supabaseAdmin.from("appointments") as any)
-      .select("scheduled_at, b2b_closer_id, status")
-      .eq("type", "booking")
-      .gte("scheduled_at", new Date(viewerDayStart.getTime() - SLOT * 60_000).toISOString())
-      .lt("scheduled_at", new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString());
-    const allBookings = (bookings ?? []) as Array<{ scheduled_at: string; b2b_closer_id: string | null; status: string | null }>;
-
-    // Google Calendar busy windows for each connected closer.
-    const { getBusyIntervalsForUser } = await import("@/lib/googleCalendar.server");
-    const gcalBusyByCloser = new Map<string, Array<{ start: number; end: number }>>();
-    await Promise.all(
-      closerRows.map(async (c) => {
-        if (!c.user_id) return;
-        const busy = await getBusyIntervalsForUser(
-          c.user_id,
-          new Date(viewerDayStart.getTime() - SLOT * 60_000).toISOString(),
-          new Date(viewerDayEnd.getTime() + SLOT * 60_000).toISOString(),
-        );
-        if (busy.length > 0) gcalBusyByCloser.set(c.id, busy);
-      }),
-    );
-
-
-    // Viewer day can span 2 EST calendar days
-    const estDates = new Set<string>();
-    estDates.add(zonedDateKey(viewerDayStart, EST_TZ));
-    estDates.add(zonedDateKey(new Date(viewerDayEnd.getTime() - 1), EST_TZ));
-
-    const now = Date.now();
-    const slotMs = SLOT * 60_000;
-    const found = new Set<string>();
-
-    for (const estKey of estDates) {
-      const [ey, em, ed] = estKey.split("-").map(Number);
-      const probe = zonedWallToUTC(ey, em, ed, 12, 0, EST_TZ);
-      const dow = zonedDayOfWeek(probe, EST_TZ);
-      const globalWindows = globalRules.filter((r) => r.day_of_week === dow);
-      if (globalWindows.length === 0) continue;
-
-      for (const w of globalWindows) {
-        for (let mm = w.start_minute; mm + SLOT <= w.end_minute; mm += SLOT) {
-          const slot = zonedWallToUTC(ey, em, ed, Math.floor(mm / 60), mm % 60, EST_TZ);
-          const t = slot.getTime();
-          if (t < now) continue;
-          if (t < viewerDayStart.getTime() || t >= viewerDayEnd.getTime()) continue;
-
-          const slotEnd = t + slotMs;
-          let availableClosers = 0;
-          for (const cid of closerIds) {
-            const apptConflict = allBookings.some((b) => {
-              if (b.b2b_closer_id !== cid) return false;
-              if (b.status === "cancelled") return false;
-              const bs = new Date(b.scheduled_at).getTime();
-              return bs < slotEnd && bs + slotMs > t;
-            });
-            if (apptConflict) continue;
-            const gcalConflict = (gcalBusyByCloser.get(cid) ?? []).some(
-              (iv) => iv.start < slotEnd && iv.end > t,
-            );
-            if (gcalConflict) continue;
-            availableClosers += 1;
-          }
-
-
-          // Reserve capacity for pending (unassigned) bookings already sitting on this slot
-          const pendingAtSlot = allBookings.filter((b) =>
-            b.b2b_closer_id == null
-            && b.status === "pending_assignment"
-            && new Date(b.scheduled_at).getTime() === t
-          ).length;
-
-          if (availableClosers - pendingAtSlot > 0) {
-            found.add(slot.toISOString());
-          }
-        }
-      }
-    }
-
-    return Array.from(found).sort();
+    const { computeB2bSlots } = await import("@/lib/b2b-booking.server");
+    return computeB2bSlots({ date: data.date, tz: data.tz });
   });
 
 // ---------- B2B setter: book a slot for a claimed lead (auto-assign closer) ----------
@@ -799,7 +682,6 @@ export const bookB2bSlotForLead = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1. Load the pool lead and verify ownership.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: lead } = await (supabaseAdmin.from("b2b_lead_pool") as any)
       .select("id, first_name, last_name, email, phone, company, claimed_by")
@@ -808,7 +690,7 @@ export const bookB2bSlotForLead = createServerFn({ method: "POST" })
     if (!lead) throw new Error("Lead not found");
     if (lead.claimed_by !== context.userId) throw new Error("Not your lead.");
 
-    // Apply any edits from the booking dialog before we use the row.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editPatch: Record<string, any> = {};
     if (data.first_name !== undefined) editPatch.first_name = data.first_name || null;
     if (data.last_name !== undefined) editPatch.last_name = data.last_name || null;
@@ -822,218 +704,21 @@ export const bookB2bSlotForLead = createServerFn({ method: "POST" })
     }
     if (!lead.email) throw new Error("This lead has no email on file — add one before booking.");
 
-    const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(" ").trim() || "Lead";
-    const slotStart = new Date(data.scheduled_at);
-    const slotMs = (await getSlotMinutes()) * 60_000;
-    const slotEnd = slotStart.getTime() + slotMs;
-
-    // 2. Validate the slot falls inside the global B2B window (EST).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: globalRules } = await (supabaseAdmin.from("availability_rules") as any)
-      .select("day_of_week, start_minute, end_minute");
-    const rules = ((globalRules ?? []) as Array<{ day_of_week: number; start_minute: number; end_minute: number }>);
-    const estKey = zonedDateKey(slotStart, EST_TZ);
-    const [ey, em, ed] = estKey.split("-").map(Number);
-    const dow = zonedDayOfWeek(slotStart, EST_TZ);
-    const estHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: EST_TZ, hour: "2-digit", hourCycle: "h23" }).format(slotStart));
-    const estMin = Number(new Intl.DateTimeFormat("en-US", { timeZone: EST_TZ, minute: "2-digit" }).format(slotStart));
-    const slotMinuteOfDay = estHour * 60 + estMin;
-    const inWindow = rules.some(
-      (r) => r.day_of_week === dow && slotMinuteOfDay >= r.start_minute && slotMinuteOfDay + (slotMs / 60_000) <= r.end_minute,
-    );
-    // Reconstruct the EST wall time to ensure the slot lines up with the grid.
-    const estAligned = zonedWallToUTC(ey, em, ed, Math.floor(slotMinuteOfDay / 60), slotMinuteOfDay % 60, EST_TZ);
-    if (!inWindow || estAligned.getTime() !== slotStart.getTime()) {
-      throw new Error("That time isn't available anymore.");
-    }
-    if (slotStart.getTime() < Date.now()) throw new Error("That time is in the past.");
-
-    // 3. Load active B2B closers and their conflicts.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closerRows } = await (supabaseAdmin.from("b2b_closers") as any)
-      .select("id, user_id, full_name")
-      .eq("active", true)
-      .order("id", { ascending: true });
-    const allActive = ((closerRows ?? []) as Array<{ id: string; user_id: string | null; full_name: string | null }>);
-    if (allActive.length === 0) throw new Error("No B2B closers are set up yet.");
-
-    // Only closers with a connected Google Calendar are eligible — without it
-    // we can't verify they're actually free at this time.
-    const activeUserIds = allActive.map((c) => c.user_id).filter((v): v is string => !!v);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: conns2 } = await (supabaseAdmin.from("app_user_connections") as any)
-      .select("user_id")
-      .eq("connector_id", "google_calendar")
-      .in("user_id", activeUserIds.length > 0 ? activeUserIds : ["00000000-0000-0000-0000-000000000000"]);
-    const connectedSet2 = new Set(((conns2 ?? []) as Array<{ user_id: string }>).map((r) => r.user_id));
-    const closers = allActive.filter((c) => c.user_id && connectedSet2.has(c.user_id));
-    if (closers.length === 0) throw new Error("No closers with a connected calendar are available.");
-
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: overlappingAppts } = await (supabaseAdmin.from("appointments") as any)
-      .select("scheduled_at, b2b_closer_id, status")
-      .eq("type", "booking")
-      .gte("scheduled_at", new Date(slotStart.getTime() - slotMs).toISOString())
-      .lt("scheduled_at", new Date(slotEnd + slotMs).toISOString());
-    const appts = ((overlappingAppts ?? []) as Array<{ scheduled_at: string; b2b_closer_id: string | null; status: string | null }>);
-
-    const { getBusyIntervalsForUser } = await import("@/lib/googleCalendar.server");
-
-    // 4. Pick the first free closer.
-    let picked: { id: string; user_id: string | null; full_name: string | null } | null = null;
-    for (const c of closers) {
-      const apptConflict = appts.some((b) => {
-        if (b.b2b_closer_id !== c.id) return false;
-        if (b.status === "cancelled") return false;
-        const bs = new Date(b.scheduled_at).getTime();
-        return bs < slotEnd && bs + slotMs > slotStart.getTime();
-      });
-      if (apptConflict) continue;
-      if (c.user_id) {
-        const busy = await getBusyIntervalsForUser(
-          c.user_id,
-          new Date(slotStart.getTime() - slotMs).toISOString(),
-          new Date(slotEnd + slotMs).toISOString(),
-        );
-        const gcalConflict = busy.some((iv) => iv.start < slotEnd && iv.end > slotStart.getTime());
-        if (gcalConflict) continue;
-      }
-      picked = c;
-      break;
-    }
-    if (!picked) throw new Error("That time was just taken — pick another.");
-
-    // 5. Insert appointment as already assigned to the picked closer.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: appt, error: insErr } = await (supabaseAdmin.from("appointments") as any)
-      .insert({
-        user_id: context.userId,
-        lead_id: null,
-        type: "booking",
-        scheduled_at: slotStart.toISOString(),
-        name: leadName,
-        phone: lead.phone,
-        email: lead.email,
-        status: "assigned",
-        b2b_closer_id: picked.id,
-        timezone: data.timezone ?? null,
-        context: data.note ?? null,
-      })
-      .select("id")
-      .single();
-    if (insErr || !appt) throw new Error(insErr?.message || "Could not create appointment.");
-    const appointmentId = appt.id as string;
-
-    // 6. Zoom meeting on the picked closer's credentials (best-effort).
-    let meetingUrl: string | null = null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: creds } = await (supabaseAdmin.from("b2b_closer_zoom_credentials") as any)
-      .select("zoom_account_id, zoom_client_id, zoom_client_secret")
-      .eq("closer_id", picked.id)
-      .maybeSingle();
-    const slotMinutes = slotMs / 60_000;
-    meetingUrl = await createZoomMeetingOnCloserAccount({
-      accountId: (creds?.zoom_account_id as string | null) ?? null,
-      clientId: (creds?.zoom_client_id as string | null) ?? null,
-      clientSecret: (creds?.zoom_client_secret as string | null) ?? null,
-      topic: `${leadName} — Sales Call`,
-      start_time: slotStart.toISOString(),
-      duration: slotMinutes,
-    });
-    if (meetingUrl) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabaseAdmin.from("appointments") as any)
-        .update({ meeting_url: meetingUrl }).eq("id", appointmentId);
-    }
-
-    // 6b. Add the event to the closer's Google Calendar (best-effort).
-    if (picked.user_id) {
-      try {
-        const { createCalendarEventForUser } = await import("@/lib/googleCalendar.server");
-        const endISO = new Date(slotStart.getTime() + slotMs).toISOString();
-        const descLines = [
-          `Lead: ${leadName}`,
-          lead.email ? `Email: ${lead.email}` : null,
-          lead.phone ? `Phone: ${lead.phone}` : null,
-          lead.company ? `Company: ${lead.company}` : null,
-          meetingUrl ? `Zoom: ${meetingUrl}` : null,
-          data.note ? `\nNotes:\n${data.note}` : null,
-        ].filter(Boolean).join("\n");
-        await createCalendarEventForUser(picked.user_id, {
-          summary: `${leadName} — Sales Call`,
-          description: descLines,
-          startISO: slotStart.toISOString(),
-          endISO,
-          timezone: data.timezone ?? null,
-          attendees: lead.email ? [{ email: lead.email, displayName: leadName }] : [],
-          meetingUrl,
-        });
-      } catch (e) {
-        console.warn("[b2b-gcal-insert] failed", e);
-      }
-    }
-
-    // 7. Booking confirmation email.
-    await sendBookingConfirmationEmail({
-      appointmentId,
-      recipientEmail: lead.email,
-      leadName,
-      scheduledAt: slotStart.toISOString(),
-      meetingUrl,
-      durationMinutes: slotMinutes,
+    const { bookB2bCore } = await import("@/lib/b2b-booking.server");
+    return bookB2bCore({
+      lead: {
+        id: lead.id as string,
+        first_name: (lead.first_name as string | null) ?? null,
+        last_name: (lead.last_name as string | null) ?? null,
+        email: (lead.email as string | null) ?? null,
+        phone: (lead.phone as string | null) ?? null,
+        company: (lead.company as string | null) ?? null,
+      },
+      setterUserId: context.userId,
+      scheduledAt: data.scheduled_at,
       timezone: data.timezone ?? null,
-    });
-
-    // 7b. Notify the assigned B2B closer with the Zoom link.
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: closerRow } = await (supabaseAdmin.from("b2b_closers") as any)
-        .select("email, full_name")
-        .eq("id", picked.id)
-        .maybeSingle();
-      const closerEmail = (closerRow?.email as string | null) ?? null;
-      if (closerEmail) {
-        const { sendTransactional } = await import("@/lib/email/transactional.server");
-        const scheduledLabel = formatScheduledLabel(slotStart.toISOString(), data.timezone ?? null);
-        await sendTransactional({
-          templateName: "closer-call-closer",
-          recipientEmail: closerEmail,
-          idempotencyKey: `b2b-closer-notify-${appointmentId}`,
-          templateData: {
-            closerName: (closerRow?.full_name as string | null) ?? picked.full_name ?? null,
-            applicantName: leadName,
-            applicantEmail: lead.email,
-            applicantPhone: lead.phone,
-            scheduledAt: slotStart.toISOString(),
-            scheduledLabel,
-            meetingUrl,
-            durationMinutes: slotMinutes,
-          },
-        });
-      }
-    } catch (e) {
-      console.warn("[b2b-closer-notify] send failed", e);
-    }
-
-    // 8. Log the call outcome as "booked" on the pool lead.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabaseAdmin.from("b2b_call_attempts") as any).insert({
-      pool_lead_id: data.pool_lead_id,
-      setter_id: context.userId,
-      outcome: "booked",
       note: data.note ?? null,
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabaseAdmin.from("b2b_lead_pool") as any)
-      .update({ status: "booked", didnt_pick_up: false, last_attempt_at: new Date().toISOString() })
-      .eq("id", data.pool_lead_id);
-
-    return {
-      appointment_id: appointmentId,
-      closer_name: picked.full_name,
-      meeting_url: meetingUrl,
-    };
   });
 
 

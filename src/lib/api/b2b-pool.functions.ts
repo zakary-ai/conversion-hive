@@ -543,3 +543,74 @@ export const adminBulkImportPool = createServerFn({ method: "POST" })
     return { inserted, duplicates: dupInBatch + dupInDb + dupOnInsert, skipped: 0 };
 
   });
+
+// ---------- Setter booking link + info email ----------
+export const getMyBookingLink = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { ensureBookingSlug, bookingLinkFor } = await import("@/lib/b2b-booking.server");
+    const slug = await ensureBookingSlug(context.userId);
+    return { slug, url: bookingLinkFor(slug) };
+  });
+
+/**
+ * Emails the lead the ChatGPT-ads overview with this setter's personal
+ * booking link, and logs an "info_emailed" attempt on the lead.
+ */
+export const sendLeadInfoEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    pool_lead_id: z.string().uuid(),
+    email: z.string().trim().email().max(200).optional(),
+    note: z.string().trim().max(2000).optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: lead } = await (supabaseAdmin.from("b2b_lead_pool") as any)
+      .select("id, first_name, last_name, email, claimed_by")
+      .eq("id", data.pool_lead_id)
+      .maybeSingle();
+    if (!lead) throw new Error("Lead not found");
+    if (lead.claimed_by !== context.userId) throw new Error("Not your lead.");
+
+    const recipient = (data.email || (lead.email as string | null) || "").trim().toLowerCase();
+    if (!recipient) throw new Error("This lead has no email — add one first.");
+    if (recipient !== (lead.email as string | null)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabaseAdmin.from("b2b_lead_pool") as any).update({ email: recipient }).eq("id", lead.id);
+    }
+
+    const { ensureBookingSlug, bookingLinkFor } = await import("@/lib/b2b-booking.server");
+    const slug = await ensureBookingSlug(context.userId);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabaseAdmin.from("profiles") as any)
+      .select("full_name").eq("user_id", context.userId).maybeSingle();
+
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    const res = await sendTransactional({
+      templateName: "chatgpt-ads-info",
+      recipientEmail: recipient,
+      idempotencyKey: `b2b-info-${lead.id}-${Date.now()}`,
+      templateData: {
+        name: (lead.first_name as string | null) ?? null,
+        setterName: (profile?.full_name as string | null) ?? null,
+        bookingUrl: bookingLinkFor(slug),
+      },
+    });
+    if (!res.ok) throw new Error(res.reason === "email_suppressed" ? "That address has unsubscribed." : "Could not send the email.");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabaseAdmin.from("b2b_call_attempts") as any).insert({
+      pool_lead_id: lead.id,
+      setter_id: context.userId,
+      outcome: "info_emailed",
+      note: data.note ?? `Info email sent to ${recipient}`,
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabaseAdmin.from("b2b_lead_pool") as any)
+      .update({ last_attempt_at: new Date().toISOString() }).eq("id", lead.id);
+
+    return { ok: true, email: recipient, booking_url: bookingLinkFor(slug) };
+  });
