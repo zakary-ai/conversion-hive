@@ -9,6 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Briefcase, CheckCircle2, Clock, GraduationCap, DollarSign, ArrowRight, ListChecks, Phone, PhoneCall, Timer, RefreshCw, Mic } from "lucide-react";
 import { getMyCallStats, syncMyCalls } from "@/lib/api/calls.functions";
+import { getMyBookingLink } from "@/lib/api/b2b-pool.functions";
+import { Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -305,6 +307,38 @@ function QuoCallsCard() {
           </div>
         </>
       )}
+    </Card>
+  );
+}
+
+function BookingLinkCard() {
+  const { data } = useQuery({ queryKey: ["my-booking-link"], queryFn: () => getMyBookingLink() });
+  const url = data?.url ?? "";
+
+  const copy = async () => {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Booking link copied");
+    } catch {
+      toast.error("Couldn't copy — long-press the link to copy it manually.");
+    }
+  };
+
+  return (
+    <Card className="p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground">Your booking link</div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Share this with leads — anything booked through it is credited to you.
+          </p>
+          <div className="mt-2 text-sm font-medium break-all">{url || "Generating…"}</div>
+        </div>
+        <Button size="sm" variant="outline" disabled={!url} onClick={copy}>
+          <LinkIcon className="h-4 w-4 mr-2" /> Copy link
+        </Button>
+      </div>
     </Card>
   );
 }
