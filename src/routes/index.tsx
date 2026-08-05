@@ -51,9 +51,9 @@ function LandingPage() {
       {/* Ambient liquid-glass background */}
       <div className="relative min-h-dvh overflow-hidden">
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute -top-40 left-1/2 h-[42rem] w-[42rem] -translate-x-1/2 rounded-full bg-primary/25 blur-[140px]" />
-          <div className="absolute top-1/3 -left-40 h-[30rem] w-[30rem] rounded-full bg-purple-500/20 blur-[130px]" />
-          <div className="absolute bottom-0 -right-32 h-[34rem] w-[34rem] rounded-full bg-sky-400/15 blur-[140px]" />
+          <div className="absolute -top-40 left-1/2 h-[42rem] w-[42rem] -translate-x-1/2 rounded-full bg-primary/35 blur-[120px]" />
+          <div className="absolute top-1/3 -left-40 h-[30rem] w-[30rem] rounded-full bg-purple-500/30 blur-[120px]" />
+          <div className="absolute bottom-0 -right-32 h-[34rem] w-[34rem] rounded-full bg-sky-400/25 blur-[130px]" />
         </div>
 
         {/* Header */}
