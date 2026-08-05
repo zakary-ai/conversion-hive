@@ -125,7 +125,7 @@ function PublicBookingPage() {
             <Calendar
               mode="single"
               selected={day}
-              onSelect={(d) => { setDay(d ?? undefined); setSlot(null); }}
+              onSelect={(d: Date | undefined) => { setDay(d ?? undefined); setSlot(null); }}
               disabled={{ before: today }}
               className="[--cell-size:2.4rem]"
             />
