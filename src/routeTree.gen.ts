@@ -19,6 +19,7 @@ import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AppAuthRouteImport } from './routes/app/auth'
 import { Route as AppAuthenticatedRouteRouteImport } from './routes/app/_authenticated/route'
 import { Route as OauthGoogleCalendarReturnRouteImport } from './routes/oauth/google-calendar/return'
@@ -134,6 +135,11 @@ const IndexRoute = IndexRouteImport.update({
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookSlugRoute = BookSlugRouteImport.update({
+  id: '/book/$slug',
+  path: '/book/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAuthRoute = AppAuthRouteImport.update({
@@ -534,6 +540,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/auth': typeof AppAuthRoute
+  '/book/$slug': typeof BookSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
@@ -611,6 +618,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/auth': typeof AppAuthRoute
+  '/book/$slug': typeof BookSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
   '/app/calendar': typeof AppAuthenticatedCalendarRoute
@@ -689,6 +697,7 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/_authenticated': typeof AppAuthenticatedRouteRouteWithChildren
   '/app/auth': typeof AppAuthRoute
+  '/book/$slug': typeof BookSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/_authenticated/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
@@ -768,6 +777,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/unsubscribe'
     | '/app/auth'
+    | '/book/$slug'
     | '/email/unsubscribe'
     | '/app/admin'
     | '/api/public/confirm-booking'
@@ -845,6 +855,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/unsubscribe'
     | '/app/auth'
+    | '/book/$slug'
     | '/email/unsubscribe'
     | '/api/public/confirm-booking'
     | '/app/calendar'
@@ -922,6 +933,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/app/_authenticated'
     | '/app/auth'
+    | '/book/$slug'
     | '/email/unsubscribe'
     | '/app/_authenticated/admin'
     | '/api/public/confirm-booking'
@@ -999,6 +1011,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  BookSlugRoute: typeof BookSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicConfirmBookingRoute: typeof ApiPublicConfirmBookingRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -1090,6 +1103,13 @@ declare module '@tanstack/react-router' {
       path: '/email/unsubscribe'
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book/$slug': {
+      id: '/book/$slug'
+      path: '/book/$slug'
+      fullPath: '/book/$slug'
+      preLoaderRoute: typeof BookSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/auth': {
@@ -1718,6 +1738,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  BookSlugRoute: BookSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicConfirmBookingRoute: ApiPublicConfirmBookingRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
@@ -1741,13 +1762,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
