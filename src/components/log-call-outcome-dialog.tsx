@@ -114,6 +114,23 @@ export function LogCallOutcomeDialog({
               </div>
             </div>
           )}
+          {mode === "email" && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Sends {name} the ChatGPT ads overview plus your personal booking link, so they can
+                book a call straight onto the B2B calendar under your name.
+              </p>
+              <div>
+                <Label>Email address</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" />
+              </div>
+              <div>
+                <Label>Internal note (optional)</Label>
+                <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+              </div>
+            </div>
+          )}
+
 
           {mode !== "menu" && (
             <DialogFooter>
