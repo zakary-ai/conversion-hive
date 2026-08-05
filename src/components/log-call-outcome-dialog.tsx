@@ -73,6 +73,9 @@ export function LogCallOutcomeDialog({
               <Button className="justify-start" onClick={() => setMode("booking")}>
                 <CheckCircle2 className="h-4 w-4 mr-2" /> Book
               </Button>
+              <Button variant="outline" className="justify-start" onClick={() => setMode("email")}>
+                <Mail className="h-4 w-4 mr-2" /> Send email with information
+              </Button>
               <Button variant="outline" className="justify-start" onClick={() => setMode("callback")}>
                 <CalendarClock className="h-4 w-4 mr-2" /> Schedule callback
               </Button>
