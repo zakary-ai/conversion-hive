@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { logCallOutcome } from "@/lib/api/b2b-pool.functions";
+import { logCallOutcome, sendLeadInfoEmail } from "@/lib/api/b2b-pool.functions";
 import { B2bBookingSlotDialog } from "@/components/b2b-booking-slot-dialog";
 import { toast } from "sonner";
-import { CalendarClock, PhoneOff, Ban, CheckCircle2 } from "lucide-react";
+import { CalendarClock, PhoneOff, Ban, CheckCircle2, Mail } from "lucide-react";
 
 type Lead = {
   id: string;
@@ -21,10 +21,13 @@ export function LogCallOutcomeDialog({
   lead, open, onClose,
 }: { lead: Lead; open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
-  const [mode, setMode] = useState<"menu" | "callback" | "note" | "booking">("menu");
+  const [mode, setMode] = useState<"menu" | "callback" | "note" | "booking" | "email">("menu");
   const [pendingOutcome, setPendingOutcome] = useState<"no_answer" | "not_interested" | null>(null);
   const [note, setNote] = useState("");
   const [callbackAt, setCallbackAt] = useState<string>("");
+  const [email, setEmail] = useState(lead.email ?? "");
+
+  useEffect(() => { if (open) setEmail(lead.email ?? ""); }, [open, lead.email]);
 
   const reset = () => { setMode("menu"); setNote(""); setCallbackAt(""); setPendingOutcome(null); };
   const close = () => { reset(); onClose(); };
@@ -45,6 +48,15 @@ export function LogCallOutcomeDialog({
   const submit = useMutation({
     mutationFn: async (payload: Payload) => logCallOutcome({ data: payload }),
     onSuccess: () => { toast.success("Outcome logged"); invalidate(); close(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const sendInfo = useMutation({
+    mutationFn: async () =>
+      sendLeadInfoEmail({
+        data: { pool_lead_id: lead.id, email: email.trim() || undefined, note: note.trim() || undefined },
+      }),
+    onSuccess: (res) => { toast.success(`Info email sent to ${res.email}`); invalidate(); close(); },
     onError: (e: Error) => toast.error(e.message),
   });
 
