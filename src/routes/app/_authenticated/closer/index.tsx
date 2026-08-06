@@ -18,6 +18,7 @@ import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 import { MyAvailabilitySection } from "@/components/my-availability-section";
+import { B2bBookingAvailabilitySection } from "@/components/b2b-booking-availability-section";
 import { getMyCloserLines } from "@/lib/api/closer-availability.functions";
 import { SupportButton } from "@/components/support-button";
 
@@ -267,6 +268,8 @@ function CloserHome() {
           {shownB2c.map((b) => <CallCard key={b.id} b={b} onOutcome={() => setOutcomeFor(b)} onPreview={() => setPreviewFor(b)} />)}
         </div>
       </section>
+
+      {lines?.b2b && <B2bBookingAvailabilitySection />}
 
       {(lines?.b2b || lines?.b2c) && (
         <MyAvailabilitySection

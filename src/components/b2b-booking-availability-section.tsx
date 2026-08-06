@@ -81,6 +81,7 @@ export function B2bBookingAvailabilitySection() {
         <CloserAvailabilityEditor
           weekly={weekly}
           notes=""
+          hideNotes
           onChange={(v) => setWeekly(v.weekly)}
         />
       )}

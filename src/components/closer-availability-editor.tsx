@@ -52,11 +52,13 @@ export function CloserAvailabilityEditor({
   notes,
   onChange,
   readOnly = false,
+  hideNotes = false,
 }: {
   weekly: Weekly;
   notes: string;
   onChange: (next: { weekly: Weekly; notes: string }) => void;
   readOnly?: boolean;
+  hideNotes?: boolean;
 }) {
   const setDay = (dow: number, patch: Partial<WeeklyDay>) => {
     const next = weekly.map((d) => (d.day === dow ? { ...d, ...patch } : d));
@@ -162,6 +164,7 @@ export function CloserAvailabilityEditor({
         })}
       </div>
 
+      {!hideNotes && (
       <div>
         <label className="text-sm font-medium">Notes</label>
         <p className="text-xs text-muted-foreground mb-2">
@@ -175,6 +178,7 @@ export function CloserAvailabilityEditor({
           disabled={readOnly}
         />
       </div>
+      )}
     </div>
   );
 }
