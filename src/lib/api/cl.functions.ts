@@ -766,7 +766,7 @@ export const deleteAppointment = createServerFn({ method: "POST" })
 
 export const rescheduleAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid(), scheduled_at: z.string().datetime() }).parse)
+  .inputValidator(z.object({ id: z.string().uuid(), scheduled_at: z.string().datetime(), silent: z.boolean().optional() }).parse)
   .handler(async ({ data, context }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: appt, error: aerr } = await (context.supabase.from("appointments") as any)
