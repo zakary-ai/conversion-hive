@@ -632,7 +632,7 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const me = await findMyDmSetter(context.userId, context.claims?.email as string | undefined, "*");
-    if (meErr) console.error("[getMyDmTeam] fetch self failed:", meErr);
+    
     if (!me) throw new Error("Not a DM setter");
 
     let myStats;
