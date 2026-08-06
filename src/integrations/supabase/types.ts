@@ -396,6 +396,7 @@ export type Database = {
           zoom_account_id: string | null
           zoom_client_id: string | null
           zoom_client_secret: string | null
+          zoom_host_email: string | null
         }
         Insert: {
           closer_id: string
@@ -403,6 +404,7 @@ export type Database = {
           zoom_account_id?: string | null
           zoom_client_id?: string | null
           zoom_client_secret?: string | null
+          zoom_host_email?: string | null
         }
         Update: {
           closer_id?: string
@@ -410,6 +412,7 @@ export type Database = {
           zoom_account_id?: string | null
           zoom_client_id?: string | null
           zoom_client_secret?: string | null
+          zoom_host_email?: string | null
         }
         Relationships: [
           {

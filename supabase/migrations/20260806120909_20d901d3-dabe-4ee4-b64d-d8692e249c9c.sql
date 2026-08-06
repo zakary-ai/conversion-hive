@@ -1,0 +1,1 @@
+ALTER TABLE public.b2b_closer_zoom_credentials ADD COLUMN IF NOT EXISTS zoom_host_email text;
