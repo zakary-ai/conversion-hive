@@ -27,6 +27,37 @@ function todayKey(tz = "America/New_York") {
 
 export const DEFAULT_DM_PASSWORD = "ConversionLab1095!";
 
+/**
+ * Resolve the signed-in user's dm_setters row.
+ *
+ * Invites create the dm_setters row before/independently of the auth user, so
+ * `user_id` can stay NULL if account creation happened on a different path
+ * (e.g. the auth user already existed). That made the app claim "Not a DM
+ * setter" for a legitimately invited setter. Fall back to matching the token's
+ * email and heal `user_id` so it only ever happens once.
+ */
+async function findMyDmSetter(
+  userId: string,
+  email: string | null | undefined,
+  select = "*",
+) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: byId } = await supabaseAdmin
+    .from("dm_setters").select(select).eq("user_id", userId).maybeSingle();
+  if (byId) return byId as any;
+  const mail = (email ?? "").trim().toLowerCase();
+  if (!mail) return null;
+  const { data: byEmail } = await supabaseAdmin
+    .from("dm_setters").select("id").ilike("email", mail).is("user_id", null).maybeSingle();
+  if (!byEmail) return null;
+  await supabaseAdmin.from("dm_setters")
+    .update({ user_id: userId, updated_at: new Date().toISOString() })
+    .eq("id", (byEmail as { id: string }).id);
+  const { data: healed } = await supabaseAdmin
+    .from("dm_setters").select(select).eq("id", (byEmail as { id: string }).id).maybeSingle();
+  return (healed ?? null) as any;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Admin: CRUD DM Setters / Managers                                          */
 /* -------------------------------------------------------------------------- */
@@ -283,7 +314,7 @@ export const getMyDmStats = createServerFn({ method: "GET" })
   }).optional().parse)
   .handler(async ({ data, context }) => {
     const range = data?.from || data?.to ? { from: data?.from ?? undefined, to: data?.to ?? undefined } : undefined;
-    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name, commission_rate").eq("user_id", context.userId).maybeSingle();
+    const me = await findMyDmSetter(context.userId, context.claims?.email as string | undefined, "id, daily_target, apply_slug, full_name, commission_rate");
     if (!me) throw new Error("Not a DM setter");
     const stats = await computeStatsFor(me.id, range, Number(me.commission_rate ?? 0.075));
 
@@ -441,7 +472,7 @@ export const logDmScreenshots = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => LogImagesSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name").eq("user_id", context.userId).maybeSingle();
+    const me = await findMyDmSetter(context.userId, context.claims?.email as string | undefined, "id, daily_target, apply_slug, full_name");
     if (!me) throw new Error("Not a DM setter");
 
     const date = todayKey();
@@ -575,7 +606,7 @@ export const adjustDmDailyLog = createServerFn({ method: "POST" })
   .inputValidator(z.object({ delta: z.number().int().min(-500).max(500) }).parse)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin.from("dm_setters").select("id, daily_target, apply_slug, full_name").eq("user_id", context.userId).maybeSingle();
+    const me = await findMyDmSetter(context.userId, context.claims?.email as string | undefined, "id, daily_target, apply_slug, full_name");
     if (!me) throw new Error("Not a DM setter");
     const date = todayKey();
     const { data: existing } = await supabaseAdmin
@@ -600,8 +631,8 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me, error: meErr } = await supabaseAdmin.from("dm_setters").select("*").eq("user_id", context.userId).maybeSingle();
-    if (meErr) console.error("[getMyDmTeam] fetch self failed:", meErr);
+    const me = await findMyDmSetter(context.userId, context.claims?.email as string | undefined, "*");
+    
     if (!me) throw new Error("Not a DM setter");
 
     let myStats;
@@ -787,8 +818,7 @@ export const listMyDmBookings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me } = await supabaseAdmin
-      .from("dm_setters").select("id, is_manager").eq("user_id", context.userId).maybeSingle();
+    const me = await findMyDmSetter(context.userId, context.claims?.email as string | undefined, "id, is_manager");
     if (!me) throw new Error("Not a DM setter");
 
     // Collect setter ids: self + team (if manager)
