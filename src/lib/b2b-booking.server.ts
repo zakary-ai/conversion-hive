@@ -78,6 +78,7 @@ export async function createZoomMeetingOnCloserAccount(input: {
   accountId: string | null;
   clientId: string | null;
   clientSecret: string | null;
+  hostEmail?: string | null;
   topic: string;
   start_time: string;
   duration: number;
@@ -85,7 +86,9 @@ export async function createZoomMeetingOnCloserAccount(input: {
   try {
     const token = await getCloserZoomAccessToken(input);
     if (!token) return null;
-    const res = await fetch("https://api.zoom.us/v2/users/me/meetings", {
+    const hostPath = input.hostEmail?.trim() ? encodeURIComponent(input.hostEmail.trim()) : "me";
+    const res = await fetch(`https://api.zoom.us/v2/users/${hostPath}/meetings`, {
+
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -427,13 +430,15 @@ export async function bookB2bCore(input: {
   // 4. Zoom meeting (best-effort).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: creds } = await (supabaseAdmin.from("b2b_closer_zoom_credentials") as any)
-    .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+    .select("zoom_account_id, zoom_client_id, zoom_client_secret, zoom_host_email")
     .eq("closer_id", picked.id).maybeSingle();
   const slotMinutes = slotMs / 60_000;
   const meetingUrl = await createZoomMeetingOnCloserAccount({
     accountId: (creds?.zoom_account_id as string | null) ?? null,
     clientId: (creds?.zoom_client_id as string | null) ?? null,
     clientSecret: (creds?.zoom_client_secret as string | null) ?? null,
+    hostEmail: (creds?.zoom_host_email as string | null) ?? null,
+
     topic: `${leadName} — Sales Call`,
     start_time: slotStart.toISOString(),
     duration: slotMinutes,

@@ -151,10 +151,11 @@ export const updateB2bCloser = createServerFn({ method: "POST" })
     zoom_account_id: z.string().trim().max(200).nullable().optional(),
     zoom_client_id: z.string().trim().max(200).nullable().optional(),
     zoom_client_secret: z.string().trim().max(500).nullable().optional(),
+    zoom_host_email: z.string().trim().max(320).nullable().optional(),
   }).parse)
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { id, zoom_account_id, zoom_client_id, zoom_client_secret, ...rest } = data;
+    const { id, zoom_account_id, zoom_client_id, zoom_client_secret, zoom_host_email, ...rest } = data;
     const patch: { full_name?: string; active?: boolean } = {};
     if (rest.full_name !== undefined) patch.full_name = rest.full_name;
     if (rest.active !== undefined) patch.active = rest.active;
@@ -163,23 +164,28 @@ export const updateB2bCloser = createServerFn({ method: "POST" })
       const { error } = await (context.supabase.from("b2b_closers") as any).update(patch).eq("id", id);
       if (error) throw new Error(error.message);
     }
-    const hasZoom = zoom_account_id !== undefined || zoom_client_id !== undefined || zoom_client_secret !== undefined;
+    const hasZoom =
+      zoom_account_id !== undefined || zoom_client_id !== undefined ||
+      zoom_client_secret !== undefined || zoom_host_email !== undefined;
     if (hasZoom) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const allCleared = zoom_account_id === null && zoom_client_id === null && zoom_client_secret === null;
+      const allCleared =
+        zoom_account_id === null && zoom_client_id === null && zoom_client_secret === null;
       if (allCleared) {
         await supabaseAdmin.from("b2b_closer_zoom_credentials").delete().eq("closer_id", id);
       } else {
-        const upsert: { closer_id: string; zoom_account_id?: string | null; zoom_client_id?: string | null; zoom_client_secret?: string | null; updated_at: string } = { closer_id: id, updated_at: new Date().toISOString() };
+        const upsert: { closer_id: string; zoom_account_id?: string | null; zoom_client_id?: string | null; zoom_client_secret?: string | null; zoom_host_email?: string | null; updated_at: string } = { closer_id: id, updated_at: new Date().toISOString() };
         if (zoom_account_id !== undefined) upsert.zoom_account_id = zoom_account_id;
         if (zoom_client_id !== undefined) upsert.zoom_client_id = zoom_client_id;
         if (zoom_client_secret !== undefined) upsert.zoom_client_secret = zoom_client_secret;
+        if (zoom_host_email !== undefined) upsert.zoom_host_email = zoom_host_email;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabaseAdmin.from("b2b_closer_zoom_credentials") as any)
           .upsert(upsert, { onConflict: "closer_id" });
         if (error) throw new Error(error.message);
       }
     }
+
     return { ok: true };
   });
 
@@ -201,14 +207,16 @@ export const getB2bCloserZoomCreds = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("b2b_closer_zoom_credentials")
-      .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+      .select("zoom_account_id, zoom_client_id, zoom_client_secret, zoom_host_email")
       .eq("closer_id", data.closer_id)
       .maybeSingle();
     return {
       zoom_account_id: (row?.zoom_account_id as string | null) ?? null,
       zoom_client_id: (row?.zoom_client_id as string | null) ?? null,
       zoom_client_secret: (row?.zoom_client_secret as string | null) ?? null,
+      zoom_host_email: ((row as { zoom_host_email?: string | null } | null)?.zoom_host_email as string | null) ?? null,
     };
+
   });
 
 export const listB2bClosersZoomStatus = createServerFn({ method: "GET" })

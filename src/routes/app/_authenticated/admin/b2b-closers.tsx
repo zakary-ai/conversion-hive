@@ -149,11 +149,13 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
   const [accountId, setAccountId] = useState("");
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
+  const [hostEmail, setHostEmail] = useState("");
   useEffect(() => {
     if (creds) {
       setAccountId(creds.zoom_account_id ?? "");
       setClientId(creds.zoom_client_id ?? "");
       setClientSecret(creds.zoom_client_secret ?? "");
+      setHostEmail(creds.zoom_host_email ?? "");
     }
   }, [creds]);
 
@@ -164,6 +166,7 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
         zoom_account_id: accountId.trim() || null,
         zoom_client_id: clientId.trim() || null,
         zoom_client_secret: clientSecret.trim() || null,
+        zoom_host_email: hostEmail.trim() || null,
       },
     }),
     onSuccess: () => {
@@ -177,7 +180,7 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
 
   const clear = useMutation({
     mutationFn: () => updateB2bCloser({
-      data: { id: closer.id, zoom_account_id: null, zoom_client_id: null, zoom_client_secret: null },
+      data: { id: closer.id, zoom_account_id: null, zoom_client_id: null, zoom_client_secret: null, zoom_host_email: null },
     }),
     onSuccess: () => {
       toast.success("Zoom credentials removed");
@@ -191,7 +194,9 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        From the B2B closer's Zoom Server-to-Server OAuth app. B2B meetings will be created on this account.
+        From a Zoom Server-to-Server OAuth app. If this closer is on someone else's Zoom
+        account, paste that account's credentials and set the host email below — meetings
+        are then created on this closer's own Zoom user.
       </p>
       <div>
         <Label>Account ID</Label>
@@ -205,6 +210,14 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
         <Label>Client Secret</Label>
         <Input type="password" value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} placeholder="Zoom Client Secret" />
       </div>
+      <div>
+        <Label>Host email (optional)</Label>
+        <Input type="email" value={hostEmail} onChange={(e) => setHostEmail(e.target.value)} placeholder="closer@yourcompany.com" />
+        <p className="text-xs text-muted-foreground mt-1">
+          Leave blank to host on the app owner's Zoom user. Requires the shared app to have
+          admin meeting scopes (meeting:write:admin).
+        </p>
+      </div>
       <div className="flex gap-2 pt-2">
         <Button onClick={() => save.mutate()} disabled={save.isPending} className="flex-1">
           <Save className="h-4 w-4 mr-1" /> Save
@@ -216,3 +229,4 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
     </div>
   );
 }
+
