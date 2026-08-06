@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listB2bClosers, createB2bCloser, updateB2bCloser, deleteB2bCloser,
-  resendB2bCloserInvite, getB2bCloserZoomCreds, listB2bClosersZoomStatus,
+  resendB2bCloserInvite, getB2bCloserZoomCreds, listB2bClosersZoomStatus, reorderB2bClosers,
 } from "@/lib/api/b2b-closers.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Save, UserPlus, KeyRound, BarChart3 } from "lucide-react";
+import { Trash2, Save, UserPlus, KeyRound, BarChart3, ArrowUp, ArrowDown, ListOrdered } from "lucide-react";
 import { B2bCloserDetailDialog } from "@/components/admin/b2b-closer-detail-dialog";
 
 export const Route = createFileRoute("/app/_authenticated/admin/b2b-closers")({
@@ -63,11 +63,13 @@ function B2bClosersPage() {
         </Dialog>
       </div>
 
+      {closers.length > 1 && <PriorityList closers={closers as CloserRowT[]} />}
+
       <div className="grid gap-3">
         {closers.length === 0 && (
           <Card className="p-8 text-center text-sm text-muted-foreground">No B2B closers yet. Invite one to get started.</Card>
         )}
-        {closers.map((c) => <CloserRow key={c.id} closer={c as CloserRowT} hasZoom={!!zoomStatus[c.id]} />)}
+        {closers.map((c, i) => <CloserRow key={c.id} closer={c as CloserRowT} rank={i + 1} hasZoom={!!zoomStatus[c.id]} />)}
       </div>
     </div>
   );
@@ -78,9 +80,78 @@ type CloserRowT = {
   full_name: string;
   email: string;
   active: boolean;
+  priority?: number | null;
 };
 
-function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }) {
+function PriorityList({ closers }: { closers: CloserRowT[] }) {
+  const qc = useQueryClient();
+  const [order, setOrder] = useState<string[]>(closers.map((c) => c.id));
+  const key = closers.map((c) => c.id).join("|");
+  useEffect(() => { setOrder(closers.map((c) => c.id)); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [key]);
+
+  const byId = new Map(closers.map((c) => [c.id, c]));
+  const move = (idx: number, dir: -1 | 1) => {
+    setOrder((o) => {
+      const next = [...o];
+      const t = idx + dir;
+      if (t < 0 || t >= next.length) return o;
+      [next[idx], next[t]] = [next[t], next[idx]];
+      return next;
+    });
+  };
+  const dirty = order.join("|") !== key;
+
+  const save = useMutation({
+    mutationFn: () => reorderB2bClosers({ data: { ids: order } }),
+    onSuccess: () => {
+      toast.success("Priority order saved");
+      qc.invalidateQueries({ queryKey: ["b2b-closers"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div>
+        <div className="flex items-center gap-2 font-medium">
+          <ListOrdered className="h-4 w-4" /> Assignment priority
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          When a lead books a B2B slot, the highest closer on this list who is active, free on their
+          Google Calendar, and inside their own booking hours gets the call.
+        </p>
+      </div>
+      <div className="divide-y divide-border rounded-lg border border-border">
+        {order.map((id, idx) => {
+          const c = byId.get(id);
+          if (!c) return null;
+          return (
+            <div key={id} className="flex items-center gap-3 p-2.5">
+              <span className="w-6 text-center text-sm font-semibold text-muted-foreground">{idx + 1}</span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{c.full_name}</div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {c.active ? c.email : "Inactive — skipped"}
+                </div>
+              </div>
+              <Button size="icon" variant="ghost" disabled={idx === 0} onClick={() => move(idx, -1)} aria-label="Move up">
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="ghost" disabled={idx === order.length - 1} onClick={() => move(idx, 1)} aria-label="Move down">
+                <ArrowDown className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+      <Button className="w-full" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
+        <Save className="h-4 w-4 mr-1" /> {save.isPending ? "Saving…" : "Save priority order"}
+      </Button>
+    </Card>
+  );
+}
+
+function CloserRow({ closer, rank, hasZoom }: { closer: CloserRowT; rank: number; hasZoom: boolean }) {
   const qc = useQueryClient();
   const [editZoom, setEditZoom] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -102,7 +173,9 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }
   return (
     <Card className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <button type="button" onClick={() => setDetailOpen(true)} className="min-w-0 text-left group">
-        <div className="font-medium truncate text-primary group-hover:underline">{closer.full_name}</div>
+        <div className="font-medium truncate text-primary group-hover:underline">
+          <span className="text-muted-foreground mr-1.5 font-normal">#{rank}</span>{closer.full_name}
+        </div>
         <div className="text-xs text-muted-foreground truncate">{closer.email}</div>
         <div className="text-xs mt-1">
           <span className={hasZoom ? "text-emerald-600" : "text-amber-600"}>
