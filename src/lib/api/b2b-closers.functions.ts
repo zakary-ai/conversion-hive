@@ -303,3 +303,74 @@ export const getB2bCloserDetail = createServerFn({ method: "GET" })
       }>,
     };
   });
+
+// ---------- Self-service: my own B2B booking availability ----------
+const WeeklySchema = z.array(
+  z.object({
+    day: z.number().int().min(0).max(6),
+    enabled: z.boolean(),
+    ranges: z.array(
+      z.object({
+        start_minute: z.number().int().min(0).max(1439),
+        end_minute: z.number().int().min(1).max(1440),
+      }),
+    ),
+  }),
+);
+
+export const getMyB2bBookingAvailability = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: closer } = await (context.supabase.from("b2b_closers") as any)
+      .select("id").eq("user_id", context.userId).maybeSingle();
+    if (!closer) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: rows } = await (context.supabase.from("b2b_closer_availability_rules") as any)
+      .select("day_of_week, start_minute, end_minute").eq("closer_id", closer.id);
+    const weekly = Array.from({ length: 7 }, (_, i) => ({
+      day: i,
+      enabled: false,
+      ranges: [] as Array<{ start_minute: number; end_minute: number }>,
+    }));
+    for (const r of (rows ?? []) as Array<{ day_of_week: number; start_minute: number; end_minute: number }>) {
+      weekly[r.day_of_week].enabled = true;
+      weekly[r.day_of_week].ranges.push({ start_minute: r.start_minute, end_minute: r.end_minute });
+    }
+    for (const d of weekly) d.ranges.sort((a, b) => a.start_minute - b.start_minute);
+    return { closer_id: closer.id as string, weekly };
+  });
+
+export const saveMyB2bBookingAvailability = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ weekly: WeeklySchema }).parse)
+  .handler(async ({ data, context }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: closer } = await (context.supabase.from("b2b_closers") as any)
+      .select("id").eq("user_id", context.userId).maybeSingle();
+    if (!closer) throw new Error("You aren't set up as a B2B closer.");
+    const rules: Array<{ closer_id: string; day_of_week: number; start_minute: number; end_minute: number }> = [];
+    for (const d of data.weekly) {
+      if (!d.enabled) continue;
+      for (const r of d.ranges) {
+        if (r.end_minute <= r.start_minute) continue;
+        rules.push({
+          closer_id: closer.id as string,
+          day_of_week: d.day,
+          start_minute: r.start_minute,
+          end_minute: r.end_minute,
+        });
+      }
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const del = await (supabaseAdmin.from("b2b_closer_availability_rules") as any)
+      .delete().eq("closer_id", closer.id);
+    if (del.error) throw new Error(del.error.message);
+    if (rules.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ins = await (supabaseAdmin.from("b2b_closer_availability_rules") as any).insert(rules);
+      if (ins.error) throw new Error(ins.error.message);
+    }
+    return { ok: true, count: rules.length };
+  });
