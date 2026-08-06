@@ -794,7 +794,9 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
 
     let newMeetingUrl: string | null | undefined = undefined;
     const assignedCloserId = (appt.b2b_closer_id as string | null) ?? (appt.assigned_closer_id as string | null);
-    if (appt.type === "booking" && assignedCloserId) {
+    // Silent reschedules keep the existing meeting link (the lead isn't notified,
+    // so the link they already have must keep working).
+    if (!data.silent && appt.type === "booking" && assignedCloserId) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const credsTable = appt.b2b_closer_id ? "b2b_closer_zoom_credentials" : "closer_zoom_credentials";
       const { data: creds } = await supabaseAdmin
@@ -824,7 +826,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
     const { error } = await (context.supabase.from("appointments") as any).update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    if (appt.type === "booking" && assignedCloserId && appt.email) {
+    if (!data.silent && appt.type === "booking" && assignedCloserId && appt.email) {
       await sendBookingConfirmationEmail({
         appointmentId: data.id,
         recipientEmail: appt.email,
