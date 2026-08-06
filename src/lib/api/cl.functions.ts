@@ -774,7 +774,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
 
     const slotMinutes = await getSlotMinutes();
-    if (appt.type === "booking") {
+    if (!data.silent && appt.type === "booking") {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: clash } = await supabaseAdmin.from("appointments")
         .select("id, assigned_closer_id, b2b_closer_id, status")
