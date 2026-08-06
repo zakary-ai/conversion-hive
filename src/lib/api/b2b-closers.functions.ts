@@ -207,14 +207,16 @@ export const getB2bCloserZoomCreds = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("b2b_closer_zoom_credentials")
-      .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+      .select("zoom_account_id, zoom_client_id, zoom_client_secret, zoom_host_email")
       .eq("closer_id", data.closer_id)
       .maybeSingle();
     return {
       zoom_account_id: (row?.zoom_account_id as string | null) ?? null,
       zoom_client_id: (row?.zoom_client_id as string | null) ?? null,
       zoom_client_secret: (row?.zoom_client_secret as string | null) ?? null,
+      zoom_host_email: ((row as { zoom_host_email?: string | null } | null)?.zoom_host_email as string | null) ?? null,
     };
+
   });
 
 export const listB2bClosersZoomStatus = createServerFn({ method: "GET" })
