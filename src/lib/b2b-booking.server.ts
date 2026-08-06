@@ -194,6 +194,19 @@ export async function computeB2bSlots(input: { date: string; tz?: string }): Pro
   const closerIds = closerRows.map((c) => c.id);
   if (closerIds.length === 0) return [];
 
+  // Per-closer availability windows (EST). A closer with no rows is treated as
+  // available across the whole global window.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: closerRules } = await (supabaseAdmin.from("b2b_closer_availability_rules") as any)
+    .select("closer_id, day_of_week, start_minute, end_minute")
+    .in("closer_id", closerIds);
+  const rulesByCloser = new Map<string, Array<{ day_of_week: number; start_minute: number; end_minute: number }>>();
+  for (const r of ((closerRules ?? []) as Array<{ closer_id: string; day_of_week: number; start_minute: number; end_minute: number }>)) {
+    const arr = rulesByCloser.get(r.closer_id) ?? [];
+    arr.push(r);
+    rulesByCloser.set(r.closer_id, arr);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: bookings } = await (supabaseAdmin.from("appointments") as any)
     .select("scheduled_at, b2b_closer_id, status")
@@ -241,6 +254,13 @@ export async function computeB2bSlots(input: { date: string; tz?: string }): Pro
         const slotEnd = t + slotMs;
         let availableClosers = 0;
         for (const cid of closerIds) {
+          const own = rulesByCloser.get(cid);
+          if (own && own.length > 0) {
+            const inOwnWindow = own.some(
+              (r) => r.day_of_week === dow && mm >= r.start_minute && mm + SLOT <= r.end_minute,
+            );
+            if (!inOwnWindow) continue;
+          }
           const apptConflict = allBookings.some((b) => {
             if (b.b2b_closer_id !== cid) return false;
             if (b.status === "cancelled") return false;
@@ -341,8 +361,28 @@ export async function bookB2bCore(input: {
 
   const { getBusyIntervalsForUser } = await import("@/lib/googleCalendar.server");
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: pickRules } = await (supabaseAdmin.from("b2b_closer_availability_rules") as any)
+    .select("closer_id, day_of_week, start_minute, end_minute")
+    .in("closer_id", closers.map((c) => c.id));
+  const pickRulesByCloser = new Map<string, Array<{ day_of_week: number; start_minute: number; end_minute: number }>>();
+  for (const r of ((pickRules ?? []) as Array<{ closer_id: string; day_of_week: number; start_minute: number; end_minute: number }>)) {
+    const arr = pickRulesByCloser.get(r.closer_id) ?? [];
+    arr.push(r);
+    pickRulesByCloser.set(r.closer_id, arr);
+  }
+
   let picked: { id: string; user_id: string | null; full_name: string | null } | null = null;
   for (const c of closers) {
+    const own = pickRulesByCloser.get(c.id);
+    if (own && own.length > 0) {
+      const inOwnWindow = own.some(
+        (r) => r.day_of_week === dow
+          && slotMinuteOfDay >= r.start_minute
+          && slotMinuteOfDay + slotMs / 60_000 <= r.end_minute,
+      );
+      if (!inOwnWindow) continue;
+    }
     const apptConflict = appts.some((b) => {
       if (b.b2b_closer_id !== c.id) return false;
       if (b.status === "cancelled") return false;
