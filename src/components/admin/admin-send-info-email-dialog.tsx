@@ -70,7 +70,7 @@ export function AdminSendInfoEmailButton() {
                   <SelectValue placeholder={setters.isLoading ? "Loading setters…" : "Select a setter"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {(setters.data?.rows ?? []).map((s) => (
+                  {((setters.data?.rows ?? []) as { user_id: string; full_name: string }[]).map((s) => (
                     <SelectItem key={s.user_id} value={s.user_id}>{s.full_name}</SelectItem>
                   ))}
                   {setters.data && setters.data.rows.length === 0 && (
