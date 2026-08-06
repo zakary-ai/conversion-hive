@@ -78,6 +78,7 @@ export async function createZoomMeetingOnCloserAccount(input: {
   accountId: string | null;
   clientId: string | null;
   clientSecret: string | null;
+  hostEmail?: string | null;
   topic: string;
   start_time: string;
   duration: number;
@@ -85,7 +86,9 @@ export async function createZoomMeetingOnCloserAccount(input: {
   try {
     const token = await getCloserZoomAccessToken(input);
     if (!token) return null;
-    const res = await fetch("https://api.zoom.us/v2/users/me/meetings", {
+    const hostPath = input.hostEmail?.trim() ? encodeURIComponent(input.hostEmail.trim()) : "me";
+    const res = await fetch(`https://api.zoom.us/v2/users/${hostPath}/meetings`, {
+
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
