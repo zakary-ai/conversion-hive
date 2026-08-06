@@ -340,8 +340,9 @@ export async function bookB2bCore(input: {
   // 2. Eligible closers: active + connected Google Calendar.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: closerRows } = await (supabaseAdmin.from("b2b_closers") as any)
-    .select("id, user_id, full_name").eq("active", true).order("id", { ascending: true });
-  const allActive = ((closerRows ?? []) as Array<{ id: string; user_id: string | null; full_name: string | null }>);
+    .select("id, user_id, full_name, priority").eq("active", true)
+    .order("priority", { ascending: true }).order("created_at", { ascending: true });
+  const allActive = ((closerRows ?? []) as Array<{ id: string; user_id: string | null; full_name: string | null; priority?: number | null }>);
   if (allActive.length === 0) throw new Error("No B2B closers are set up yet.");
 
   const activeUserIds = allActive.map((c) => c.user_id).filter((v): v is string => !!v);
@@ -375,7 +376,7 @@ export async function bookB2bCore(input: {
     pickRulesByCloser.set(r.closer_id, arr);
   }
 
-  let picked: { id: string; user_id: string | null; full_name: string | null } | null = null;
+  let picked: { id: string; user_id: string | null; full_name: string | null; priority?: number | null } | null = null;
   for (const c of closers) {
     const own = pickRulesByCloser.get(c.id);
     if (own && own.length > 0) {

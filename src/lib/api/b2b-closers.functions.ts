@@ -17,7 +17,7 @@ export const listB2bClosers = createServerFn({ method: "GET" })
     await assertAdmin(context);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (context.supabase.from("b2b_closers") as any)
-      .select("*").order("created_at", { ascending: false });
+      .select("*").order("priority", { ascending: true }).order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as Array<{ id: string; user_id: string | null; full_name: string; email: string; active: boolean; created_at: string; updated_at: string }>;
   });
@@ -142,12 +142,27 @@ export const resendB2bCloserInvite = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const reorderB2bClosers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ ids: z.array(z.string().uuid()).min(1).max(200) }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    for (let i = 0; i < data.ids.length; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (context.supabase.from("b2b_closers") as any)
+        .update({ priority: i + 1 }).eq("id", data.ids[i]);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
 export const updateB2bCloser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({
     id: z.string().uuid(),
     full_name: z.string().trim().min(1).max(200).optional(),
     active: z.boolean().optional(),
+    priority: z.number().int().min(1).max(999).optional(),
     zoom_account_id: z.string().trim().max(200).nullable().optional(),
     zoom_client_id: z.string().trim().max(200).nullable().optional(),
     zoom_client_secret: z.string().trim().max(500).nullable().optional(),
@@ -156,9 +171,10 @@ export const updateB2bCloser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { id, zoom_account_id, zoom_client_id, zoom_client_secret, zoom_host_email, ...rest } = data;
-    const patch: { full_name?: string; active?: boolean } = {};
+    const patch: { full_name?: string; active?: boolean; priority?: number } = {};
     if (rest.full_name !== undefined) patch.full_name = rest.full_name;
     if (rest.active !== undefined) patch.active = rest.active;
+    if (rest.priority !== undefined) patch.priority = rest.priority;
     if (Object.keys(patch).length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (context.supabase.from("b2b_closers") as any).update(patch).eq("id", id);
