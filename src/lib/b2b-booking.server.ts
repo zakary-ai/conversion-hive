@@ -440,7 +440,7 @@ export async function bookB2bCore(input: {
     clientSecret: (creds?.zoom_client_secret as string | null) ?? null,
     hostEmail: (creds?.zoom_host_email as string | null) ?? null,
 
-    topic: `${leadName} — Sales Call`,
+    topic: `${leadName} — Discovery Call`,
     start_time: slotStart.toISOString(),
     duration: slotMinutes,
   });
@@ -462,7 +462,7 @@ export async function bookB2bCore(input: {
         input.note ? `\nNotes:\n${input.note}` : null,
       ].filter(Boolean).join("\n");
       await createCalendarEventForUser(picked.user_id, {
-        summary: `${leadName} — Sales Call`,
+        summary: `${leadName} — Discovery Call`,
         description: descLines,
         startISO: slotStart.toISOString(),
         endISO: new Date(slotStart.getTime() + slotMs).toISOString(),

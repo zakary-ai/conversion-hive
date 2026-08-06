@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/public/hooks/backfill-gcal")({
             appt.context ? `\nNotes:\n${appt.context}` : null,
           ].filter(Boolean).join("\n");
           const eventId = await createCalendarEventForUser(closerUserId, {
-            summary: `${appt.name} — Sales Call`,
+            summary: `${appt.name} — Discovery Call`,
             description: descLines,
             startISO: start.toISOString(),
             endISO,
@@ -82,7 +82,7 @@ export const Route = createFileRoute("/api/public/hooks/backfill-gcal")({
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    summary: `${appt.name} — Sales Call`,
+                    summary: `${appt.name} — Discovery Call`,
                     description: descLines,
                     start: { dateTime: start.toISOString(), timeZone: appt.timezone || "UTC" },
                     end: { dateTime: endISO, timeZone: appt.timezone || "UTC" },
