@@ -27,6 +27,37 @@ function todayKey(tz = "America/New_York") {
 
 export const DEFAULT_DM_PASSWORD = "ConversionLab1095!";
 
+/**
+ * Resolve the signed-in user's dm_setters row.
+ *
+ * Invites create the dm_setters row before/independently of the auth user, so
+ * `user_id` can stay NULL if account creation happened on a different path
+ * (e.g. the auth user already existed). That made the app claim "Not a DM
+ * setter" for a legitimately invited setter. Fall back to matching the token's
+ * email and heal `user_id` so it only ever happens once.
+ */
+async function findMyDmSetter(
+  userId: string,
+  email: string | null | undefined,
+  select = "*",
+) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: byId } = await supabaseAdmin
+    .from("dm_setters").select(select).eq("user_id", userId).maybeSingle();
+  if (byId) return byId as any;
+  const mail = (email ?? "").trim().toLowerCase();
+  if (!mail) return null;
+  const { data: byEmail } = await supabaseAdmin
+    .from("dm_setters").select("id").ilike("email", mail).is("user_id", null).maybeSingle();
+  if (!byEmail) return null;
+  await supabaseAdmin.from("dm_setters")
+    .update({ user_id: userId, updated_at: new Date().toISOString() })
+    .eq("id", (byEmail as { id: string }).id);
+  const { data: healed } = await supabaseAdmin
+    .from("dm_setters").select(select).eq("id", (byEmail as { id: string }).id).maybeSingle();
+  return (healed ?? null) as any;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Admin: CRUD DM Setters / Managers                                          */
 /* -------------------------------------------------------------------------- */
