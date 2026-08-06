@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { B2bLeadDetailDialog } from "@/components/b2b-lead-detail-dialog";
+import { AdminSendInfoEmailButton } from "@/components/admin/admin-send-info-email-dialog";
 import { parseCsv } from "@/lib/csv";
 import { Upload, Loader2, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -55,6 +56,7 @@ function AdminPoolPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <PageHeader title="B2B Lead Pool" description={`${total} leads · shared across all setters`} />
         <div className="flex gap-2 flex-wrap">
+          <AdminSendInfoEmailButton />
           <ExportCsvButton />
           <CsvImportButton />
         </div>

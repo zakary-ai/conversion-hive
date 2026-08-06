@@ -614,3 +614,63 @@ export const sendLeadInfoEmail = createServerFn({ method: "POST" })
 
     return { ok: true, email: recipient, booking_url: bookingLinkFor(slug) };
   });
+
+// ---------- Admin: send the 1-pager to any address, crediting a chosen setter ----------
+export const adminListB2bSetters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: roles } = await (supabaseAdmin.from("user_roles") as any)
+      .select("user_id").eq("role", "b2b_setter");
+    const ids = (roles ?? []).map((r: { user_id: string }) => r.user_id);
+    if (!ids.length) return { rows: [] as { user_id: string; full_name: string; email: string | null }[] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profs } = await (supabaseAdmin.from("profiles") as any)
+      .select("user_id, full_name, email").in("user_id", ids);
+    const rows = (profs ?? [])
+      .map((p: { user_id: string; full_name: string | null; email: string | null }) => ({
+        user_id: p.user_id,
+        full_name: p.full_name || p.email || "Setter",
+        email: p.email ?? null,
+      }))
+      .sort((a: { full_name: string }, b: { full_name: string }) => a.full_name.localeCompare(b.full_name));
+    return { rows };
+  });
+
+export const adminSendInfoEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    email: z.string().trim().email().max(200),
+    name: z.string().trim().max(120).optional(),
+    setter_user_id: z.string().uuid(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (supabaseAdmin.from("profiles") as any)
+      .select("full_name").eq("user_id", data.setter_user_id).maybeSingle();
+
+    const { ensureBookingSlug, bookingLinkFor } = await import("@/lib/b2b-booking.server");
+    const slug = await ensureBookingSlug(data.setter_user_id);
+    const bookingUrl = bookingLinkFor(slug);
+
+    const recipient = data.email.toLowerCase();
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    const res = await sendTransactional({
+      templateName: "chatgpt-ads-info",
+      recipientEmail: recipient,
+      idempotencyKey: `b2b-info-admin-${recipient}-${Date.now()}`,
+      templateData: {
+        name: data.name || null,
+        setterName: (profile?.full_name as string | null) ?? null,
+        bookingUrl,
+      },
+    });
+    if (!res.ok) {
+      throw new Error(res.reason === "email_suppressed" ? "That address has unsubscribed." : "Could not send the email.");
+    }
+    return { ok: true, email: recipient, booking_url: bookingUrl };
+  });

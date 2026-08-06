@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-const convsOpts = (tagId: string | null) => queryOptions({
+export const convsOpts = (tagId: string | null) => queryOptions({
   queryKey: ["ob-convs", tagId ?? "all"],
   queryFn: () => obListConversations({ data: { tagId: tagId ?? undefined } }),
 });
