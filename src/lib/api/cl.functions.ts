@@ -806,7 +806,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
         accountId: (creds?.zoom_account_id as string | null) ?? null,
         clientId: (creds?.zoom_client_id as string | null) ?? null,
         clientSecret: (creds?.zoom_client_secret as string | null) ?? null,
-        topic: `${appt.name} — Sales Call`,
+        topic: `${appt.name} — Discovery Call`,
         start_time: data.scheduled_at,
         duration: slotMinutes,
       });
@@ -921,7 +921,7 @@ export const assignB2bCloser = createServerFn({ method: "POST" })
       accountId: (creds?.zoom_account_id as string | null) ?? null,
       clientId: (creds?.zoom_client_id as string | null) ?? null,
       clientSecret: (creds?.zoom_client_secret as string | null) ?? null,
-      topic: `${appt.name} — Sales Call`,
+      topic: `${appt.name} — Discovery Call`,
       start_time: appt.scheduled_at as string,
       duration: slotMinutes,
     });
