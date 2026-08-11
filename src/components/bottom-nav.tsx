@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Users, Briefcase, Calendar as CalendarIcon, Settings,
-  GraduationCap, UserCog, CalendarCheck, UserPlus, DollarSign, MessageCircle, Camera, Mic,
+  GraduationCap, UserCog, CalendarCheck, UserPlus, DollarSign, MessageCircle, Camera, Mic, Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminChannel } from "@/components/app-sidebar";
