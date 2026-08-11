@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Phone, Mail, Building2, Linkedin, MapPin, PhoneCall, Save } from "lucide-react";
 import { listCallsForPoolLead, startBridgeCall } from "@/lib/api/calls.functions";
 import { updatePoolLeadNotes } from "@/lib/api/b2b-pool.functions";
+import { justcallDialLead } from "@/lib/api/justcall.functions";
 import { toast } from "sonner";
 
 function normalizeE164(input: string): string {
@@ -18,22 +19,18 @@ function normalizeE164(input: string): string {
   return "+" + d;
 }
 
-async function callViaQuo(poolLeadId: string, phone: string) {
+async function callViaJustCall(poolLeadId: string, phone: string) {
+  try {
+    await justcallDialLead({ data: { pool_lead_id: poolLeadId } });
+    toast.success("Dialing in JustCall — pick up your JustCall app");
+    return;
+  } catch (e) {
+    toast.error((e as Error).message);
+  }
+  // Fallback: local dialer so the setter is never blocked.
   const to = normalizeE164(phone);
   startBridgeCall({ data: { pool_lead_id: poolLeadId } }).catch(() => {});
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile) {
-    const deep = `openphone://call?to=${encodeURIComponent(to)}`;
-    const fallback = `tel:${to}`;
-    const timer = setTimeout(() => { window.location.href = fallback; }, 1200);
-    const onHide = () => { clearTimeout(timer); document.removeEventListener("visibilitychange", onHide); };
-    document.addEventListener("visibilitychange", onHide);
-    window.location.href = deep;
-  } else {
-    const url = `https://my.openphone.com/inbox?dial=${encodeURIComponent(to)}`;
-    const w = window.open(url, "_blank", "noopener,noreferrer");
-    if (!w) toast.error("Popup blocked — allow popups to open Quo");
-  }
+  window.location.href = `tel:${to}`;
 }
 
 export function B2bLeadDetailDialog({
@@ -154,7 +151,7 @@ export function B2bLeadDetailDialog({
             {showActions && (
               <div className="flex justify-end gap-2 pt-4 flex-wrap">
                 <Button variant="outline" onClick={onClose}>Close</Button>
-                <Button variant="outline" disabled={!lead.phone} onClick={() => lead.phone && callViaQuo(lead.id, lead.phone)}>
+                <Button variant="outline" disabled={!lead.phone} onClick={() => lead.phone && callViaJustCall(lead.id, lead.phone)}>
                   <PhoneCall className="h-4 w-4 mr-1" /> Call
                 </Button>
                 {onLogOutcome && <Button onClick={onLogOutcome}>Log call outcome</Button>}

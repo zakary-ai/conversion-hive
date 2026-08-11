@@ -51,6 +51,7 @@ import { Route as AppAuthenticatedB2bRecordingsRouteImport } from './routes/app/
 import { Route as AppAuthenticatedB2bPoolRouteImport } from './routes/app/_authenticated/b2b.pool'
 import { Route as AppAuthenticatedB2bLeadsRouteImport } from './routes/app/_authenticated/b2b.leads'
 import { Route as AppAuthenticatedB2bDidntPickUpRouteImport } from './routes/app/_authenticated/b2b.didnt-pick-up'
+import { Route as AppAuthenticatedB2bDialerRouteImport } from './routes/app/_authenticated/b2b.dialer'
 import { Route as AppAuthenticatedB2bCallbacksRouteImport } from './routes/app/_authenticated/b2b.callbacks'
 import { Route as AppAuthenticatedAdminTicketsRouteImport } from './routes/app/_authenticated/admin/tickets'
 import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
@@ -58,6 +59,7 @@ import { Route as AppAuthenticatedAdminScraperRouteImport } from './routes/app/_
 import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
 import { Route as AppAuthenticatedAdminModulesRouteImport } from './routes/app/_authenticated/admin/modules'
 import { Route as AppAuthenticatedAdminLeadsRouteImport } from './routes/app/_authenticated/admin/leads'
+import { Route as AppAuthenticatedAdminJustcallSetupRouteImport } from './routes/app/_authenticated/admin/justcall-setup'
 import { Route as AppAuthenticatedAdminDmSettersRouteImport } from './routes/app/_authenticated/admin/dm-setters'
 import { Route as AppAuthenticatedAdminCommissionsRouteImport } from './routes/app/_authenticated/admin/commissions'
 import { Route as AppAuthenticatedAdminClosersRouteImport } from './routes/app/_authenticated/admin/closers'
@@ -78,6 +80,7 @@ import { Route as ApiPublicHooksRunDailyCycleRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksPurgeDmScreenshotsRouteImport } from './routes/api/public/hooks/purge-dm-screenshots'
 import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
 import { Route as ApiPublicHooksMarkUnbookedRouteImport } from './routes/api/public/hooks/mark-unbooked'
+import { Route as ApiPublicHooksJustcallRouteImport } from './routes/api/public/hooks/justcall'
 import { Route as ApiPublicHooksGhlBookingRouteImport } from './routes/api/public/hooks/ghl-booking'
 import { Route as ApiPublicHooksDistributeLeadsRouteImport } from './routes/api/public/hooks/distribute-leads'
 import { Route as ApiPublicHooksClayLeadRouteImport } from './routes/api/public/hooks/clay-lead'
@@ -320,6 +323,12 @@ const AppAuthenticatedB2bDidntPickUpRoute =
     path: '/b2b/didnt-pick-up',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedB2bDialerRoute =
+  AppAuthenticatedB2bDialerRouteImport.update({
+    id: '/b2b/dialer',
+    path: '/b2b/dialer',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedB2bCallbacksRoute =
   AppAuthenticatedB2bCallbacksRouteImport.update({
     id: '/b2b/callbacks',
@@ -360,6 +369,12 @@ const AppAuthenticatedAdminLeadsRoute =
   AppAuthenticatedAdminLeadsRouteImport.update({
     id: '/leads',
     path: '/leads',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminJustcallSetupRoute =
+  AppAuthenticatedAdminJustcallSetupRouteImport.update({
+    id: '/justcall-setup',
+    path: '/justcall-setup',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 const AppAuthenticatedAdminDmSettersRoute =
@@ -481,6 +496,11 @@ const ApiPublicHooksMarkUnbookedRoute =
     path: '/api/public/hooks/mark-unbooked',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksJustcallRoute = ApiPublicHooksJustcallRouteImport.update({
+  id: '/api/public/hooks/justcall',
+  path: '/api/public/hooks/justcall',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksGhlBookingRoute =
   ApiPublicHooksGhlBookingRouteImport.update({
     id: '/api/public/hooks/ghl-booking',
@@ -563,6 +583,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/clay-lead': typeof ApiPublicHooksClayLeadRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
+  '/api/public/hooks/justcall': typeof ApiPublicHooksJustcallRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -583,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
   '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
+  '/app/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
   '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
@@ -590,6 +612,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
   '/app/b2b/callbacks': typeof AppAuthenticatedB2bCallbacksRoute
+  '/app/b2b/dialer': typeof AppAuthenticatedB2bDialerRoute
   '/app/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
   '/app/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
   '/app/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
@@ -641,6 +664,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/clay-lead': typeof ApiPublicHooksClayLeadRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
+  '/api/public/hooks/justcall': typeof ApiPublicHooksJustcallRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -661,6 +685,7 @@ export interface FileRoutesByTo {
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
   '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
+  '/app/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
   '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
@@ -668,6 +693,7 @@ export interface FileRoutesByTo {
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
   '/app/b2b/callbacks': typeof AppAuthenticatedB2bCallbacksRoute
+  '/app/b2b/dialer': typeof AppAuthenticatedB2bDialerRoute
   '/app/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
   '/app/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
   '/app/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
@@ -722,6 +748,7 @@ export interface FileRoutesById {
   '/api/public/hooks/clay-lead': typeof ApiPublicHooksClayLeadRoute
   '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
+  '/api/public/hooks/justcall': typeof ApiPublicHooksJustcallRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -742,6 +769,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/closers': typeof AppAuthenticatedAdminClosersRoute
   '/app/_authenticated/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
   '/app/_authenticated/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
+  '/app/_authenticated/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
   '/app/_authenticated/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/_authenticated/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
@@ -749,6 +777,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/_authenticated/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
   '/app/_authenticated/b2b/callbacks': typeof AppAuthenticatedB2bCallbacksRoute
+  '/app/_authenticated/b2b/dialer': typeof AppAuthenticatedB2bDialerRoute
   '/app/_authenticated/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
   '/app/_authenticated/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
   '/app/_authenticated/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
@@ -803,6 +832,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/clay-lead'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
+    | '/api/public/hooks/justcall'
     | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
@@ -823,6 +853,7 @@ export interface FileRouteTypes {
     | '/app/admin/closers'
     | '/app/admin/commissions'
     | '/app/admin/dm-setters'
+    | '/app/admin/justcall-setup'
     | '/app/admin/leads'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
@@ -830,6 +861,7 @@ export interface FileRouteTypes {
     | '/app/admin/settings'
     | '/app/admin/tickets'
     | '/app/b2b/callbacks'
+    | '/app/b2b/dialer'
     | '/app/b2b/didnt-pick-up'
     | '/app/b2b/leads'
     | '/app/b2b/pool'
@@ -881,6 +913,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/clay-lead'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
+    | '/api/public/hooks/justcall'
     | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
@@ -901,6 +934,7 @@ export interface FileRouteTypes {
     | '/app/admin/closers'
     | '/app/admin/commissions'
     | '/app/admin/dm-setters'
+    | '/app/admin/justcall-setup'
     | '/app/admin/leads'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
@@ -908,6 +942,7 @@ export interface FileRouteTypes {
     | '/app/admin/settings'
     | '/app/admin/tickets'
     | '/app/b2b/callbacks'
+    | '/app/b2b/dialer'
     | '/app/b2b/didnt-pick-up'
     | '/app/b2b/leads'
     | '/app/b2b/pool'
@@ -961,6 +996,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/clay-lead'
     | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
+    | '/api/public/hooks/justcall'
     | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
@@ -981,6 +1017,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/closers'
     | '/app/_authenticated/admin/commissions'
     | '/app/_authenticated/admin/dm-setters'
+    | '/app/_authenticated/admin/justcall-setup'
     | '/app/_authenticated/admin/leads'
     | '/app/_authenticated/admin/modules'
     | '/app/_authenticated/admin/quizzes'
@@ -988,6 +1025,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/settings'
     | '/app/_authenticated/admin/tickets'
     | '/app/_authenticated/b2b/callbacks'
+    | '/app/_authenticated/b2b/dialer'
     | '/app/_authenticated/b2b/didnt-pick-up'
     | '/app/_authenticated/b2b/leads'
     | '/app/_authenticated/b2b/pool'
@@ -1032,6 +1070,7 @@ export interface RootRouteChildren {
   ApiPublicHooksClayLeadRoute: typeof ApiPublicHooksClayLeadRoute
   ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
   ApiPublicHooksGhlBookingRoute: typeof ApiPublicHooksGhlBookingRoute
+  ApiPublicHooksJustcallRoute: typeof ApiPublicHooksJustcallRoute
   ApiPublicHooksMarkUnbookedRoute: typeof ApiPublicHooksMarkUnbookedRoute
   ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksPurgeDmScreenshotsRoute: typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -1342,6 +1381,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedB2bDidntPickUpRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/b2b/dialer': {
+      id: '/app/_authenticated/b2b/dialer'
+      path: '/b2b/dialer'
+      fullPath: '/app/b2b/dialer'
+      preLoaderRoute: typeof AppAuthenticatedB2bDialerRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/b2b/callbacks': {
       id: '/app/_authenticated/b2b/callbacks'
       path: '/b2b/callbacks'
@@ -1389,6 +1435,13 @@ declare module '@tanstack/react-router' {
       path: '/leads'
       fullPath: '/app/admin/leads'
       preLoaderRoute: typeof AppAuthenticatedAdminLeadsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/justcall-setup': {
+      id: '/app/_authenticated/admin/justcall-setup'
+      path: '/justcall-setup'
+      fullPath: '/app/admin/justcall-setup'
+      preLoaderRoute: typeof AppAuthenticatedAdminJustcallSetupRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
     '/app/_authenticated/admin/dm-setters': {
@@ -1531,6 +1584,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMarkUnbookedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/justcall': {
+      id: '/api/public/hooks/justcall'
+      path: '/api/public/hooks/justcall'
+      fullPath: '/api/public/hooks/justcall'
+      preLoaderRoute: typeof ApiPublicHooksJustcallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/ghl-booking': {
       id: '/api/public/hooks/ghl-booking'
       path: '/api/public/hooks/ghl-booking'
@@ -1609,6 +1669,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminClosersRoute: typeof AppAuthenticatedAdminClosersRoute
   AppAuthenticatedAdminCommissionsRoute: typeof AppAuthenticatedAdminCommissionsRoute
   AppAuthenticatedAdminDmSettersRoute: typeof AppAuthenticatedAdminDmSettersRoute
+  AppAuthenticatedAdminJustcallSetupRoute: typeof AppAuthenticatedAdminJustcallSetupRoute
   AppAuthenticatedAdminLeadsRoute: typeof AppAuthenticatedAdminLeadsRoute
   AppAuthenticatedAdminModulesRoute: typeof AppAuthenticatedAdminModulesRoute
   AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
@@ -1640,6 +1701,8 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminCommissionsRoute:
       AppAuthenticatedAdminCommissionsRoute,
     AppAuthenticatedAdminDmSettersRoute: AppAuthenticatedAdminDmSettersRoute,
+    AppAuthenticatedAdminJustcallSetupRoute:
+      AppAuthenticatedAdminJustcallSetupRoute,
     AppAuthenticatedAdminLeadsRoute: AppAuthenticatedAdminLeadsRoute,
     AppAuthenticatedAdminModulesRoute: AppAuthenticatedAdminModulesRoute,
     AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
@@ -1686,6 +1749,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedSetPasswordRoute: typeof AppAuthenticatedSetPasswordRoute
   AppAuthenticatedTicketsRoute: typeof AppAuthenticatedTicketsRoute
   AppAuthenticatedB2bCallbacksRoute: typeof AppAuthenticatedB2bCallbacksRoute
+  AppAuthenticatedB2bDialerRoute: typeof AppAuthenticatedB2bDialerRoute
   AppAuthenticatedB2bDidntPickUpRoute: typeof AppAuthenticatedB2bDidntPickUpRoute
   AppAuthenticatedB2bLeadsRoute: typeof AppAuthenticatedB2bLeadsRouteWithChildren
   AppAuthenticatedB2bPoolRoute: typeof AppAuthenticatedB2bPoolRoute
@@ -1712,6 +1776,7 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedSetPasswordRoute: AppAuthenticatedSetPasswordRoute,
   AppAuthenticatedTicketsRoute: AppAuthenticatedTicketsRoute,
   AppAuthenticatedB2bCallbacksRoute: AppAuthenticatedB2bCallbacksRoute,
+  AppAuthenticatedB2bDialerRoute: AppAuthenticatedB2bDialerRoute,
   AppAuthenticatedB2bDidntPickUpRoute: AppAuthenticatedB2bDidntPickUpRoute,
   AppAuthenticatedB2bLeadsRoute: AppAuthenticatedB2bLeadsRouteWithChildren,
   AppAuthenticatedB2bPoolRoute: AppAuthenticatedB2bPoolRoute,
@@ -1767,6 +1832,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksClayLeadRoute: ApiPublicHooksClayLeadRoute,
   ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
   ApiPublicHooksGhlBookingRoute: ApiPublicHooksGhlBookingRoute,
+  ApiPublicHooksJustcallRoute: ApiPublicHooksJustcallRoute,
   ApiPublicHooksMarkUnbookedRoute: ApiPublicHooksMarkUnbookedRoute,
   ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksPurgeDmScreenshotsRoute: ApiPublicHooksPurgeDmScreenshotsRoute,
@@ -1783,13 +1849,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
