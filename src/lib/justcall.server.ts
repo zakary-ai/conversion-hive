@@ -147,13 +147,18 @@ export async function jcAddContacts(
   let error: string | null = null;
   // JustCall accepts one contact per request on the sales dialer contacts endpoint.
   for (const c of contacts) {
+    const first = (c.first_name ?? "").trim() || (c.company ?? "").trim() || "Lead";
+    const last = (c.last_name ?? "").trim();
     const res = await jcFetch("/sales_dialer/contacts", {
       method: "POST",
       body: {
         campaign_id: campaignId,
         phone: c.phone,
-        firstname: c.first_name ?? "",
-        lastname: c.last_name ?? "",
+        name: [first, last].filter(Boolean).join(" "),
+        firstname: first,
+        lastname: last,
+        first_name: first,
+        last_name: last,
         email: c.email ?? "",
         company: c.company ?? "",
         notes: c.notes ?? "",
