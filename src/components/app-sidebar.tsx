@@ -37,6 +37,7 @@ const adminB2BItems = [
   { title: "Outbound Leads", url: "/app/admin/outbound/leads", icon: Inbox },
   { title: "Campaigns", url: "/app/admin/outbound/campaigns", icon: Briefcase },
   { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
+  { title: "JustCall", url: "/app/admin/justcall-setup", icon: Phone },
   { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },
   { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
