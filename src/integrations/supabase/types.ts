@@ -550,6 +550,65 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_live_calls: {
+        Row: {
+          answered_at: string | null
+          created_at: string
+          direction: string
+          duration_sec: number | null
+          ended_at: string | null
+          id: string
+          justcall_call_id: string | null
+          phone: string | null
+          pool_lead_id: string | null
+          raw: Json | null
+          setter_id: string
+          started_at: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          answered_at?: string | null
+          created_at?: string
+          direction?: string
+          duration_sec?: number | null
+          ended_at?: string | null
+          id?: string
+          justcall_call_id?: string | null
+          phone?: string | null
+          pool_lead_id?: string | null
+          raw?: Json | null
+          setter_id: string
+          started_at?: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          answered_at?: string | null
+          created_at?: string
+          direction?: string
+          duration_sec?: number | null
+          ended_at?: string | null
+          id?: string
+          justcall_call_id?: string | null
+          phone?: string | null
+          pool_lead_id?: string | null
+          raw?: Json | null
+          setter_id?: string
+          started_at?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_live_calls_pool_lead_id_fkey"
+            columns: ["pool_lead_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_lead_pool"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       b2b_settings: {
         Row: {
           days_out: number
@@ -625,6 +684,7 @@ export type Database = {
           ended_at: string | null
           from_number: string | null
           id: string
+          justcall_call_id: string | null
           lead_id: string | null
           openphone_call_id: string | null
           pool_lead_id: string | null
@@ -646,6 +706,7 @@ export type Database = {
           ended_at?: string | null
           from_number?: string | null
           id?: string
+          justcall_call_id?: string | null
           lead_id?: string | null
           openphone_call_id?: string | null
           pool_lead_id?: string | null
@@ -667,6 +728,7 @@ export type Database = {
           ended_at?: string | null
           from_number?: string | null
           id?: string
+          justcall_call_id?: string | null
           lead_id?: string | null
           openphone_call_id?: string | null
           pool_lead_id?: string | null
@@ -2200,6 +2262,9 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          justcall_agent_email: string | null
+          justcall_agent_id: string | null
+          justcall_number_e164: string | null
           must_change_password: boolean
           openphone_number_e164: string | null
           openphone_number_id: string | null
@@ -2217,6 +2282,9 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          justcall_agent_email?: string | null
+          justcall_agent_id?: string | null
+          justcall_number_e164?: string | null
           must_change_password?: boolean
           openphone_number_e164?: string | null
           openphone_number_id?: string | null
@@ -2234,6 +2302,9 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          justcall_agent_email?: string | null
+          justcall_agent_id?: string | null
+          justcall_number_e164?: string | null
           must_change_password?: boolean
           openphone_number_e164?: string | null
           openphone_number_id?: string | null
