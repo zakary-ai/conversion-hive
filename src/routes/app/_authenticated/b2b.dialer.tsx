@@ -106,7 +106,7 @@ function DialerPage() {
           <Card className="p-4 space-y-3">
             <div className="text-xs uppercase tracking-widest text-muted-foreground">Session</div>
             <Button asChild className="w-full">
-              <a href="https://app.justcall.io/app/sales-dialer" target="_blank" rel="noreferrer">
+              <a href="https://salesdialer.justcall.io/apex/campaigns" target="_blank" rel="noreferrer">
                 <ExternalLink className="h-4 w-4 mr-2" /> Open JustCall dialer
               </a>
             </Button>
