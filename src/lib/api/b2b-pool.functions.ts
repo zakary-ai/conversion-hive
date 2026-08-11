@@ -112,6 +112,27 @@ export const listMyClaimedLeads = createServerFn({ method: "GET" })
   });
 
 // ---------- Update lead notes (claimer or admin) ----------
+// Update email / notes straight from the live dialer card.
+export const updatePoolLeadContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      id: z.string().uuid(),
+      email: z.string().trim().max(200).nullable().optional(),
+      notes: z.string().max(10000).optional(),
+    }).parse,
+  )
+  .handler(async ({ data, context }) => {
+    const patch: Record<string, any> = {};
+    if (data.email !== undefined) patch.email = data.email ? data.email.toLowerCase() : null;
+    if (data.notes !== undefined) patch.notes = data.notes;
+    if (!Object.keys(patch).length) return { ok: true };
+    const { error } = await (context.supabase as any)
+      .from("b2b_lead_pool").update(patch).eq("id", data.id).eq("claimed_by", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const updatePoolLeadNotes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ id: z.string().uuid(), notes: z.string().max(10000) }).parse)
