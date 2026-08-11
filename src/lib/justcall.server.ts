@@ -35,10 +35,13 @@ export async function jcFetch<T = unknown>(
     let parsed: unknown = null;
     try { parsed = text ? JSON.parse(text) : null; } catch { parsed = text; }
     if (!res.ok) {
-      const msg =
-        (parsed && typeof parsed === "object" && "message" in (parsed as Record<string, unknown>)
-          ? String((parsed as Record<string, unknown>).message)
-          : typeof parsed === "string" ? parsed : `HTTP ${res.status}`);
+      const obj = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+      const detail =
+        obj?.message ?? obj?.error ?? obj?.errors ?? obj?.detail ??
+        (typeof parsed === "string" && parsed ? parsed : null);
+      const msg = detail
+        ? typeof detail === "string" ? detail : JSON.stringify(detail)
+        : `HTTP ${res.status}`;
       return { ok: false, status: res.status, data: null, error: msg };
     }
     return { ok: true, status: res.status, data: parsed as T, error: null };
