@@ -40,6 +40,7 @@ function ClientDashboard() {
   const { data: me } = useSuspenseQuery(meOpts);
   const name = me.profile?.full_name?.split(" ")[0] || "there";
   const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [bookNewOpen, setBookNewOpen] = useState(false);
 
   return (
     <div className="space-y-6 max-w-7xl">
@@ -48,10 +49,18 @@ function ClientDashboard() {
           title={`Welcome back, ${name}`}
           description="Here's what's happening with your pipeline today."
         />
-        <SupportButton />
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setBookNewOpen(true)} className="shrink-0">
+            <Plus className="h-4 w-4 mr-1" /> Book lead
+          </Button>
+          <SupportButton />
+        </div>
       </div>
 
+      <BookNewLeadDialog open={bookNewOpen} onClose={() => setBookNewOpen(false)} />
+
       <BookingLinkCard />
+
 
       <QuoCallsCard />
 
