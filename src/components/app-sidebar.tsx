@@ -7,7 +7,7 @@ import {
 import {
   LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX, PhoneOff, Mic,
+  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX, PhoneOff, Mic, Phone,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -15,6 +15,7 @@ const clientItems = [
   { title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard },
   { title: "Lead Pool", url: "/app/b2b/pool", icon: Users },
   { title: "My Leads", url: "/app/b2b/leads", icon: Briefcase },
+  { title: "Dialer", url: "/app/b2b/dialer", icon: Phone },
   { title: "Didn't Pick Up", url: "/app/b2b/didnt-pick-up", icon: PhoneOff },
   { title: "Callbacks", url: "/app/b2b/callbacks", icon: CalendarIcon },
   { title: "Recordings", url: "/app/b2b/recordings", icon: Mic },
@@ -37,6 +38,7 @@ const adminB2BItems = [
   { title: "Outbound Leads", url: "/app/admin/outbound/leads", icon: Inbox },
   { title: "Campaigns", url: "/app/admin/outbound/campaigns", icon: Briefcase },
   { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
+  { title: "JustCall", url: "/app/admin/justcall-setup", icon: Phone },
   { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },
   { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
