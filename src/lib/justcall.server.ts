@@ -35,10 +35,13 @@ export async function jcFetch<T = unknown>(
     let parsed: unknown = null;
     try { parsed = text ? JSON.parse(text) : null; } catch { parsed = text; }
     if (!res.ok) {
-      const msg =
-        (parsed && typeof parsed === "object" && "message" in (parsed as Record<string, unknown>)
-          ? String((parsed as Record<string, unknown>).message)
-          : typeof parsed === "string" ? parsed : `HTTP ${res.status}`);
+      const obj = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+      const detail =
+        obj?.message ?? obj?.error ?? obj?.errors ?? obj?.detail ??
+        (typeof parsed === "string" && parsed ? parsed : null);
+      const msg = detail
+        ? typeof detail === "string" ? detail : JSON.stringify(detail)
+        : `HTTP ${res.status}`;
       return { ok: false, status: res.status, data: null, error: msg };
     }
     return { ok: true, status: res.status, data: parsed as T, error: null };
@@ -103,16 +106,29 @@ export async function jcCreateCampaign(
   name: string,
   agentId?: string | null,
 ): Promise<{ id: string | null; error: string | null }> {
-  const body: Record<string, unknown> = { name, type: "sales_dialer" };
-  if (agentId) body.agent_id = agentId;
-  const res = await jcFetch<{ data?: { id?: number | string; campaign_id?: number | string } }>(
-    "/sales_dialer/campaigns",
-    { method: "POST", body },
-  );
-  if (!res.ok) return { id: null, error: res.error };
-  const id = res.data?.data?.id ?? res.data?.data?.campaign_id;
-  return { id: id ? String(id) : null, error: null };
+  // JustCall's create-campaign payload varies by account setup; try known shapes.
+  const attempts: Array<Record<string, unknown>> = [
+    { name, country_code: "US", type: "predictive" },
+    { name, country_code: "US" },
+    { name, type: "sales_dialer" },
+    { name },
+  ];
+  let lastError: string | null = null;
+  for (const base of attempts) {
+    const body = { ...base, ...(agentId ? { agent_id: agentId } : {}) };
+    const res = await jcFetch<{ data?: { id?: number | string; campaign_id?: number | string } }>(
+      "/sales_dialer/campaigns",
+      { method: "POST", body },
+    );
+    if (res.ok) {
+      const id = res.data?.data?.id ?? res.data?.data?.campaign_id;
+      return { id: id ? String(id) : null, error: null };
+    }
+    lastError = res.error;
+  }
+  return { id: null, error: lastError };
 }
+
 
 export type JcContact = {
   first_name?: string | null;
