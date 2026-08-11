@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Phone, Mail, Building2, Linkedin, MapPin, PhoneCall, Save } from "lucide-react";
 import { listCallsForPoolLead, startBridgeCall } from "@/lib/api/calls.functions";
 import { updatePoolLeadNotes } from "@/lib/api/b2b-pool.functions";
+import { justcallDialLead } from "@/lib/api/justcall.functions";
 import { toast } from "sonner";
 
 function normalizeE164(input: string): string {
@@ -150,7 +151,7 @@ export function B2bLeadDetailDialog({
             {showActions && (
               <div className="flex justify-end gap-2 pt-4 flex-wrap">
                 <Button variant="outline" onClick={onClose}>Close</Button>
-                <Button variant="outline" disabled={!lead.phone} onClick={() => lead.phone && callViaQuo(lead.id, lead.phone)}>
+                <Button variant="outline" disabled={!lead.phone} onClick={() => lead.phone && callViaJustCall(lead.id, lead.phone)}>
                   <PhoneCall className="h-4 w-4 mr-1" /> Call
                 </Button>
                 {onLogOutcome && <Button onClick={onLogOutcome}>Log call outcome</Button>}
