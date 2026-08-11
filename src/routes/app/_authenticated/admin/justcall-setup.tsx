@@ -176,23 +176,18 @@ function SetterRow({ setter, agents, onSaved }: {
 
         <div className="space-y-1">
           <Label className="text-xs">JustCall number (E.164)</Label>
-          <Select value={number} onValueChange={(v) => setNumber(v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select number" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">No number</SelectItem>
-              {(selected?.numbers ?? []).map((n) => (
-                <SelectItem key={n} value={n}>{n}</SelectItem>
-              ))}
-              {(!selected || !selected.numbers.length) && (
-                <SelectItem value="custom">Custom number</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-          {number === "custom" && (
-            <Input className="mt-1" value={""} onChange={(e) => setNumber(e.target.value)} placeholder="+1234567890" />
-          )}
+          <Input
+            list={`numbers-${setter.user_id}`}
+            value={number === "custom" ? "" : number}
+            onChange={(e) => setNumber(e.target.value)}
+            placeholder="+1234567890"
+          />
+          <datalist id={`numbers-${setter.user_id}`}>
+            <option value="">No number</option>
+            {(selected?.numbers ?? []).map((n: string) => (
+              <option key={n} value={n} />
+            ))}
+          </datalist>
         </div>
       </div>
     </div>
