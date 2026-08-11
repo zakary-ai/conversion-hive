@@ -157,16 +157,20 @@ export async function jcAddContacts(
       continue;
     }
     const numericCampaignId = Number(campaignId);
+    const email = (c.email ?? "").trim();
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+    const body: Record<string, unknown> = {
+      campaign_id: Number.isFinite(numericCampaignId) ? numericCampaignId : campaignId,
+      phone_number: phoneNumber,
+      name: [first, last].filter(Boolean).join(" "),
+    };
+    // JustCall validates these only when present, so omit empty values.
+    if (isEmail) body.email = email;
+    if ((c.company ?? "").trim()) body.company = (c.company ?? "").trim();
+    if ((c.notes ?? "").trim()) body.notes = (c.notes ?? "").trim();
     const res = await jcFetch("/sales_dialer/campaigns/contact", {
       method: "POST",
-      body: {
-        campaign_id: Number.isFinite(numericCampaignId) ? numericCampaignId : campaignId,
-        phone_number: phoneNumber,
-        name: [first, last].filter(Boolean).join(" "),
-        email: c.email ?? "",
-        company: c.company ?? "",
-        notes: c.notes ?? "",
-      },
+      body,
     });
     if (res.ok) added++;
     else if (!error) error = res.error;
