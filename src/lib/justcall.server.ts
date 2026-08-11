@@ -103,16 +103,29 @@ export async function jcCreateCampaign(
   name: string,
   agentId?: string | null,
 ): Promise<{ id: string | null; error: string | null }> {
-  const body: Record<string, unknown> = { name, type: "sales_dialer" };
-  if (agentId) body.agent_id = agentId;
-  const res = await jcFetch<{ data?: { id?: number | string; campaign_id?: number | string } }>(
-    "/sales_dialer/campaigns",
-    { method: "POST", body },
-  );
-  if (!res.ok) return { id: null, error: res.error };
-  const id = res.data?.data?.id ?? res.data?.data?.campaign_id;
-  return { id: id ? String(id) : null, error: null };
+  // JustCall's create-campaign payload varies by account setup; try known shapes.
+  const attempts: Array<Record<string, unknown>> = [
+    { name, country_code: "US", type: "predictive" },
+    { name, country_code: "US" },
+    { name, type: "sales_dialer" },
+    { name },
+  ];
+  let lastError: string | null = null;
+  for (const base of attempts) {
+    const body = { ...base, ...(agentId ? { agent_id: agentId } : {}) };
+    const res = await jcFetch<{ data?: { id?: number | string; campaign_id?: number | string } }>(
+      "/sales_dialer/campaigns",
+      { method: "POST", body },
+    );
+    if (res.ok) {
+      const id = res.data?.data?.id ?? res.data?.data?.campaign_id;
+      return { id: id ? String(id) : null, error: null };
+    }
+    lastError = res.error;
+  }
+  return { id: null, error: lastError };
 }
+
 
 export type JcContact = {
   first_name?: string | null;
