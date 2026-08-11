@@ -7,7 +7,9 @@ import { SupportButton } from "@/components/support-button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Briefcase, CheckCircle2, Clock, GraduationCap, DollarSign, ArrowRight, ListChecks, Phone, PhoneCall, Timer, RefreshCw, Mic } from "lucide-react";
+import { Briefcase, CheckCircle2, Clock, GraduationCap, DollarSign, ArrowRight, ListChecks, Phone, PhoneCall, Timer, RefreshCw, Mic, Plus } from "lucide-react";
+import { BookNewLeadDialog } from "@/components/book-new-lead-dialog";
+
 import { getMyCallStats, syncMyCalls } from "@/lib/api/calls.functions";
 import { getMyBookingLink } from "@/lib/api/b2b-pool.functions";
 import { Link as LinkIcon } from "lucide-react";
