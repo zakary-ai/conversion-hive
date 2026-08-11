@@ -59,6 +59,7 @@ import { Route as AppAuthenticatedAdminScraperRouteImport } from './routes/app/_
 import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
 import { Route as AppAuthenticatedAdminModulesRouteImport } from './routes/app/_authenticated/admin/modules'
 import { Route as AppAuthenticatedAdminLeadsRouteImport } from './routes/app/_authenticated/admin/leads'
+import { Route as AppAuthenticatedAdminJustcallSetupRouteImport } from './routes/app/_authenticated/admin/justcall-setup'
 import { Route as AppAuthenticatedAdminDmSettersRouteImport } from './routes/app/_authenticated/admin/dm-setters'
 import { Route as AppAuthenticatedAdminCommissionsRouteImport } from './routes/app/_authenticated/admin/commissions'
 import { Route as AppAuthenticatedAdminClosersRouteImport } from './routes/app/_authenticated/admin/closers'
@@ -370,6 +371,12 @@ const AppAuthenticatedAdminLeadsRoute =
     path: '/leads',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
+const AppAuthenticatedAdminJustcallSetupRoute =
+  AppAuthenticatedAdminJustcallSetupRouteImport.update({
+    id: '/justcall-setup',
+    path: '/justcall-setup',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
 const AppAuthenticatedAdminDmSettersRoute =
   AppAuthenticatedAdminDmSettersRouteImport.update({
     id: '/dm-setters',
@@ -597,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
   '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
+  '/app/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
   '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
@@ -677,6 +685,7 @@ export interface FileRoutesByTo {
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
   '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
+  '/app/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
   '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
@@ -760,6 +769,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/closers': typeof AppAuthenticatedAdminClosersRoute
   '/app/_authenticated/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
   '/app/_authenticated/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
+  '/app/_authenticated/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
   '/app/_authenticated/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/_authenticated/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
@@ -843,6 +853,7 @@ export interface FileRouteTypes {
     | '/app/admin/closers'
     | '/app/admin/commissions'
     | '/app/admin/dm-setters'
+    | '/app/admin/justcall-setup'
     | '/app/admin/leads'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
@@ -923,6 +934,7 @@ export interface FileRouteTypes {
     | '/app/admin/closers'
     | '/app/admin/commissions'
     | '/app/admin/dm-setters'
+    | '/app/admin/justcall-setup'
     | '/app/admin/leads'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
@@ -1005,6 +1017,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/closers'
     | '/app/_authenticated/admin/commissions'
     | '/app/_authenticated/admin/dm-setters'
+    | '/app/_authenticated/admin/justcall-setup'
     | '/app/_authenticated/admin/leads'
     | '/app/_authenticated/admin/modules'
     | '/app/_authenticated/admin/quizzes'
@@ -1424,6 +1437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAdminLeadsRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
+    '/app/_authenticated/admin/justcall-setup': {
+      id: '/app/_authenticated/admin/justcall-setup'
+      path: '/justcall-setup'
+      fullPath: '/app/admin/justcall-setup'
+      preLoaderRoute: typeof AppAuthenticatedAdminJustcallSetupRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
     '/app/_authenticated/admin/dm-setters': {
       id: '/app/_authenticated/admin/dm-setters'
       path: '/dm-setters'
@@ -1649,6 +1669,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminClosersRoute: typeof AppAuthenticatedAdminClosersRoute
   AppAuthenticatedAdminCommissionsRoute: typeof AppAuthenticatedAdminCommissionsRoute
   AppAuthenticatedAdminDmSettersRoute: typeof AppAuthenticatedAdminDmSettersRoute
+  AppAuthenticatedAdminJustcallSetupRoute: typeof AppAuthenticatedAdminJustcallSetupRoute
   AppAuthenticatedAdminLeadsRoute: typeof AppAuthenticatedAdminLeadsRoute
   AppAuthenticatedAdminModulesRoute: typeof AppAuthenticatedAdminModulesRoute
   AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
@@ -1680,6 +1701,8 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminCommissionsRoute:
       AppAuthenticatedAdminCommissionsRoute,
     AppAuthenticatedAdminDmSettersRoute: AppAuthenticatedAdminDmSettersRoute,
+    AppAuthenticatedAdminJustcallSetupRoute:
+      AppAuthenticatedAdminJustcallSetupRoute,
     AppAuthenticatedAdminLeadsRoute: AppAuthenticatedAdminLeadsRoute,
     AppAuthenticatedAdminModulesRoute: AppAuthenticatedAdminModulesRoute,
     AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
