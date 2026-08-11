@@ -62,7 +62,7 @@ type RawAgent = {
 };
 
 export async function jcListAgents(): Promise<{ agents: JcAgent[]; error: string | null }> {
-  const res = await jcFetch<{ data?: RawAgent[] }>("/users", { query: { per_page: 100 } });
+  const res = await jcFetch<{ data?: RawAgent[] }>("/users", { query: { per_page: 50 } });
   if (!res.ok) return { agents: [], error: res.error };
   const rows = Array.isArray(res.data?.data) ? res.data!.data! : [];
   const agents = rows.map((r) => {
@@ -80,18 +80,23 @@ export async function jcListAgents(): Promise<{ agents: JcAgent[]; error: string
 export type JcCampaign = { id: string; name: string };
 
 export async function jcListCampaigns(): Promise<{ campaigns: JcCampaign[]; error: string | null }> {
-  const res = await jcFetch<{ data?: Array<{ id?: number | string; campaign_id?: number | string; name?: string; campaign_name?: string }> }>(
-    "/sales_dialer/campaigns",
-    { query: { per_page: 100 } },
-  );
-  if (!res.ok) return { campaigns: [], error: res.error };
-  const rows = Array.isArray(res.data?.data) ? res.data!.data! : [];
-  return {
-    campaigns: rows
-      .map((r) => ({ id: String(r.id ?? r.campaign_id ?? ""), name: String(r.name ?? r.campaign_name ?? "") }))
-      .filter((c) => c.id),
-    error: null,
-  };
+  type Row = { id?: number | string; campaign_id?: number | string; name?: string; campaign_name?: string };
+  const campaigns: JcCampaign[] = [];
+  // JustCall caps per_page at 50 — page through results.
+  for (let page = 1; page <= 10; page++) {
+    const res = await jcFetch<{ data?: Row[] }>("/sales_dialer/campaigns", {
+      query: { per_page: 50, page },
+    });
+    if (!res.ok) return { campaigns, error: res.error };
+    const rows = Array.isArray(res.data?.data) ? res.data!.data! : [];
+    campaigns.push(
+      ...rows
+        .map((r) => ({ id: String(r.id ?? r.campaign_id ?? ""), name: String(r.name ?? r.campaign_name ?? "") }))
+        .filter((c) => c.id),
+    );
+    if (rows.length < 50) break;
+  }
+  return { campaigns, error: null };
 }
 
 export async function jcCreateCampaign(
