@@ -154,6 +154,8 @@ export async function jcAddContacts(
       body: {
         campaign_id: campaignId,
         phone: c.phone,
+        phone_number: c.phone,
+        contact_number: c.phone,
         name: [first, last].filter(Boolean).join(" "),
         firstname: first,
         lastname: last,
