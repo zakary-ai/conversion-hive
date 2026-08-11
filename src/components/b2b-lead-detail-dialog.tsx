@@ -18,22 +18,18 @@ function normalizeE164(input: string): string {
   return "+" + d;
 }
 
-async function callViaQuo(poolLeadId: string, phone: string) {
+async function callViaJustCall(poolLeadId: string, phone: string) {
+  try {
+    await justcallDialLead({ data: { pool_lead_id: poolLeadId } });
+    toast.success("Dialing in JustCall — pick up your JustCall app");
+    return;
+  } catch (e) {
+    toast.error((e as Error).message);
+  }
+  // Fallback: local dialer so the setter is never blocked.
   const to = normalizeE164(phone);
   startBridgeCall({ data: { pool_lead_id: poolLeadId } }).catch(() => {});
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile) {
-    const deep = `openphone://call?to=${encodeURIComponent(to)}`;
-    const fallback = `tel:${to}`;
-    const timer = setTimeout(() => { window.location.href = fallback; }, 1200);
-    const onHide = () => { clearTimeout(timer); document.removeEventListener("visibilitychange", onHide); };
-    document.addEventListener("visibilitychange", onHide);
-    window.location.href = deep;
-  } else {
-    const url = `https://my.openphone.com/inbox?dial=${encodeURIComponent(to)}`;
-    const w = window.open(url, "_blank", "noopener,noreferrer");
-    if (!w) toast.error("Popup blocked — allow popups to open Quo");
-  }
+  window.location.href = `tel:${to}`;
 }
 
 export function B2bLeadDetailDialog({
