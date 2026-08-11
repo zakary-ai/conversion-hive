@@ -10,7 +10,7 @@ const clientItems = [
   { title: "Home", url: "/app/dashboard", icon: LayoutDashboard },
   { title: "Pool", url: "/app/b2b/pool", icon: Users },
   { title: "Leads", url: "/app/b2b/leads", icon: Briefcase },
-  { title: "Calls", url: "/app/b2b/recordings", icon: Mic },
+  { title: "Dialer", url: "/app/b2b/dialer", icon: Phone },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
