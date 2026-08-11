@@ -149,18 +149,20 @@ export async function jcAddContacts(
   for (const c of contacts) {
     const first = (c.first_name ?? "").trim() || (c.company ?? "").trim() || "Lead";
     const last = (c.last_name ?? "").trim();
-    const res = await jcFetch("/sales_dialer/contacts", {
+    // This endpoint requires country code + number as digits only (for example
+    // 12135551212), not E.164's leading `+`.
+    const phoneNumber = toJustCallPhone(c.phone);
+    if (!phoneNumber) {
+      if (!error) error = `Skipped invalid phone number for ${[first, last].filter(Boolean).join(" ")}.`;
+      continue;
+    }
+    const numericCampaignId = Number(campaignId);
+    const res = await jcFetch("/sales_dialer/campaigns/contact", {
       method: "POST",
       body: {
-        campaign_id: campaignId,
-        phone: c.phone,
-        phone_number: c.phone,
-        contact_number: c.phone,
+        campaign_id: Number.isFinite(numericCampaignId) ? numericCampaignId : campaignId,
+        phone_number: phoneNumber,
         name: [first, last].filter(Boolean).join(" "),
-        firstname: first,
-        lastname: last,
-        first_name: first,
-        last_name: last,
         email: c.email ?? "",
         company: c.company ?? "",
         notes: c.notes ?? "",
@@ -197,4 +199,11 @@ export function toE164(input: string): string {
   if (d.length === 10) return "+1" + d;
   if (d.length === 11 && d.startsWith("1")) return "+" + d;
   return "+" + d;
+}
+
+export function toJustCallPhone(input: string): string | null {
+  const digits = (input ?? "").replace(/\D/g, "");
+  if (digits.length === 10) return `1${digits}`;
+  if (digits.length >= 11 && digits.length <= 15) return digits;
+  return null;
 }
