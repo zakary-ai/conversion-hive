@@ -19,20 +19,66 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: "America/New_York", label: "Eastern (ET)" },
+  { value: "America/Chicago", label: "Central (CT)" },
+  { value: "America/Denver", label: "Mountain (MT)" },
+  { value: "America/Phoenix", label: "Arizona (MST)" },
+  { value: "America/Los_Angeles", label: "Pacific (PT)" },
+  { value: "America/Anchorage", label: "Alaska (AKT)" },
+  { value: "Pacific/Honolulu", label: "Hawaii (HT)" },
+  { value: "Europe/London", label: "London (UK)" },
+  { value: "Europe/Berlin", label: "Central Europe (CET)" },
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Kolkata", label: "India (IST)" },
+  { value: "Asia/Singapore", label: "Singapore (SGT)" },
+  { value: "Australia/Sydney", label: "Sydney (AET)" },
+];
+
+// Wall-clock parts of an instant, rendered in a specific timezone.
+function partsInTz(d: Date, tz: string) {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+  const p: Record<string, string> = {};
+  for (const x of fmt.formatToParts(d)) if (x.type !== "literal") p[x.type] = x.value;
+  return {
+    date: `${p.year}-${p.month}-${p.day}`,
+    time: `${p.hour === "24" ? "00" : p.hour}:${p.minute}`,
+  };
+}
+
 export function RescheduleDialog({ apptId, currentScheduledAt, onClose }: Props) {
   const qc = useQueryClient();
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York";
+  const [tz, setTz] = useState<string>(
+    TIMEZONES.some((t) => t.value === browserTz) ? browserTz : "America/New_York",
+  );
   const current = currentScheduledAt ? new Date(currentScheduledAt) : null;
   const [date, setDate] = useState<Date | undefined>(current ?? undefined);
   const [time, setTime] = useState<string>(
-    current ? `${pad(current.getHours())}:${pad(current.getMinutes())}` : "09:00",
+    current ? partsInTz(current, tz).time : "09:00",
   );
 
   useEffect(() => {
     if (!apptId) return;
     const c = currentScheduledAt ? new Date(currentScheduledAt) : null;
     setDate(c ?? undefined);
-    setTime(c ? `${pad(c.getHours())}:${pad(c.getMinutes())}` : "09:00");
+    setTime(c ? partsInTz(c, tz).time : "09:00");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apptId, currentScheduledAt]);
+
+  const wall = useMemo(() => {
+    if (!date || !time) return null;
+    const [h, m] = time.split(":").map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return {
+      wall_date: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+      wall_time: `${pad(h)}:${pad(m)}`,
+    };
+  }, [date, time]);
 
   const iso = useMemo(() => {
     if (!date || !time) return null;
@@ -47,7 +93,16 @@ export function RescheduleDialog({ apptId, currentScheduledAt, onClose }: Props)
 
   const m = useMutation({
     mutationFn: (scheduled_at: string) =>
-      rescheduleAppointment({ data: { id: apptId!, scheduled_at, silent: !notify, notify } }),
+      rescheduleAppointment({
+        data: {
+          id: apptId!,
+          scheduled_at,
+          silent: !notify,
+          notify,
+          timezone: tz,
+          ...(wall ?? {}),
+        },
+      }),
     onSuccess: () => {
       toast.success(notify ? "Rescheduled — follow-up email sent" : "Rescheduled");
       qc.invalidateQueries({ queryKey: ["my-appointments"] });
