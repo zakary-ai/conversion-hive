@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 // Cron-triggered: send a 15-minute reminder email to leads with an upcoming
-// assigned interview. Idempotent via reminder_sent_at column.
+// assigned discovery call. Idempotent via reminder_sent_at column.
 export const Route = createFileRoute('/api/public/hooks/send-call-reminders')({
   server: {
     handlers: {
