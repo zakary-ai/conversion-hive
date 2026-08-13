@@ -167,9 +167,20 @@ export function RescheduleDialog({ apptId, currentScheduledAt, onClose }: Props)
               />
               <span className="text-xs text-muted-foreground whitespace-nowrap">24h</span>
             </div>
+            <div className="space-y-1">
+              <Label htmlFor="b2b-reschedule-tz">Timezone</Label>
+              <Select value={tz} onValueChange={setTz}>
+                <SelectTrigger id="b2b-reschedule-tz"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TIMEZONES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <p className="text-xs text-muted-foreground">
-              Any date and time is allowed — not limited to availability windows. Interpreted in your local
-              timezone.
+              Any date and time is allowed — not limited to availability windows. The time above is
+              interpreted in the selected timezone, and the follow-up email is written in it too.
             </p>
           </div>
 
