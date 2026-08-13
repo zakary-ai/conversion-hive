@@ -838,6 +838,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
       patch.status = "scheduled";
     }
     if (newMeetingUrl !== undefined) patch.meeting_url = newMeetingUrl;
+    if (data.timezone) patch.timezone = data.timezone;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (context.supabase.from("appointments") as any).update(patch).eq("id", data.id);
