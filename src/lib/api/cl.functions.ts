@@ -860,7 +860,7 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
     if (data.notify && appt.email) {
       try {
         const { sendTransactional } = await import("@/lib/email/transactional.server");
-        const tz = (appt.timezone as string | null) ?? null;
+        const tz = data.timezone ?? ((appt.timezone as string | null) ?? null);
         await sendTransactional({
           templateName: "booking-rescheduled",
           recipientEmail: appt.email as string,
