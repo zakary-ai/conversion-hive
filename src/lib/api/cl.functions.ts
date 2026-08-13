@@ -766,12 +766,29 @@ export const deleteAppointment = createServerFn({ method: "POST" })
 
 export const rescheduleAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid(), scheduled_at: z.string().datetime(), silent: z.boolean().optional(), notify: z.boolean().optional() }).parse)
+  .inputValidator(z.object({
+    id: z.string().uuid(),
+    scheduled_at: z.string().datetime(),
+    silent: z.boolean().optional(),
+    notify: z.boolean().optional(),
+    // Timezone the picked wall date/time is expressed in (also stored on the
+    // appointment so emails render in that zone).
+    timezone: z.string().max(60).optional(),
+    wall_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    wall_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  }).parse)
   .handler(async ({ data, context }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: appt, error: aerr } = await (context.supabase.from("appointments") as any)
       .select("id, type, name, email, assigned_closer_id, b2b_closer_id, status, scheduled_at, timezone").eq("id", data.id).single();
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
+
+    // When a timezone + wall clock is supplied, recompute the UTC instant in that zone.
+    if (data.timezone && data.wall_date && data.wall_time) {
+      const [wy, wm, wd] = data.wall_date.split("-").map(Number);
+      const [wh, wmin] = data.wall_time.split(":").map(Number);
+      data.scheduled_at = zonedWallToUTC(wy, wm, wd, wh, wmin, data.timezone).toISOString();
+    }
 
     const slotMinutes = await getSlotMinutes();
     if (!data.silent && appt.type === "booking") {
