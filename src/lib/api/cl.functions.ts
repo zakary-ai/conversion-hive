@@ -837,6 +837,27 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
         idempotencySuffix: `reschedule-${Date.now()}`,
       });
     }
+
+    // Follow-up "your call moved" email, with times in the lead's own timezone.
+    if (data.notify && appt.email) {
+      try {
+        const { sendTransactional } = await import("@/lib/email/transactional.server");
+        const tz = (appt.timezone as string | null) ?? null;
+        await sendTransactional({
+          templateName: "booking-rescheduled",
+          recipientEmail: appt.email as string,
+          idempotencyKey: `booking-rescheduled-${data.id}-${new Date(data.scheduled_at).getTime()}`,
+          templateData: {
+            name: appt.name,
+            previousLabel: appt.scheduled_at ? formatScheduledLabel(appt.scheduled_at as string, tz) : null,
+            newLabel: formatScheduledLabel(data.scheduled_at, tz),
+            meetingUrl: newMeetingUrl ?? null,
+          },
+        });
+      } catch (e) {
+        console.warn("[booking-rescheduled] send failed", e);
+      }
+    }
     return { ok: true };
   });
 
