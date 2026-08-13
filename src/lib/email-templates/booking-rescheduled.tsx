@@ -30,8 +30,11 @@ export const BookingRescheduledEmail = ({ name, previousLabel, newLabel, meeting
           </Text>
           {previousLabel ? <Text style={detail}><strong>Previous time:</strong> {previousLabel}</Text> : null}
           <Text style={detail}><strong>New time:</strong> {newLabel || 'TBD'}</Text>
+          {meetingUrl ? <Text style={detail}><strong>Join link:</strong> {meetingUrl}</Text> : null}
           <Text style={{ ...muted, marginTop: '16px' }}>
-            You'll receive a fresh calendar invite with the call details shortly.
+            {meetingUrl
+              ? 'Use the link above at the new time — an updated calendar invite is on the way.'
+              : "You'll receive a fresh calendar invite with the call details shortly."}
           </Text>
         </Section>
         <Text style={footer}>Talk soon.</Text>
