@@ -74,6 +74,7 @@ import { Route as AppAuthenticatedAdminAccountDeletionsRouteImport } from './rou
 import { Route as ApiPublicWebhooksSmartleadRouteImport } from './routes/api/public/webhooks/smartlead'
 import { Route as ApiPublicHooksSyncQuoCallsRouteImport } from './routes/api/public/hooks/sync-quo-calls'
 import { Route as ApiPublicHooksSmartleadSyncRouteImport } from './routes/api/public/hooks/smartlead-sync'
+import { Route as ApiPublicHooksSendTestEmailRouteImport } from './routes/api/public/hooks/send-test-email'
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
 import { Route as ApiPublicHooksRunDailyCycleRouteImport } from './routes/api/public/hooks/run-daily-cycle'
@@ -461,6 +462,12 @@ const ApiPublicHooksSmartleadSyncRoute =
     path: '/api/public/hooks/smartlead-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendTestEmailRoute =
+  ApiPublicHooksSendTestEmailRouteImport.update({
+    id: '/api/public/hooks/send-test-email',
+    path: '/api/public/hooks/send-test-email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSendCallRemindersRoute =
   ApiPublicHooksSendCallRemindersRouteImport.update({
     id: '/api/public/hooks/send-call-reminders',
@@ -590,6 +597,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
+  '/api/public/hooks/send-test-email': typeof ApiPublicHooksSendTestEmailRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
   '/api/public/hooks/sync-quo-calls': typeof ApiPublicHooksSyncQuoCallsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
@@ -671,6 +679,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
+  '/api/public/hooks/send-test-email': typeof ApiPublicHooksSendTestEmailRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
   '/api/public/hooks/sync-quo-calls': typeof ApiPublicHooksSyncQuoCallsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
@@ -755,6 +764,7 @@ export interface FileRoutesById {
   '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
   '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
+  '/api/public/hooks/send-test-email': typeof ApiPublicHooksSendTestEmailRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
   '/api/public/hooks/sync-quo-calls': typeof ApiPublicHooksSyncQuoCallsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
@@ -839,6 +849,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
+    | '/api/public/hooks/send-test-email'
     | '/api/public/hooks/smartlead-sync'
     | '/api/public/hooks/sync-quo-calls'
     | '/api/public/webhooks/smartlead'
@@ -920,6 +931,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
+    | '/api/public/hooks/send-test-email'
     | '/api/public/hooks/smartlead-sync'
     | '/api/public/hooks/sync-quo-calls'
     | '/api/public/webhooks/smartlead'
@@ -1003,6 +1015,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-daily-cycle'
     | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
+    | '/api/public/hooks/send-test-email'
     | '/api/public/hooks/smartlead-sync'
     | '/api/public/hooks/sync-quo-calls'
     | '/api/public/webhooks/smartlead'
@@ -1077,6 +1090,7 @@ export interface RootRouteChildren {
   ApiPublicHooksRunDailyCycleRoute: typeof ApiPublicHooksRunDailyCycleRoute
   ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
   ApiPublicHooksSendCallRemindersRoute: typeof ApiPublicHooksSendCallRemindersRoute
+  ApiPublicHooksSendTestEmailRoute: typeof ApiPublicHooksSendTestEmailRoute
   ApiPublicHooksSmartleadSyncRoute: typeof ApiPublicHooksSmartleadSyncRoute
   ApiPublicHooksSyncQuoCallsRoute: typeof ApiPublicHooksSyncQuoCallsRoute
   ApiPublicWebhooksSmartleadRoute: typeof ApiPublicWebhooksSmartleadRoute
@@ -1542,6 +1556,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSmartleadSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-test-email': {
+      id: '/api/public/hooks/send-test-email'
+      path: '/api/public/hooks/send-test-email'
+      fullPath: '/api/public/hooks/send-test-email'
+      preLoaderRoute: typeof ApiPublicHooksSendTestEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/send-call-reminders': {
       id: '/api/public/hooks/send-call-reminders'
       path: '/api/public/hooks/send-call-reminders'
@@ -1839,6 +1860,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksRunDailyCycleRoute: ApiPublicHooksRunDailyCycleRoute,
   ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
   ApiPublicHooksSendCallRemindersRoute: ApiPublicHooksSendCallRemindersRoute,
+  ApiPublicHooksSendTestEmailRoute: ApiPublicHooksSendTestEmailRoute,
   ApiPublicHooksSmartleadSyncRoute: ApiPublicHooksSmartleadSyncRoute,
   ApiPublicHooksSyncQuoCallsRoute: ApiPublicHooksSyncQuoCallsRoute,
   ApiPublicWebhooksSmartleadRoute: ApiPublicWebhooksSmartleadRoute,
