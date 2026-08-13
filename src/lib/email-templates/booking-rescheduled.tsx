@@ -20,13 +20,13 @@ const footer = { color: '#64748b', fontSize: '12px', margin: '20px 0 0', textAli
 export const BookingRescheduledEmail = ({ name, previousLabel, newLabel, meetingUrl }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Your interview has been rescheduled</Preview>
+    <Preview>Your discovery call has been rescheduled</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={card}>
-          <Heading style={heading}>Your interview was rescheduled{name ? `, ${name}` : ''}</Heading>
+          <Heading style={heading}>Your discovery call was rescheduled{name ? `, ${name}` : ''}</Heading>
           <Text style={muted}>
-            Heads up — your interview time has been updated. Here are the new details:
+            Heads up — your discovery call time has been updated. Here are the new details:
           </Text>
           {previousLabel ? <Text style={detail}><strong>Previous time:</strong> {previousLabel}</Text> : null}
           <Text style={detail}><strong>New time:</strong> {newLabel || 'TBD'}</Text>
@@ -45,7 +45,7 @@ export const BookingRescheduledEmail = ({ name, previousLabel, newLabel, meeting
 
 export const template = {
   component: BookingRescheduledEmail,
-  subject: 'Your interview has been rescheduled',
+  subject: 'Your discovery call has been rescheduled',
   displayName: 'Booking rescheduled',
   previewData: {
     name: 'Alex',
