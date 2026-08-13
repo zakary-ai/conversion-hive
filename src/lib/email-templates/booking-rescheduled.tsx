@@ -17,7 +17,7 @@ const muted = { color: '#cbd5e1', fontSize: '14px', lineHeight: '22px', margin: 
 const detail = { color: '#ffffff', fontSize: '15px', lineHeight: '24px', margin: '4px 0' }
 const footer = { color: '#64748b', fontSize: '12px', margin: '20px 0 0', textAlign: 'center' as const }
 
-export const BookingRescheduledEmail = ({ name, previousLabel, newLabel }: Props) => (
+export const BookingRescheduledEmail = ({ name, previousLabel, newLabel, meetingUrl }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>Your interview has been rescheduled</Preview>
