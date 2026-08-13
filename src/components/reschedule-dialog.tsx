@@ -42,11 +42,13 @@ export function RescheduleDialog({ apptId, currentScheduledAt, onClose }: Props)
     return d.toISOString();
   }, [date, time]);
 
+  const [notify, setNotify] = useState(false);
+
   const m = useMutation({
     mutationFn: (scheduled_at: string) =>
-      rescheduleAppointment({ data: { id: apptId!, scheduled_at, silent: true } }),
+      rescheduleAppointment({ data: { id: apptId!, scheduled_at, silent: !notify, notify } }),
     onSuccess: () => {
-      toast.success("Rescheduled");
+      toast.success(notify ? "Rescheduled — follow-up email sent" : "Rescheduled");
       qc.invalidateQueries({ queryKey: ["my-appointments"] });
       qc.invalidateQueries({ queryKey: ["all-appointments"] });
       qc.invalidateQueries({ queryKey: ["b2b-bookings"] });
