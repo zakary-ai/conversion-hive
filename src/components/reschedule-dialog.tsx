@@ -122,14 +122,10 @@ export function RescheduleDialog({ apptId, currentScheduledAt, onClose }: Props)
     setDate(d);
   };
 
-  const preview = iso
-    ? new Date(iso).toLocaleString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      })
+  const preview = date && wall
+    ? `${date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}, ${wall.wall_time} ${
+        TIMEZONES.find((t) => t.value === tz)?.label ?? tz
+      }`
     : null;
 
   return (
