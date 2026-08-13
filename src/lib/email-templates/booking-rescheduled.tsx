@@ -4,8 +4,9 @@ import type { TemplateEntry } from './registry'
 
 interface Props {
   name?: string
-  previousLabel?: string
+  previousLabel?: string | null
   newLabel?: string
+  meetingUrl?: string | null
 }
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Inter', Arial, sans-serif", color: '#0f172a' }
