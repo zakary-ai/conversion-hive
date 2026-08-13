@@ -766,11 +766,11 @@ export const deleteAppointment = createServerFn({ method: "POST" })
 
 export const rescheduleAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid(), scheduled_at: z.string().datetime(), silent: z.boolean().optional() }).parse)
+  .inputValidator(z.object({ id: z.string().uuid(), scheduled_at: z.string().datetime(), silent: z.boolean().optional(), notify: z.boolean().optional() }).parse)
   .handler(async ({ data, context }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: appt, error: aerr } = await (context.supabase.from("appointments") as any)
-      .select("id, type, name, email, assigned_closer_id, b2b_closer_id, status").eq("id", data.id).single();
+      .select("id, type, name, email, assigned_closer_id, b2b_closer_id, status, scheduled_at, timezone").eq("id", data.id).single();
     if (aerr || !appt) throw new Error(aerr?.message || "Appointment not found");
 
     const slotMinutes = await getSlotMinutes();
@@ -836,6 +836,27 @@ export const rescheduleAppointment = createServerFn({ method: "POST" })
         durationMinutes: slotMinutes,
         idempotencySuffix: `reschedule-${Date.now()}`,
       });
+    }
+
+    // Follow-up "your call moved" email, with times in the lead's own timezone.
+    if (data.notify && appt.email) {
+      try {
+        const { sendTransactional } = await import("@/lib/email/transactional.server");
+        const tz = (appt.timezone as string | null) ?? null;
+        await sendTransactional({
+          templateName: "booking-rescheduled",
+          recipientEmail: appt.email as string,
+          idempotencyKey: `booking-rescheduled-${data.id}-${new Date(data.scheduled_at).getTime()}`,
+          templateData: {
+            name: appt.name,
+            previousLabel: appt.scheduled_at ? formatScheduledLabel(appt.scheduled_at as string, tz) : null,
+            newLabel: formatScheduledLabel(data.scheduled_at, tz),
+            meetingUrl: newMeetingUrl ?? null,
+          },
+        });
+      } catch (e) {
+        console.warn("[booking-rescheduled] send failed", e);
+      }
     }
     return { ok: true };
   });

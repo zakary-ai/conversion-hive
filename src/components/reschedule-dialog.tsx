@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import { Switch } from "@/components/ui/switch";
 import { rescheduleAppointment } from "@/lib/api/cl.functions";
 import { toast } from "sonner";
 
@@ -42,11 +43,13 @@ export function RescheduleDialog({ apptId, currentScheduledAt, onClose }: Props)
     return d.toISOString();
   }, [date, time]);
 
+  const [notify, setNotify] = useState(false);
+
   const m = useMutation({
     mutationFn: (scheduled_at: string) =>
-      rescheduleAppointment({ data: { id: apptId!, scheduled_at, silent: true } }),
+      rescheduleAppointment({ data: { id: apptId!, scheduled_at, silent: !notify, notify } }),
     onSuccess: () => {
-      toast.success("Rescheduled");
+      toast.success(notify ? "Rescheduled — follow-up email sent" : "Rescheduled");
       qc.invalidateQueries({ queryKey: ["my-appointments"] });
       qc.invalidateQueries({ queryKey: ["all-appointments"] });
       qc.invalidateQueries({ queryKey: ["b2b-bookings"] });
@@ -111,9 +114,21 @@ export function RescheduleDialog({ apptId, currentScheduledAt, onClose }: Props)
             </div>
             <p className="text-xs text-muted-foreground">
               Any date and time is allowed — not limited to availability windows. Interpreted in your local
-              timezone. No email or notification is sent to the lead.
+              timezone.
             </p>
           </div>
+
+          <div className="rounded-xl border border-border bg-card p-3 flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="b2b-reschedule-notify">Send follow-up email</Label>
+              <p className="text-xs text-muted-foreground">
+                Emails the lead the new discovery call time in their own timezone (and issues a fresh
+                meeting link). Off = silent change, no email.
+              </p>
+            </div>
+            <Switch id="b2b-reschedule-notify" checked={notify} onCheckedChange={setNotify} />
+          </div>
+
 
           {preview && (
             <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
