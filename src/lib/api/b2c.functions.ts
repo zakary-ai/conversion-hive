@@ -770,7 +770,7 @@ export const assignCloserToBooking = createServerFn({ method: "POST" })
       accountId: (zoomCreds?.zoom_account_id as string | null) ?? null,
       clientId: (zoomCreds?.zoom_client_id as string | null) ?? null,
       clientSecret: (zoomCreds?.zoom_client_secret as string | null) ?? null,
-      topic: `${booking.applicant_name} — Interview`,
+      topic: `${booking.applicant_name} — Discovery Call`,
       start_time: booking.slot_start as string,
       duration: SLOT,
     });
@@ -914,7 +914,7 @@ export const rescheduleCloserBooking = createServerFn({ method: "POST" })
         accountId: (zoomCreds?.zoom_account_id as string | null) ?? null,
         clientId: (zoomCreds?.zoom_client_id as string | null) ?? null,
         clientSecret: (zoomCreds?.zoom_client_secret as string | null) ?? null,
-        topic: `${booking.applicant_name} — Interview`,
+        topic: `${booking.applicant_name} — Discovery Call`,
         start_time: start.toISOString(),
         duration: SLOT,
       });
@@ -1059,7 +1059,7 @@ export const resolveReapplyToken = createServerFn({ method: "POST" })
     };
   });
 
-// Public: book a new interview time under an existing (reapply) application.
+// Public: book a new discovery call time under an existing (reapply) application.
 export const createReapplyBooking = createServerFn({ method: "POST" })
   .inputValidator(z.object({
     token: z.string().uuid(),

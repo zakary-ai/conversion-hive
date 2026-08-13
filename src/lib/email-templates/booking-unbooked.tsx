@@ -21,13 +21,13 @@ const footer = { color: '#64748b', fontSize: '12px', margin: '20px 0 0', textAli
 export const BookingUnbookedEmail = ({ name, reapplyUrl }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Reapply to book a new interview time</Preview>
+    <Preview>Reapply to book a new discovery call time</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={card}>
           <Heading style={heading}>Sorry we missed you{name ? `, ${name}` : ''}</Heading>
           <Text style={muted}>
-            Unfortunately all of our interviewers were booked up for your scheduled time and
+            Unfortunately all of our closers were booked up for your scheduled time and
             we weren't able to assign someone to your call.
           </Text>
           <Text style={muted}>
@@ -46,7 +46,7 @@ export const BookingUnbookedEmail = ({ name, reapplyUrl }: Props) => (
 
 export const template = {
   component: BookingUnbookedEmail,
-  subject: "We couldn't cover your interview — reapply here",
+  subject: "We couldn't cover your discovery call — reapply here",
   displayName: 'Booking unbooked (reapply)',
   previewData: {
     name: 'Alex',

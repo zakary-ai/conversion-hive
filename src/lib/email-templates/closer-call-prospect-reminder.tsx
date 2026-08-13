@@ -25,13 +25,13 @@ const Email = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes,
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>Your interview starts in 15 minutes</Preview>
+      <Preview>Your discovery call starts in 15 minutes</Preview>
       <Body style={main}>
         <Container style={container}>
           <Section style={card}>
             <Heading style={heading}>Starting soon{name ? `, ${name}` : ''} ⏰</Heading>
             <Text style={muted}>
-              Quick reminder — your interview{closerName ? ` with ${closerName}` : ''} starts in about 15 minutes.
+              Quick reminder — your discovery call{closerName ? ` with ${closerName}` : ''} starts in about 15 minutes.
             </Text>
             <Text style={detail}><strong>When:</strong> {when}</Text>
             {durationMinutes ? <Text style={detail}><strong>Duration:</strong> {durationMinutes} minutes</Text> : null}
@@ -56,7 +56,7 @@ const Email = ({ name, scheduledLabel, scheduledAt, meetingUrl, durationMinutes,
 
 export const template = {
   component: Email,
-  subject: 'Reminder: your interview starts in 15 minutes',
+  subject: 'Reminder: your discovery call starts in 15 minutes',
   displayName: 'Closer call — prospect 15-min reminder',
   previewData: {
     name: 'Alex',
