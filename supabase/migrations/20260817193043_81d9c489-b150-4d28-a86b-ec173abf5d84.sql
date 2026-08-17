@@ -1,0 +1,1 @@
+UPDATE public.scraper_settings SET enabled = false;
