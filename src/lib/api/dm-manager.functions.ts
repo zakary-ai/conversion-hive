@@ -247,3 +247,81 @@ export const adminListManagerCalendars = createServerFn({ method: "GET" })
       bookings: ((bookings ?? []) as { manager_id: string }[]).filter((b) => b.manager_id === m.id),
     }));
   });
+
+/* -------------------------------------------------------------------------- */
+/*  Manager Zoom credentials                                                   */
+/* -------------------------------------------------------------------------- */
+
+export const getMyManagerZoom = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const me = await requireManager(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabaseAdmin.from("dm_manager_zoom_credentials") as any)
+      .select("zoom_account_id, zoom_client_id, zoom_client_secret, zoom_host_email")
+      .eq("manager_id", me.id)
+      .maybeSingle();
+    return {
+      configured: Boolean(data?.zoom_account_id && data?.zoom_client_id && data?.zoom_client_secret),
+      zoom_account_id: (data?.zoom_account_id as string | null) ?? "",
+      zoom_client_id: (data?.zoom_client_id as string | null) ?? "",
+      zoom_host_email: (data?.zoom_host_email as string | null) ?? "",
+      // never return the secret to the browser
+      has_secret: Boolean(data?.zoom_client_secret),
+    };
+  });
+
+export const saveMyManagerZoom = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    zoom_account_id: z.string().trim().max(200),
+    zoom_client_id: z.string().trim().max(200),
+    zoom_client_secret: z.string().trim().max(400).optional(),
+    zoom_host_email: z.string().trim().max(200).optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    const me = await requireManager(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const patch: Record<string, unknown> = {
+      manager_id: me.id,
+      zoom_account_id: data.zoom_account_id || null,
+      zoom_client_id: data.zoom_client_id || null,
+      zoom_host_email: data.zoom_host_email?.trim() ? data.zoom_host_email.trim().toLowerCase() : null,
+      updated_at: new Date().toISOString(),
+    };
+    // Blank secret means "keep the existing one".
+    if (data.zoom_client_secret) patch["zoom_client_secret"] = data.zoom_client_secret;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("dm_manager_zoom_credentials") as any)
+      .upsert(patch, { onConflict: "manager_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const testMyManagerZoom = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const me = await requireManager(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: creds } = await (supabaseAdmin.from("dm_manager_zoom_credentials") as any)
+      .select("zoom_account_id, zoom_client_id, zoom_client_secret, zoom_host_email")
+      .eq("manager_id", me.id)
+      .maybeSingle();
+    if (!creds?.zoom_account_id || !creds?.zoom_client_id || !creds?.zoom_client_secret) {
+      throw new Error("Add your Zoom Account ID, Client ID and Client Secret first.");
+    }
+    const { createZoomMeetingOnCloserAccount } = await import("@/lib/b2b-booking.server");
+    const url = await createZoomMeetingOnCloserAccount({
+      accountId: creds.zoom_account_id as string,
+      clientId: creds.zoom_client_id as string,
+      clientSecret: creds.zoom_client_secret as string,
+      hostEmail: (creds.zoom_host_email as string | null) ?? null,
+      topic: "Zoom connection test",
+      start_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      duration: 15,
+    });
+    if (!url) throw new Error("Zoom rejected those credentials. Double-check the Server-to-Server OAuth app values.");
+    return { ok: true, url };
+  });
