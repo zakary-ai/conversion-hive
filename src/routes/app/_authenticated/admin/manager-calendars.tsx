@@ -36,7 +36,7 @@ function AdminManagerCalendarsPage() {
     queryKey: ["admin-manager-calendars"],
     queryFn: () => adminListManagerCalendars(),
   });
-  const rows = data as Row[];
+  const rows = data as unknown as Row[];
 
   async function copy(link: string) {
     try { await navigator.clipboard.writeText(link); toast.success("Link copied"); }
