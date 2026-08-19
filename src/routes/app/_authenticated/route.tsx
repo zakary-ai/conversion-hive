@@ -60,11 +60,11 @@ function AuthenticatedLayout() {
 
   return (
     <SidebarProvider>
-      <div className="flex h-dvh min-h-dvh w-full overflow-hidden bg-background md:min-h-screen">
+      <div className="flex min-h-dvh w-full bg-background">
         <div className="hidden md:block">
           <AppSidebar isAdmin={me.isAdmin} isCloser={me.isCloser} isDmSetter={me.isDmSetter} isDmSetterManager={me.isDmSetterManager} />
         </div>
-        <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-40 shrink-0 border-b border-border bg-card pt-[env(safe-area-inset-top)]">
             {/* Mobile: centered title */}
             <div className="flex h-10 items-center justify-between gap-2 px-4 md:hidden">
@@ -94,7 +94,7 @@ function AuthenticatedLayout() {
             </div>
           </header>
           <main
-            className="mobile-app-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] sm:p-6 sm:pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-6 lg:p-8"
+            className="min-w-0 flex-1 overflow-x-hidden p-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] sm:p-6 sm:pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-6 lg:p-8"
           >
             <Outlet />
           </main>
