@@ -39,7 +39,7 @@ export const Route = createFileRoute("/call/$slug")({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-dvh w-full overflow-y-auto bg-background px-4 py-10">
+    <main className="min-h-dvh w-full bg-background px-4 py-10">
       <div className="mx-auto w-full max-w-4xl space-y-6">{children}</div>
     </main>
   );
