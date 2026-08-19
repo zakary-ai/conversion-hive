@@ -94,7 +94,7 @@ function AuthenticatedLayout() {
             </div>
           </header>
           <main
-            className="mobile-app-scroll flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] sm:p-6 sm:pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-6 lg:p-8"
+            className="mobile-app-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] sm:p-6 sm:pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-6 lg:p-8"
           >
             <Outlet />
           </main>
