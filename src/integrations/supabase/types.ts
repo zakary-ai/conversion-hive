@@ -1341,6 +1341,44 @@ export type Database = {
           },
         ]
       }
+      dm_manager_zoom_credentials: {
+        Row: {
+          created_at: string
+          manager_id: string
+          updated_at: string
+          zoom_account_id: string | null
+          zoom_client_id: string | null
+          zoom_client_secret: string | null
+          zoom_host_email: string | null
+        }
+        Insert: {
+          created_at?: string
+          manager_id: string
+          updated_at?: string
+          zoom_account_id?: string | null
+          zoom_client_id?: string | null
+          zoom_client_secret?: string | null
+          zoom_host_email?: string | null
+        }
+        Update: {
+          created_at?: string
+          manager_id?: string
+          updated_at?: string
+          zoom_account_id?: string | null
+          zoom_client_id?: string | null
+          zoom_client_secret?: string | null
+          zoom_host_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_manager_zoom_credentials_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: true
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dm_recipients: {
         Row: {
           created_at: string
