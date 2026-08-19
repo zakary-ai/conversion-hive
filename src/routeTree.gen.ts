@@ -46,6 +46,7 @@ import { Route as AppAuthenticatedTrainingModuleIdRouteImport } from './routes/a
 import { Route as AppAuthenticatedDmSetterLogsRouteImport } from './routes/app/_authenticated/dm-setter/logs'
 import { Route as AppAuthenticatedDmSetterInboxRouteImport } from './routes/app/_authenticated/dm-setter/inbox'
 import { Route as AppAuthenticatedDmSetterCalendarRouteImport } from './routes/app/_authenticated/dm-setter/calendar'
+import { Route as AppAuthenticatedDmManagerCalendarRouteImport } from './routes/app/_authenticated/dm-manager/calendar'
 import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
 import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
 import { Route as AppAuthenticatedB2bRecordingsRouteImport } from './routes/app/_authenticated/b2b.recordings'
@@ -292,6 +293,12 @@ const AppAuthenticatedDmSetterCalendarRoute =
   AppAuthenticatedDmSetterCalendarRouteImport.update({
     id: '/dm-setter/calendar',
     path: '/dm-setter/calendar',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
+const AppAuthenticatedDmManagerCalendarRoute =
+  AppAuthenticatedDmManagerCalendarRouteImport.update({
+    id: '/dm-manager/calendar',
+    path: '/dm-manager/calendar',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
 const AppAuthenticatedCloserCommissionsRoute =
@@ -626,6 +633,7 @@ export interface FileRoutesByFullPath {
   '/app/b2b/recordings': typeof AppAuthenticatedB2bRecordingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/dm-manager/calendar': typeof AppAuthenticatedDmManagerCalendarRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
   '/app/dm-setter/inbox': typeof AppAuthenticatedDmSetterInboxRoute
   '/app/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
@@ -708,6 +716,7 @@ export interface FileRoutesByTo {
   '/app/b2b/recordings': typeof AppAuthenticatedB2bRecordingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/dm-manager/calendar': typeof AppAuthenticatedDmManagerCalendarRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
   '/app/dm-setter/inbox': typeof AppAuthenticatedDmSetterInboxRoute
   '/app/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
@@ -793,6 +802,7 @@ export interface FileRoutesById {
   '/app/_authenticated/b2b/recordings': typeof AppAuthenticatedB2bRecordingsRoute
   '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
+  '/app/_authenticated/dm-manager/calendar': typeof AppAuthenticatedDmManagerCalendarRoute
   '/app/_authenticated/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
   '/app/_authenticated/dm-setter/inbox': typeof AppAuthenticatedDmSetterInboxRoute
   '/app/_authenticated/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
@@ -878,6 +888,7 @@ export interface FileRouteTypes {
     | '/app/b2b/recordings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
+    | '/app/dm-manager/calendar'
     | '/app/dm-setter/calendar'
     | '/app/dm-setter/inbox'
     | '/app/dm-setter/logs'
@@ -960,6 +971,7 @@ export interface FileRouteTypes {
     | '/app/b2b/recordings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
+    | '/app/dm-manager/calendar'
     | '/app/dm-setter/calendar'
     | '/app/dm-setter/inbox'
     | '/app/dm-setter/logs'
@@ -1044,6 +1056,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/b2b/recordings'
     | '/app/_authenticated/closer/calendar'
     | '/app/_authenticated/closer/commissions'
+    | '/app/_authenticated/dm-manager/calendar'
     | '/app/_authenticated/dm-setter/calendar'
     | '/app/_authenticated/dm-setter/inbox'
     | '/app/_authenticated/dm-setter/logs'
@@ -1357,6 +1370,13 @@ declare module '@tanstack/react-router' {
       path: '/dm-setter/calendar'
       fullPath: '/app/dm-setter/calendar'
       preLoaderRoute: typeof AppAuthenticatedDmSetterCalendarRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
+    '/app/_authenticated/dm-manager/calendar': {
+      id: '/app/_authenticated/dm-manager/calendar'
+      path: '/dm-manager/calendar'
+      fullPath: '/app/dm-manager/calendar'
+      preLoaderRoute: typeof AppAuthenticatedDmManagerCalendarRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
     '/app/_authenticated/closer/commissions': {
@@ -1776,6 +1796,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedB2bRecordingsRoute: typeof AppAuthenticatedB2bRecordingsRoute
   AppAuthenticatedCloserCalendarRoute: typeof AppAuthenticatedCloserCalendarRoute
   AppAuthenticatedCloserCommissionsRoute: typeof AppAuthenticatedCloserCommissionsRoute
+  AppAuthenticatedDmManagerCalendarRoute: typeof AppAuthenticatedDmManagerCalendarRoute
   AppAuthenticatedDmSetterCalendarRoute: typeof AppAuthenticatedDmSetterCalendarRoute
   AppAuthenticatedDmSetterInboxRoute: typeof AppAuthenticatedDmSetterInboxRoute
   AppAuthenticatedDmSetterLogsRoute: typeof AppAuthenticatedDmSetterLogsRoute
@@ -1804,6 +1825,8 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedCloserCalendarRoute: AppAuthenticatedCloserCalendarRoute,
   AppAuthenticatedCloserCommissionsRoute:
     AppAuthenticatedCloserCommissionsRoute,
+  AppAuthenticatedDmManagerCalendarRoute:
+    AppAuthenticatedDmManagerCalendarRoute,
   AppAuthenticatedDmSetterCalendarRoute: AppAuthenticatedDmSetterCalendarRoute,
   AppAuthenticatedDmSetterInboxRoute: AppAuthenticatedDmSetterInboxRoute,
   AppAuthenticatedDmSetterLogsRoute: AppAuthenticatedDmSetterLogsRoute,
