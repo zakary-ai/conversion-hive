@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMyManagerCalendar, saveMyManagerAvailability, updateMyManagerBooking } from "@/lib/api/dm-manager.functions";
+import { getMyManagerCalendar, saveMyManagerAvailability, updateMyManagerBooking, getMyManagerZoom, saveMyManagerZoom, testMyManagerZoom } from "@/lib/api/dm-manager.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
