@@ -210,6 +210,8 @@ function ManagerCalendarPage() {
             <p className="text-xs text-muted-foreground">Bookings are 30 minutes and hours are set in Eastern time.</p>
           </Card>
 
+          <ZoomCredentialsCard />
+
           <Card className="p-4 space-y-3">
             <div className="text-sm font-medium">Weekly availability (ET)</div>
             <div className="space-y-2">
