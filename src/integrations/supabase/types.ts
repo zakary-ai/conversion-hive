@@ -1250,6 +1250,97 @@ export type Database = {
           },
         ]
       }
+      dm_manager_availability_rules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_minute: number
+          id: string
+          manager_id: string
+          start_minute: number
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_minute: number
+          id?: string
+          manager_id: string
+          start_minute: number
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_minute?: number
+          id?: string
+          manager_id?: string
+          start_minute?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_manager_availability_rules_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_manager_bookings: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          manager_id: string
+          meeting_url: string | null
+          name: string
+          notes: string | null
+          outcome: string | null
+          phone: string | null
+          scheduled_at: string
+          status: string
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          manager_id: string
+          meeting_url?: string | null
+          name: string
+          notes?: string | null
+          outcome?: string | null
+          phone?: string | null
+          scheduled_at: string
+          status?: string
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          manager_id?: string
+          meeting_url?: string | null
+          name?: string
+          notes?: string | null
+          outcome?: string | null
+          phone?: string | null
+          scheduled_at?: string
+          status?: string
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_manager_bookings_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dm_recipients: {
         Row: {
           created_at: string
@@ -1298,6 +1389,7 @@ export type Database = {
       dm_setters: {
         Row: {
           apply_slug: string | null
+          booking_slug: string | null
           commission_rate: number
           created_at: string
           daily_target: number
@@ -1311,6 +1403,7 @@ export type Database = {
         }
         Insert: {
           apply_slug?: string | null
+          booking_slug?: string | null
           commission_rate?: number
           created_at?: string
           daily_target?: number
@@ -1324,6 +1417,7 @@ export type Database = {
         }
         Update: {
           apply_slug?: string | null
+          booking_slug?: string | null
           commission_rate?: number
           created_at?: string
           daily_target?: number
@@ -1580,6 +1674,7 @@ export type Database = {
           id: string
           is_active: boolean
           order_index: number
+          owner_manager_id: string | null
           title: string
           video_url: string | null
         }
@@ -1589,6 +1684,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           order_index?: number
+          owner_manager_id?: string | null
           title: string
           video_url?: string | null
         }
@@ -1598,10 +1694,19 @@ export type Database = {
           id?: string
           is_active?: boolean
           order_index?: number
+          owner_manager_id?: string | null
           title?: string
           video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "modules_owner_manager_id_fkey"
+            columns: ["owner_manager_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -2630,6 +2735,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_view_module: {
+        Args: { _owner: string; _user: string }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean

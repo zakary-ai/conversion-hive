@@ -11,6 +11,7 @@ import { template as bookingRescheduled } from './booking-rescheduled'
 import { template as bookingUnbooked } from './booking-unbooked'
 import { template as bookingDeclined } from './booking-declined'
 import { template as chatgptAdsInfo } from './chatgpt-ads-info'
+import { template as oneOnOneCall } from './one-on-one-call'
 
 
 
@@ -36,4 +37,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'booking-unbooked': bookingUnbooked,
   'booking-declined': bookingDeclined,
   'chatgpt-ads-info': chatgptAdsInfo,
+  'one-on-one-call': oneOnOneCall,
 }
