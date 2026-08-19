@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMyManagerCalendar, saveMyManagerAvailability, updateMyManagerBooking } from "@/lib/api/dm-manager.functions";
+import { getMyManagerCalendar, saveMyManagerAvailability, updateMyManagerBooking, getMyManagerZoom, saveMyManagerZoom, testMyManagerZoom } from "@/lib/api/dm-manager.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,96 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { CalendarClock, Copy, Mail, Phone, Video } from "lucide-react";
+import { CalendarClock, Copy, Mail, Phone, Video, CheckCircle2, AlertCircle } from "lucide-react";
+
+function ZoomCredentialsCard() {
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ["my-manager-zoom"], queryFn: () => getMyManagerZoom() });
+  const [form, setForm] = useState({ accountId: "", clientId: "", clientSecret: "", hostEmail: "" });
+
+  useEffect(() => {
+    if (!data) return;
+    setForm({
+      accountId: data.zoom_account_id,
+      clientId: data.zoom_client_id,
+      clientSecret: "",
+      hostEmail: data.zoom_host_email,
+    });
+  }, [data]);
+
+  const save = useMutation({
+    mutationFn: () =>
+      saveMyManagerZoom({
+        data: {
+          zoom_account_id: form.accountId,
+          zoom_client_id: form.clientId,
+          ...(form.clientSecret ? { zoom_client_secret: form.clientSecret } : {}),
+          zoom_host_email: form.hostEmail,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Zoom credentials saved");
+      setForm((f) => ({ ...f, clientSecret: "" }));
+      qc.invalidateQueries({ queryKey: ["my-manager-zoom"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const test = useMutation({
+    mutationFn: () => testMyManagerZoom(),
+    onSuccess: () => toast.success("Zoom connected — a test meeting was created successfully"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="text-sm font-medium">Zoom for your 1-on-1 calls</div>
+        {data?.configured ? (
+          <Badge variant="outline" className="text-[10px] gap-1"><CheckCircle2 className="h-3 w-3" /> Connected</Badge>
+        ) : (
+          <Badge variant="outline" className="text-[10px] gap-1"><AlertCircle className="h-3 w-3" /> Not set up</Badge>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Create a Zoom <span className="font-medium">Server-to-Server OAuth</span> app in your Zoom account and paste the
+        values below. Bookings on your link will then create meetings on your own Zoom. Until then, the company Zoom
+        account is used.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Account ID</label>
+          <Input value={form.accountId} onChange={(e) => setForm({ ...form, accountId: e.target.value })} placeholder="Account ID" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Client ID</label>
+          <Input value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })} placeholder="Client ID" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Client Secret</label>
+          <Input
+            type="password"
+            value={form.clientSecret}
+            onChange={(e) => setForm({ ...form, clientSecret: e.target.value })}
+            placeholder={data?.has_secret ? "•••••••• (leave blank to keep)" : "Client Secret"}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Zoom host email (optional)</label>
+          <Input value={form.hostEmail} onChange={(e) => setForm({ ...form, hostEmail: e.target.value })} placeholder="you@example.com" />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending ? "Saving…" : "Save Zoom keys"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => test.mutate()} disabled={test.isPending || !data?.configured}>
+          {test.isPending ? "Testing…" : "Test connection"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
 
 export const Route = createFileRoute("/app/_authenticated/dm-manager/calendar")({
   component: ManagerCalendarPage,
@@ -120,6 +209,8 @@ function ManagerCalendarPage() {
             </div>
             <p className="text-xs text-muted-foreground">Bookings are 30 minutes and hours are set in Eastern time.</p>
           </Card>
+
+          <ZoomCredentialsCard />
 
           <Card className="p-4 space-y-3">
             <div className="text-sm font-medium">Weekly availability (ET)</div>
