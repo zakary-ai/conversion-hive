@@ -49,6 +49,7 @@ const adminB2CItems = [
   { title: "Bookings", url: "/app/admin/bookings", icon: CalendarCheck },
   { title: "Closers", url: "/app/admin/closers", icon: UserPlus },
   { title: "DM Setters", url: "/app/admin/dm-setters", icon: MessageCircle },
+  { title: "Manager Calendars", url: "/app/admin/manager-calendars", icon: CalendarIcon },
   { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
   { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
   { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },
@@ -76,6 +77,8 @@ const dmSetterItems = [
 
 const dmManagerItems = [
   { title: "Home", url: "/app/dm-manager", icon: LayoutDashboard },
+  { title: "My Calendar", url: "/app/dm-manager/calendar", icon: CalendarCheck },
+  { title: "My Modules", url: "/app/dm-manager/modules", icon: GraduationCap },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
   { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },

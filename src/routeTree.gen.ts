@@ -46,6 +46,7 @@ import { Route as AppAuthenticatedTrainingModuleIdRouteImport } from './routes/a
 import { Route as AppAuthenticatedDmSetterLogsRouteImport } from './routes/app/_authenticated/dm-setter/logs'
 import { Route as AppAuthenticatedDmSetterInboxRouteImport } from './routes/app/_authenticated/dm-setter/inbox'
 import { Route as AppAuthenticatedDmSetterCalendarRouteImport } from './routes/app/_authenticated/dm-setter/calendar'
+import { Route as AppAuthenticatedDmManagerModulesRouteImport } from './routes/app/_authenticated/dm-manager/modules'
 import { Route as AppAuthenticatedDmManagerCalendarRouteImport } from './routes/app/_authenticated/dm-manager/calendar'
 import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
 import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
@@ -60,6 +61,7 @@ import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/
 import { Route as AppAuthenticatedAdminScraperRouteImport } from './routes/app/_authenticated/admin/scraper'
 import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
 import { Route as AppAuthenticatedAdminModulesRouteImport } from './routes/app/_authenticated/admin/modules'
+import { Route as AppAuthenticatedAdminManagerCalendarsRouteImport } from './routes/app/_authenticated/admin/manager-calendars'
 import { Route as AppAuthenticatedAdminLeadsRouteImport } from './routes/app/_authenticated/admin/leads'
 import { Route as AppAuthenticatedAdminJustcallSetupRouteImport } from './routes/app/_authenticated/admin/justcall-setup'
 import { Route as AppAuthenticatedAdminDmSettersRouteImport } from './routes/app/_authenticated/admin/dm-setters'
@@ -295,6 +297,12 @@ const AppAuthenticatedDmSetterCalendarRoute =
     path: '/dm-setter/calendar',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
+const AppAuthenticatedDmManagerModulesRoute =
+  AppAuthenticatedDmManagerModulesRouteImport.update({
+    id: '/dm-manager/modules',
+    path: '/dm-manager/modules',
+    getParentRoute: () => AppAuthenticatedRouteRoute,
+  } as any)
 const AppAuthenticatedDmManagerCalendarRoute =
   AppAuthenticatedDmManagerCalendarRouteImport.update({
     id: '/dm-manager/calendar',
@@ -376,6 +384,12 @@ const AppAuthenticatedAdminModulesRoute =
   AppAuthenticatedAdminModulesRouteImport.update({
     id: '/modules',
     path: '/modules',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
+const AppAuthenticatedAdminManagerCalendarsRoute =
+  AppAuthenticatedAdminManagerCalendarsRouteImport.update({
+    id: '/manager-calendars',
+    path: '/manager-calendars',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 const AppAuthenticatedAdminLeadsRoute =
@@ -620,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
   '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
+  '/app/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
@@ -634,6 +649,7 @@ export interface FileRoutesByFullPath {
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-manager/calendar': typeof AppAuthenticatedDmManagerCalendarRoute
+  '/app/dm-manager/modules': typeof AppAuthenticatedDmManagerModulesRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
   '/app/dm-setter/inbox': typeof AppAuthenticatedDmSetterInboxRoute
   '/app/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
@@ -703,6 +719,7 @@ export interface FileRoutesByTo {
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
   '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
+  '/app/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
@@ -717,6 +734,7 @@ export interface FileRoutesByTo {
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-manager/calendar': typeof AppAuthenticatedDmManagerCalendarRoute
+  '/app/dm-manager/modules': typeof AppAuthenticatedDmManagerModulesRoute
   '/app/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
   '/app/dm-setter/inbox': typeof AppAuthenticatedDmSetterInboxRoute
   '/app/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
@@ -789,6 +807,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/_authenticated/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
   '/app/_authenticated/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
+  '/app/_authenticated/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/_authenticated/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/_authenticated/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
@@ -803,6 +822,7 @@ export interface FileRoutesById {
   '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/_authenticated/dm-manager/calendar': typeof AppAuthenticatedDmManagerCalendarRoute
+  '/app/_authenticated/dm-manager/modules': typeof AppAuthenticatedDmManagerModulesRoute
   '/app/_authenticated/dm-setter/calendar': typeof AppAuthenticatedDmSetterCalendarRoute
   '/app/_authenticated/dm-setter/inbox': typeof AppAuthenticatedDmSetterInboxRoute
   '/app/_authenticated/dm-setter/logs': typeof AppAuthenticatedDmSetterLogsRoute
@@ -875,6 +895,7 @@ export interface FileRouteTypes {
     | '/app/admin/dm-setters'
     | '/app/admin/justcall-setup'
     | '/app/admin/leads'
+    | '/app/admin/manager-calendars'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
     | '/app/admin/scraper'
@@ -889,6 +910,7 @@ export interface FileRouteTypes {
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-manager/calendar'
+    | '/app/dm-manager/modules'
     | '/app/dm-setter/calendar'
     | '/app/dm-setter/inbox'
     | '/app/dm-setter/logs'
@@ -958,6 +980,7 @@ export interface FileRouteTypes {
     | '/app/admin/dm-setters'
     | '/app/admin/justcall-setup'
     | '/app/admin/leads'
+    | '/app/admin/manager-calendars'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
     | '/app/admin/scraper'
@@ -972,6 +995,7 @@ export interface FileRouteTypes {
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-manager/calendar'
+    | '/app/dm-manager/modules'
     | '/app/dm-setter/calendar'
     | '/app/dm-setter/inbox'
     | '/app/dm-setter/logs'
@@ -1043,6 +1067,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/dm-setters'
     | '/app/_authenticated/admin/justcall-setup'
     | '/app/_authenticated/admin/leads'
+    | '/app/_authenticated/admin/manager-calendars'
     | '/app/_authenticated/admin/modules'
     | '/app/_authenticated/admin/quizzes'
     | '/app/_authenticated/admin/scraper'
@@ -1057,6 +1082,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/closer/calendar'
     | '/app/_authenticated/closer/commissions'
     | '/app/_authenticated/dm-manager/calendar'
+    | '/app/_authenticated/dm-manager/modules'
     | '/app/_authenticated/dm-setter/calendar'
     | '/app/_authenticated/dm-setter/inbox'
     | '/app/_authenticated/dm-setter/logs'
@@ -1372,6 +1398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedDmSetterCalendarRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
+    '/app/_authenticated/dm-manager/modules': {
+      id: '/app/_authenticated/dm-manager/modules'
+      path: '/dm-manager/modules'
+      fullPath: '/app/dm-manager/modules'
+      preLoaderRoute: typeof AppAuthenticatedDmManagerModulesRouteImport
+      parentRoute: typeof AppAuthenticatedRouteRoute
+    }
     '/app/_authenticated/dm-manager/calendar': {
       id: '/app/_authenticated/dm-manager/calendar'
       path: '/dm-manager/calendar'
@@ -1468,6 +1501,13 @@ declare module '@tanstack/react-router' {
       path: '/modules'
       fullPath: '/app/admin/modules'
       preLoaderRoute: typeof AppAuthenticatedAdminModulesRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
+    '/app/_authenticated/admin/manager-calendars': {
+      id: '/app/_authenticated/admin/manager-calendars'
+      path: '/manager-calendars'
+      fullPath: '/app/admin/manager-calendars'
+      preLoaderRoute: typeof AppAuthenticatedAdminManagerCalendarsRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
     '/app/_authenticated/admin/leads': {
@@ -1711,6 +1751,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminDmSettersRoute: typeof AppAuthenticatedAdminDmSettersRoute
   AppAuthenticatedAdminJustcallSetupRoute: typeof AppAuthenticatedAdminJustcallSetupRoute
   AppAuthenticatedAdminLeadsRoute: typeof AppAuthenticatedAdminLeadsRoute
+  AppAuthenticatedAdminManagerCalendarsRoute: typeof AppAuthenticatedAdminManagerCalendarsRoute
   AppAuthenticatedAdminModulesRoute: typeof AppAuthenticatedAdminModulesRoute
   AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
   AppAuthenticatedAdminScraperRoute: typeof AppAuthenticatedAdminScraperRoute
@@ -1744,6 +1785,8 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminJustcallSetupRoute:
       AppAuthenticatedAdminJustcallSetupRoute,
     AppAuthenticatedAdminLeadsRoute: AppAuthenticatedAdminLeadsRoute,
+    AppAuthenticatedAdminManagerCalendarsRoute:
+      AppAuthenticatedAdminManagerCalendarsRoute,
     AppAuthenticatedAdminModulesRoute: AppAuthenticatedAdminModulesRoute,
     AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
     AppAuthenticatedAdminScraperRoute: AppAuthenticatedAdminScraperRoute,
@@ -1797,6 +1840,7 @@ interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedCloserCalendarRoute: typeof AppAuthenticatedCloserCalendarRoute
   AppAuthenticatedCloserCommissionsRoute: typeof AppAuthenticatedCloserCommissionsRoute
   AppAuthenticatedDmManagerCalendarRoute: typeof AppAuthenticatedDmManagerCalendarRoute
+  AppAuthenticatedDmManagerModulesRoute: typeof AppAuthenticatedDmManagerModulesRoute
   AppAuthenticatedDmSetterCalendarRoute: typeof AppAuthenticatedDmSetterCalendarRoute
   AppAuthenticatedDmSetterInboxRoute: typeof AppAuthenticatedDmSetterInboxRoute
   AppAuthenticatedDmSetterLogsRoute: typeof AppAuthenticatedDmSetterLogsRoute
@@ -1827,6 +1871,7 @@ const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
     AppAuthenticatedCloserCommissionsRoute,
   AppAuthenticatedDmManagerCalendarRoute:
     AppAuthenticatedDmManagerCalendarRoute,
+  AppAuthenticatedDmManagerModulesRoute: AppAuthenticatedDmManagerModulesRoute,
   AppAuthenticatedDmSetterCalendarRoute: AppAuthenticatedDmSetterCalendarRoute,
   AppAuthenticatedDmSetterInboxRoute: AppAuthenticatedDmSetterInboxRoute,
   AppAuthenticatedDmSetterLogsRoute: AppAuthenticatedDmSetterLogsRoute,
