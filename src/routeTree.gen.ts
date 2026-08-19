@@ -19,6 +19,7 @@ import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as CallSlugRouteImport } from './routes/call.$slug'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AppAuthRouteImport } from './routes/app/auth'
 import { Route as AppAuthenticatedRouteRouteImport } from './routes/app/_authenticated/route'
@@ -139,6 +140,11 @@ const IndexRoute = IndexRouteImport.update({
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallSlugRoute = CallSlugRouteImport.update({
+  id: '/call/$slug',
+  path: '/call/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookSlugRoute = BookSlugRouteImport.update({
@@ -567,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/auth': typeof AppAuthRoute
   '/book/$slug': typeof BookSlugRoute
+  '/call/$slug': typeof CallSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
@@ -649,6 +656,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/auth': typeof AppAuthRoute
   '/book/$slug': typeof BookSlugRoute
+  '/call/$slug': typeof CallSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
   '/app/calendar': typeof AppAuthenticatedCalendarRoute
@@ -732,6 +740,7 @@ export interface FileRoutesById {
   '/app/_authenticated': typeof AppAuthenticatedRouteRouteWithChildren
   '/app/auth': typeof AppAuthRoute
   '/book/$slug': typeof BookSlugRoute
+  '/call/$slug': typeof CallSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/_authenticated/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
@@ -816,6 +825,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/app/auth'
     | '/book/$slug'
+    | '/call/$slug'
     | '/email/unsubscribe'
     | '/app/admin'
     | '/api/public/confirm-booking'
@@ -898,6 +908,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/app/auth'
     | '/book/$slug'
+    | '/call/$slug'
     | '/email/unsubscribe'
     | '/api/public/confirm-booking'
     | '/app/calendar'
@@ -980,6 +991,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated'
     | '/app/auth'
     | '/book/$slug'
+    | '/call/$slug'
     | '/email/unsubscribe'
     | '/app/_authenticated/admin'
     | '/api/public/confirm-booking'
@@ -1062,6 +1074,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   BookSlugRoute: typeof BookSlugRoute
+  CallSlugRoute: typeof CallSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicConfirmBookingRoute: typeof ApiPublicConfirmBookingRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -1155,6 +1168,13 @@ declare module '@tanstack/react-router' {
       path: '/email/unsubscribe'
       fullPath: '/email/unsubscribe'
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/call/$slug': {
+      id: '/call/$slug'
+      path: '/call/$slug'
+      fullPath: '/call/$slug'
+      preLoaderRoute: typeof CallSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/book/$slug': {
@@ -1824,6 +1844,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   BookSlugRoute: BookSlugRoute,
+  CallSlugRoute: CallSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicConfirmBookingRoute: ApiPublicConfirmBookingRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
