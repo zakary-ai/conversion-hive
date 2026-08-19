@@ -18,6 +18,7 @@ const clientItems = [
   { title: "Dialer", url: "/app/b2b/dialer", icon: Phone },
   { title: "Didn't Pick Up", url: "/app/b2b/didnt-pick-up", icon: PhoneOff },
   { title: "Callbacks", url: "/app/b2b/callbacks", icon: CalendarIcon },
+  { title: "My Bookings", url: "/app/calendar", icon: CalendarCheck },
   { title: "Recordings", url: "/app/b2b/recordings", icon: Mic },
   { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
   { title: "Training", url: "/app/training", icon: GraduationCap },

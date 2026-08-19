@@ -11,6 +11,7 @@ const clientItems = [
   { title: "Pool", url: "/app/b2b/pool", icon: Users },
   { title: "Leads", url: "/app/b2b/leads", icon: Briefcase },
   { title: "Dialer", url: "/app/b2b/dialer", icon: Phone },
+  { title: "Bookings", url: "/app/calendar", icon: CalendarCheck },
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
