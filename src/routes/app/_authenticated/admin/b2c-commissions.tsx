@@ -245,11 +245,20 @@ function BookingGroupCard({ row }: { row: Row }) {
             {dealVolume(row) > 0 ? ` · Deal ${money(dealVolume(row))}` : ""}
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total</div>
-          <div className={`font-semibold ${allApproved ? "text-success" : "text-warning"}`}>{money(total)}</div>
+        <div className="flex items-start gap-2">
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total</div>
+            <div className={`font-semibold ${allApproved ? "text-success" : "text-warning"}`}>{money(total)}</div>
+          </div>
+          {!allApproved && (
+            <Button size="sm" variant="outline" className="h-7" onClick={() => setDealEditing((v) => !v)}>
+              <Pencil className="h-3 w-3 mr-1" /> {dealEditing ? "Close" : "Edit deal"}
+            </Button>
+          )}
         </div>
       </div>
+
+      {dealEditing && <DealEditor row={row} onDone={() => setDealEditing(false)} />}
 
       <div className="grid sm:grid-cols-2 gap-2">
         <DmSetterSlot row={row} />
@@ -260,6 +269,143 @@ function BookingGroupCard({ row }: { row: Row }) {
     </div>
   );
 }
+
+// ---------- Whole-deal editor: deal size drives every party's split ----------
+function DealEditor({ row, onDone }: { row: Row; onDone: () => void }) {
+  const qc = useQueryClient();
+  const isClosed = row.outcome === "closed";
+  const initialBase = isClosed
+    ? Number(row.deal_amount ?? 0)
+    : Number(row.deposit_amount ?? 0) + Number(row.follow_up_amount ?? 0);
+
+  const pctOf = (amt: number | null | undefined) =>
+    initialBase > 0 && amt != null ? String(Math.round((Number(amt) / initialBase) * 10000) / 100) : "";
+
+  const [deal, setDeal] = useState(String(row.deal_amount ?? ""));
+  const [deposit, setDeposit] = useState(String(row.deposit_amount ?? ""));
+  const [followUp, setFollowUp] = useState(String(row.follow_up_amount ?? ""));
+  const [closerPct, setCloserPct] = useState(row.commission_percent != null ? String(row.commission_percent) : "");
+  const [dmPct, setDmPct] = useState(pctOf(row.dm_setter_commission_amount));
+  const [mgrPct, setMgrPct] = useState(pctOf(row.dm_setter_manager_commission_amount));
+
+  const base = isClosed
+    ? (parseFloat(deal) || 0)
+    : (parseFloat(deposit) || 0) + (parseFloat(followUp) || 0);
+  const calc = (p: string) => {
+    const v = parseFloat(p);
+    if (!isFinite(v) || base <= 0) return 0;
+    return Math.round(base * (v / 100) * 100) / 100;
+  };
+  const closerAmt = calc(closerPct);
+  const dmAmt = calc(dmPct);
+  const mgrAmt = calc(mgrPct);
+
+  const save = useMutation({
+    mutationFn: () => updateBookingDeal({
+      data: {
+        booking_id: row.id,
+        deal_amount: isClosed ? (parseFloat(deal) || 0) : null,
+        deposit_amount: isClosed ? null : (parseFloat(deposit) || 0),
+        follow_up_amount: isClosed ? null : (parseFloat(followUp) || 0),
+        closer_percent: closerPct ? parseFloat(closerPct) : null,
+        ...(row.dm_setter_id && dmPct ? { dm_setter_percent: parseFloat(dmPct) } : {}),
+        ...(row.dm_setter_manager_id && mgrPct ? { dm_manager_percent: parseFloat(mgrPct) } : {}),
+      },
+    }),
+    onSuccess: () => {
+      toast.success("Deal updated");
+      qc.invalidateQueries({ queryKey: ["closed-deals-commission"] });
+      qc.invalidateQueries({ queryKey: ["my-closer-commissions"] });
+      qc.invalidateQueries({ queryKey: ["my-commissions"] });
+      onDone();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="rounded-md border border-warning/40 bg-warning/5 p-3 space-y-3">
+      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Edit deal</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {isClosed ? (
+          <div>
+            <Label className="text-[9px]">Deal amount ($)</Label>
+            <Input className="h-8" type="number" step="0.01" value={deal} onChange={(e) => setDeal(e.target.value)} />
+          </div>
+        ) : (
+          <>
+            <div>
+              <Label className="text-[9px]">Deposit ($)</Label>
+              <Input className="h-8" type="number" step="0.01" value={deposit} onChange={(e) => setDeposit(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[9px]">Follow-up ($)</Label>
+              <Input className="h-8" type="number" step="0.01" value={followUp} onChange={(e) => setFollowUp(e.target.value)} />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-3">
+        <SplitField
+          label="Closer"
+          name={row.closers?.full_name ?? "Unassigned"}
+          pct={closerPct}
+          setPct={setCloserPct}
+          amount={closerAmt}
+          disabled={!row.closers}
+        />
+        <SplitField
+          label="DM Setter"
+          name={row.dm_setter?.full_name ?? "Not recorded"}
+          pct={dmPct}
+          setPct={setDmPct}
+          amount={dmAmt}
+          disabled={!row.dm_setter_id}
+        />
+        <SplitField
+          label="DM Setter Manager"
+          name={row.dm_setter_manager?.full_name ?? "Not recorded"}
+          pct={mgrPct}
+          setPct={setMgrPct}
+          amount={mgrAmt}
+          disabled={!row.dm_setter_manager_id}
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="text-[11px] text-muted-foreground">
+          Base {money(base)} · Payouts total <span className="text-foreground">{money(closerAmt + dmAmt + mgrAmt)}</span>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="h-7" onClick={onDone}>Cancel</Button>
+          <Button size="sm" className="h-7" onClick={() => save.mutate()} disabled={save.isPending}>
+            {save.isPending ? "Saving…" : "Save deal"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SplitField({ label, name, pct, setPct, amount, disabled }: {
+  label: string; name: string; pct: string; setPct: (v: string) => void; amount: number; disabled?: boolean;
+}) {
+  return (
+    <div className="rounded-md border border-border p-2 bg-background/40">
+      <div className="text-[9px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="text-xs font-medium truncate">{name}</div>
+      <div className="flex items-end gap-2 mt-1">
+        <div className="w-20">
+          <Label className="text-[9px] flex items-center gap-1"><Percent className="h-3 w-3" /> %</Label>
+          <Input className="h-8" type="number" step="0.1" value={pct} disabled={disabled}
+            onChange={(e) => setPct(e.target.value)} />
+        </div>
+        <div className="text-sm font-semibold text-warning pb-1">{disabled ? "—" : money(amount)}</div>
+      </div>
+    </div>
+  );
+}
+
 
 function DmSetterSlot({ row }: { row: Row }) {
   const qc = useQueryClient();
