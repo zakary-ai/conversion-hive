@@ -14,6 +14,7 @@ import {
   listB2cManualLookups,
   addB2cManualCommission,
   listB2cManualCommissions,
+  updateBookingDeal,
 } from "@/lib/api/b2c.functions";
 import { approveCommission, deleteCommission, setCommissionPaid } from "@/lib/api/cl.functions";
 
@@ -215,6 +216,7 @@ function PayoutsSheetWithManual({ open, onOpenChange, rows }: { open: boolean; o
 // ---------- Booking group card (DM Setter | Closer) ----------
 function BookingGroupCard({ row }: { row: Row }) {
   const [editing, setEditing] = useState(false);
+  const [dealEditing, setDealEditing] = useState(false);
   const closerApproved = (row.commission_status ?? "pending") === "approved";
   const dmApproved = (row.dm_setter_commission_status ?? "pending") === "approved";
   const mgrApproved = (row.dm_setter_manager_commission_status ?? "pending") === "approved";
@@ -251,7 +253,7 @@ function BookingGroupCard({ row }: { row: Row }) {
             <div className={`font-semibold ${allApproved ? "text-success" : "text-warning"}`}>{money(total)}</div>
           </div>
           {!allApproved && (
-            <Button size="sm" variant="outline" className="h-7" onClick={() => setDealEditing((v) => !v)}>
+            <Button size="sm" variant="outline" className="h-7" onClick={() => setDealEditing(!dealEditing)}>
               <Pencil className="h-3 w-3 mr-1" /> {dealEditing ? "Close" : "Edit deal"}
             </Button>
           )}
