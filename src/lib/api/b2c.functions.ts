@@ -1401,6 +1401,75 @@ export const updateBookingCommission = createServerFn({ method: "POST" })
     return { ok: true, commission_amount: commissionAmount };
   });
 
+// ---------- Admin: edit the whole deal (deal size + every party's split) ----------
+export const updateBookingDeal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({
+    booking_id: z.string().uuid(),
+    deal_amount: z.number().nonnegative().nullable().optional(),
+    deposit_amount: z.number().nonnegative().nullable().optional(),
+    follow_up_amount: z.number().nonnegative().nullable().optional(),
+    closer_percent: z.number().min(0).max(100).nullable().optional(),
+    closer_amount: z.number().nonnegative().nullable().optional(),
+    dm_setter_percent: z.number().min(0).max(100).nullable().optional(),
+    dm_setter_amount: z.number().nonnegative().nullable().optional(),
+    dm_manager_percent: z.number().min(0).max(100).nullable().optional(),
+    dm_manager_amount: z.number().nonnegative().nullable().optional(),
+  }).parse)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: gerr } = await context.supabase
+      .from("closer_bookings")
+      .select("outcome, deal_amount, deposit_amount, follow_up_amount, commission_percent, dm_setter_id, dm_setter_manager_id")
+      .eq("id", data.booking_id).maybeSingle();
+    if (gerr) throw new Error(gerr.message);
+    if (!row) throw new Error("Booking not found");
+
+    const outcome = row.outcome as string;
+    const deal = data.deal_amount !== undefined ? data.deal_amount : (row.deal_amount as number | null);
+    const deposit = data.deposit_amount !== undefined ? data.deposit_amount : (row.deposit_amount as number | null);
+    const followUp = data.follow_up_amount !== undefined ? data.follow_up_amount : (row.follow_up_amount as number | null);
+    const pct = data.closer_percent !== undefined ? data.closer_percent : (row.commission_percent as number | null);
+
+    const base = outcome === "closed"
+      ? Number(deal ?? 0)
+      : Number(deposit ?? 0) + Number(followUp ?? 0);
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+
+    const closerAmount = data.closer_amount != null
+      ? data.closer_amount
+      : computeCommission(outcome, deal, deposit, followUp, pct);
+
+    const dmAmount = data.dm_setter_amount != null
+      ? data.dm_setter_amount
+      : (row.dm_setter_id && data.dm_setter_percent != null && base > 0
+        ? round2(base * (data.dm_setter_percent / 100))
+        : undefined);
+
+    const mgrAmount = data.dm_manager_amount != null
+      ? data.dm_manager_amount
+      : (row.dm_setter_manager_id && data.dm_manager_percent != null && base > 0
+        ? round2(base * (data.dm_manager_percent / 100))
+        : undefined);
+
+    const patch: Record<string, unknown> = {
+      deal_amount: deal,
+      deposit_amount: deposit,
+      follow_up_amount: followUp,
+      commission_percent: pct,
+      commission_amount: closerAmount,
+    };
+    if (dmAmount !== undefined) patch['dm_setter_commission_amount'] = dmAmount;
+    if (mgrAmount !== undefined) patch['dm_setter_manager_commission_amount'] = mgrAmount;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin.from("closer_bookings") as any).update(patch).eq("id", data.booking_id);
+    if (error) throw new Error(error.message);
+    return { ok: true, closer_amount: closerAmount, dm_setter_amount: dmAmount ?? null, dm_manager_amount: mgrAmount ?? null };
+  });
+
+
 // ---------- Admin: clear a booking's outcome/commission (remove from commissions list) ----------
 export const clearBookingOutcome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
