@@ -1296,6 +1296,7 @@ export type Database = {
           notes: string | null
           outcome: string | null
           phone: string | null
+          reminder_sent_at: string | null
           scheduled_at: string
           status: string
           timezone: string | null
@@ -1311,6 +1312,7 @@ export type Database = {
           notes?: string | null
           outcome?: string | null
           phone?: string | null
+          reminder_sent_at?: string | null
           scheduled_at: string
           status?: string
           timezone?: string | null
@@ -1326,6 +1328,7 @@ export type Database = {
           notes?: string | null
           outcome?: string | null
           phone?: string | null
+          reminder_sent_at?: string | null
           scheduled_at?: string
           status?: string
           timezone?: string | null

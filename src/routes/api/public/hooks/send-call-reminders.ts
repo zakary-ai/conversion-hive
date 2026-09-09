@@ -72,7 +72,73 @@ export const Route = createFileRoute('/api/public/hooks/send-call-reminders')({
             }
           }
 
-          return new Response(JSON.stringify({ ok: true, checked: rows?.length ?? 0, sent }), {
+          // 1-on-1 manager interview bookings: remind the applicant and the manager.
+          let managerSent = 0
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: mgrRows } = await (supabaseAdmin.from('dm_manager_bookings') as any)
+            .select('id, name, email, scheduled_at, timezone, meeting_url, manager_id, dm_setters:manager_id ( full_name, email )')
+            .eq('status', 'scheduled')
+            .is('reminder_sent_at', null)
+            .gte('scheduled_at', windowStart)
+            .lte('scheduled_at', windowEnd)
+
+          for (const b of (mgrRows ?? []) as any[]) {
+            const startISO = b.scheduled_at as string
+            const label = (tz: string) => {
+              try {
+                return new Intl.DateTimeFormat('en-US', {
+                  timeZone: tz,
+                  weekday: 'long', month: 'long', day: 'numeric',
+                  hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+                }).format(new Date(startISO))
+              } catch { return startISO }
+            }
+            const managerName = b.dm_setters?.full_name ?? undefined
+            const managerEmail = b.dm_setters?.email ?? null
+
+            let anySent = false
+            if (b.email) {
+              const r = await sendTransactional({
+                templateName: 'one-on-one-call-reminder',
+                recipientEmail: b.email as string,
+                idempotencyKey: `dm-manager-booking-reminder-${b.id}`,
+                templateData: {
+                  name: b.name,
+                  managerName,
+                  scheduledLabel: label((b.timezone as string | null) || 'America/New_York'),
+                  meetingUrl: b.meeting_url,
+                  durationMinutes: 30,
+                },
+              })
+              anySent = anySent || r.ok
+            }
+            if (managerEmail) {
+              const r = await sendTransactional({
+                templateName: 'one-on-one-call-reminder',
+                recipientEmail: managerEmail as string,
+                idempotencyKey: `dm-manager-booking-reminder-mgr-${b.id}`,
+                templateData: {
+                  name: b.name,
+                  managerName,
+                  forManager: true,
+                  scheduledLabel: label('America/New_York'),
+                  meetingUrl: b.meeting_url,
+                  durationMinutes: 30,
+                },
+              })
+              anySent = anySent || r.ok
+            }
+
+            if (anySent) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (supabaseAdmin.from('dm_manager_bookings') as any)
+                .update({ reminder_sent_at: new Date().toISOString() })
+                .eq('id', b.id as string)
+              managerSent++
+            }
+          }
+
+          return new Response(JSON.stringify({ ok: true, checked: rows?.length ?? 0, sent, managerSent }), {
             headers: { 'Content-Type': 'application/json' },
           })
         } catch (e) {

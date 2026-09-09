@@ -160,5 +160,36 @@ export async function createManagerBooking(input: {
     // Email failure must not lose the booking.
   }
 
+  // Notify the manager that a new interview landed on their calendar.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: mgr } = await (supabaseAdmin.from("dm_setters") as any)
+      .select("email, full_name")
+      .eq("id", input.managerId)
+      .maybeSingle();
+    const managerEmail = (mgr?.email as string | null) || null;
+    if (managerEmail) {
+      const managerLabel = formatScheduledLabel(new Date(startMs).toISOString(), EST_TZ);
+      const { sendTransactional } = await import("@/lib/email/transactional.server");
+      await sendTransactional({
+        templateName: "one-on-one-call-manager",
+        recipientEmail: managerEmail,
+        idempotencyKey: `dm-manager-booking-mgr-${row.id}`,
+        templateData: {
+          managerName: (mgr?.full_name as string | null) ?? input.managerName ?? undefined,
+          name: input.name,
+          email: input.email,
+          phone: input.phone || null,
+          scheduledLabel: managerLabel,
+          meetingUrl,
+          durationMinutes: MANAGER_SLOT_MINUTES,
+          timezone: input.timezone || null,
+        },
+      });
+    }
+  } catch {
+    // Notification failure must not lose the booking.
+  }
+
   return { id: row.id as string, meeting_url: meetingUrl, scheduled_label: scheduledLabel };
 }
