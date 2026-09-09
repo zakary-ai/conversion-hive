@@ -20,7 +20,6 @@ import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CallSlugRouteImport } from './routes/call.$slug'
-import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AppAuthRouteImport } from './routes/app/auth'
 import { Route as AppAuthenticatedRouteRouteImport } from './routes/app/_authenticated/route'
 import { Route as OauthGoogleCalendarReturnRouteImport } from './routes/oauth/google-calendar/return'
@@ -65,7 +64,6 @@ import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/ap
 import { Route as ApiPublicHooksPurgeDmScreenshotsRouteImport } from './routes/api/public/hooks/purge-dm-screenshots'
 import { Route as ApiPublicHooksMarkUnbookedRouteImport } from './routes/api/public/hooks/mark-unbooked'
 import { Route as ApiPublicHooksGhlBookingRouteImport } from './routes/api/public/hooks/ghl-booking'
-import { Route as ApiPublicHooksBackfillGcalRouteImport } from './routes/api/public/hooks/backfill-gcal'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -120,11 +118,6 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
 const CallSlugRoute = CallSlugRouteImport.update({
   id: '/call/$slug',
   path: '/call/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BookSlugRoute = BookSlugRouteImport.update({
-  id: '/book/$slug',
-  path: '/book/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAuthRoute = AppAuthRouteImport.update({
@@ -384,12 +377,6 @@ const ApiPublicHooksGhlBookingRoute =
     path: '/api/public/hooks/ghl-booking',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksBackfillGcalRoute =
-  ApiPublicHooksBackfillGcalRouteImport.update({
-    id: '/api/public/hooks/backfill-gcal',
-    path: '/api/public/hooks/backfill-gcal',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -402,7 +389,6 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/auth': typeof AppAuthRoute
-  '/book/$slug': typeof BookSlugRoute
   '/call/$slug': typeof CallSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
@@ -413,7 +399,6 @@ export interface FileRoutesByFullPath {
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
-  '/api/public/hooks/backfill-gcal': typeof ApiPublicHooksBackfillGcalRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -460,7 +445,6 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/auth': typeof AppAuthRoute
-  '/book/$slug': typeof BookSlugRoute
   '/call/$slug': typeof CallSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
@@ -470,7 +454,6 @@ export interface FileRoutesByTo {
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
-  '/api/public/hooks/backfill-gcal': typeof ApiPublicHooksBackfillGcalRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -519,7 +502,6 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/_authenticated': typeof AppAuthenticatedRouteRouteWithChildren
   '/app/auth': typeof AppAuthRoute
-  '/book/$slug': typeof BookSlugRoute
   '/call/$slug': typeof CallSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/_authenticated/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
@@ -530,7 +512,6 @@ export interface FileRoutesById {
   '/app/_authenticated/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
-  '/api/public/hooks/backfill-gcal': typeof ApiPublicHooksBackfillGcalRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -579,7 +560,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/unsubscribe'
     | '/app/auth'
-    | '/book/$slug'
     | '/call/$slug'
     | '/email/unsubscribe'
     | '/app/admin'
@@ -590,7 +570,6 @@ export interface FileRouteTypes {
     | '/app/tickets'
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
-    | '/api/public/hooks/backfill-gcal'
     | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/purge-dm-screenshots'
@@ -637,7 +616,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/unsubscribe'
     | '/app/auth'
-    | '/book/$slug'
     | '/call/$slug'
     | '/email/unsubscribe'
     | '/api/public/confirm-booking'
@@ -647,7 +625,6 @@ export interface FileRouteTypes {
     | '/app/tickets'
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
-    | '/api/public/hooks/backfill-gcal'
     | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/purge-dm-screenshots'
@@ -695,7 +672,6 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/app/_authenticated'
     | '/app/auth'
-    | '/book/$slug'
     | '/call/$slug'
     | '/email/unsubscribe'
     | '/app/_authenticated/admin'
@@ -706,7 +682,6 @@ export interface FileRouteTypes {
     | '/app/_authenticated/tickets'
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
-    | '/api/public/hooks/backfill-gcal'
     | '/api/public/hooks/ghl-booking'
     | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/purge-dm-screenshots'
@@ -753,13 +728,11 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
-  BookSlugRoute: typeof BookSlugRoute
   CallSlugRoute: typeof CallSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicConfirmBookingRoute: typeof ApiPublicConfirmBookingRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthGoogleCalendarReturnRoute: typeof OauthGoogleCalendarReturnRoute
-  ApiPublicHooksBackfillGcalRoute: typeof ApiPublicHooksBackfillGcalRoute
   ApiPublicHooksGhlBookingRoute: typeof ApiPublicHooksGhlBookingRoute
   ApiPublicHooksMarkUnbookedRoute: typeof ApiPublicHooksMarkUnbookedRoute
   ApiPublicHooksPurgeDmScreenshotsRoute: typeof ApiPublicHooksPurgeDmScreenshotsRoute
@@ -848,13 +821,6 @@ declare module '@tanstack/react-router' {
       path: '/call/$slug'
       fullPath: '/call/$slug'
       preLoaderRoute: typeof CallSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/book/$slug': {
-      id: '/book/$slug'
-      path: '/book/$slug'
-      fullPath: '/book/$slug'
-      preLoaderRoute: typeof BookSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/auth': {
@@ -1165,13 +1131,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksGhlBookingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/backfill-gcal': {
-      id: '/api/public/hooks/backfill-gcal'
-      path: '/api/public/hooks/backfill-gcal'
-      fullPath: '/api/public/hooks/backfill-gcal'
-      preLoaderRoute: typeof ApiPublicHooksBackfillGcalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -1288,13 +1247,11 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
-  BookSlugRoute: BookSlugRoute,
   CallSlugRoute: CallSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicConfirmBookingRoute: ApiPublicConfirmBookingRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthGoogleCalendarReturnRoute: OauthGoogleCalendarReturnRoute,
-  ApiPublicHooksBackfillGcalRoute: ApiPublicHooksBackfillGcalRoute,
   ApiPublicHooksGhlBookingRoute: ApiPublicHooksGhlBookingRoute,
   ApiPublicHooksMarkUnbookedRoute: ApiPublicHooksMarkUnbookedRoute,
   ApiPublicHooksPurgeDmScreenshotsRoute: ApiPublicHooksPurgeDmScreenshotsRoute,
