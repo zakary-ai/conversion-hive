@@ -95,6 +95,16 @@ function ManagerBookingPage() {
   const { slug, managerName } = Route.useLoaderData();
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const bookRef = useRef<HTMLDivElement>(null);
+  const vslRef = useRef<HTMLVideoElement>(null);
+  const [vslMuted, setVslMuted] = useState(true);
+  const unmuteVsl = () => {
+    const v = vslRef.current;
+    if (!v) return;
+    v.muted = false;
+    v.currentTime = 0;
+    v.play();
+    setVslMuted(false);
+  };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -160,13 +170,30 @@ function ManagerBookingPage() {
 
           {/* VSL */}
           <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
-            <video
-              src={vslAsset.url}
-              controls
-              playsInline
-              preload="metadata"
-              className="aspect-video w-full"
-            />
+            <div className="relative">
+              <video
+                src={vslAsset.url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                ref={vslRef}
+                className="aspect-video w-full"
+              />
+              {vslMuted && (
+                <button
+                  type="button"
+                  onClick={unmuteVsl}
+                  className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors hover:bg-black/40"
+                  aria-label="Click to unmute"
+                >
+                  <span className="animate-pulse rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg ring-2 ring-primary/40">
+                    Click to unmute
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="pt-2">
