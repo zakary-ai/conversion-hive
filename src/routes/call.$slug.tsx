@@ -177,6 +177,7 @@ function ManagerBookingPage() {
                 muted
                 loop
                 playsInline
+                controls
                 preload="metadata"
                 ref={vslRef}
                 className="aspect-video w-full"
