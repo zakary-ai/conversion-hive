@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getPublicManagerBySlug, listPublicManagerSlots, bookPublicManagerSlot } from "@/lib/api/dm-manager.functions";
+import testimonialAsset from "@/assets/testimonial.mp4.asset.json";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -186,6 +187,15 @@ function ManagerBookingPage() {
             </blockquote>
             <p className="mt-4 text-sm text-muted-foreground">- Conversion Lab DM Setter</p>
           </Card>
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+            <video
+              src={testimonialAsset.url}
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-video w-full"
+            />
+          </div>
         </div>
       </section>
 
