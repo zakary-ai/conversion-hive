@@ -15,7 +15,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/app/_authenticated/closer/commissions")({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQueryOptions);
-    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/dashboard" });
+    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/profile" });
   },
   component: CloserCommissions,
 });

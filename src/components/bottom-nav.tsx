@@ -1,29 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Users, Briefcase, Calendar as CalendarIcon, Settings,
-  GraduationCap, UserCog, CalendarCheck, UserPlus, DollarSign, MessageCircle, Camera, Mic, Phone,
+  LayoutDashboard, Calendar as CalendarIcon,
+  GraduationCap, UserCog, CalendarCheck, UserPlus, DollarSign, MessageCircle, Camera, LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAdminChannel } from "@/components/app-sidebar";
 
-const clientItems = [
-  { title: "Home", url: "/app/dashboard", icon: LayoutDashboard },
-  { title: "Pool", url: "/app/b2b/pool", icon: Users },
-  { title: "Leads", url: "/app/b2b/leads", icon: Briefcase },
-  { title: "Dialer", url: "/app/b2b/dialer", icon: Phone },
-  { title: "Bookings", url: "/app/calendar", icon: CalendarCheck },
-  { title: "Profile", url: "/app/profile", icon: UserCog },
-] as const;
-
-const adminB2BItems = [
-  { title: "Home", url: "/app/admin", icon: LayoutDashboard },
-  { title: "Leads", url: "/app/admin/leads", icon: Briefcase },
-  { title: "Bookings", url: "/app/calendar", icon: CalendarCheck },
-  { title: "Setters", url: "/app/admin/clients", icon: Users },
-  { title: "Settings", url: "/app/admin/settings", icon: Settings },
-] as const;
-
-const adminB2CItems = [
+const adminItems = [
   { title: "Home", url: "/app/admin", icon: LayoutDashboard },
   { title: "Bookings", url: "/app/admin/bookings", icon: CalendarCheck },
   { title: "DM Setters", url: "/app/admin/dm-setters", icon: MessageCircle },
@@ -53,17 +35,23 @@ const dmManagerItems = [
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
+const baseItems = [
+  { title: "Training", url: "/app/training", icon: GraduationCap },
+  { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Support", url: "/app/tickets", icon: LifeBuoy },
+  { title: "Profile", url: "/app/profile", icon: UserCog },
+] as const;
+
 export function BottomNav({ isAdmin, isCloser, isDmSetter, isDmSetterManager }: { isAdmin: boolean; isCloser?: boolean; isDmSetter?: boolean; isDmSetterManager?: boolean }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [channel] = useAdminChannel();
   const items = isAdmin
-    ? channel === "b2c" ? adminB2CItems : adminB2BItems
+    ? adminItems
     : isDmSetterManager ? dmManagerItems
     : isDmSetter ? dmSetterItems
-    : isCloser ? closerItems : clientItems;
+    : isCloser ? closerItems : baseItems;
 
   const isActive = (url: string) =>
-    url === "/app/admin" || url === "/app/dashboard" || url === "/app/closer" || url === "/app/dm-setter" || url === "/app/dm-manager"
+    url === "/app/admin" || url === "/app/closer" || url === "/app/dm-setter" || url === "/app/dm-manager"
       ? pathname === url
       : pathname === url || pathname.startsWith(url + "/");
 

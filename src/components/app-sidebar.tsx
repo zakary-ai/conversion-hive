@@ -1,59 +1,28 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, useSidebar,
 } from "@/components/ui/sidebar";
 import {
-  LayoutDashboard, BookOpen, Users, ListChecks, DollarSign, UserCog,
-  GraduationCap, Settings, Briefcase, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX, PhoneOff, Mic, Phone,
+  LayoutDashboard, BookOpen, ListChecks, DollarSign, UserCog,
+  GraduationCap, Settings, Calendar as CalendarIcon, Inbox,
+  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
-const clientItems = [
-  { title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard },
-  { title: "Lead Pool", url: "/app/b2b/pool", icon: Users },
-  { title: "My Leads", url: "/app/b2b/leads", icon: Briefcase },
-  { title: "Dialer", url: "/app/b2b/dialer", icon: Phone },
-  { title: "Didn't Pick Up", url: "/app/b2b/didnt-pick-up", icon: PhoneOff },
-  { title: "Callbacks", url: "/app/b2b/callbacks", icon: CalendarIcon },
-  { title: "My Bookings", url: "/app/calendar", icon: CalendarCheck },
-  { title: "Recordings", url: "/app/b2b/recordings", icon: Mic },
-  { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
-  { title: "Training", url: "/app/training", icon: GraduationCap },
-  { title: "Commissions", url: "/app/commissions", icon: DollarSign },
-  { title: "Support", url: "/app/tickets", icon: LifeBuoy },
-  { title: "Profile", url: "/app/profile", icon: UserCog },
-] as const;
-
-const adminB2BItems = [
-  { title: "Dashboard", url: "/app/admin", icon: LayoutDashboard },
-  { title: "Setters", url: "/app/admin/clients", icon: Users },
-  { title: "Closers", url: "/app/admin/b2b-closers", icon: UserPlus },
-  { title: "Lead Pool", url: "/app/admin/b2b-pool", icon: Briefcase },
-  { title: "Bookings", url: "/app/calendar", icon: CalendarCheck },
-  { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
-  { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
-  { title: "Commissions", url: "/app/admin/b2b-commissions", icon: DollarSign },
-  { title: "Outbound Leads", url: "/app/admin/outbound/leads", icon: Inbox },
-  { title: "Campaigns", url: "/app/admin/outbound/campaigns", icon: Briefcase },
-  { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
-  { title: "JustCall", url: "/app/admin/justcall-setup", icon: Phone },
-  { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },
-  { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
-  { title: "Settings", url: "/app/admin/settings", icon: Settings },
-] as const;
-
-const adminB2CItems = [
+const adminItems = [
   { title: "Dashboard", url: "/app/admin", icon: LayoutDashboard },
   { title: "Bookings", url: "/app/admin/bookings", icon: CalendarCheck },
   { title: "Closers", url: "/app/admin/closers", icon: UserPlus },
   { title: "DM Setters", url: "/app/admin/dm-setters", icon: MessageCircle },
   { title: "Manager Calendars", url: "/app/admin/manager-calendars", icon: CalendarIcon },
+  { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
+  { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
+  { title: "Applications", url: "/app/admin/applications", icon: Inbox },
   { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
   { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },
+  { title: "Admins", url: "/app/admin/admins", icon: ShieldCheck },
   { title: "Settings", url: "/app/admin/settings", icon: Settings },
 ] as const;
 
@@ -89,50 +58,28 @@ const dmManagerItems = [
   { title: "Profile", url: "/app/profile", icon: UserCog },
 ] as const;
 
-
-const CHANNEL_KEY = "cl_admin_channel";
-export type AdminChannel = "b2b" | "b2c";
-
-export function useAdminChannel(): [AdminChannel, (c: AdminChannel) => void] {
-  const [channel, setChannel] = useState<AdminChannel>("b2b");
-  useEffect(() => {
-    const v = (typeof window !== "undefined" && localStorage.getItem(CHANNEL_KEY)) as AdminChannel | null;
-    if (v === "b2b" || v === "b2c") setChannel(v);
-    const onStorage = () => {
-      const next = localStorage.getItem(CHANNEL_KEY) as AdminChannel | null;
-      if (next === "b2b" || next === "b2c") setChannel(next);
-    };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("admin-channel-change", onStorage);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("admin-channel-change", onStorage);
-    };
-  }, []);
-  const set = (c: AdminChannel) => {
-    localStorage.setItem(CHANNEL_KEY, c);
-    setChannel(c);
-    window.dispatchEvent(new Event("admin-channel-change"));
-  };
-  return [channel, set];
-}
+const baseItems = [
+  { title: "Training", url: "/app/training", icon: GraduationCap },
+  { title: "Commissions", url: "/app/commissions", icon: DollarSign },
+  { title: "Support", url: "/app/tickets", icon: LifeBuoy },
+  { title: "Profile", url: "/app/profile", icon: UserCog },
+] as const;
 
 export function AppSidebar({ isAdmin, isCloser, isDmSetter, isDmSetterManager }: { isAdmin: boolean; isCloser?: boolean; isDmSetter?: boolean; isDmSetterManager?: boolean }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [channel, setChannel] = useAdminChannel();
 
   const items = isAdmin
-    ? channel === "b2c" ? adminB2CItems : adminB2BItems
+    ? adminItems
     : isDmSetterManager ? dmManagerItems
     : isDmSetter ? dmSetterItems
-    : isCloser ? closerItems : clientItems;
+    : isCloser ? closerItems : baseItems;
 
-  const label = isAdmin ? "Admin" : isDmSetterManager ? "DM Manager" : isDmSetter ? "DM Setter" : isCloser ? "Closer" : "Setter";
+  const label = isAdmin ? "Admin" : isDmSetterManager ? "DM Manager" : isDmSetter ? "DM Setter" : isCloser ? "Closer" : "Team";
 
   const isActive = (url: string) =>
-    url === "/app/admin" || url === "/app/dashboard" || url === "/app/closer" || url === "/app/dm-setter" || url === "/app/dm-manager"
+    url === "/app/admin" || url === "/app/closer" || url === "/app/dm-setter" || url === "/app/dm-manager"
       ? pathname === url
       : pathname === url || pathname.startsWith(url + "/");
 
@@ -150,22 +97,6 @@ export function AppSidebar({ isAdmin, isCloser, isDmSetter, isDmSetterManager }:
             </div>
           )}
         </div>
-        {isAdmin && !collapsed && (
-          <div className="px-2 pb-2">
-            <div className="inline-flex w-full rounded-lg border border-border bg-muted/30 p-0.5 text-xs">
-              <button
-                type="button"
-                onClick={() => setChannel("b2b")}
-                className={`flex-1 rounded-md px-2 py-1 font-medium transition ${channel === "b2b" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-              >B2B</button>
-              <button
-                type="button"
-                onClick={() => setChannel("b2c")}
-                className={`flex-1 rounded-md px-2 py-1 font-medium transition ${channel === "b2c" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-              >B2C</button>
-            </div>
-          </div>
-        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

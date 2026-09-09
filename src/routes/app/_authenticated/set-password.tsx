@@ -31,7 +31,7 @@ function SetPasswordPage() {
       const me = await qc.fetchQuery({ queryKey: ["me"], queryFn: () => getMe() });
       toast.success("Password updated");
       navigate({
-        to: me.isAdmin ? "/app/admin" : me.isCloser ? "/app/closer" : "/app/dashboard",
+        to: me.isAdmin ? "/app/admin" : me.isCloser ? "/app/closer" : "/app/profile",
         replace: true,
       });
     } catch (err) {

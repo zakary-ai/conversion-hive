@@ -20,7 +20,6 @@ import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CallSlugRouteImport } from './routes/call.$slug'
-import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AppAuthRouteImport } from './routes/app/auth'
 import { Route as AppAuthenticatedRouteRouteImport } from './routes/app/_authenticated/route'
 import { Route as OauthGoogleCalendarReturnRouteImport } from './routes/oauth/google-calendar/return'
@@ -28,10 +27,7 @@ import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/em
 import { Route as AppAuthenticatedTicketsRouteImport } from './routes/app/_authenticated/tickets'
 import { Route as AppAuthenticatedSetPasswordRouteImport } from './routes/app/_authenticated/set-password'
 import { Route as AppAuthenticatedProfileRouteImport } from './routes/app/_authenticated/profile'
-import { Route as AppAuthenticatedLeadsRouteImport } from './routes/app/_authenticated/leads'
-import { Route as AppAuthenticatedDashboardRouteImport } from './routes/app/_authenticated/dashboard'
 import { Route as AppAuthenticatedCommissionsRouteImport } from './routes/app/_authenticated/commissions'
-import { Route as AppAuthenticatedCalendarRouteImport } from './routes/app/_authenticated/calendar'
 import { Route as ApiPublicConfirmBookingRouteImport } from './routes/api/public/confirm-booking'
 import { Route as AppAuthenticatedAdminRouteRouteImport } from './routes/app/_authenticated/admin/route'
 import { Route as AppAuthenticatedTrainingIndexRouteImport } from './routes/app/_authenticated/training.index'
@@ -50,50 +46,24 @@ import { Route as AppAuthenticatedDmManagerModulesRouteImport } from './routes/a
 import { Route as AppAuthenticatedDmManagerCalendarRouteImport } from './routes/app/_authenticated/dm-manager/calendar'
 import { Route as AppAuthenticatedCloserCommissionsRouteImport } from './routes/app/_authenticated/closer/commissions'
 import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app/_authenticated/closer/calendar'
-import { Route as AppAuthenticatedB2bRecordingsRouteImport } from './routes/app/_authenticated/b2b.recordings'
-import { Route as AppAuthenticatedB2bPoolRouteImport } from './routes/app/_authenticated/b2b.pool'
-import { Route as AppAuthenticatedB2bLeadsRouteImport } from './routes/app/_authenticated/b2b.leads'
-import { Route as AppAuthenticatedB2bDidntPickUpRouteImport } from './routes/app/_authenticated/b2b.didnt-pick-up'
-import { Route as AppAuthenticatedB2bDialerRouteImport } from './routes/app/_authenticated/b2b.dialer'
-import { Route as AppAuthenticatedB2bCallbacksRouteImport } from './routes/app/_authenticated/b2b.callbacks'
 import { Route as AppAuthenticatedAdminTicketsRouteImport } from './routes/app/_authenticated/admin/tickets'
 import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
-import { Route as AppAuthenticatedAdminScraperRouteImport } from './routes/app/_authenticated/admin/scraper'
 import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
 import { Route as AppAuthenticatedAdminModulesRouteImport } from './routes/app/_authenticated/admin/modules'
 import { Route as AppAuthenticatedAdminManagerCalendarsRouteImport } from './routes/app/_authenticated/admin/manager-calendars'
-import { Route as AppAuthenticatedAdminLeadsRouteImport } from './routes/app/_authenticated/admin/leads'
-import { Route as AppAuthenticatedAdminJustcallSetupRouteImport } from './routes/app/_authenticated/admin/justcall-setup'
 import { Route as AppAuthenticatedAdminDmSettersRouteImport } from './routes/app/_authenticated/admin/dm-setters'
-import { Route as AppAuthenticatedAdminCommissionsRouteImport } from './routes/app/_authenticated/admin/commissions'
 import { Route as AppAuthenticatedAdminClosersRouteImport } from './routes/app/_authenticated/admin/closers'
 import { Route as AppAuthenticatedAdminBookingsRouteImport } from './routes/app/_authenticated/admin/bookings'
 import { Route as AppAuthenticatedAdminB2cCommissionsRouteImport } from './routes/app/_authenticated/admin/b2c-commissions'
-import { Route as AppAuthenticatedAdminB2bPoolRouteImport } from './routes/app/_authenticated/admin/b2b-pool'
-import { Route as AppAuthenticatedAdminB2bCommissionsRouteImport } from './routes/app/_authenticated/admin/b2b-commissions'
-import { Route as AppAuthenticatedAdminB2bClosersRouteImport } from './routes/app/_authenticated/admin/b2b-closers'
 import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/app/_authenticated/admin/applications'
 import { Route as AppAuthenticatedAdminAdminsRouteImport } from './routes/app/_authenticated/admin/admins'
 import { Route as AppAuthenticatedAdminAccountDeletionsRouteImport } from './routes/app/_authenticated/admin/account-deletions'
 import { Route as ApiPublicWebhooksSmartleadRouteImport } from './routes/api/public/webhooks/smartlead'
-import { Route as ApiPublicHooksSyncQuoCallsRouteImport } from './routes/api/public/hooks/sync-quo-calls'
 import { Route as ApiPublicHooksSmartleadSyncRouteImport } from './routes/api/public/hooks/smartlead-sync'
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
-import { Route as ApiPublicHooksRunScraperRouteImport } from './routes/api/public/hooks/run-scraper'
-import { Route as ApiPublicHooksRunDailyCycleRouteImport } from './routes/api/public/hooks/run-daily-cycle'
 import { Route as ApiPublicHooksPurgeDmScreenshotsRouteImport } from './routes/api/public/hooks/purge-dm-screenshots'
-import { Route as ApiPublicHooksOpenphoneRouteImport } from './routes/api/public/hooks/openphone'
 import { Route as ApiPublicHooksMarkUnbookedRouteImport } from './routes/api/public/hooks/mark-unbooked'
-import { Route as ApiPublicHooksJustcallRouteImport } from './routes/api/public/hooks/justcall'
 import { Route as ApiPublicHooksGhlBookingRouteImport } from './routes/api/public/hooks/ghl-booking'
-import { Route as ApiPublicHooksDistributeLeadsRouteImport } from './routes/api/public/hooks/distribute-leads'
-import { Route as ApiPublicHooksClayLeadRouteImport } from './routes/api/public/hooks/clay-lead'
-import { Route as ApiPublicHooksBackfillGcalRouteImport } from './routes/api/public/hooks/backfill-gcal'
-import { Route as AppAuthenticatedAdminClientsIndexRouteImport } from './routes/app/_authenticated/admin/clients.index'
-import { Route as AppAuthenticatedB2bLeadsIdRouteImport } from './routes/app/_authenticated/b2b.leads.$id'
-import { Route as AppAuthenticatedAdminOutboundLeadsRouteImport } from './routes/app/_authenticated/admin/outbound.leads'
-import { Route as AppAuthenticatedAdminOutboundCampaignsRouteImport } from './routes/app/_authenticated/admin/outbound.campaigns'
-import { Route as AppAuthenticatedAdminClientsUserIdRouteImport } from './routes/app/_authenticated/admin/clients.$userId'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
@@ -150,11 +120,6 @@ const CallSlugRoute = CallSlugRouteImport.update({
   path: '/call/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BookSlugRoute = BookSlugRouteImport.update({
-  id: '/book/$slug',
-  path: '/book/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppAuthRoute = AppAuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -191,27 +156,10 @@ const AppAuthenticatedProfileRoute = AppAuthenticatedProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppAuthenticatedRouteRoute,
 } as any)
-const AppAuthenticatedLeadsRoute = AppAuthenticatedLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => AppAuthenticatedRouteRoute,
-} as any)
-const AppAuthenticatedDashboardRoute =
-  AppAuthenticatedDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AppAuthenticatedRouteRoute,
-  } as any)
 const AppAuthenticatedCommissionsRoute =
   AppAuthenticatedCommissionsRouteImport.update({
     id: '/commissions',
     path: '/commissions',
-    getParentRoute: () => AppAuthenticatedRouteRoute,
-  } as any)
-const AppAuthenticatedCalendarRoute =
-  AppAuthenticatedCalendarRouteImport.update({
-    id: '/calendar',
-    path: '/calendar',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
 const ApiPublicConfirmBookingRoute = ApiPublicConfirmBookingRouteImport.update({
@@ -321,41 +269,6 @@ const AppAuthenticatedCloserCalendarRoute =
     path: '/closer/calendar',
     getParentRoute: () => AppAuthenticatedRouteRoute,
   } as any)
-const AppAuthenticatedB2bRecordingsRoute =
-  AppAuthenticatedB2bRecordingsRouteImport.update({
-    id: '/b2b/recordings',
-    path: '/b2b/recordings',
-    getParentRoute: () => AppAuthenticatedRouteRoute,
-  } as any)
-const AppAuthenticatedB2bPoolRoute = AppAuthenticatedB2bPoolRouteImport.update({
-  id: '/b2b/pool',
-  path: '/b2b/pool',
-  getParentRoute: () => AppAuthenticatedRouteRoute,
-} as any)
-const AppAuthenticatedB2bLeadsRoute =
-  AppAuthenticatedB2bLeadsRouteImport.update({
-    id: '/b2b/leads',
-    path: '/b2b/leads',
-    getParentRoute: () => AppAuthenticatedRouteRoute,
-  } as any)
-const AppAuthenticatedB2bDidntPickUpRoute =
-  AppAuthenticatedB2bDidntPickUpRouteImport.update({
-    id: '/b2b/didnt-pick-up',
-    path: '/b2b/didnt-pick-up',
-    getParentRoute: () => AppAuthenticatedRouteRoute,
-  } as any)
-const AppAuthenticatedB2bDialerRoute =
-  AppAuthenticatedB2bDialerRouteImport.update({
-    id: '/b2b/dialer',
-    path: '/b2b/dialer',
-    getParentRoute: () => AppAuthenticatedRouteRoute,
-  } as any)
-const AppAuthenticatedB2bCallbacksRoute =
-  AppAuthenticatedB2bCallbacksRouteImport.update({
-    id: '/b2b/callbacks',
-    path: '/b2b/callbacks',
-    getParentRoute: () => AppAuthenticatedRouteRoute,
-  } as any)
 const AppAuthenticatedAdminTicketsRoute =
   AppAuthenticatedAdminTicketsRouteImport.update({
     id: '/tickets',
@@ -366,12 +279,6 @@ const AppAuthenticatedAdminSettingsRoute =
   AppAuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
-const AppAuthenticatedAdminScraperRoute =
-  AppAuthenticatedAdminScraperRouteImport.update({
-    id: '/scraper',
-    path: '/scraper',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 const AppAuthenticatedAdminQuizzesRoute =
@@ -392,28 +299,10 @@ const AppAuthenticatedAdminManagerCalendarsRoute =
     path: '/manager-calendars',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
-const AppAuthenticatedAdminLeadsRoute =
-  AppAuthenticatedAdminLeadsRouteImport.update({
-    id: '/leads',
-    path: '/leads',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
-const AppAuthenticatedAdminJustcallSetupRoute =
-  AppAuthenticatedAdminJustcallSetupRouteImport.update({
-    id: '/justcall-setup',
-    path: '/justcall-setup',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
 const AppAuthenticatedAdminDmSettersRoute =
   AppAuthenticatedAdminDmSettersRouteImport.update({
     id: '/dm-setters',
     path: '/dm-setters',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
-const AppAuthenticatedAdminCommissionsRoute =
-  AppAuthenticatedAdminCommissionsRouteImport.update({
-    id: '/commissions',
-    path: '/commissions',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 const AppAuthenticatedAdminClosersRoute =
@@ -432,24 +321,6 @@ const AppAuthenticatedAdminB2cCommissionsRoute =
   AppAuthenticatedAdminB2cCommissionsRouteImport.update({
     id: '/b2c-commissions',
     path: '/b2c-commissions',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
-const AppAuthenticatedAdminB2bPoolRoute =
-  AppAuthenticatedAdminB2bPoolRouteImport.update({
-    id: '/b2b-pool',
-    path: '/b2b-pool',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
-const AppAuthenticatedAdminB2bCommissionsRoute =
-  AppAuthenticatedAdminB2bCommissionsRouteImport.update({
-    id: '/b2b-commissions',
-    path: '/b2b-commissions',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
-const AppAuthenticatedAdminB2bClosersRoute =
-  AppAuthenticatedAdminB2bClosersRouteImport.update({
-    id: '/b2b-closers',
-    path: '/b2b-closers',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 const AppAuthenticatedAdminApplicationsRoute =
@@ -476,12 +347,6 @@ const ApiPublicWebhooksSmartleadRoute =
     path: '/api/public/webhooks/smartlead',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksSyncQuoCallsRoute =
-  ApiPublicHooksSyncQuoCallsRouteImport.update({
-    id: '/api/public/hooks/sync-quo-calls',
-    path: '/api/public/hooks/sync-quo-calls',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksSmartleadSyncRoute =
   ApiPublicHooksSmartleadSyncRouteImport.update({
     id: '/api/public/hooks/smartlead-sync',
@@ -494,92 +359,23 @@ const ApiPublicHooksSendCallRemindersRoute =
     path: '/api/public/hooks/send-call-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksRunScraperRoute =
-  ApiPublicHooksRunScraperRouteImport.update({
-    id: '/api/public/hooks/run-scraper',
-    path: '/api/public/hooks/run-scraper',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksRunDailyCycleRoute =
-  ApiPublicHooksRunDailyCycleRouteImport.update({
-    id: '/api/public/hooks/run-daily-cycle',
-    path: '/api/public/hooks/run-daily-cycle',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksPurgeDmScreenshotsRoute =
   ApiPublicHooksPurgeDmScreenshotsRouteImport.update({
     id: '/api/public/hooks/purge-dm-screenshots',
     path: '/api/public/hooks/purge-dm-screenshots',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksOpenphoneRoute = ApiPublicHooksOpenphoneRouteImport.update({
-  id: '/api/public/hooks/openphone',
-  path: '/api/public/hooks/openphone',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksMarkUnbookedRoute =
   ApiPublicHooksMarkUnbookedRouteImport.update({
     id: '/api/public/hooks/mark-unbooked',
     path: '/api/public/hooks/mark-unbooked',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksJustcallRoute = ApiPublicHooksJustcallRouteImport.update({
-  id: '/api/public/hooks/justcall',
-  path: '/api/public/hooks/justcall',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksGhlBookingRoute =
   ApiPublicHooksGhlBookingRouteImport.update({
     id: '/api/public/hooks/ghl-booking',
     path: '/api/public/hooks/ghl-booking',
     getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksDistributeLeadsRoute =
-  ApiPublicHooksDistributeLeadsRouteImport.update({
-    id: '/api/public/hooks/distribute-leads',
-    path: '/api/public/hooks/distribute-leads',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksClayLeadRoute = ApiPublicHooksClayLeadRouteImport.update({
-  id: '/api/public/hooks/clay-lead',
-  path: '/api/public/hooks/clay-lead',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksBackfillGcalRoute =
-  ApiPublicHooksBackfillGcalRouteImport.update({
-    id: '/api/public/hooks/backfill-gcal',
-    path: '/api/public/hooks/backfill-gcal',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AppAuthenticatedAdminClientsIndexRoute =
-  AppAuthenticatedAdminClientsIndexRouteImport.update({
-    id: '/clients/',
-    path: '/clients/',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
-const AppAuthenticatedB2bLeadsIdRoute =
-  AppAuthenticatedB2bLeadsIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AppAuthenticatedB2bLeadsRoute,
-  } as any)
-const AppAuthenticatedAdminOutboundLeadsRoute =
-  AppAuthenticatedAdminOutboundLeadsRouteImport.update({
-    id: '/outbound/leads',
-    path: '/outbound/leads',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
-const AppAuthenticatedAdminOutboundCampaignsRoute =
-  AppAuthenticatedAdminOutboundCampaignsRouteImport.update({
-    id: '/outbound/campaigns',
-    path: '/outbound/campaigns',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
-  } as any)
-const AppAuthenticatedAdminClientsUserIdRoute =
-  AppAuthenticatedAdminClientsUserIdRouteImport.update({
-    id: '/clients/$userId',
-    path: '/clients/$userId',
-    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -593,59 +389,34 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/auth': typeof AppAuthRoute
-  '/book/$slug': typeof BookSlugRoute
   '/call/$slug': typeof CallSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
-  '/app/calendar': typeof AppAuthenticatedCalendarRoute
   '/app/commissions': typeof AppAuthenticatedCommissionsRoute
-  '/app/dashboard': typeof AppAuthenticatedDashboardRoute
-  '/app/leads': typeof AppAuthenticatedLeadsRoute
   '/app/profile': typeof AppAuthenticatedProfileRoute
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
-  '/api/public/hooks/backfill-gcal': typeof ApiPublicHooksBackfillGcalRoute
-  '/api/public/hooks/clay-lead': typeof ApiPublicHooksClayLeadRoute
-  '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
-  '/api/public/hooks/justcall': typeof ApiPublicHooksJustcallRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
-  '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
-  '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
-  '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
-  '/api/public/hooks/sync-quo-calls': typeof ApiPublicHooksSyncQuoCallsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
   '/app/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
-  '/app/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
-  '/app/admin/b2b-commissions': typeof AppAuthenticatedAdminB2bCommissionsRoute
-  '/app/admin/b2b-pool': typeof AppAuthenticatedAdminB2bPoolRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
-  '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
-  '/app/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
-  '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
-  '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
-  '/app/b2b/callbacks': typeof AppAuthenticatedB2bCallbacksRoute
-  '/app/b2b/dialer': typeof AppAuthenticatedB2bDialerRoute
-  '/app/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
-  '/app/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
-  '/app/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
-  '/app/b2b/recordings': typeof AppAuthenticatedB2bRecordingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-manager/calendar': typeof AppAuthenticatedDmManagerCalendarRoute
@@ -662,11 +433,6 @@ export interface FileRoutesByFullPath {
   '/app/dm-manager/': typeof AppAuthenticatedDmManagerIndexRoute
   '/app/dm-setter/': typeof AppAuthenticatedDmSetterIndexRoute
   '/app/training/': typeof AppAuthenticatedTrainingIndexRoute
-  '/app/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
-  '/app/admin/outbound/campaigns': typeof AppAuthenticatedAdminOutboundCampaignsRoute
-  '/app/admin/outbound/leads': typeof AppAuthenticatedAdminOutboundLeadsRoute
-  '/app/b2b/leads/$id': typeof AppAuthenticatedB2bLeadsIdRoute
-  '/app/admin/clients/': typeof AppAuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -679,58 +445,33 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/auth': typeof AppAuthRoute
-  '/book/$slug': typeof BookSlugRoute
   '/call/$slug': typeof CallSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
-  '/app/calendar': typeof AppAuthenticatedCalendarRoute
   '/app/commissions': typeof AppAuthenticatedCommissionsRoute
-  '/app/dashboard': typeof AppAuthenticatedDashboardRoute
-  '/app/leads': typeof AppAuthenticatedLeadsRoute
   '/app/profile': typeof AppAuthenticatedProfileRoute
   '/app/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/app/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
-  '/api/public/hooks/backfill-gcal': typeof ApiPublicHooksBackfillGcalRoute
-  '/api/public/hooks/clay-lead': typeof ApiPublicHooksClayLeadRoute
-  '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
-  '/api/public/hooks/justcall': typeof ApiPublicHooksJustcallRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
-  '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
-  '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
-  '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
-  '/api/public/hooks/sync-quo-calls': typeof ApiPublicHooksSyncQuoCallsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
   '/app/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
-  '/app/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
-  '/app/admin/b2b-commissions': typeof AppAuthenticatedAdminB2bCommissionsRoute
-  '/app/admin/b2b-pool': typeof AppAuthenticatedAdminB2bPoolRoute
   '/app/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/admin/closers': typeof AppAuthenticatedAdminClosersRoute
-  '/app/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
-  '/app/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
-  '/app/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
-  '/app/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
-  '/app/b2b/callbacks': typeof AppAuthenticatedB2bCallbacksRoute
-  '/app/b2b/dialer': typeof AppAuthenticatedB2bDialerRoute
-  '/app/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
-  '/app/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
-  '/app/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
-  '/app/b2b/recordings': typeof AppAuthenticatedB2bRecordingsRoute
   '/app/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/dm-manager/calendar': typeof AppAuthenticatedDmManagerCalendarRoute
@@ -747,11 +488,6 @@ export interface FileRoutesByTo {
   '/app/dm-manager': typeof AppAuthenticatedDmManagerIndexRoute
   '/app/dm-setter': typeof AppAuthenticatedDmSetterIndexRoute
   '/app/training': typeof AppAuthenticatedTrainingIndexRoute
-  '/app/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
-  '/app/admin/outbound/campaigns': typeof AppAuthenticatedAdminOutboundCampaignsRoute
-  '/app/admin/outbound/leads': typeof AppAuthenticatedAdminOutboundLeadsRoute
-  '/app/b2b/leads/$id': typeof AppAuthenticatedB2bLeadsIdRoute
-  '/app/admin/clients': typeof AppAuthenticatedAdminClientsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -766,59 +502,34 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/app/_authenticated': typeof AppAuthenticatedRouteRouteWithChildren
   '/app/auth': typeof AppAuthRoute
-  '/book/$slug': typeof BookSlugRoute
   '/call/$slug': typeof CallSlugRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/app/_authenticated/admin': typeof AppAuthenticatedAdminRouteRouteWithChildren
   '/api/public/confirm-booking': typeof ApiPublicConfirmBookingRoute
-  '/app/_authenticated/calendar': typeof AppAuthenticatedCalendarRoute
   '/app/_authenticated/commissions': typeof AppAuthenticatedCommissionsRoute
-  '/app/_authenticated/dashboard': typeof AppAuthenticatedDashboardRoute
-  '/app/_authenticated/leads': typeof AppAuthenticatedLeadsRoute
   '/app/_authenticated/profile': typeof AppAuthenticatedProfileRoute
   '/app/_authenticated/set-password': typeof AppAuthenticatedSetPasswordRoute
   '/app/_authenticated/tickets': typeof AppAuthenticatedTicketsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
-  '/api/public/hooks/backfill-gcal': typeof ApiPublicHooksBackfillGcalRoute
-  '/api/public/hooks/clay-lead': typeof ApiPublicHooksClayLeadRoute
-  '/api/public/hooks/distribute-leads': typeof ApiPublicHooksDistributeLeadsRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
-  '/api/public/hooks/justcall': typeof ApiPublicHooksJustcallRoute
   '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
-  '/api/public/hooks/openphone': typeof ApiPublicHooksOpenphoneRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
-  '/api/public/hooks/run-daily-cycle': typeof ApiPublicHooksRunDailyCycleRoute
-  '/api/public/hooks/run-scraper': typeof ApiPublicHooksRunScraperRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
-  '/api/public/hooks/sync-quo-calls': typeof ApiPublicHooksSyncQuoCallsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
   '/app/_authenticated/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/_authenticated/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
   '/app/_authenticated/admin/applications': typeof AppAuthenticatedAdminApplicationsRoute
-  '/app/_authenticated/admin/b2b-closers': typeof AppAuthenticatedAdminB2bClosersRoute
-  '/app/_authenticated/admin/b2b-commissions': typeof AppAuthenticatedAdminB2bCommissionsRoute
-  '/app/_authenticated/admin/b2b-pool': typeof AppAuthenticatedAdminB2bPoolRoute
   '/app/_authenticated/admin/b2c-commissions': typeof AppAuthenticatedAdminB2cCommissionsRoute
   '/app/_authenticated/admin/bookings': typeof AppAuthenticatedAdminBookingsRoute
   '/app/_authenticated/admin/closers': typeof AppAuthenticatedAdminClosersRoute
-  '/app/_authenticated/admin/commissions': typeof AppAuthenticatedAdminCommissionsRoute
   '/app/_authenticated/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
-  '/app/_authenticated/admin/justcall-setup': typeof AppAuthenticatedAdminJustcallSetupRoute
-  '/app/_authenticated/admin/leads': typeof AppAuthenticatedAdminLeadsRoute
   '/app/_authenticated/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/_authenticated/admin/modules': typeof AppAuthenticatedAdminModulesRoute
   '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
-  '/app/_authenticated/admin/scraper': typeof AppAuthenticatedAdminScraperRoute
   '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/_authenticated/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
-  '/app/_authenticated/b2b/callbacks': typeof AppAuthenticatedB2bCallbacksRoute
-  '/app/_authenticated/b2b/dialer': typeof AppAuthenticatedB2bDialerRoute
-  '/app/_authenticated/b2b/didnt-pick-up': typeof AppAuthenticatedB2bDidntPickUpRoute
-  '/app/_authenticated/b2b/leads': typeof AppAuthenticatedB2bLeadsRouteWithChildren
-  '/app/_authenticated/b2b/pool': typeof AppAuthenticatedB2bPoolRoute
-  '/app/_authenticated/b2b/recordings': typeof AppAuthenticatedB2bRecordingsRoute
   '/app/_authenticated/closer/calendar': typeof AppAuthenticatedCloserCalendarRoute
   '/app/_authenticated/closer/commissions': typeof AppAuthenticatedCloserCommissionsRoute
   '/app/_authenticated/dm-manager/calendar': typeof AppAuthenticatedDmManagerCalendarRoute
@@ -835,11 +546,6 @@ export interface FileRoutesById {
   '/app/_authenticated/dm-manager/': typeof AppAuthenticatedDmManagerIndexRoute
   '/app/_authenticated/dm-setter/': typeof AppAuthenticatedDmSetterIndexRoute
   '/app/_authenticated/training/': typeof AppAuthenticatedTrainingIndexRoute
-  '/app/_authenticated/admin/clients/$userId': typeof AppAuthenticatedAdminClientsUserIdRoute
-  '/app/_authenticated/admin/outbound/campaigns': typeof AppAuthenticatedAdminOutboundCampaignsRoute
-  '/app/_authenticated/admin/outbound/leads': typeof AppAuthenticatedAdminOutboundLeadsRoute
-  '/app/_authenticated/b2b/leads/$id': typeof AppAuthenticatedB2bLeadsIdRoute
-  '/app/_authenticated/admin/clients/': typeof AppAuthenticatedAdminClientsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -854,59 +560,34 @@ export interface FileRouteTypes {
     | '/terms'
     | '/unsubscribe'
     | '/app/auth'
-    | '/book/$slug'
     | '/call/$slug'
     | '/email/unsubscribe'
     | '/app/admin'
     | '/api/public/confirm-booking'
-    | '/app/calendar'
     | '/app/commissions'
-    | '/app/dashboard'
-    | '/app/leads'
     | '/app/profile'
     | '/app/set-password'
     | '/app/tickets'
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
-    | '/api/public/hooks/backfill-gcal'
-    | '/api/public/hooks/clay-lead'
-    | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
-    | '/api/public/hooks/justcall'
     | '/api/public/hooks/mark-unbooked'
-    | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
-    | '/api/public/hooks/run-daily-cycle'
-    | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
-    | '/api/public/hooks/sync-quo-calls'
     | '/api/public/webhooks/smartlead'
     | '/app/admin/account-deletions'
     | '/app/admin/admins'
     | '/app/admin/applications'
-    | '/app/admin/b2b-closers'
-    | '/app/admin/b2b-commissions'
-    | '/app/admin/b2b-pool'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
     | '/app/admin/closers'
-    | '/app/admin/commissions'
     | '/app/admin/dm-setters'
-    | '/app/admin/justcall-setup'
-    | '/app/admin/leads'
     | '/app/admin/manager-calendars'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
-    | '/app/admin/scraper'
     | '/app/admin/settings'
     | '/app/admin/tickets'
-    | '/app/b2b/callbacks'
-    | '/app/b2b/dialer'
-    | '/app/b2b/didnt-pick-up'
-    | '/app/b2b/leads'
-    | '/app/b2b/pool'
-    | '/app/b2b/recordings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-manager/calendar'
@@ -923,11 +604,6 @@ export interface FileRouteTypes {
     | '/app/dm-manager/'
     | '/app/dm-setter/'
     | '/app/training/'
-    | '/app/admin/clients/$userId'
-    | '/app/admin/outbound/campaigns'
-    | '/app/admin/outbound/leads'
-    | '/app/b2b/leads/$id'
-    | '/app/admin/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -940,58 +616,33 @@ export interface FileRouteTypes {
     | '/terms'
     | '/unsubscribe'
     | '/app/auth'
-    | '/book/$slug'
     | '/call/$slug'
     | '/email/unsubscribe'
     | '/api/public/confirm-booking'
-    | '/app/calendar'
     | '/app/commissions'
-    | '/app/dashboard'
-    | '/app/leads'
     | '/app/profile'
     | '/app/set-password'
     | '/app/tickets'
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
-    | '/api/public/hooks/backfill-gcal'
-    | '/api/public/hooks/clay-lead'
-    | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
-    | '/api/public/hooks/justcall'
     | '/api/public/hooks/mark-unbooked'
-    | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
-    | '/api/public/hooks/run-daily-cycle'
-    | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
-    | '/api/public/hooks/sync-quo-calls'
     | '/api/public/webhooks/smartlead'
     | '/app/admin/account-deletions'
     | '/app/admin/admins'
     | '/app/admin/applications'
-    | '/app/admin/b2b-closers'
-    | '/app/admin/b2b-commissions'
-    | '/app/admin/b2b-pool'
     | '/app/admin/b2c-commissions'
     | '/app/admin/bookings'
     | '/app/admin/closers'
-    | '/app/admin/commissions'
     | '/app/admin/dm-setters'
-    | '/app/admin/justcall-setup'
-    | '/app/admin/leads'
     | '/app/admin/manager-calendars'
     | '/app/admin/modules'
     | '/app/admin/quizzes'
-    | '/app/admin/scraper'
     | '/app/admin/settings'
     | '/app/admin/tickets'
-    | '/app/b2b/callbacks'
-    | '/app/b2b/dialer'
-    | '/app/b2b/didnt-pick-up'
-    | '/app/b2b/leads'
-    | '/app/b2b/pool'
-    | '/app/b2b/recordings'
     | '/app/closer/calendar'
     | '/app/closer/commissions'
     | '/app/dm-manager/calendar'
@@ -1008,11 +659,6 @@ export interface FileRouteTypes {
     | '/app/dm-manager'
     | '/app/dm-setter'
     | '/app/training'
-    | '/app/admin/clients/$userId'
-    | '/app/admin/outbound/campaigns'
-    | '/app/admin/outbound/leads'
-    | '/app/b2b/leads/$id'
-    | '/app/admin/clients'
   id:
     | '__root__'
     | '/'
@@ -1026,59 +672,34 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/app/_authenticated'
     | '/app/auth'
-    | '/book/$slug'
     | '/call/$slug'
     | '/email/unsubscribe'
     | '/app/_authenticated/admin'
     | '/api/public/confirm-booking'
-    | '/app/_authenticated/calendar'
     | '/app/_authenticated/commissions'
-    | '/app/_authenticated/dashboard'
-    | '/app/_authenticated/leads'
     | '/app/_authenticated/profile'
     | '/app/_authenticated/set-password'
     | '/app/_authenticated/tickets'
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
-    | '/api/public/hooks/backfill-gcal'
-    | '/api/public/hooks/clay-lead'
-    | '/api/public/hooks/distribute-leads'
     | '/api/public/hooks/ghl-booking'
-    | '/api/public/hooks/justcall'
     | '/api/public/hooks/mark-unbooked'
-    | '/api/public/hooks/openphone'
     | '/api/public/hooks/purge-dm-screenshots'
-    | '/api/public/hooks/run-daily-cycle'
-    | '/api/public/hooks/run-scraper'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
-    | '/api/public/hooks/sync-quo-calls'
     | '/api/public/webhooks/smartlead'
     | '/app/_authenticated/admin/account-deletions'
     | '/app/_authenticated/admin/admins'
     | '/app/_authenticated/admin/applications'
-    | '/app/_authenticated/admin/b2b-closers'
-    | '/app/_authenticated/admin/b2b-commissions'
-    | '/app/_authenticated/admin/b2b-pool'
     | '/app/_authenticated/admin/b2c-commissions'
     | '/app/_authenticated/admin/bookings'
     | '/app/_authenticated/admin/closers'
-    | '/app/_authenticated/admin/commissions'
     | '/app/_authenticated/admin/dm-setters'
-    | '/app/_authenticated/admin/justcall-setup'
-    | '/app/_authenticated/admin/leads'
     | '/app/_authenticated/admin/manager-calendars'
     | '/app/_authenticated/admin/modules'
     | '/app/_authenticated/admin/quizzes'
-    | '/app/_authenticated/admin/scraper'
     | '/app/_authenticated/admin/settings'
     | '/app/_authenticated/admin/tickets'
-    | '/app/_authenticated/b2b/callbacks'
-    | '/app/_authenticated/b2b/dialer'
-    | '/app/_authenticated/b2b/didnt-pick-up'
-    | '/app/_authenticated/b2b/leads'
-    | '/app/_authenticated/b2b/pool'
-    | '/app/_authenticated/b2b/recordings'
     | '/app/_authenticated/closer/calendar'
     | '/app/_authenticated/closer/commissions'
     | '/app/_authenticated/dm-manager/calendar'
@@ -1095,11 +716,6 @@ export interface FileRouteTypes {
     | '/app/_authenticated/dm-manager/'
     | '/app/_authenticated/dm-setter/'
     | '/app/_authenticated/training/'
-    | '/app/_authenticated/admin/clients/$userId'
-    | '/app/_authenticated/admin/outbound/campaigns'
-    | '/app/_authenticated/admin/outbound/leads'
-    | '/app/_authenticated/b2b/leads/$id'
-    | '/app/_authenticated/admin/clients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1112,25 +728,16 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
-  BookSlugRoute: typeof BookSlugRoute
   CallSlugRoute: typeof CallSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicConfirmBookingRoute: typeof ApiPublicConfirmBookingRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthGoogleCalendarReturnRoute: typeof OauthGoogleCalendarReturnRoute
-  ApiPublicHooksBackfillGcalRoute: typeof ApiPublicHooksBackfillGcalRoute
-  ApiPublicHooksClayLeadRoute: typeof ApiPublicHooksClayLeadRoute
-  ApiPublicHooksDistributeLeadsRoute: typeof ApiPublicHooksDistributeLeadsRoute
   ApiPublicHooksGhlBookingRoute: typeof ApiPublicHooksGhlBookingRoute
-  ApiPublicHooksJustcallRoute: typeof ApiPublicHooksJustcallRoute
   ApiPublicHooksMarkUnbookedRoute: typeof ApiPublicHooksMarkUnbookedRoute
-  ApiPublicHooksOpenphoneRoute: typeof ApiPublicHooksOpenphoneRoute
   ApiPublicHooksPurgeDmScreenshotsRoute: typeof ApiPublicHooksPurgeDmScreenshotsRoute
-  ApiPublicHooksRunDailyCycleRoute: typeof ApiPublicHooksRunDailyCycleRoute
-  ApiPublicHooksRunScraperRoute: typeof ApiPublicHooksRunScraperRoute
   ApiPublicHooksSendCallRemindersRoute: typeof ApiPublicHooksSendCallRemindersRoute
   ApiPublicHooksSmartleadSyncRoute: typeof ApiPublicHooksSmartleadSyncRoute
-  ApiPublicHooksSyncQuoCallsRoute: typeof ApiPublicHooksSyncQuoCallsRoute
   ApiPublicWebhooksSmartleadRoute: typeof ApiPublicWebhooksSmartleadRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -1216,13 +823,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CallSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/book/$slug': {
-      id: '/book/$slug'
-      path: '/book/$slug'
-      fullPath: '/book/$slug'
-      preLoaderRoute: typeof BookSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app/auth': {
       id: '/app/auth'
       path: '/auth'
@@ -1272,32 +872,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedProfileRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/app/_authenticated/leads': {
-      id: '/app/_authenticated/leads'
-      path: '/leads'
-      fullPath: '/app/leads'
-      preLoaderRoute: typeof AppAuthenticatedLeadsRouteImport
-      parentRoute: typeof AppAuthenticatedRouteRoute
-    }
-    '/app/_authenticated/dashboard': {
-      id: '/app/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/app/dashboard'
-      preLoaderRoute: typeof AppAuthenticatedDashboardRouteImport
-      parentRoute: typeof AppAuthenticatedRouteRoute
-    }
     '/app/_authenticated/commissions': {
       id: '/app/_authenticated/commissions'
       path: '/commissions'
       fullPath: '/app/commissions'
       preLoaderRoute: typeof AppAuthenticatedCommissionsRouteImport
-      parentRoute: typeof AppAuthenticatedRouteRoute
-    }
-    '/app/_authenticated/calendar': {
-      id: '/app/_authenticated/calendar'
-      path: '/calendar'
-      fullPath: '/app/calendar'
-      preLoaderRoute: typeof AppAuthenticatedCalendarRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
     '/api/public/confirm-booking': {
@@ -1426,48 +1005,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedCloserCalendarRouteImport
       parentRoute: typeof AppAuthenticatedRouteRoute
     }
-    '/app/_authenticated/b2b/recordings': {
-      id: '/app/_authenticated/b2b/recordings'
-      path: '/b2b/recordings'
-      fullPath: '/app/b2b/recordings'
-      preLoaderRoute: typeof AppAuthenticatedB2bRecordingsRouteImport
-      parentRoute: typeof AppAuthenticatedRouteRoute
-    }
-    '/app/_authenticated/b2b/pool': {
-      id: '/app/_authenticated/b2b/pool'
-      path: '/b2b/pool'
-      fullPath: '/app/b2b/pool'
-      preLoaderRoute: typeof AppAuthenticatedB2bPoolRouteImport
-      parentRoute: typeof AppAuthenticatedRouteRoute
-    }
-    '/app/_authenticated/b2b/leads': {
-      id: '/app/_authenticated/b2b/leads'
-      path: '/b2b/leads'
-      fullPath: '/app/b2b/leads'
-      preLoaderRoute: typeof AppAuthenticatedB2bLeadsRouteImport
-      parentRoute: typeof AppAuthenticatedRouteRoute
-    }
-    '/app/_authenticated/b2b/didnt-pick-up': {
-      id: '/app/_authenticated/b2b/didnt-pick-up'
-      path: '/b2b/didnt-pick-up'
-      fullPath: '/app/b2b/didnt-pick-up'
-      preLoaderRoute: typeof AppAuthenticatedB2bDidntPickUpRouteImport
-      parentRoute: typeof AppAuthenticatedRouteRoute
-    }
-    '/app/_authenticated/b2b/dialer': {
-      id: '/app/_authenticated/b2b/dialer'
-      path: '/b2b/dialer'
-      fullPath: '/app/b2b/dialer'
-      preLoaderRoute: typeof AppAuthenticatedB2bDialerRouteImport
-      parentRoute: typeof AppAuthenticatedRouteRoute
-    }
-    '/app/_authenticated/b2b/callbacks': {
-      id: '/app/_authenticated/b2b/callbacks'
-      path: '/b2b/callbacks'
-      fullPath: '/app/b2b/callbacks'
-      preLoaderRoute: typeof AppAuthenticatedB2bCallbacksRouteImport
-      parentRoute: typeof AppAuthenticatedRouteRoute
-    }
     '/app/_authenticated/admin/tickets': {
       id: '/app/_authenticated/admin/tickets'
       path: '/tickets'
@@ -1480,13 +1017,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/app/admin/settings'
       preLoaderRoute: typeof AppAuthenticatedAdminSettingsRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
-    '/app/_authenticated/admin/scraper': {
-      id: '/app/_authenticated/admin/scraper'
-      path: '/scraper'
-      fullPath: '/app/admin/scraper'
-      preLoaderRoute: typeof AppAuthenticatedAdminScraperRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
     '/app/_authenticated/admin/quizzes': {
@@ -1510,32 +1040,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAdminManagerCalendarsRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
-    '/app/_authenticated/admin/leads': {
-      id: '/app/_authenticated/admin/leads'
-      path: '/leads'
-      fullPath: '/app/admin/leads'
-      preLoaderRoute: typeof AppAuthenticatedAdminLeadsRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
-    '/app/_authenticated/admin/justcall-setup': {
-      id: '/app/_authenticated/admin/justcall-setup'
-      path: '/justcall-setup'
-      fullPath: '/app/admin/justcall-setup'
-      preLoaderRoute: typeof AppAuthenticatedAdminJustcallSetupRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
     '/app/_authenticated/admin/dm-setters': {
       id: '/app/_authenticated/admin/dm-setters'
       path: '/dm-setters'
       fullPath: '/app/admin/dm-setters'
       preLoaderRoute: typeof AppAuthenticatedAdminDmSettersRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
-    '/app/_authenticated/admin/commissions': {
-      id: '/app/_authenticated/admin/commissions'
-      path: '/commissions'
-      fullPath: '/app/admin/commissions'
-      preLoaderRoute: typeof AppAuthenticatedAdminCommissionsRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
     '/app/_authenticated/admin/closers': {
@@ -1557,27 +1066,6 @@ declare module '@tanstack/react-router' {
       path: '/b2c-commissions'
       fullPath: '/app/admin/b2c-commissions'
       preLoaderRoute: typeof AppAuthenticatedAdminB2cCommissionsRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
-    '/app/_authenticated/admin/b2b-pool': {
-      id: '/app/_authenticated/admin/b2b-pool'
-      path: '/b2b-pool'
-      fullPath: '/app/admin/b2b-pool'
-      preLoaderRoute: typeof AppAuthenticatedAdminB2bPoolRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
-    '/app/_authenticated/admin/b2b-commissions': {
-      id: '/app/_authenticated/admin/b2b-commissions'
-      path: '/b2b-commissions'
-      fullPath: '/app/admin/b2b-commissions'
-      preLoaderRoute: typeof AppAuthenticatedAdminB2bCommissionsRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
-    '/app/_authenticated/admin/b2b-closers': {
-      id: '/app/_authenticated/admin/b2b-closers'
-      path: '/b2b-closers'
-      fullPath: '/app/admin/b2b-closers'
-      preLoaderRoute: typeof AppAuthenticatedAdminB2bClosersRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
     '/app/_authenticated/admin/applications': {
@@ -1608,13 +1096,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksSmartleadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/sync-quo-calls': {
-      id: '/api/public/hooks/sync-quo-calls'
-      path: '/api/public/hooks/sync-quo-calls'
-      fullPath: '/api/public/hooks/sync-quo-calls'
-      preLoaderRoute: typeof ApiPublicHooksSyncQuoCallsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/smartlead-sync': {
       id: '/api/public/hooks/smartlead-sync'
       path: '/api/public/hooks/smartlead-sync'
@@ -1629,32 +1110,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSendCallRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/run-scraper': {
-      id: '/api/public/hooks/run-scraper'
-      path: '/api/public/hooks/run-scraper'
-      fullPath: '/api/public/hooks/run-scraper'
-      preLoaderRoute: typeof ApiPublicHooksRunScraperRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/run-daily-cycle': {
-      id: '/api/public/hooks/run-daily-cycle'
-      path: '/api/public/hooks/run-daily-cycle'
-      fullPath: '/api/public/hooks/run-daily-cycle'
-      preLoaderRoute: typeof ApiPublicHooksRunDailyCycleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/purge-dm-screenshots': {
       id: '/api/public/hooks/purge-dm-screenshots'
       path: '/api/public/hooks/purge-dm-screenshots'
       fullPath: '/api/public/hooks/purge-dm-screenshots'
       preLoaderRoute: typeof ApiPublicHooksPurgeDmScreenshotsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/openphone': {
-      id: '/api/public/hooks/openphone'
-      path: '/api/public/hooks/openphone'
-      fullPath: '/api/public/hooks/openphone'
-      preLoaderRoute: typeof ApiPublicHooksOpenphoneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/mark-unbooked': {
@@ -1664,75 +1124,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMarkUnbookedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/justcall': {
-      id: '/api/public/hooks/justcall'
-      path: '/api/public/hooks/justcall'
-      fullPath: '/api/public/hooks/justcall'
-      preLoaderRoute: typeof ApiPublicHooksJustcallRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/ghl-booking': {
       id: '/api/public/hooks/ghl-booking'
       path: '/api/public/hooks/ghl-booking'
       fullPath: '/api/public/hooks/ghl-booking'
       preLoaderRoute: typeof ApiPublicHooksGhlBookingRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/distribute-leads': {
-      id: '/api/public/hooks/distribute-leads'
-      path: '/api/public/hooks/distribute-leads'
-      fullPath: '/api/public/hooks/distribute-leads'
-      preLoaderRoute: typeof ApiPublicHooksDistributeLeadsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/clay-lead': {
-      id: '/api/public/hooks/clay-lead'
-      path: '/api/public/hooks/clay-lead'
-      fullPath: '/api/public/hooks/clay-lead'
-      preLoaderRoute: typeof ApiPublicHooksClayLeadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/backfill-gcal': {
-      id: '/api/public/hooks/backfill-gcal'
-      path: '/api/public/hooks/backfill-gcal'
-      fullPath: '/api/public/hooks/backfill-gcal'
-      preLoaderRoute: typeof ApiPublicHooksBackfillGcalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app/_authenticated/admin/clients/': {
-      id: '/app/_authenticated/admin/clients/'
-      path: '/clients'
-      fullPath: '/app/admin/clients/'
-      preLoaderRoute: typeof AppAuthenticatedAdminClientsIndexRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
-    '/app/_authenticated/b2b/leads/$id': {
-      id: '/app/_authenticated/b2b/leads/$id'
-      path: '/$id'
-      fullPath: '/app/b2b/leads/$id'
-      preLoaderRoute: typeof AppAuthenticatedB2bLeadsIdRouteImport
-      parentRoute: typeof AppAuthenticatedB2bLeadsRoute
-    }
-    '/app/_authenticated/admin/outbound/leads': {
-      id: '/app/_authenticated/admin/outbound/leads'
-      path: '/outbound/leads'
-      fullPath: '/app/admin/outbound/leads'
-      preLoaderRoute: typeof AppAuthenticatedAdminOutboundLeadsRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
-    '/app/_authenticated/admin/outbound/campaigns': {
-      id: '/app/_authenticated/admin/outbound/campaigns'
-      path: '/outbound/campaigns'
-      fullPath: '/app/admin/outbound/campaigns'
-      preLoaderRoute: typeof AppAuthenticatedAdminOutboundCampaignsRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
-    }
-    '/app/_authenticated/admin/clients/$userId': {
-      id: '/app/_authenticated/admin/clients/$userId'
-      path: '/clients/$userId'
-      fullPath: '/app/admin/clients/$userId'
-      preLoaderRoute: typeof AppAuthenticatedAdminClientsUserIdRouteImport
-      parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
   }
 }
@@ -1741,27 +1138,16 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminAccountDeletionsRoute: typeof AppAuthenticatedAdminAccountDeletionsRoute
   AppAuthenticatedAdminAdminsRoute: typeof AppAuthenticatedAdminAdminsRoute
   AppAuthenticatedAdminApplicationsRoute: typeof AppAuthenticatedAdminApplicationsRoute
-  AppAuthenticatedAdminB2bClosersRoute: typeof AppAuthenticatedAdminB2bClosersRoute
-  AppAuthenticatedAdminB2bCommissionsRoute: typeof AppAuthenticatedAdminB2bCommissionsRoute
-  AppAuthenticatedAdminB2bPoolRoute: typeof AppAuthenticatedAdminB2bPoolRoute
   AppAuthenticatedAdminB2cCommissionsRoute: typeof AppAuthenticatedAdminB2cCommissionsRoute
   AppAuthenticatedAdminBookingsRoute: typeof AppAuthenticatedAdminBookingsRoute
   AppAuthenticatedAdminClosersRoute: typeof AppAuthenticatedAdminClosersRoute
-  AppAuthenticatedAdminCommissionsRoute: typeof AppAuthenticatedAdminCommissionsRoute
   AppAuthenticatedAdminDmSettersRoute: typeof AppAuthenticatedAdminDmSettersRoute
-  AppAuthenticatedAdminJustcallSetupRoute: typeof AppAuthenticatedAdminJustcallSetupRoute
-  AppAuthenticatedAdminLeadsRoute: typeof AppAuthenticatedAdminLeadsRoute
   AppAuthenticatedAdminManagerCalendarsRoute: typeof AppAuthenticatedAdminManagerCalendarsRoute
   AppAuthenticatedAdminModulesRoute: typeof AppAuthenticatedAdminModulesRoute
   AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
-  AppAuthenticatedAdminScraperRoute: typeof AppAuthenticatedAdminScraperRoute
   AppAuthenticatedAdminSettingsRoute: typeof AppAuthenticatedAdminSettingsRoute
   AppAuthenticatedAdminTicketsRoute: typeof AppAuthenticatedAdminTicketsRoute
   AppAuthenticatedAdminIndexRoute: typeof AppAuthenticatedAdminIndexRoute
-  AppAuthenticatedAdminClientsUserIdRoute: typeof AppAuthenticatedAdminClientsUserIdRoute
-  AppAuthenticatedAdminOutboundCampaignsRoute: typeof AppAuthenticatedAdminOutboundCampaignsRoute
-  AppAuthenticatedAdminOutboundLeadsRoute: typeof AppAuthenticatedAdminOutboundLeadsRoute
-  AppAuthenticatedAdminClientsIndexRoute: typeof AppAuthenticatedAdminClientsIndexRoute
 }
 
 const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteChildren =
@@ -1771,36 +1157,18 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminAdminsRoute: AppAuthenticatedAdminAdminsRoute,
     AppAuthenticatedAdminApplicationsRoute:
       AppAuthenticatedAdminApplicationsRoute,
-    AppAuthenticatedAdminB2bClosersRoute: AppAuthenticatedAdminB2bClosersRoute,
-    AppAuthenticatedAdminB2bCommissionsRoute:
-      AppAuthenticatedAdminB2bCommissionsRoute,
-    AppAuthenticatedAdminB2bPoolRoute: AppAuthenticatedAdminB2bPoolRoute,
     AppAuthenticatedAdminB2cCommissionsRoute:
       AppAuthenticatedAdminB2cCommissionsRoute,
     AppAuthenticatedAdminBookingsRoute: AppAuthenticatedAdminBookingsRoute,
     AppAuthenticatedAdminClosersRoute: AppAuthenticatedAdminClosersRoute,
-    AppAuthenticatedAdminCommissionsRoute:
-      AppAuthenticatedAdminCommissionsRoute,
     AppAuthenticatedAdminDmSettersRoute: AppAuthenticatedAdminDmSettersRoute,
-    AppAuthenticatedAdminJustcallSetupRoute:
-      AppAuthenticatedAdminJustcallSetupRoute,
-    AppAuthenticatedAdminLeadsRoute: AppAuthenticatedAdminLeadsRoute,
     AppAuthenticatedAdminManagerCalendarsRoute:
       AppAuthenticatedAdminManagerCalendarsRoute,
     AppAuthenticatedAdminModulesRoute: AppAuthenticatedAdminModulesRoute,
     AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
-    AppAuthenticatedAdminScraperRoute: AppAuthenticatedAdminScraperRoute,
     AppAuthenticatedAdminSettingsRoute: AppAuthenticatedAdminSettingsRoute,
     AppAuthenticatedAdminTicketsRoute: AppAuthenticatedAdminTicketsRoute,
     AppAuthenticatedAdminIndexRoute: AppAuthenticatedAdminIndexRoute,
-    AppAuthenticatedAdminClientsUserIdRoute:
-      AppAuthenticatedAdminClientsUserIdRoute,
-    AppAuthenticatedAdminOutboundCampaignsRoute:
-      AppAuthenticatedAdminOutboundCampaignsRoute,
-    AppAuthenticatedAdminOutboundLeadsRoute:
-      AppAuthenticatedAdminOutboundLeadsRoute,
-    AppAuthenticatedAdminClientsIndexRoute:
-      AppAuthenticatedAdminClientsIndexRoute,
   }
 
 const AppAuthenticatedAdminRouteRouteWithChildren =
@@ -1808,35 +1176,12 @@ const AppAuthenticatedAdminRouteRouteWithChildren =
     AppAuthenticatedAdminRouteRouteChildren,
   )
 
-interface AppAuthenticatedB2bLeadsRouteChildren {
-  AppAuthenticatedB2bLeadsIdRoute: typeof AppAuthenticatedB2bLeadsIdRoute
-}
-
-const AppAuthenticatedB2bLeadsRouteChildren: AppAuthenticatedB2bLeadsRouteChildren =
-  {
-    AppAuthenticatedB2bLeadsIdRoute: AppAuthenticatedB2bLeadsIdRoute,
-  }
-
-const AppAuthenticatedB2bLeadsRouteWithChildren =
-  AppAuthenticatedB2bLeadsRoute._addFileChildren(
-    AppAuthenticatedB2bLeadsRouteChildren,
-  )
-
 interface AppAuthenticatedRouteRouteChildren {
   AppAuthenticatedAdminRouteRoute: typeof AppAuthenticatedAdminRouteRouteWithChildren
-  AppAuthenticatedCalendarRoute: typeof AppAuthenticatedCalendarRoute
   AppAuthenticatedCommissionsRoute: typeof AppAuthenticatedCommissionsRoute
-  AppAuthenticatedDashboardRoute: typeof AppAuthenticatedDashboardRoute
-  AppAuthenticatedLeadsRoute: typeof AppAuthenticatedLeadsRoute
   AppAuthenticatedProfileRoute: typeof AppAuthenticatedProfileRoute
   AppAuthenticatedSetPasswordRoute: typeof AppAuthenticatedSetPasswordRoute
   AppAuthenticatedTicketsRoute: typeof AppAuthenticatedTicketsRoute
-  AppAuthenticatedB2bCallbacksRoute: typeof AppAuthenticatedB2bCallbacksRoute
-  AppAuthenticatedB2bDialerRoute: typeof AppAuthenticatedB2bDialerRoute
-  AppAuthenticatedB2bDidntPickUpRoute: typeof AppAuthenticatedB2bDidntPickUpRoute
-  AppAuthenticatedB2bLeadsRoute: typeof AppAuthenticatedB2bLeadsRouteWithChildren
-  AppAuthenticatedB2bPoolRoute: typeof AppAuthenticatedB2bPoolRoute
-  AppAuthenticatedB2bRecordingsRoute: typeof AppAuthenticatedB2bRecordingsRoute
   AppAuthenticatedCloserCalendarRoute: typeof AppAuthenticatedCloserCalendarRoute
   AppAuthenticatedCloserCommissionsRoute: typeof AppAuthenticatedCloserCommissionsRoute
   AppAuthenticatedDmManagerCalendarRoute: typeof AppAuthenticatedDmManagerCalendarRoute
@@ -1853,19 +1198,10 @@ interface AppAuthenticatedRouteRouteChildren {
 
 const AppAuthenticatedRouteRouteChildren: AppAuthenticatedRouteRouteChildren = {
   AppAuthenticatedAdminRouteRoute: AppAuthenticatedAdminRouteRouteWithChildren,
-  AppAuthenticatedCalendarRoute: AppAuthenticatedCalendarRoute,
   AppAuthenticatedCommissionsRoute: AppAuthenticatedCommissionsRoute,
-  AppAuthenticatedDashboardRoute: AppAuthenticatedDashboardRoute,
-  AppAuthenticatedLeadsRoute: AppAuthenticatedLeadsRoute,
   AppAuthenticatedProfileRoute: AppAuthenticatedProfileRoute,
   AppAuthenticatedSetPasswordRoute: AppAuthenticatedSetPasswordRoute,
   AppAuthenticatedTicketsRoute: AppAuthenticatedTicketsRoute,
-  AppAuthenticatedB2bCallbacksRoute: AppAuthenticatedB2bCallbacksRoute,
-  AppAuthenticatedB2bDialerRoute: AppAuthenticatedB2bDialerRoute,
-  AppAuthenticatedB2bDidntPickUpRoute: AppAuthenticatedB2bDidntPickUpRoute,
-  AppAuthenticatedB2bLeadsRoute: AppAuthenticatedB2bLeadsRouteWithChildren,
-  AppAuthenticatedB2bPoolRoute: AppAuthenticatedB2bPoolRoute,
-  AppAuthenticatedB2bRecordingsRoute: AppAuthenticatedB2bRecordingsRoute,
   AppAuthenticatedCloserCalendarRoute: AppAuthenticatedCloserCalendarRoute,
   AppAuthenticatedCloserCommissionsRoute:
     AppAuthenticatedCloserCommissionsRoute,
@@ -1911,25 +1247,16 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
-  BookSlugRoute: BookSlugRoute,
   CallSlugRoute: CallSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicConfirmBookingRoute: ApiPublicConfirmBookingRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthGoogleCalendarReturnRoute: OauthGoogleCalendarReturnRoute,
-  ApiPublicHooksBackfillGcalRoute: ApiPublicHooksBackfillGcalRoute,
-  ApiPublicHooksClayLeadRoute: ApiPublicHooksClayLeadRoute,
-  ApiPublicHooksDistributeLeadsRoute: ApiPublicHooksDistributeLeadsRoute,
   ApiPublicHooksGhlBookingRoute: ApiPublicHooksGhlBookingRoute,
-  ApiPublicHooksJustcallRoute: ApiPublicHooksJustcallRoute,
   ApiPublicHooksMarkUnbookedRoute: ApiPublicHooksMarkUnbookedRoute,
-  ApiPublicHooksOpenphoneRoute: ApiPublicHooksOpenphoneRoute,
   ApiPublicHooksPurgeDmScreenshotsRoute: ApiPublicHooksPurgeDmScreenshotsRoute,
-  ApiPublicHooksRunDailyCycleRoute: ApiPublicHooksRunDailyCycleRoute,
-  ApiPublicHooksRunScraperRoute: ApiPublicHooksRunScraperRoute,
   ApiPublicHooksSendCallRemindersRoute: ApiPublicHooksSendCallRemindersRoute,
   ApiPublicHooksSmartleadSyncRoute: ApiPublicHooksSmartleadSyncRoute,
-  ApiPublicHooksSyncQuoCallsRoute: ApiPublicHooksSyncQuoCallsRoute,
   ApiPublicWebhooksSmartleadRoute: ApiPublicWebhooksSmartleadRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,

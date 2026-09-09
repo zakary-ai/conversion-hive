@@ -9,8 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phone, Mail, Clock, Loader2, CreditCard, DollarSign, Trash2 } from "lucide-react";
 import { listClosers, assignCloserToBooking, deleteCloserBooking, getApplicationById } from "@/lib/api/b2c.functions";
-import { listB2bClosers } from "@/lib/api/b2b-closers.functions";
-import { assignB2bCloser, deleteAppointment } from "@/lib/api/cl.functions";
 import { toast } from "sonner";
 
 export type ScheduledLeadRow = {
@@ -25,11 +23,9 @@ export type ScheduledLeadRow = {
 
 export function ScheduledLeadDialog({
   row,
-  channel,
   onClose,
 }: {
   row: ScheduledLeadRow | null;
-  channel: "b2b" | "b2c";
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -44,15 +40,15 @@ export function ScheduledLeadDialog({
   }, [row?.id]);
 
   const closersQ = useQuery({
-    queryKey: channel === "b2b" ? ["b2b-closers"] : ["closers"],
-    queryFn: () => (channel === "b2b" ? listB2bClosers() : listClosers()),
+    queryKey: ["closers"],
+    queryFn: () => listClosers(),
     enabled: !!row,
   });
 
   const appQ = useQuery({
     queryKey: ["application", row?.application_id],
     queryFn: () => getApplicationById({ data: { id: row!.application_id! } }),
-    enabled: !!row && channel === "b2c" && !!row.application_id,
+    enabled: !!row && !!row.application_id,
   });
 
   const eligibleClosers = (closersQ.data ?? []).filter((c) => c.active);
@@ -61,16 +57,12 @@ export function ScheduledLeadDialog({
     mutationFn: async () => {
       if (!row) throw new Error("No booking");
       if (!closerId) throw new Error("Pick a closer");
-      if (channel === "b2b") {
-        return assignB2bCloser({ data: { appointment_id: row.id, closer_id: closerId } });
-      }
       return assignCloserToBooking({ data: { booking_id: row.id, closer_id: closerId } });
     },
     onSuccess: () => {
       toast.success("Closer assigned — confirmation email sent");
       qc.invalidateQueries({ queryKey: ["admin-overview"] });
       qc.invalidateQueries({ queryKey: ["b2c-bookings"] });
-      qc.invalidateQueries({ queryKey: ["b2b-bookings"] });
       onClose();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -79,16 +71,12 @@ export function ScheduledLeadDialog({
   const del = useMutation({
     mutationFn: async () => {
       if (!row) throw new Error("No booking");
-      if (channel === "b2b") {
-        return deleteAppointment({ data: { id: row.id } });
-      }
       return deleteCloserBooking({ data: { booking_id: row.id } });
     },
     onSuccess: () => {
       toast.success("Lead deleted");
       qc.invalidateQueries({ queryKey: ["admin-overview"] });
       qc.invalidateQueries({ queryKey: ["b2c-bookings"] });
-      qc.invalidateQueries({ queryKey: ["b2b-bookings"] });
       setConfirmDelete(false);
       onClose();
     },
@@ -128,7 +116,7 @@ export function ScheduledLeadDialog({
               )}
             </div>
 
-            {channel === "b2c" && row.application_id && (
+            {row.application_id && (
               <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm space-y-1.5">
                 <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Application</div>
                 {appQ.isLoading ? (
@@ -163,7 +151,7 @@ export function ScheduledLeadDialog({
                 <SelectContent>
                   {eligibleClosers.length === 0 ? (
                     <div className="p-2 text-xs text-muted-foreground">
-                      No active {channel === "b2b" ? "B2B" : "B2C"} closers available.
+                      No active closers available.
                     </div>
                   ) : (
                     eligibleClosers.map((c) => (
@@ -206,7 +194,7 @@ export function ScheduledLeadDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the booking{channel === "b2c" ? " and its calendar event" : ""}. This cannot be undone.
+              This permanently removes the booking and its calendar event. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
