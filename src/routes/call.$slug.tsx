@@ -207,7 +207,7 @@ function ManagerBookingPage() {
       {/* SOCIAL PROOF */}
       <section className="border-y border-border bg-muted/30 px-4 py-14 sm:py-16">
         <div className="mx-auto w-full max-w-2xl space-y-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground">Testimonials</h2>
+          <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-foreground">Testimonials</h2>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Real People. Real Results. First Week.</p>
           <Card className="p-8 text-left">
             <Quote className="h-8 w-8 text-primary/40" />
