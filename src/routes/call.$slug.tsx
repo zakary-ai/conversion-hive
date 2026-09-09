@@ -14,7 +14,6 @@ import {
   CalendarClock,
   CheckCircle2,
   Loader2,
-  Play,
   GraduationCap,
   PhoneCall,
   LifeBuoy,
