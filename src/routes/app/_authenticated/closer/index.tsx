@@ -2,7 +2,6 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { listCloserBookings } from "@/lib/api/b2c.functions";
-import { listMyAppointments } from "@/lib/api/cl.functions";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +15,7 @@ import {
 } from "lucide-react";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
-import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 import { MyAvailabilitySection } from "@/components/my-availability-section";
-import { B2bBookingAvailabilitySection } from "@/components/b2b-booking-availability-section";
 import { getMyCloserLines } from "@/lib/api/closer-availability.functions";
 import { SupportButton } from "@/components/support-button";
 
@@ -42,7 +39,6 @@ type B = {
   outcome: string | null;
   outcome_at: string | null;
 };
-type Appt = Awaited<ReturnType<typeof listMyAppointments>>[number];
 
 type FilterKey = "today" | "closes" | "not-interested" | "dq" | "no-show" | "all";
 
@@ -53,11 +49,9 @@ const dayKey = (d: string | Date) =>
 
 function CloserHome() {
   const { data } = useQuery({ queryKey: ["closer-bookings"], queryFn: () => listCloserBookings() });
-  const { data: apptsRaw = [] } = useQuery({ queryKey: ["my-appointments"], queryFn: () => listMyAppointments() });
   const { data: lines } = useQuery({ queryKey: ["my-closer-lines"], queryFn: () => getMyCloserLines() });
 
   const rows = ((data?.rows ?? []) as B[]).filter((r) => r.status !== "cancelled");
-  const b2bRows = (apptsRaw as Appt[]).filter((a) => a.type === "booking" && a.status !== "cancelled");
 
   // Date range — default = today
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
@@ -70,8 +64,7 @@ function CloserHome() {
   // Today (based on ET calendar)
   const todayKey = dayKey(new Date());
   const todayCallsB2c = rows.filter((r) => dayKey(r.slot_start) === todayKey);
-  const todayCallsB2b = b2bRows.filter((a) => dayKey(a.scheduled_at) === todayKey);
-  const goingLiveToday = todayCallsB2c.length + todayCallsB2b.length;
+  const goingLiveToday = todayCallsB2c.length;
 
   // Outcome buckets within [from, to] (by outcome_at / outcome_set_at)
   const inRange = (iso: string | null) => {
@@ -81,24 +74,11 @@ function CloserHome() {
   };
 
   const b2cInRange = rows.filter((r) => r.outcome && inRange(r.outcome_at));
-  const b2bInRange = b2bRows.filter((a) => a.outcome && inRange(a.outcome_set_at));
 
-  const closes = [
-    ...b2cInRange.filter((r) => r.outcome === "closed" || r.outcome === "deposit"),
-    ...b2bInRange.filter((a) => a.outcome === "closed"),
-  ];
-  const notInterested = [
-    ...b2cInRange.filter((r) => r.outcome === "not_interested"),
-    ...b2bInRange.filter((a) => a.outcome === "lost"),
-  ];
-  const dq = [
-    ...b2cInRange.filter((r) => r.outcome === "disqualified"),
-    ...b2bInRange.filter((a) => a.outcome === "disqualified"),
-  ];
-  const noShow = [
-    ...b2cInRange.filter((r) => r.outcome === "no_show"),
-    ...b2bInRange.filter((a) => a.outcome === "no_show"),
-  ];
+  const closes = b2cInRange.filter((r) => r.outcome === "closed" || r.outcome === "deposit");
+  const notInterested = b2cInRange.filter((r) => r.outcome === "not_interested");
+  const dq = b2cInRange.filter((r) => r.outcome === "disqualified");
+  const noShow = b2cInRange.filter((r) => r.outcome === "no_show");
 
   const closesCount = closes.length;
   const qualified = closesCount + notInterested.length;
@@ -110,31 +90,17 @@ function CloserHome() {
     filter === "today"
       ? todayCallsB2c
       : filter === "closes"
-        ? (closes.filter((x) => "slot_start" in x) as B[])
+        ? closes
         : filter === "not-interested"
-          ? (notInterested.filter((x) => "slot_start" in x) as B[])
+          ? notInterested
           : filter === "dq"
-            ? (dq.filter((x) => "slot_start" in x) as B[])
+            ? dq
             : filter === "no-show"
-              ? (noShow.filter((x) => "slot_start" in x) as B[])
-              : [...closes, ...notInterested, ...dq, ...noShow].filter((x) => "slot_start" in x) as B[];
-
-  const shownB2b: Appt[] =
-    filter === "today"
-      ? todayCallsB2b
-      : filter === "closes"
-        ? (closes.filter((x) => "scheduled_at" in x) as Appt[])
-        : filter === "not-interested"
-          ? (notInterested.filter((x) => "scheduled_at" in x) as Appt[])
-          : filter === "dq"
-            ? (dq.filter((x) => "scheduled_at" in x) as Appt[])
-            : filter === "no-show"
-              ? (noShow.filter((x) => "scheduled_at" in x) as Appt[])
-              : [...closes, ...notInterested, ...dq, ...noShow].filter((x) => "scheduled_at" in x) as Appt[];
+              ? noShow
+              : [...closes, ...notInterested, ...dq, ...noShow];
 
   const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
   const [previewFor, setPreviewFor] = useState<B | null>(null);
-  const [apptFor, setApptFor] = useState<Appt | null>(null);
 
   const fmtBtn = (d: Date | undefined) =>
     d ? d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Pick date";
@@ -256,35 +222,20 @@ function CloserHome() {
       <section>
         <div className="flex items-center gap-2 mb-2">
           <h2 className="text-sm uppercase tracking-widest text-muted-foreground">{filterLabel[filter]}</h2>
-          <Badge variant="secondary">{shownB2c.length + shownB2b.length}</Badge>
+          <Badge variant="secondary">{shownB2c.length}</Badge>
         </div>
         <div className="grid gap-2">
-          {shownB2c.length + shownB2b.length === 0 && (
+          {shownB2c.length === 0 && (
             <Card className="p-6 text-sm text-muted-foreground text-center">
               {filter === "today" ? "No calls today." : "Nothing in this range."}
             </Card>
           )}
-          {shownB2b.map((a) => <AppointmentCard key={a.id} a={a} onOpen={() => setApptFor(a)} />)}
           {shownB2c.map((b) => <CallCard key={b.id} b={b} onOutcome={() => setOutcomeFor(b)} onPreview={() => setPreviewFor(b)} />)}
         </div>
       </section>
 
-      {lines?.b2b && <B2bBookingAvailabilitySection />}
-
-      {(lines?.b2b || lines?.b2c) && (
-        <MyAvailabilitySection
-          lines={[
-            ...(lines?.b2b ? (["b2b"] as const) : []),
-            ...(lines?.b2c ? (["b2c"] as const) : []),
-          ]}
-          label={
-            lines?.b2b && lines?.b2c
-              ? "My availability & notes"
-              : lines?.b2b
-                ? "My B2B availability & notes"
-                : "My B2C availability & notes"
-          }
-        />
+      {lines?.b2c && (
+        <MyAvailabilitySection lines={["b2c"]} label="My availability & notes" />
       )}
 
       {outcomeFor && (
@@ -301,7 +252,6 @@ function CloserHome() {
         open={!!previewFor}
         onOpenChange={(v) => !v && setPreviewFor(null)}
       />
-      <AppointmentDetailDialog appt={apptFor} onClose={() => setApptFor(null)} />
     </div>
   );
 }
@@ -364,31 +314,6 @@ function CallCard({ b, onOutcome, onPreview }: { b: B; onOutcome: () => void; on
   );
 }
 
-function AppointmentCard({ a, onOpen }: { a: Appt; onOpen: () => void }) {
-  const dt = new Date(a.scheduled_at);
-  const label = dt.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  return (
-    <Card className="p-4 flex items-center justify-between gap-3 flex-wrap">
-      <div className="min-w-0 cursor-pointer" onClick={onOpen}>
-        <div className="font-medium flex items-center gap-2">
-          <span className="text-primary hover:underline">{a.name}</span>
-          <Badge variant="secondary" className="text-[10px]">B2B</Badge>
-          <Badge variant="secondary" className="text-[10px]">{a.outcome ?? a.status}</Badge>
-        </div>
-        <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
-          <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {label}</span>
-          {a.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {a.email}</span>}
-          {a.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {a.phone}</span>}
-        </div>
-      </div>
-      {a.meeting_url && !a.outcome && (
-        <a href={a.meeting_url} target="_blank" rel="noreferrer">
-          <Button size="sm" className="gap-1"><Video className="h-3 w-3" /> Join</Button>
-        </a>
-      )}
-    </Card>
-  );
-}
 
 const RANGE_OPTS: { label: string; days: number | null }[] = [
   { label: "1d", days: 1 },
