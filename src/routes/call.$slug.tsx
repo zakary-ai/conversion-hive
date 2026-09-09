@@ -95,6 +95,16 @@ function ManagerBookingPage() {
   const { slug, managerName } = Route.useLoaderData();
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const bookRef = useRef<HTMLDivElement>(null);
+  const vslRef = useRef<HTMLVideoElement>(null);
+  const [vslMuted, setVslMuted] = useState(true);
+  const unmuteVsl = () => {
+    const v = vslRef.current;
+    if (!v) return;
+    v.muted = false;
+    v.currentTime = 0;
+    v.play();
+    setVslMuted(false);
+  };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
