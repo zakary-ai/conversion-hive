@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getPublicManagerBySlug, listPublicManagerSlots, bookPublicManagerSlot } from "@/lib/api/dm-manager.functions";
 import testimonialAsset from "@/assets/testimonial.mp4.asset.json";
+import vslAsset from "@/assets/scarlett-vsl.mp4.asset.json";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,6 @@ import {
   CalendarClock,
   CheckCircle2,
   Loader2,
-  Play,
   GraduationCap,
   PhoneCall,
   LifeBuoy,
@@ -158,14 +158,15 @@ function ManagerBookingPage() {
             Join the Conversion Lab DM Setter program and start earning from day one under a proven brand.
           </p>
 
-          {/* VSL placeholder */}
+          {/* VSL */}
           <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
-            <div className="relative flex aspect-video flex-col items-center justify-center gap-3 bg-muted/40">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
-                <Play className="h-7 w-7 fill-current" />
-              </div>
-              <p className="text-sm font-medium text-muted-foreground">Video coming soon - 2–3 minutes max</p>
-            </div>
+            <video
+              src={vslAsset.url}
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-video w-full"
+            />
           </div>
 
           <div className="pt-2">
