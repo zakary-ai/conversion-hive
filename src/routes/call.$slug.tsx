@@ -35,7 +35,7 @@ export const Route = createFileRoute("/call/$slug")({
       meta: [
         { title: "Get Paid to Learn Sales · Conversion Lab" },
         { name: "description", content: `Join the Conversion Lab DM Setter program and start earning from day one under a proven brand. Book your interview with ${who}.` },
-        { property: "og:title", content: "Get Paid to Learn Sales — No Experience Required" },
+        { property: "og:title", content: "Get Paid to Learn Sales - No Experience Required" },
         { property: "og:description", content: "Join the Conversion Lab DM Setter program and start earning from day one under a proven brand." },
         { property: "og:type", content: "website" },
         { name: "twitter:card", content: "summary_large_image" },
@@ -63,7 +63,7 @@ const WHAT_YOU_GET = [
   { icon: PhoneCall, text: "2–3 live group coaching calls per week" },
   { icon: LifeBuoy, text: "24/7 direct support from your coach" },
   { icon: LayoutGrid, text: "Access to the Conversion Lab app with everything you need in one place" },
-  { icon: MessagesSquare, text: "A live DM setter position — start booking calls from day one" },
+  { icon: MessagesSquare, text: "A live DM setter position - start booking calls from day one" },
   { icon: Users, text: "A community of people on the same path as you" },
   { icon: TrendingUp, text: "The opportunity to grow within the Conversion Lab ecosystem based on your performance" },
 ];
@@ -150,7 +150,7 @@ function ManagerBookingPage() {
         <div className="mx-auto w-full max-w-3xl text-center space-y-5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Conversion Lab · DM Setter Program</p>
           <h1 className="text-4xl sm:text-5xl font-display font-bold tracking-tight leading-[1.05]">
-            Get Paid to Learn Sales —{" "}
+            Get Paid to Learn Sales -{" "}
             <span className="text-primary">No Experience Required</span>
           </h1>
           <p className="mx-auto max-w-xl text-base sm:text-lg text-muted-foreground">
@@ -163,7 +163,7 @@ function ManagerBookingPage() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <Play className="h-7 w-7 fill-current" />
               </div>
-              <p className="text-sm font-medium text-muted-foreground">Video coming soon — 2–3 minutes max</p>
+              <p className="text-sm font-medium text-muted-foreground">Video coming soon - 2–3 minutes max</p>
             </div>
           </div>
 
@@ -184,7 +184,7 @@ function ManagerBookingPage() {
             <blockquote className="mt-4 text-lg sm:text-xl font-medium leading-relaxed">
               "Margot came in with zero experience and made $600 profit in her very first week as a DM setter."
             </blockquote>
-            <p className="mt-4 text-sm text-muted-foreground">— Conversion Lab DM Setter</p>
+            <p className="mt-4 text-sm text-muted-foreground">- Conversion Lab DM Setter</p>
           </Card>
         </div>
       </section>
@@ -277,7 +277,7 @@ function ManagerBookingPage() {
                     <Loader2 className="h-4 w-4 animate-spin" /> Loading times…
                   </div>
                 ) : (slots.data ?? []).length === 0 ? (
-                  <p className="py-6 text-sm text-muted-foreground">No times left on this day — try another date.</p>
+                  <p className="py-6 text-sm text-muted-foreground">No times left on this day - try another date.</p>
                 ) : (
                   <div className="mt-3 grid max-h-[280px] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
                     {(slots.data ?? []).map((iso) => (
@@ -330,7 +330,7 @@ function ManagerBookingPage() {
           )}
 
           <p className="text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Conversion Lab. Results vary — no income is guaranteed.
+            © {new Date().getFullYear()} Conversion Lab. Results vary - no income is guaranteed.
           </p>
         </div>
       </section>
