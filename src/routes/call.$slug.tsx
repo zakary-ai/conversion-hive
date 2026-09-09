@@ -227,6 +227,15 @@ function ManagerBookingPage() {
               className="aspect-video w-full"
             />
           </div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+            <video
+              src={testimonial2Asset.url}
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-video w-full"
+            />
+          </div>
         </div>
       </section>
 
