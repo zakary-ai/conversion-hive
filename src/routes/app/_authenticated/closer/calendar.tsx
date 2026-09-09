@@ -16,7 +16,7 @@ import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog"
 export const Route = createFileRoute("/app/_authenticated/closer/calendar")({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQueryOptions);
-    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/dashboard" });
+    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/profile" });
   },
   component: CloserCalendar,
 });

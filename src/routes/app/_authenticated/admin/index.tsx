@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2, DollarSign, XCircle, UserX, HelpCircle, CircleDashed } from "lucide-react";
-import { useAdminChannel, type AdminChannel } from "@/components/app-sidebar";
 import { ScheduledLeadDialog, type ScheduledLeadRow } from "@/components/admin/scheduled-lead-dialog";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
 import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
@@ -16,14 +15,13 @@ import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog"
 type Overview = Awaited<ReturnType<typeof getAdminOverview>>;
 type Row = Overview["upcomingCalls"][number];
 
-const overviewOpts = (channel: AdminChannel) =>
-  queryOptions({
-    queryKey: ["admin-overview", channel],
-    queryFn: () => getAdminOverview({ data: { channel } }),
-  });
+const overviewOpts = queryOptions({
+  queryKey: ["admin-overview", "b2c"],
+  queryFn: () => getAdminOverview({ data: { channel: "b2c" } }),
+});
 
 export const Route = createFileRoute("/app/_authenticated/admin/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(overviewOpts("b2b")),
+  loader: ({ context }) => context.queryClient.ensureQueryData(overviewOpts),
   component: AdminDashboard,
 });
 
@@ -37,8 +35,7 @@ const METRIC_LABELS: Record<MetricKey, string> = {
 };
 
 function AdminDashboard() {
-  const [channel] = useAdminChannel();
-  const { data } = useSuspenseQuery(overviewOpts(channel));
+  const { data } = useSuspenseQuery(overviewOpts);
   const [openMetric, setOpenMetric] = useState<MetricKey | null>(null);
   const [scheduledLead, setScheduledLead] = useState<ScheduledLeadRow | null>(null);
   const [liveCall, setLiveCall] = useState<Row | null>(null);
@@ -53,10 +50,7 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <PageHeader title="Admin overview" description={`Live ${channel.toUpperCase()} metrics across all setters.`} />
-        <ChannelToggle />
-      </div>
+      <PageHeader title="Admin overview" description="Live metrics across all setters." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {cards.map(({ key, icon, hint }) => (
@@ -105,9 +99,9 @@ function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      <ScheduledLeadDialog row={scheduledLead} channel={channel} onClose={() => setScheduledLead(null)} />
+      <ScheduledLeadDialog row={scheduledLead} onClose={() => setScheduledLead(null)} />
 
-      {liveCall && channel === "b2c" && (
+      {liveCall && (
         <OutcomeDialog
           bookingId={liveCall.id}
           applicationId={liveCall.application_id}
@@ -116,48 +110,11 @@ function AdminDashboard() {
           onOpenChange={(o) => { if (!o) setLiveCall(null); }}
         />
       )}
-      {liveCall && channel === "b2b" && (
-        <AppointmentDetailDialog
-          appt={{
-            id: liveCall.id,
-            lead_id: liveCall.lead_id,
-            type: liveCall.type ?? "booking",
-            scheduled_at: liveCall.scheduled_at,
-            name: liveCall.name ?? "",
-            phone: liveCall.phone,
-            email: liveCall.email,
-            context: liveCall.context,
-            meeting_url: liveCall.meeting_url,
-            outcome: liveCall.outcome,
-            deal_amount: liveCall.deal_amount,
-            commission_amount: liveCall.commission_amount,
-            lost_reason: liveCall.lost_reason,
-          }}
-          onClose={() => setLiveCall(null)}
-        />
-      )}
     </div>
   );
 }
 
 
-function ChannelToggle() {
-  const [channel, setChannel] = useAdminChannel();
-  return (
-    <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5 text-xs shrink-0">
-      <button
-        type="button"
-        onClick={() => setChannel("b2b")}
-        className={`rounded-md px-3 py-1.5 font-medium transition ${channel === "b2b" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-      >B2B</button>
-      <button
-        type="button"
-        onClick={() => setChannel("b2c")}
-        className={`rounded-md px-3 py-1.5 font-medium transition ${channel === "b2c" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-      >B2C</button>
-    </div>
-  );
-}
 
 function Section({ title, icon: Icon, children, empty }: { title: string; icon: typeof Clock; children: React.ReactNode; empty: string }) {
   const items = Array.isArray(children) ? children : [children];

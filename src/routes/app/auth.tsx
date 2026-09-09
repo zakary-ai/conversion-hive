@@ -31,7 +31,7 @@ function AuthPage() {
       const isCloser = (roles ?? []).some((r) => r.role === "closer");
       const isDmSetter = (roles ?? []).some((r) => (r.role as string) === "dm_setter");
       const isDmManager = (roles ?? []).some((r) => (r.role as string) === "dm_setter_manager");
-      if (active) navigate({ to: isAdmin ? "/app/admin" : isDmManager ? "/app/dm-manager" : isDmSetter ? "/app/dm-setter" : isCloser ? "/app/closer" : "/app/dashboard" });
+      if (active) navigate({ to: isAdmin ? "/app/admin" : isDmManager ? "/app/dm-manager" : isDmSetter ? "/app/dm-setter" : isCloser ? "/app/closer" : "/app/profile" });
     });
     return () => {
       active = false;
@@ -56,7 +56,7 @@ function AuthPage() {
     const isCloser = (roles ?? []).some((r) => r.role === "closer");
     const isDmSetter = (roles ?? []).some((r) => (r.role as string) === "dm_setter");
     const isDmManager = (roles ?? []).some((r) => (r.role as string) === "dm_setter_manager");
-    navigate({ to: isAdmin ? "/app/admin" : isDmManager ? "/app/dm-manager" : isDmSetter ? "/app/dm-setter" : isCloser ? "/app/closer" : "/app/dashboard" });
+    navigate({ to: isAdmin ? "/app/admin" : isDmManager ? "/app/dm-manager" : isDmSetter ? "/app/dm-setter" : isCloser ? "/app/closer" : "/app/profile" });
   };
 
   return (

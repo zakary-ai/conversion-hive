@@ -25,7 +25,7 @@ import { SupportButton } from "@/components/support-button";
 export const Route = createFileRoute("/app/_authenticated/closer/")({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQueryOptions);
-    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/dashboard" });
+    if (!me.isCloser && !me.isAdmin) throw redirect({ to: "/app/profile" });
   },
   component: CloserHome,
 });
