@@ -26,7 +26,7 @@ export function EmailPreviewDialog({ open, onOpenChange }: { open: boolean; onOp
         <DialogHeader>
           <DialogTitle>Booking confirmation email</DialogTitle>
           <DialogDescription>
-            This is what the lead receives once a closer is assigned to a B2B booking.
+            This is what the lead receives once a closer is assigned to a booking.
           </DialogDescription>
         </DialogHeader>
         <div className="rounded-md border overflow-hidden bg-white">

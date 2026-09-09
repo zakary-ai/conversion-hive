@@ -47,7 +47,7 @@ function ClosersPage() {
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:items-center">
         <div className="min-w-0">
           <h1 className="text-2xl font-display font-semibold">Closers</h1>
-          <p className="text-sm text-muted-foreground">B2C closers. B2B closers are managed in their own section.</p>
+          <p className="text-sm text-muted-foreground">Closers who take discovery calls.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -82,7 +82,6 @@ type CloserRowT = {
   full_name: string;
   email: string;
   active: boolean;
-  b2b_active?: boolean;
 };
 
 function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }) {
@@ -95,8 +94,6 @@ function CloserRow({ closer, hasZoom }: { closer: CloserRowT; hasZoom: boolean }
     onSuccess: () => qc.invalidateQueries({ queryKey: ["closers"] }),
     onError: (e: Error) => toast.error(e.message),
   });
-  const toggleB2B = null as never;
-  void toggleB2B;
   const del = useMutation({
     mutationFn: () => deleteCloser({ data: { id: closer.id } }),
     onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["closers"] }); },
@@ -292,7 +289,7 @@ function CloserZoomCreds({ closer, onDone }: { closer: CloserRowT; onDone: () =>
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        From the closer's Zoom Server-to-Server OAuth app. Meetings for this closer will be created on their own Zoom account (used for both B2C and B2B).
+        From the closer's Zoom Server-to-Server OAuth app. Meetings for this closer will be created on their own Zoom account .
       </p>
       <div>
         <Label>Account ID</Label>
