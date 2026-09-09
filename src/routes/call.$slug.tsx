@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getPublicManagerBySlug, listPublicManagerSlots, bookPublicManagerSlot } from "@/lib/api/dm-manager.functions";
 import testimonialAsset from "@/assets/testimonial.mp4.asset.json";
+import testimonial2Asset from "@/assets/testimonial2.mp4.asset.json";
 import vslAsset from "@/assets/scarlett-vsl.mp4.asset.json";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
