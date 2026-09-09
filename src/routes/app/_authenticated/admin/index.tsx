@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { CalendarCheck2, Video, Clock, ExternalLink, Mail, Phone, Users, CheckCircle2, DollarSign, XCircle, UserX, HelpCircle, CircleDashed } from "lucide-react";
 import { ScheduledLeadDialog, type ScheduledLeadRow } from "@/components/admin/scheduled-lead-dialog";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
-import { AppointmentDetailDialog } from "@/components/appointment-detail-dialog";
 
 
 type Overview = Awaited<ReturnType<typeof getAdminOverview>>;
