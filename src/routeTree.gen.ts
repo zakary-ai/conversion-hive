@@ -49,6 +49,7 @@ import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app
 import { Route as AppAuthenticatedAdminTicketsRouteImport } from './routes/app/_authenticated/admin/tickets'
 import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
 import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
+import { Route as AppAuthenticatedAdminPifPaymentsRouteImport } from './routes/app/_authenticated/admin/pif-payments'
 import { Route as AppAuthenticatedAdminModulesRouteImport } from './routes/app/_authenticated/admin/modules'
 import { Route as AppAuthenticatedAdminManagerCalendarsRouteImport } from './routes/app/_authenticated/admin/manager-calendars'
 import { Route as AppAuthenticatedAdminDmSettersRouteImport } from './routes/app/_authenticated/admin/dm-setters'
@@ -288,6 +289,12 @@ const AppAuthenticatedAdminQuizzesRoute =
     path: '/quizzes',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
+const AppAuthenticatedAdminPifPaymentsRoute =
+  AppAuthenticatedAdminPifPaymentsRouteImport.update({
+    id: '/pif-payments',
+    path: '/pif-payments',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
 const AppAuthenticatedAdminModulesRoute =
   AppAuthenticatedAdminModulesRouteImport.update({
     id: '/modules',
@@ -422,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
+  '/app/admin/pif-payments': typeof AppAuthenticatedAdminPifPaymentsRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
@@ -478,6 +486,7 @@ export interface FileRoutesByTo {
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
+  '/app/admin/pif-payments': typeof AppAuthenticatedAdminPifPaymentsRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
@@ -537,6 +546,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/_authenticated/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/_authenticated/admin/modules': typeof AppAuthenticatedAdminModulesRoute
+  '/app/_authenticated/admin/pif-payments': typeof AppAuthenticatedAdminPifPaymentsRoute
   '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/_authenticated/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
@@ -596,6 +606,7 @@ export interface FileRouteTypes {
     | '/app/admin/dm-setters'
     | '/app/admin/manager-calendars'
     | '/app/admin/modules'
+    | '/app/admin/pif-payments'
     | '/app/admin/quizzes'
     | '/app/admin/settings'
     | '/app/admin/tickets'
@@ -652,6 +663,7 @@ export interface FileRouteTypes {
     | '/app/admin/dm-setters'
     | '/app/admin/manager-calendars'
     | '/app/admin/modules'
+    | '/app/admin/pif-payments'
     | '/app/admin/quizzes'
     | '/app/admin/settings'
     | '/app/admin/tickets'
@@ -710,6 +722,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/dm-setters'
     | '/app/_authenticated/admin/manager-calendars'
     | '/app/_authenticated/admin/modules'
+    | '/app/_authenticated/admin/pif-payments'
     | '/app/_authenticated/admin/quizzes'
     | '/app/_authenticated/admin/settings'
     | '/app/_authenticated/admin/tickets'
@@ -1040,6 +1053,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAdminQuizzesRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
+    '/app/_authenticated/admin/pif-payments': {
+      id: '/app/_authenticated/admin/pif-payments'
+      path: '/pif-payments'
+      fullPath: '/app/admin/pif-payments'
+      preLoaderRoute: typeof AppAuthenticatedAdminPifPaymentsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
     '/app/_authenticated/admin/modules': {
       id: '/app/_authenticated/admin/modules'
       path: '/modules'
@@ -1165,6 +1185,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminDmSettersRoute: typeof AppAuthenticatedAdminDmSettersRoute
   AppAuthenticatedAdminManagerCalendarsRoute: typeof AppAuthenticatedAdminManagerCalendarsRoute
   AppAuthenticatedAdminModulesRoute: typeof AppAuthenticatedAdminModulesRoute
+  AppAuthenticatedAdminPifPaymentsRoute: typeof AppAuthenticatedAdminPifPaymentsRoute
   AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
   AppAuthenticatedAdminSettingsRoute: typeof AppAuthenticatedAdminSettingsRoute
   AppAuthenticatedAdminTicketsRoute: typeof AppAuthenticatedAdminTicketsRoute
@@ -1186,6 +1207,8 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminManagerCalendarsRoute:
       AppAuthenticatedAdminManagerCalendarsRoute,
     AppAuthenticatedAdminModulesRoute: AppAuthenticatedAdminModulesRoute,
+    AppAuthenticatedAdminPifPaymentsRoute:
+      AppAuthenticatedAdminPifPaymentsRoute,
     AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
     AppAuthenticatedAdminSettingsRoute: AppAuthenticatedAdminSettingsRoute,
     AppAuthenticatedAdminTicketsRoute: AppAuthenticatedAdminTicketsRoute,
