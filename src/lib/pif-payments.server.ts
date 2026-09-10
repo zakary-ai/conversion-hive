@@ -169,6 +169,7 @@ export function parsePaymentText(text: string, postedAt: Date): ParsedPayment {
     payment_method,
     recurrence_note: recurrence_note ?? (paidInFull ? "Paid in full" : null),
     needs_review,
+    paid_in_full: paidInFull,
   };
 }
 
