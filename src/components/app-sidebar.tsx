@@ -6,7 +6,7 @@ import {
 import {
   LayoutDashboard, BookOpen, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX,
+  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX, Wallet,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
