@@ -57,12 +57,17 @@ export const updatePifPayment = createServerFn({ method: "POST" })
     await assertAdmin(context as never);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { id, status, ...fields } = data;
-    const patch: Record<string, unknown> = { ...fields, manually_edited: true };
+    const patch: {
+      manually_edited: boolean;
+      status?: string;
+      paid_at?: string | null;
+      needs_review?: boolean;
+    } & Omit<typeof fields, "needs_review"> = { ...fields, manually_edited: true };
     if (status) {
-      patch["status"] = status;
-      patch["paid_at"] = status === "paid" ? new Date().toISOString() : null;
+      patch.status = status;
+      patch.paid_at = status === "paid" ? new Date().toISOString() : null;
     }
-    if (Object.keys(fields).length > 0) patch["needs_review"] = data.needs_review ?? false;
+    if (Object.keys(fields).length > 0) patch.needs_review = data.needs_review ?? false;
     const { error } = await supabaseAdmin.from("pif_payments").update(patch).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
