@@ -17,7 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { RefreshCw, DollarSign, CalendarClock, AlertTriangle, Check, Repeat, Trash2, Pencil } from "lucide-react";
+import { RefreshCw, DollarSign, CalendarClock, AlertTriangle, Check, Repeat, Trash2, Pencil, Mail } from "lucide-react";
+import { CollectionsEmailsDialog } from "@/components/admin/collections-emails-dialog";
 
 export const Route = createFileRoute("/app/_authenticated/admin/pif-payments")({
   component: PifPaymentsPage,
