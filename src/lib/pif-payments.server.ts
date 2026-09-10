@@ -42,6 +42,7 @@ export type ParsedPayment = {
   payment_method: string | null;
   recurrence_note: string | null;
   needs_review: boolean;
+  paid_in_full: boolean;
 };
 
 const MONEY = String.raw`\$?\s*([\d][\d,]*(?:\.\d{1,2})?)\s*\$?`;
