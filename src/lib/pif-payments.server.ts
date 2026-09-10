@@ -111,13 +111,24 @@ export function parsePaymentText(text: string, postedAt: Date): ParsedPayment {
     }
   }
 
+  // Remaining-balance parenthetical, e.g. "(450 remaining upon commissions)".
+  const paren = clean.match(/\(([^)]{3,160})\)/);
+  const parenText = paren?.[1]?.trim() ?? null;
+
   // Recurring arrangements, e.g. "$100 due every 2 weeks til paid off".
   let recurrence_note: string | null = null;
-  const recurring = clean.match(/(?:\(|\s)([^()]*\b(?:every\s+\d*\s*(?:week|weeks|month|months|day|days)|weekly|bi-?weekly|monthly)\b[^()]*)\)?/i);
-  if (recurring?.[1]) recurrence_note = recurring[1].trim();
-  if (!recurrence_note && /out of commis?sions/i.test(clean)) {
-    const m = clean.match(/\(([^)]*commis?sions[^)]*)\)/i);
-    recurrence_note = m?.[1]?.trim() ?? "Paid from commissions until paid off";
+  const RECUR = /\b(?:every\s+(?:\d+|a|one|two|three|four|other)?\s*(?:week|weeks|month|months|day|days)|weekly|bi-?weekly|monthly)\b/i;
+  if (parenText && RECUR.test(parenText)) recurrence_note = parenText;
+  if (!recurrence_note && RECUR.test(clean)) {
+    const m = clean.match(new RegExp(`([^().]*${RECUR.source}[^().]*)`, "i"));
+    if (m?.[1]) recurrence_note = m[1].trim();
+  }
+  if (!recurrence_note && parenText && /commis?sions|remaining|left|pending|within|when he|when she|as he|as she|gets paid/i.test(parenText)) {
+    recurrence_note = parenText;
+  }
+  if (amount_due == null && parenText) {
+    const amt = parenText.match(new RegExp(MONEY, "i"));
+    if (amt) amount_due = toNumber(amt[1]!);
   }
   if (recurrence_note && amount_due == null) {
     const amt = recurrence_note.match(new RegExp(MONEY, "i"));
@@ -129,7 +140,7 @@ export function parsePaymentText(text: string, postedAt: Date): ParsedPayment {
   const pm = clean.match(/payment\s*method\s*[-–:]*\s*([A-Za-z ]{3,20})/i);
   if (pm?.[1]) payment_method = pm[1].trim();
   if (!payment_method) {
-    const tag = clean.match(/#(zelle|venmo|cashapp|cash\s?app|paypal|stripe|apple\s?pay|card|zelle)/i);
+    const tag = clean.match(/#(zelle|venmo|cashapp|cash\s?app|paypal|stripe|apple\s?pay|card)/i);
     if (tag?.[1]) payment_method = tag[1];
     else {
       const bare = clean.match(/\b(zelle|venmo|cashapp|cash app|paypal|stripe|apple pay)\b/i);
@@ -140,9 +151,24 @@ export function parsePaymentText(text: string, postedAt: Date): ParsedPayment {
     payment_method = payment_method.charAt(0).toUpperCase() + payment_method.slice(1).toLowerCase();
   }
 
-  const needs_review = !person_name || (due_date == null && recurrence_note == null);
+  // A single amount with no remainder or "down" wording means paid in full.
+  const paidInFull =
+    amount_due == null &&
+    due_date == null &&
+    recurrence_note == null &&
+    parenText == null &&
+    !/\bdown\b|\bremaining\b|\bleft\b|\bdue\b/i.test(clean);
 
-  return { person_name, amount_due, due_date, payment_method, recurrence_note, needs_review };
+  const needs_review = !person_name || (!paidInFull && due_date == null && recurrence_note == null);
+
+  return {
+    person_name,
+    amount_due,
+    due_date,
+    payment_method,
+    recurrence_note: recurrence_note ?? (paidInFull ? "Paid in full" : null),
+    needs_review,
+  };
 }
 
 /** True when the message looks like a payment post rather than chatter. */
