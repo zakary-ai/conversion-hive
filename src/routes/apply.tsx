@@ -187,7 +187,7 @@ function ApplyPage() {
   }, [scrollToBooking]);
 
   return (
-    <div ref={pageRef} className="mobile-app-scroll min-h-dvh overflow-y-auto overflow-x-hidden bg-background text-foreground">
+    <div ref={pageRef} className="min-h-dvh overflow-x-clip bg-background text-foreground">
       {/* HERO */}
       <section className="px-4 pt-16 pb-14 sm:pt-24 sm:pb-20">
         <div className="mx-auto w-full max-w-3xl text-center space-y-5">
