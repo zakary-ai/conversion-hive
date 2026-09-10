@@ -253,6 +253,7 @@ function PaymentCard({
   onStatus: (status: "due" | "paid" | "skipped") => void;
   onDelete: () => void;
 }) {
+  const [emailsOpen, setEmailsOpen] = useState(false);
   return (
     <Card className="p-3 space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
