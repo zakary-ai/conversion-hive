@@ -294,6 +294,9 @@ function PaymentCard({
             Mark unpaid
           </Button>
         )}
+        <Button size="sm" variant="outline" onClick={() => setEmailsOpen(true)}>
+          <Mail className="h-3 w-3 mr-1" /> Emails
+        </Button>
         <Button size="sm" variant="outline" onClick={onEdit}>
           <Pencil className="h-3 w-3 mr-1" /> Edit
         </Button>
@@ -301,6 +304,7 @@ function PaymentCard({
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
+      <CollectionsEmailsDialog target={emailsOpen ? row : null} onClose={() => setEmailsOpen(false)} />
     </Card>
   );
 }
