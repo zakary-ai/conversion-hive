@@ -6,7 +6,7 @@ import {
 import {
   LayoutDashboard, BookOpen, ListChecks, DollarSign, UserCog,
   GraduationCap, Settings, Calendar as CalendarIcon, Inbox,
-  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX,
+  UserPlus, CalendarCheck, ShieldCheck, MessageCircle, Camera, LifeBuoy, UserX, Wallet,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -19,6 +19,7 @@ const adminItems = [
   { title: "Modules", url: "/app/admin/modules", icon: BookOpen },
   { title: "Quizzes", url: "/app/admin/quizzes", icon: ListChecks },
   { title: "Commissions", url: "/app/admin/b2c-commissions", icon: DollarSign },
+  { title: "Payments Due", url: "/app/admin/pif-payments", icon: Wallet },
   { title: "Applications", url: "/app/admin/applications", icon: Inbox },
   { title: "Tickets", url: "/app/admin/tickets", icon: LifeBuoy },
   { title: "Deletions", url: "/app/admin/account-deletions", icon: UserX },

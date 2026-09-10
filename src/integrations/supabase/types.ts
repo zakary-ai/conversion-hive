@@ -2399,6 +2399,99 @@ export type Database = {
         }
         Relationships: []
       }
+      pif_payment_sync: {
+        Row: {
+          created_at: string
+          id: number
+          last_error: string | null
+          last_status: string | null
+          last_synced_at: string | null
+          messages_seen: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          last_error?: string | null
+          last_status?: string | null
+          last_synced_at?: string | null
+          messages_seen?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          last_error?: string | null
+          last_status?: string | null
+          last_synced_at?: string | null
+          messages_seen?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pif_payments: {
+        Row: {
+          amount_due: number | null
+          created_at: string
+          due_date: string | null
+          id: string
+          manually_edited: boolean
+          needs_review: boolean
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          person_name: string | null
+          posted_at: string | null
+          raw_text: string
+          recurrence_note: string | null
+          slack_channel: string
+          slack_ts: string
+          slack_user: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_due?: number | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          manually_edited?: boolean
+          needs_review?: boolean
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          person_name?: string | null
+          posted_at?: string | null
+          raw_text: string
+          recurrence_note?: string | null
+          slack_channel: string
+          slack_ts: string
+          slack_user?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_due?: number | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          manually_edited?: boolean
+          needs_review?: boolean
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          person_name?: string | null
+          posted_at?: string | null
+          raw_text?: string
+          recurrence_note?: string | null
+          slack_channel?: string
+          slack_ts?: string
+          slack_user?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           b2b_booking_slug: string | null

@@ -49,6 +49,7 @@ import { Route as AppAuthenticatedCloserCalendarRouteImport } from './routes/app
 import { Route as AppAuthenticatedAdminTicketsRouteImport } from './routes/app/_authenticated/admin/tickets'
 import { Route as AppAuthenticatedAdminSettingsRouteImport } from './routes/app/_authenticated/admin/settings'
 import { Route as AppAuthenticatedAdminQuizzesRouteImport } from './routes/app/_authenticated/admin/quizzes'
+import { Route as AppAuthenticatedAdminPifPaymentsRouteImport } from './routes/app/_authenticated/admin/pif-payments'
 import { Route as AppAuthenticatedAdminModulesRouteImport } from './routes/app/_authenticated/admin/modules'
 import { Route as AppAuthenticatedAdminManagerCalendarsRouteImport } from './routes/app/_authenticated/admin/manager-calendars'
 import { Route as AppAuthenticatedAdminDmSettersRouteImport } from './routes/app/_authenticated/admin/dm-setters'
@@ -59,6 +60,7 @@ import { Route as AppAuthenticatedAdminApplicationsRouteImport } from './routes/
 import { Route as AppAuthenticatedAdminAdminsRouteImport } from './routes/app/_authenticated/admin/admins'
 import { Route as AppAuthenticatedAdminAccountDeletionsRouteImport } from './routes/app/_authenticated/admin/account-deletions'
 import { Route as ApiPublicWebhooksSmartleadRouteImport } from './routes/api/public/webhooks/smartlead'
+import { Route as ApiPublicHooksSyncPifPaymentsRouteImport } from './routes/api/public/hooks/sync-pif-payments'
 import { Route as ApiPublicHooksSmartleadSyncRouteImport } from './routes/api/public/hooks/smartlead-sync'
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksPurgeDmScreenshotsRouteImport } from './routes/api/public/hooks/purge-dm-screenshots'
@@ -287,6 +289,12 @@ const AppAuthenticatedAdminQuizzesRoute =
     path: '/quizzes',
     getParentRoute: () => AppAuthenticatedAdminRouteRoute,
   } as any)
+const AppAuthenticatedAdminPifPaymentsRoute =
+  AppAuthenticatedAdminPifPaymentsRouteImport.update({
+    id: '/pif-payments',
+    path: '/pif-payments',
+    getParentRoute: () => AppAuthenticatedAdminRouteRoute,
+  } as any)
 const AppAuthenticatedAdminModulesRoute =
   AppAuthenticatedAdminModulesRouteImport.update({
     id: '/modules',
@@ -347,6 +355,12 @@ const ApiPublicWebhooksSmartleadRoute =
     path: '/api/public/webhooks/smartlead',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSyncPifPaymentsRoute =
+  ApiPublicHooksSyncPifPaymentsRouteImport.update({
+    id: '/api/public/hooks/sync-pif-payments',
+    path: '/api/public/hooks/sync-pif-payments',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSmartleadSyncRoute =
   ApiPublicHooksSmartleadSyncRouteImport.update({
     id: '/api/public/hooks/smartlead-sync',
@@ -404,6 +418,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
+  '/api/public/hooks/sync-pif-payments': typeof ApiPublicHooksSyncPifPaymentsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
   '/app/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
@@ -414,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
+  '/app/admin/pif-payments': typeof AppAuthenticatedAdminPifPaymentsRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
@@ -459,6 +475,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
+  '/api/public/hooks/sync-pif-payments': typeof ApiPublicHooksSyncPifPaymentsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
   '/app/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
@@ -469,6 +486,7 @@ export interface FileRoutesByTo {
   '/app/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/admin/modules': typeof AppAuthenticatedAdminModulesRoute
+  '/app/admin/pif-payments': typeof AppAuthenticatedAdminPifPaymentsRoute
   '/app/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
@@ -517,6 +535,7 @@ export interface FileRoutesById {
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
+  '/api/public/hooks/sync-pif-payments': typeof ApiPublicHooksSyncPifPaymentsRoute
   '/api/public/webhooks/smartlead': typeof ApiPublicWebhooksSmartleadRoute
   '/app/_authenticated/admin/account-deletions': typeof AppAuthenticatedAdminAccountDeletionsRoute
   '/app/_authenticated/admin/admins': typeof AppAuthenticatedAdminAdminsRoute
@@ -527,6 +546,7 @@ export interface FileRoutesById {
   '/app/_authenticated/admin/dm-setters': typeof AppAuthenticatedAdminDmSettersRoute
   '/app/_authenticated/admin/manager-calendars': typeof AppAuthenticatedAdminManagerCalendarsRoute
   '/app/_authenticated/admin/modules': typeof AppAuthenticatedAdminModulesRoute
+  '/app/_authenticated/admin/pif-payments': typeof AppAuthenticatedAdminPifPaymentsRoute
   '/app/_authenticated/admin/quizzes': typeof AppAuthenticatedAdminQuizzesRoute
   '/app/_authenticated/admin/settings': typeof AppAuthenticatedAdminSettingsRoute
   '/app/_authenticated/admin/tickets': typeof AppAuthenticatedAdminTicketsRoute
@@ -575,6 +595,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
+    | '/api/public/hooks/sync-pif-payments'
     | '/api/public/webhooks/smartlead'
     | '/app/admin/account-deletions'
     | '/app/admin/admins'
@@ -585,6 +606,7 @@ export interface FileRouteTypes {
     | '/app/admin/dm-setters'
     | '/app/admin/manager-calendars'
     | '/app/admin/modules'
+    | '/app/admin/pif-payments'
     | '/app/admin/quizzes'
     | '/app/admin/settings'
     | '/app/admin/tickets'
@@ -630,6 +652,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
+    | '/api/public/hooks/sync-pif-payments'
     | '/api/public/webhooks/smartlead'
     | '/app/admin/account-deletions'
     | '/app/admin/admins'
@@ -640,6 +663,7 @@ export interface FileRouteTypes {
     | '/app/admin/dm-setters'
     | '/app/admin/manager-calendars'
     | '/app/admin/modules'
+    | '/app/admin/pif-payments'
     | '/app/admin/quizzes'
     | '/app/admin/settings'
     | '/app/admin/tickets'
@@ -687,6 +711,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
+    | '/api/public/hooks/sync-pif-payments'
     | '/api/public/webhooks/smartlead'
     | '/app/_authenticated/admin/account-deletions'
     | '/app/_authenticated/admin/admins'
@@ -697,6 +722,7 @@ export interface FileRouteTypes {
     | '/app/_authenticated/admin/dm-setters'
     | '/app/_authenticated/admin/manager-calendars'
     | '/app/_authenticated/admin/modules'
+    | '/app/_authenticated/admin/pif-payments'
     | '/app/_authenticated/admin/quizzes'
     | '/app/_authenticated/admin/settings'
     | '/app/_authenticated/admin/tickets'
@@ -738,6 +764,7 @@ export interface RootRouteChildren {
   ApiPublicHooksPurgeDmScreenshotsRoute: typeof ApiPublicHooksPurgeDmScreenshotsRoute
   ApiPublicHooksSendCallRemindersRoute: typeof ApiPublicHooksSendCallRemindersRoute
   ApiPublicHooksSmartleadSyncRoute: typeof ApiPublicHooksSmartleadSyncRoute
+  ApiPublicHooksSyncPifPaymentsRoute: typeof ApiPublicHooksSyncPifPaymentsRoute
   ApiPublicWebhooksSmartleadRoute: typeof ApiPublicWebhooksSmartleadRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -1026,6 +1053,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAuthenticatedAdminQuizzesRouteImport
       parentRoute: typeof AppAuthenticatedAdminRouteRoute
     }
+    '/app/_authenticated/admin/pif-payments': {
+      id: '/app/_authenticated/admin/pif-payments'
+      path: '/pif-payments'
+      fullPath: '/app/admin/pif-payments'
+      preLoaderRoute: typeof AppAuthenticatedAdminPifPaymentsRouteImport
+      parentRoute: typeof AppAuthenticatedAdminRouteRoute
+    }
     '/app/_authenticated/admin/modules': {
       id: '/app/_authenticated/admin/modules'
       path: '/modules'
@@ -1096,6 +1130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksSmartleadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sync-pif-payments': {
+      id: '/api/public/hooks/sync-pif-payments'
+      path: '/api/public/hooks/sync-pif-payments'
+      fullPath: '/api/public/hooks/sync-pif-payments'
+      preLoaderRoute: typeof ApiPublicHooksSyncPifPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/smartlead-sync': {
       id: '/api/public/hooks/smartlead-sync'
       path: '/api/public/hooks/smartlead-sync'
@@ -1144,6 +1185,7 @@ interface AppAuthenticatedAdminRouteRouteChildren {
   AppAuthenticatedAdminDmSettersRoute: typeof AppAuthenticatedAdminDmSettersRoute
   AppAuthenticatedAdminManagerCalendarsRoute: typeof AppAuthenticatedAdminManagerCalendarsRoute
   AppAuthenticatedAdminModulesRoute: typeof AppAuthenticatedAdminModulesRoute
+  AppAuthenticatedAdminPifPaymentsRoute: typeof AppAuthenticatedAdminPifPaymentsRoute
   AppAuthenticatedAdminQuizzesRoute: typeof AppAuthenticatedAdminQuizzesRoute
   AppAuthenticatedAdminSettingsRoute: typeof AppAuthenticatedAdminSettingsRoute
   AppAuthenticatedAdminTicketsRoute: typeof AppAuthenticatedAdminTicketsRoute
@@ -1165,6 +1207,8 @@ const AppAuthenticatedAdminRouteRouteChildren: AppAuthenticatedAdminRouteRouteCh
     AppAuthenticatedAdminManagerCalendarsRoute:
       AppAuthenticatedAdminManagerCalendarsRoute,
     AppAuthenticatedAdminModulesRoute: AppAuthenticatedAdminModulesRoute,
+    AppAuthenticatedAdminPifPaymentsRoute:
+      AppAuthenticatedAdminPifPaymentsRoute,
     AppAuthenticatedAdminQuizzesRoute: AppAuthenticatedAdminQuizzesRoute,
     AppAuthenticatedAdminSettingsRoute: AppAuthenticatedAdminSettingsRoute,
     AppAuthenticatedAdminTicketsRoute: AppAuthenticatedAdminTicketsRoute,
@@ -1257,6 +1301,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksPurgeDmScreenshotsRoute: ApiPublicHooksPurgeDmScreenshotsRoute,
   ApiPublicHooksSendCallRemindersRoute: ApiPublicHooksSendCallRemindersRoute,
   ApiPublicHooksSmartleadSyncRoute: ApiPublicHooksSmartleadSyncRoute,
+  ApiPublicHooksSyncPifPaymentsRoute: ApiPublicHooksSyncPifPaymentsRoute,
   ApiPublicWebhooksSmartleadRoute: ApiPublicWebhooksSmartleadRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
