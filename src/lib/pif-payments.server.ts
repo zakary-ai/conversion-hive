@@ -42,6 +42,7 @@ export type ParsedPayment = {
   payment_method: string | null;
   recurrence_note: string | null;
   needs_review: boolean;
+  paid_in_full: boolean;
 };
 
 const MONEY = String.raw`\$?\s*([\d][\d,]*(?:\.\d{1,2})?)\s*\$?`;
@@ -168,6 +169,7 @@ export function parsePaymentText(text: string, postedAt: Date): ParsedPayment {
     payment_method,
     recurrence_note: recurrence_note ?? (paidInFull ? "Paid in full" : null),
     needs_review,
+    paid_in_full: paidInFull,
   };
 }
 
@@ -213,6 +215,12 @@ export async function syncPifPayments(limit = 200): Promise<SyncResult> {
     const parsed = parsePaymentText(text, postedAt);
     const prior = existing.get(m.ts);
 
+    // Skip fully-paid posts; only track what's still due.
+    if (parsed.paid_in_full) {
+      skipped++;
+      continue;
+    }
+
     if (prior?.manually_edited) {
       // Never overwrite hand-corrected rows; only refresh the raw text.
       await supabaseAdmin.from("pif_payments").update({ raw_text: text }).eq("id", prior.id);
@@ -220,13 +228,14 @@ export async function syncPifPayments(limit = 200): Promise<SyncResult> {
       continue;
     }
 
+    const { paid_in_full: _omit, ...fields } = parsed;
     const row = {
       slack_channel: PIF_DM_CHANNEL,
       slack_ts: m.ts,
       slack_user: m.user ?? null,
       posted_at: postedAt.toISOString(),
       raw_text: text,
-      ...parsed,
+      ...fields,
     };
 
     if (prior) {
