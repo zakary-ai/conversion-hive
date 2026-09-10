@@ -9,9 +9,29 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GraduationCap, CalendarCheck, DollarSign, Sparkles, CheckCircle2, CalendarClock } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  CalendarClock,
+  CheckCircle2,
+  Loader2,
+  GraduationCap,
+  PhoneCall,
+  LifeBuoy,
+  LayoutGrid,
+  MessagesSquare,
+  Users,
+  TrendingUp,
+  Quote,
+  Target,
+  MessageCircle,
+  Star,
+  ShieldCheck,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import testimonialAsset from "@/assets/testimonial.mp4.asset.json";
+import testimonial2Asset from "@/assets/testimonial2.mp4.asset.json";
+import vslAsset from "@/assets/scarlett-vsl.mp4.asset.json";
 
 export const Route = createFileRoute("/apply")({
   validateSearch: z.object({
@@ -20,10 +40,12 @@ export const Route = createFileRoute("/apply")({
   }).parse,
   head: () => ({
     meta: [
-      { title: "Apply Now — Remote Sales Opportunity" },
-      { name: "description", content: "Join a team of driven remote sales pros. Training included. Apply in under 2 minutes." },
-      { property: "og:title", content: "Apply Now — Remote Sales Opportunity" },
-      { property: "og:description", content: "Driven sales people wanted. Training included, commissions uncapped." },
+      { title: "Build Your Own Income Stream - Conversion Lab Business Certification" },
+      { name: "description", content: "Join the Conversion Lab Business Certification Program and start earning from day one. No experience required. 5-star certification curriculum with dedicated coaching." },
+      { property: "og:title", content: "Build Your Own Income Stream Under a Proven Brand - No Experience Required" },
+      { property: "og:description", content: "Join the Conversion Lab Business Certification Program and start earning from day one." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ApplyPage,
@@ -44,13 +66,62 @@ function toDateKey(d: Date, tz: string) {
   }).format(d);
 }
 
+const WHAT_YOU_GET = [
+  { icon: Target, text: "A personalized scalability plan built specifically for you" },
+  { icon: MessageCircle, text: "Direct access to the CEO - text anytime" },
+  { icon: GraduationCap, text: "Dedicated coach doing exactly what she teaches" },
+  { icon: Star, text: "5 star certification curriculum" },
+  { icon: PhoneCall, text: "2-3 live group coaching calls per week" },
+  { icon: Users, text: "One on one coaching session per week dedicated to you" },
+  { icon: LayoutGrid, text: "Access to the Conversion Lab app with everything you need in one place" },
+  { icon: TrendingUp, text: "A progressive community that unlocks as you advance through each star" },
+];
+
+const HOW_IT_WORKS = [
+  "Book your interview to see if you qualify",
+  "Enroll and get immediate access to everything",
+  "Run your program and start earning from day one",
+  "Complete your 5 star certification and scale",
+];
+
+const FAQS = [
+  {
+    q: "Do I need experience?",
+    a: "No. Scarlett and Suhanna both started with zero experience and made over $1,000 and $2,000 respectively in their very first week.",
+  },
+  {
+    q: "How much can I make?",
+    a: "Earnings depend entirely on your effort and consistency. There is no income guarantee outside of our refund policy. What we can tell you is that people who show up and follow the program see results fast.",
+  },
+  {
+    q: "How long is the program?",
+    a: "The certification program consists of 5 stars. Your coach determines when you are ready to advance. There is no fixed timeline - you move at the pace your competency develops.",
+  },
+  {
+    q: "Who is my coach?",
+    a: "Your dedicated coach is Caryn - an active high ticket sales professional making $4,000-$8,000 per month doing exactly what she teaches.",
+  },
+];
+
 function ApplyPage() {
   const { dm: dmSlug, reapply: reapplyToken } = Route.useSearch();
   const pageRef = useRef<HTMLDivElement>(null);
+  const bookRef = useRef<HTMLDivElement>(null);
+  const vslRef = useRef<HTMLVideoElement>(null);
+  const [vslMuted, setVslMuted] = useState(true);
   const [step, setStep] = useState<Step>(reapplyToken ? "book" : "form");
   const [appInfo, setAppInfo] = useState<{ id: string; token: string } | null>(
     reapplyToken ? { id: "reapply", token: reapplyToken } : null,
   );
+
+  const unmuteVsl = () => {
+    const v = vslRef.current;
+    if (!v) return;
+    v.muted = false;
+    v.currentTime = 0;
+    v.play();
+    setVslMuted(false);
+  };
 
   const { data: dmSetter } = useQuery({
     queryKey: ["dm-slug", dmSlug],
@@ -106,192 +177,329 @@ function ApplyPage() {
     form.credit_score_range &&
     (dmSlug ? true : form.referred_by);
 
-  const scrollToApply = useCallback(() => {
-    const scroller = pageRef.current;
-    const target = document.getElementById("apply");
-    if (!target) return;
-
-    if (scroller) {
-      scroller.scrollTo({ top: target.offsetTop, behavior: "smooth" });
-    } else {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    window.history.replaceState(null, "", "#apply");
+  const scrollToBooking = useCallback(() => {
+    bookRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   useEffect(() => {
     if (window.location.hash !== "#apply") return;
-    requestAnimationFrame(scrollToApply);
-  }, [scrollToApply]);
+    requestAnimationFrame(scrollToBooking);
+  }, [scrollToBooking]);
 
   return (
-    <div ref={pageRef} className="mobile-app-scroll h-dvh min-h-screen overflow-y-auto overflow-x-hidden bg-background text-foreground">
-      <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-background" />
-        <div className="relative max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-xs uppercase tracking-widest text-primary mb-6">
-            <Sparkles className="h-3 w-3" /> Now hiring
-          </div>
-          <h1 className="text-5xl md:text-6xl font-display font-semibold tracking-tight">Apply Now</h1>
-          <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            We're looking for driven sales people, or those looking to get into the sales industry. Training is included — you bring the hunger, we'll give you the skills.
+    <div ref={pageRef} className="mobile-app-scroll min-h-dvh overflow-y-auto overflow-x-hidden bg-background text-foreground">
+      {/* HERO */}
+      <section className="px-4 pt-16 pb-14 sm:pt-24 sm:pb-20">
+        <div className="mx-auto w-full max-w-3xl text-center space-y-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Conversion Lab · Business Certification Program</p>
+          <h1 className="text-4xl sm:text-5xl font-display font-bold tracking-tight leading-[1.05]">
+            Build Your Own Income Stream Under a Proven Brand -{" "}
+            <span className="text-primary">No Experience Required</span>
+          </h1>
+          <p className="mx-auto max-w-xl text-base sm:text-lg text-muted-foreground">
+            Join the Conversion Lab Business Certification Program and start earning from day one.
           </p>
-          <Button size="lg" className="mt-8" type="button" onClick={scrollToApply}>
-            Apply now
-          </Button>
+
+          {/* VSL */}
+          <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+            <div className="relative">
+              <video
+                src={vslAsset.url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                controls
+                preload="metadata"
+                ref={vslRef}
+                className="aspect-video w-full"
+              />
+              {vslMuted && (
+                <button
+                  type="button"
+                  onClick={unmuteVsl}
+                  className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors hover:bg-black/40"
+                  aria-label="Click to unmute"
+                >
+                  <span className="animate-pulse rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg ring-2 ring-primary/40">
+                    Click to unmute
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <Button size="lg" className="h-12 px-8 text-base font-semibold" onClick={scrollToBooking}>
+              Book Your Interview Now
+            </Button>
+          </div>
         </div>
       </section>
 
-      <section className="max-w-5xl mx-auto px-6 pt-16 pb-4 grid md:grid-cols-3 gap-6">
-        {[
-          { icon: GraduationCap, title: "Training Included", body: "Hands-on coaching in high-ticket sales, objection handling, and closing frameworks." },
-          { icon: CalendarCheck, title: "Appointment Setting", body: "The more appointments you set the more bonuses you will make." },
-          { icon: DollarSign, title: "Earn Commission", body: "Performance-based pay with top reps clearing 5-figures per month." },
-        ].map((f) => (
-          <Card key={f.title} className="p-6 bg-card border-border">
-            <div className="h-10 w-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center mb-4">
-              <f.icon className="h-5 w-5" />
-            </div>
-            <h3 className="font-display text-lg font-semibold tracking-tight">{f.title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
+      {/* SOCIAL PROOF */}
+      <section className="border-y border-border bg-muted/30 px-4 py-14 sm:py-16">
+        <div className="mx-auto w-full max-w-2xl space-y-6 text-center">
+          <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-foreground">Testimonials</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Real People. Real Results. First Week.</p>
+          <Card className="p-8 text-left">
+            <Quote className="h-8 w-8 text-primary/40" />
+            <blockquote className="mt-4 text-lg sm:text-xl font-medium leading-relaxed">
+              "Scarlett joined with zero sales experience and made over $1,000 in her very first week."
+            </blockquote>
           </Card>
-        ))}
+          <Card className="p-8 text-left">
+            <Quote className="h-8 w-8 text-primary/40" />
+            <blockquote className="mt-4 text-lg sm:text-xl font-medium leading-relaxed">
+              "Suhanna joined and made over $2,000 in her very first week working about 2 hours a day."
+            </blockquote>
+          </Card>
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+            <video
+              src={testimonialAsset.url}
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-video w-full"
+            />
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+            <video
+              src={testimonial2Asset.url}
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-video w-full"
+            />
+          </div>
+        </div>
       </section>
 
-      <section id="apply" className="max-w-2xl mx-auto px-6 pt-8 pb-24 scroll-mt-8">
-        {step === "form" && (
-          <Card className="p-8 bg-card border-border">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-display font-semibold">Apply now</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Takes under 2 minutes. You'll book your call right after.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label>Full name</Label>
-                <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} />
-              </div>
-              <div>
-                <Label>Phone number</Label>
-                <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
-              </div>
-              <div>
-                <Label>Email</Label>
-                <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
-              </div>
-              <div>
-                <Label>How much do you earn monthly?</Label>
-                <Select value={form.current_monthly_income} onValueChange={(v) => set("current_monthly_income", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
-                  <SelectContent>
-                    {CURRENT_INCOME.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>How much do you want to earn monthly?</Label>
-                <Select value={form.desired_monthly_income} onValueChange={(v) => set("desired_monthly_income", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
-                  <SelectContent>
-                    {DESIRED_INCOME.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>What is your credit score?</Label>
-                <Select value={form.credit_score_range} onValueChange={(v) => set("credit_score_range", v as Credit)}>
-                  <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
-                  <SelectContent>
-                    {CREDIT.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              {dmSlug ? (
-                <div>
-                  <Label>Referred by</Label>
-                  <div className="mt-1 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm">
-                    {dmSetter?.full_name ?? (dmSlug ? "Loading…" : "")}
-                  </div>
+      {/* WHAT YOU GET */}
+      <section className="px-4 py-14 sm:py-20">
+        <div className="mx-auto w-full max-w-3xl space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">Here's Everything Included</h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {WHAT_YOU_GET.map(({ icon: Icon, text }) => (
+              <Card key={text} className="flex items-start gap-3 p-5">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <Icon className="h-4 w-4" />
                 </div>
-              ) : (
+                <p className="text-sm leading-relaxed">{text}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="border-y border-border bg-muted/30 px-4 py-14 sm:py-20">
+        <div className="mx-auto w-full max-w-3xl space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">Simple. Straightforward. Proven.</h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {HOW_IT_WORKS.map((stepText, i) => (
+              <Card key={stepText} className="flex items-start gap-4 p-5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                  {i + 1}
+                </div>
+                <p className="text-sm font-medium leading-relaxed pt-1.5">{stepText}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="px-4 py-14 sm:py-20">
+        <div className="mx-auto w-full max-w-2xl space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">Frequently Asked Questions</h2>
+          </div>
+          <Accordion type="single" collapsible className="w-full">
+            {FAQS.map((f, i) => (
+              <AccordionItem key={f.q} value={`faq-${i}`}>
+                <AccordionTrigger className="text-left text-base font-medium">{f.q}</AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground leading-relaxed">{f.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
+      {/* REFUND POLICY */}
+      <section className="border-y border-border bg-muted/30 px-4 py-14 sm:py-20">
+        <div className="mx-auto w-full max-w-2xl space-y-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <ShieldCheck className="h-7 w-7" />
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">We Stand Behind This</h2>
+          <Card className="p-8 text-left space-y-4">
+            <p className="text-lg font-medium leading-relaxed">
+              If you do the work and don't make $5,000 profit within 4 months - we refund you everything.
+            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              No games. No fine print. We only win when you win.
+            </p>
+          </Card>
+        </div>
+      </section>
+
+      {/* FINAL CTA + BOOKING */}
+      <section id="apply" ref={bookRef} className="scroll-mt-6 px-4 py-14 sm:py-20">
+        <div className="mx-auto w-full max-w-2xl space-y-8">
+          <div className="text-center space-y-3">
+            <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">Ready to Get Started?</h2>
+            <p className="mx-auto max-w-xl text-muted-foreground">
+              Spots are limited. We only take people we believe can succeed.
+            </p>
+            <div className="pt-2">
+              <Button size="lg" className="h-12 px-8 text-base font-semibold" onClick={scrollToBooking}>
+                Book Your Interview Now
+              </Button>
+            </div>
+          </div>
+
+          {/* APPLICATION FORM */}
+          {step === "form" && (
+            <Card className="p-8 bg-card border-border">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-display font-semibold">Apply now</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Takes under 2 minutes. You'll book your call right after.
+                </p>
+              </div>
+
+              <div className="space-y-4">
                 <div>
-                  <Label>Referred by</Label>
-                  <Select value={form.referred_by} onValueChange={(v) => set("referred_by", v as Referrer)}>
-                    <SelectTrigger><SelectValue placeholder="Who referred you?" /></SelectTrigger>
+                  <Label>Full name</Label>
+                  <Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} />
+                </div>
+                <div>
+                  <Label>Phone number</Label>
+                  <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+                </div>
+                <div>
+                  <Label>How much do you earn monthly?</Label>
+                  <Select value={form.current_monthly_income} onValueChange={(v) => set("current_monthly_income", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
                     <SelectContent>
-                      {REFERRERS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      {CURRENT_INCOME.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
+                <div>
+                  <Label>How much do you want to earn monthly?</Label>
+                  <Select value={form.desired_monthly_income} onValueChange={(v) => set("desired_monthly_income", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
+                    <SelectContent>
+                      {DESIRED_INCOME.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>What is your credit score?</Label>
+                  <Select value={form.credit_score_range} onValueChange={(v) => set("credit_score_range", v as Credit)}>
+                    <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
+                    <SelectContent>
+                      {CREDIT.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {dmSlug ? (
+                  <div>
+                    <Label>Referred by</Label>
+                    <div className="mt-1 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm">
+                      {dmSetter?.full_name ?? (dmSlug ? "Loading…" : "")}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <Label>Referred by</Label>
+                    <Select value={form.referred_by} onValueChange={(v) => set("referred_by", v as Referrer)}>
+                      <SelectTrigger><SelectValue placeholder="Who referred you?" /></SelectTrigger>
+                      <SelectContent>
+                        {REFERRERS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-              {error && <p className="text-sm text-destructive">{error}</p>}
+                {error && <p className="text-sm text-destructive">{error}</p>}
 
-
-              <Button
-                size="lg"
-                className="w-full"
-                disabled={!valid || submit.isPending}
-                onClick={() => { setError(null); submit.mutate(); }}
-              >
-                {submit.isPending ? "Submitting…" : "Submit application"}
-              </Button>
-            </div>
-          </Card>
-        )}
-
-        {reapplyToken && reapplyQuery.isError && (
-          <Card className="p-8 text-center bg-card border-border">
-            <h2 className="text-2xl font-display font-semibold">Link expired</h2>
-            <p className="mt-3 text-muted-foreground">
-              {reapplyQuery.error instanceof Error ? reapplyQuery.error.message : "This reapply link is no longer valid."}
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">Please <a className="text-primary underline" href="/apply">apply again</a> to book a new time.</p>
-          </Card>
-        )}
-
-        {reapplyToken && reapplyQuery.isLoading && (
-          <Card className="p-8 text-center bg-card border-border text-sm text-muted-foreground">Loading…</Card>
-        )}
-
-        {step === "book" && appInfo && !reapplyToken && (
-          <BookingStep
-            mode="new"
-            appId={appInfo.id}
-            token={appInfo.token}
-            onBooked={() => setStep("done")}
-          />
-        )}
-
-        {step === "book" && reapplyToken && reapplyQuery.data && (
-          <div className="space-y-3">
-            <Card className="p-4 bg-primary/10 border-primary/30 text-sm">
-              Welcome back{reapplyQuery.data.full_name ? `, ${reapplyQuery.data.full_name}` : ""} — pick a new time below.
+                <Button
+                  size="lg"
+                  className="w-full"
+                  disabled={!valid || submit.isPending}
+                  onClick={() => { setError(null); submit.mutate(); }}
+                >
+                  {submit.isPending ? "Submitting…" : "Submit application"}
+                </Button>
+              </div>
             </Card>
+          )}
+
+          {reapplyToken && reapplyQuery.isError && (
+            <Card className="p-8 text-center bg-card border-border">
+              <h2 className="text-2xl font-display font-semibold">Link expired</h2>
+              <p className="mt-3 text-muted-foreground">
+                {reapplyQuery.error instanceof Error ? reapplyQuery.error.message : "This reapply link is no longer valid."}
+              </p>
+              <p className="mt-3 text-sm text-muted-foreground">Please <a className="text-primary underline" href="/apply">apply again</a> to book a new time.</p>
+            </Card>
+          )}
+
+          {reapplyToken && reapplyQuery.isLoading && (
+            <Card className="p-8 text-center bg-card border-border text-sm text-muted-foreground">Loading…</Card>
+          )}
+
+          {step === "book" && appInfo && !reapplyToken && (
             <BookingStep
-              mode="reapply"
-              appId={reapplyQuery.data.application_id}
-              token={reapplyToken}
+              mode="new"
+              appId={appInfo.id}
+              token={appInfo.token}
               onBooked={() => setStep("done")}
             />
-          </div>
-        )}
+          )}
 
-        {step === "done" && (
-          <Card className="p-10 text-center">
-            <div className="h-14 w-14 mx-auto rounded-full bg-success/20 text-success flex items-center justify-center mb-4">
-              <CheckCircle2 className="h-7 w-7" />
+          {step === "book" && reapplyToken && reapplyQuery.data && (
+            <div className="space-y-3">
+              <Card className="p-4 bg-primary/10 border-primary/30 text-sm">
+                Welcome back{reapplyQuery.data.full_name ? `, ${reapplyQuery.data.full_name}` : ""} - pick a new time below.
+              </Card>
+              <BookingStep
+                mode="reapply"
+                appId={reapplyQuery.data.application_id}
+                token={reapplyToken}
+                onBooked={() => setStep("done")}
+              />
             </div>
-            <h2 className="text-2xl font-display font-semibold">You're booked</h2>
-            <p className="mt-3 text-muted-foreground">
-              Thanks! We'll send a calendar invite shortly with the call details.
-            </p>
-          </Card>
-        )}
-      </section>
+          )}
 
+          {step === "done" && (
+            <Card className="p-10 text-center">
+              <div className="h-14 w-14 mx-auto rounded-full bg-success/20 text-success flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-7 w-7" />
+              </div>
+              <h2 className="text-2xl font-display font-semibold">You're booked</h2>
+              <p className="mt-3 text-muted-foreground">
+                Thanks! We'll send a calendar invite shortly with the call details.
+              </p>
+            </Card>
+          )}
+
+          <p className="text-center text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Conversion Lab. Results vary - no income is guaranteed outside of our refund policy.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
@@ -324,7 +532,7 @@ function BookingStep({ appId, token, onBooked, mode = "new" }: { appId: string; 
   }, [detected]);
   const today = useMemo(() => {
     const d = new Date();
-    d.setHours(0, 0, 0, 0);
+    d.setHours(0, "0" as unknown as number, 0, 0);
     return d;
   }, []);
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -363,7 +571,6 @@ function BookingStep({ appId, token, onBooked, mode = "new" }: { appId: string; 
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
-
 
   const book = useMutation({
     mutationFn: (iso: string) =>
@@ -406,7 +613,6 @@ function BookingStep({ appId, token, onBooked, mode = "new" }: { appId: string; 
             onSelect={(d) => { if (d) { setDate(d); setPicked(null); } }}
             disabled={(d) => d < today || d > horizonEnd || isDayClosed(d)}
             toDate={horizonEnd}
-
             className="pointer-events-auto"
           />
         </div>
