@@ -17,7 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { RefreshCw, DollarSign, CalendarClock, AlertTriangle, Check, Repeat, Trash2, Pencil } from "lucide-react";
+import { RefreshCw, DollarSign, CalendarClock, AlertTriangle, Check, Repeat, Trash2, Pencil, Mail } from "lucide-react";
+import { CollectionsEmailsDialog } from "@/components/admin/collections-emails-dialog";
 
 export const Route = createFileRoute("/app/_authenticated/admin/pif-payments")({
   component: PifPaymentsPage,
@@ -252,6 +253,7 @@ function PaymentCard({
   onStatus: (status: "due" | "paid" | "skipped") => void;
   onDelete: () => void;
 }) {
+  const [emailsOpen, setEmailsOpen] = useState(false);
   return (
     <Card className="p-3 space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -292,6 +294,9 @@ function PaymentCard({
             Mark unpaid
           </Button>
         )}
+        <Button size="sm" variant="outline" onClick={() => setEmailsOpen(true)}>
+          <Mail className="h-3 w-3 mr-1" /> Emails
+        </Button>
         <Button size="sm" variant="outline" onClick={onEdit}>
           <Pencil className="h-3 w-3 mr-1" /> Edit
         </Button>
@@ -299,6 +304,7 @@ function PaymentCard({
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
+      <CollectionsEmailsDialog target={emailsOpen ? row : null} onClose={() => setEmailsOpen(false)} />
     </Card>
   );
 }
