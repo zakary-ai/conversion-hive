@@ -114,15 +114,31 @@ export async function createManagerBooking(input: {
     .eq("manager_id", input.managerId)
     .maybeSingle();
   const hasOwn = Boolean(creds?.zoom_account_id && creds?.zoom_client_id && creds?.zoom_client_secret);
-  const meetingUrl = await createZoomMeetingOnCloserAccount({
-    accountId: hasOwn ? creds.zoom_account_id : process.env["ZOOM_ACCOUNT_ID"] ?? null,
-    clientId: hasOwn ? creds.zoom_client_id : process.env["ZOOM_CLIENT_ID"] ?? null,
-    clientSecret: hasOwn ? creds.zoom_client_secret : process.env["ZOOM_CLIENT_SECRET"] ?? null,
-    hostEmail: hasOwn ? (creds.zoom_host_email as string | null) ?? null : null,
-    topic,
-    start_time: new Date(startMs).toISOString(),
-    duration: MANAGER_SLOT_MINUTES,
-  });
+  let meetingUrl: string | null = null;
+  if (hasOwn) {
+    meetingUrl = await createZoomMeetingOnCloserAccount({
+      accountId: creds.zoom_account_id,
+      clientId: creds.zoom_client_id,
+      clientSecret: creds.zoom_client_secret,
+      hostEmail: (creds.zoom_host_email as string | null) ?? null,
+      topic,
+      start_time: new Date(startMs).toISOString(),
+      duration: MANAGER_SLOT_MINUTES,
+    });
+  }
+  // If the manager's own Zoom app is unavailable (disabled, missing scopes, wrong
+  // keys), always fall back to the platform Zoom account so the invite still has a link.
+  if (!meetingUrl) {
+    meetingUrl = await createZoomMeetingOnCloserAccount({
+      accountId: process.env["ZOOM_ACCOUNT_ID"] ?? null,
+      clientId: process.env["ZOOM_CLIENT_ID"] ?? null,
+      clientSecret: process.env["ZOOM_CLIENT_SECRET"] ?? null,
+      hostEmail: null,
+      topic,
+      start_time: new Date(startMs).toISOString(),
+      duration: MANAGER_SLOT_MINUTES,
+    });
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: row, error } = await (supabaseAdmin.from("dm_manager_bookings") as any)
