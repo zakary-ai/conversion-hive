@@ -1059,22 +1059,6 @@ export const createReapplyBooking = createServerFn({ method: "POST" })
     if (!app) throw new Error("Invalid reapply link.");
     if (!app.email) throw new Error("Application missing email");
 
-    // Re-verify the 5-day window based on the most recent unbooked row.
-    const { data: latestUnbooked } = await supabaseAdmin
-      .from("closer_bookings")
-      .select("id, unbooked_at")
-      .eq("application_id", app.id)
-      .eq("status", "unbooked")
-      .order("unbooked_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!latestUnbooked || !latestUnbooked.unbooked_at) {
-      throw new Error("This reapply link is no longer valid.");
-    }
-    const ageMs = Date.now() - new Date(latestUnbooked.unbooked_at as string).getTime();
-    if (ageMs > 5 * 24 * 60 * 60 * 1000) {
-      throw new Error("This reapply link has expired.");
-    }
 
     const { slot_minutes: SLOT } = await getB2cSettingsRow();
     const start = new Date(data.slot_start);
