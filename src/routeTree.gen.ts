@@ -64,7 +64,6 @@ import { Route as ApiPublicHooksSyncPifPaymentsRouteImport } from './routes/api/
 import { Route as ApiPublicHooksSmartleadSyncRouteImport } from './routes/api/public/hooks/smartlead-sync'
 import { Route as ApiPublicHooksSendCallRemindersRouteImport } from './routes/api/public/hooks/send-call-reminders'
 import { Route as ApiPublicHooksPurgeDmScreenshotsRouteImport } from './routes/api/public/hooks/purge-dm-screenshots'
-import { Route as ApiPublicHooksMarkUnbookedRouteImport } from './routes/api/public/hooks/mark-unbooked'
 import { Route as ApiPublicHooksGhlBookingRouteImport } from './routes/api/public/hooks/ghl-booking'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
@@ -379,12 +378,6 @@ const ApiPublicHooksPurgeDmScreenshotsRoute =
     path: '/api/public/hooks/purge-dm-screenshots',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksMarkUnbookedRoute =
-  ApiPublicHooksMarkUnbookedRouteImport.update({
-    id: '/api/public/hooks/mark-unbooked',
-    path: '/api/public/hooks/mark-unbooked',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksGhlBookingRoute =
   ApiPublicHooksGhlBookingRouteImport.update({
     id: '/api/public/hooks/ghl-booking',
@@ -414,7 +407,6 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
-  '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
@@ -471,7 +463,6 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
-  '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
@@ -531,7 +522,6 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/google-calendar/return': typeof OauthGoogleCalendarReturnRoute
   '/api/public/hooks/ghl-booking': typeof ApiPublicHooksGhlBookingRoute
-  '/api/public/hooks/mark-unbooked': typeof ApiPublicHooksMarkUnbookedRoute
   '/api/public/hooks/purge-dm-screenshots': typeof ApiPublicHooksPurgeDmScreenshotsRoute
   '/api/public/hooks/send-call-reminders': typeof ApiPublicHooksSendCallRemindersRoute
   '/api/public/hooks/smartlead-sync': typeof ApiPublicHooksSmartleadSyncRoute
@@ -591,7 +581,6 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
     | '/api/public/hooks/ghl-booking'
-    | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
@@ -648,7 +637,6 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
     | '/api/public/hooks/ghl-booking'
-    | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
@@ -707,7 +695,6 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/oauth/google-calendar/return'
     | '/api/public/hooks/ghl-booking'
-    | '/api/public/hooks/mark-unbooked'
     | '/api/public/hooks/purge-dm-screenshots'
     | '/api/public/hooks/send-call-reminders'
     | '/api/public/hooks/smartlead-sync'
@@ -760,7 +747,6 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthGoogleCalendarReturnRoute: typeof OauthGoogleCalendarReturnRoute
   ApiPublicHooksGhlBookingRoute: typeof ApiPublicHooksGhlBookingRoute
-  ApiPublicHooksMarkUnbookedRoute: typeof ApiPublicHooksMarkUnbookedRoute
   ApiPublicHooksPurgeDmScreenshotsRoute: typeof ApiPublicHooksPurgeDmScreenshotsRoute
   ApiPublicHooksSendCallRemindersRoute: typeof ApiPublicHooksSendCallRemindersRoute
   ApiPublicHooksSmartleadSyncRoute: typeof ApiPublicHooksSmartleadSyncRoute
@@ -1158,13 +1144,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPurgeDmScreenshotsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/mark-unbooked': {
-      id: '/api/public/hooks/mark-unbooked'
-      path: '/api/public/hooks/mark-unbooked'
-      fullPath: '/api/public/hooks/mark-unbooked'
-      preLoaderRoute: typeof ApiPublicHooksMarkUnbookedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/ghl-booking': {
       id: '/api/public/hooks/ghl-booking'
       path: '/api/public/hooks/ghl-booking'
@@ -1297,7 +1276,6 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthGoogleCalendarReturnRoute: OauthGoogleCalendarReturnRoute,
   ApiPublicHooksGhlBookingRoute: ApiPublicHooksGhlBookingRoute,
-  ApiPublicHooksMarkUnbookedRoute: ApiPublicHooksMarkUnbookedRoute,
   ApiPublicHooksPurgeDmScreenshotsRoute: ApiPublicHooksPurgeDmScreenshotsRoute,
   ApiPublicHooksSendCallRemindersRoute: ApiPublicHooksSendCallRemindersRoute,
   ApiPublicHooksSmartleadSyncRoute: ApiPublicHooksSmartleadSyncRoute,
