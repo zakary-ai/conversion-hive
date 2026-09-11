@@ -1034,22 +1034,6 @@ export const resolveReapplyToken = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!app) throw new Error("This reapply link is invalid.");
 
-    const { data: latestUnbooked } = await supabaseAdmin
-      .from("closer_bookings")
-      .select("id, unbooked_at")
-      .eq("application_id", app.id)
-      .eq("status", "unbooked")
-      .order("unbooked_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!latestUnbooked || !latestUnbooked.unbooked_at) {
-      throw new Error("This reapply link is no longer valid.");
-    }
-    const ageMs = Date.now() - new Date(latestUnbooked.unbooked_at as string).getTime();
-    if (ageMs > 5 * 24 * 60 * 60 * 1000) {
-      throw new Error("This reapply link has expired. Please apply again.");
-    }
 
     return {
       application_id: app.id as string,
