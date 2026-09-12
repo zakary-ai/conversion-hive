@@ -25,7 +25,6 @@ import {
   Target,
   MessageCircle,
   Star,
-  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
@@ -91,7 +90,7 @@ const FAQS = [
   },
   {
     q: "How much can I make?",
-    a: "Earnings depend entirely on your effort and consistency. There is no income guarantee outside of our refund policy. What we can tell you is that people who show up and follow the program see results fast.",
+    a: "Earnings depend entirely on your effort, consistency, and performance. Results vary from person to person.",
   },
   {
     q: "How long is the program?",
@@ -330,24 +329,6 @@ function ApplyPage() {
         </div>
       </section>
 
-      {/* REFUND POLICY */}
-      <section className="border-y border-border bg-muted/30 px-4 py-14 sm:py-20">
-        <div className="mx-auto w-full max-w-2xl space-y-6 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
-            <ShieldCheck className="h-7 w-7" />
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">We Stand Behind This</h2>
-          <Card className="p-8 text-left space-y-4">
-            <p className="text-lg font-medium leading-relaxed">
-              If you do the work and don't make $5,000 profit within 4 months - we refund you everything.
-            </p>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              No games. No fine print. We only win when you win.
-            </p>
-          </Card>
-        </div>
-      </section>
-
       {/* FINAL CTA + BOOKING */}
       <section id="apply" ref={bookRef} className="scroll-mt-6 px-4 py-14 sm:py-20">
         <div className="mx-auto w-full max-w-2xl space-y-8">
@@ -496,7 +477,7 @@ function ApplyPage() {
           )}
 
           <p className="text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Conversion Lab. Results vary - no income is guaranteed outside of our refund policy.
+            © {new Date().getFullYear()} Conversion Lab. Results vary.
           </p>
         </div>
       </section>

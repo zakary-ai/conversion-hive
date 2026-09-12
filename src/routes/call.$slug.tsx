@@ -84,7 +84,7 @@ const FAQS = [
   },
   {
     q: "How much can I make?",
-    a: "Earnings depend entirely on your effort. There is no income guarantee. What we can tell you is that people who show up consistently and follow the program see results fast.",
+    a: "Earnings depend entirely on your effort, consistency, and performance. Results vary from person to person.",
   },
   {
     q: "How long is the program?",
@@ -380,7 +380,7 @@ function ManagerBookingPage() {
           )}
 
           <p className="text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Conversion Lab. Results vary - no income is guaranteed.
+            © {new Date().getFullYear()} Conversion Lab. Results vary.
           </p>
         </div>
       </section>
