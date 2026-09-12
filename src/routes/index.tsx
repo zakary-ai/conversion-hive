@@ -1,5 +1,4 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useRef, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -20,7 +19,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import logo from "@/assets/logo.png";
 import testimonialAsset from "@/assets/testimonial.mp4.asset.json";
 import testimonial2Asset from "@/assets/testimonial2.mp4.asset.json";
-import vslAsset from "@/assets/scarlett-vsl.mp4.asset.json";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -83,18 +81,6 @@ const FAQS = [
 ];
 
 function LandingPage() {
-  const vslRef = useRef<HTMLVideoElement>(null);
-  const [vslMuted, setVslMuted] = useState(true);
-
-  const unmuteVsl = () => {
-    const video = vslRef.current;
-    if (!video) return;
-    video.muted = false;
-    video.currentTime = 0;
-    void video.play();
-    setVslMuted(false);
-  };
-
   return (
     <div className="min-h-dvh overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 px-4 backdrop-blur-xl">
@@ -125,32 +111,6 @@ function LandingPage() {
             <p className="mx-auto max-w-xl text-base text-muted-foreground sm:text-lg">
               Join the Conversion Lab Business Certification Program, learn a proven system, and start building your business from day one.
             </p>
-
-            <div className="mx-auto max-w-2xl overflow-hidden rounded-lg border border-border bg-card shadow-lg">
-              <div className="relative">
-                <video
-                  ref={vslRef}
-                  src={vslAsset.url}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  controls
-                  preload="metadata"
-                  className="aspect-video w-full"
-                />
-                {vslMuted && (
-                  <Button
-                    type="button"
-                    onClick={unmuteVsl}
-                    className="absolute left-1/2 top-1/2 h-12 -translate-x-1/2 -translate-y-1/2 px-6 font-bold shadow-lg"
-                    aria-label="Unmute video"
-                  >
-                    Click to unmute
-                  </Button>
-                )}
-              </div>
-            </div>
 
             <Button size="lg" className="h-12 px-8 text-base font-semibold" asChild>
               <Link to="/apply">Book Your Interview Now <ArrowRight className="ml-2 h-4 w-4" /></Link>
