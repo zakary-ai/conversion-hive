@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { submitB2cApplication, listCloserSlotsForDate, createCloserBooking, getPublicBookingWindow, resolveReapplyToken, createReapplyBooking } from "@/lib/api/b2c.functions";
-import { resolveDmSlug } from "@/lib/api/dm-setters.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,12 +118,6 @@ function ApplyPage() {
     v.play();
     setVslMuted(false);
   };
-
-  const { data: dmSetter } = useQuery({
-    queryKey: ["dm-slug", dmSlug],
-    queryFn: () => resolveDmSlug({ data: { slug: dmSlug! } }),
-    enabled: !!dmSlug,
-  });
 
   const reapplyQuery = useQuery({
     queryKey: ["reapply", reapplyToken],

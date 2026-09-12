@@ -82,7 +82,9 @@ export type Database = {
           admin_notes: string | null
           booking_token: string
           created_at: string
-          credit_score_range: Database["public"]["Enums"]["application_credit"]
+          credit_score_range:
+            | Database["public"]["Enums"]["application_credit"]
+            | null
           current_monthly_income: string
           desired_monthly_income: string
           dm_setter_id: string | null
@@ -102,7 +104,9 @@ export type Database = {
           admin_notes?: string | null
           booking_token?: string
           created_at?: string
-          credit_score_range: Database["public"]["Enums"]["application_credit"]
+          credit_score_range?:
+            | Database["public"]["Enums"]["application_credit"]
+            | null
           current_monthly_income: string
           desired_monthly_income: string
           dm_setter_id?: string | null
@@ -122,7 +126,9 @@ export type Database = {
           admin_notes?: string | null
           booking_token?: string
           created_at?: string
-          credit_score_range?: Database["public"]["Enums"]["application_credit"]
+          credit_score_range?:
+            | Database["public"]["Enums"]["application_credit"]
+            | null
           current_monthly_income?: string
           desired_monthly_income?: string
           dm_setter_id?: string | null

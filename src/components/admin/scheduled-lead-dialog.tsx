@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, Mail, Clock, Loader2, CreditCard, DollarSign, Trash2 } from "lucide-react";
+import { Phone, Mail, Clock, Loader2, CircleDollarSign, DollarSign, Trash2 } from "lucide-react";
 import { listClosers, assignCloserToBooking, deleteCloserBooking, getApplicationById } from "@/lib/api/b2c.functions";
 import { toast } from "sonner";
 
@@ -131,9 +131,9 @@ export function ScheduledLeadDialog({
                       <span className="font-medium">{appQ.data.current_monthly_income}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-muted-foreground">Credit:</span>
-                      <span className="font-medium">{appQ.data.credit_score_range}</span>
+                      <CircleDollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Willing to invest:</span>
+                      <span className="font-medium">{appQ.data.open_to_invest ?? "—"}</span>
                     </div>
                   </>
                 ) : (
