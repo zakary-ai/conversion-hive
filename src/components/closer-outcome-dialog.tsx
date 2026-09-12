@@ -92,7 +92,7 @@ export function OutcomeDialog({
         {app && (
           <div className="rounded-md border border-border bg-muted/30 p-3 text-xs space-y-1">
             <div><span className="text-muted-foreground">Income now:</span> {app.current_monthly_income} → <span className="text-muted-foreground">goal</span> {app.desired_monthly_income}</div>
-            <div><span className="text-muted-foreground">Invest:</span> {app.open_to_invest} · <span className="text-muted-foreground">Credit:</span> {app.credit_score_range}</div>
+            <div><span className="text-muted-foreground">Willing to invest:</span> {app.open_to_invest ?? "—"}</div>
           </div>
         )}
 

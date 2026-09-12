@@ -37,7 +37,7 @@ export function ApplicationDetailDialog({
             <Row label="Phone" value={data.phone} />
             <Row label="Current monthly income" value={data.current_monthly_income} />
             <Row label="Desired monthly income" value={data.desired_monthly_income} />
-            <Row label="Credit score range" value={data.credit_score_range} />
+            <Row label="Willing to invest" value={data.open_to_invest} />
             <Row
               label="Referred by"
               value={(() => {
