@@ -112,32 +112,6 @@ function LandingPage() {
               Join the Conversion Lab Business Certification Program, learn a proven system, and start building your business from day one.
             </p>
 
-            <div className="mx-auto max-w-2xl overflow-hidden rounded-lg border border-border bg-card shadow-lg">
-              <div className="relative">
-                <video
-                  ref={vslRef}
-                  src={vslAsset.url}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  controls
-                  preload="metadata"
-                  className="aspect-video w-full"
-                />
-                {vslMuted && (
-                  <Button
-                    type="button"
-                    onClick={unmuteVsl}
-                    className="absolute left-1/2 top-1/2 h-12 -translate-x-1/2 -translate-y-1/2 px-6 font-bold shadow-lg"
-                    aria-label="Unmute video"
-                  >
-                    Click to unmute
-                  </Button>
-                )}
-              </div>
-            </div>
-
             <Button size="lg" className="h-12 px-8 text-base font-semibold" asChild>
               <Link to="/apply">Book Your Interview Now <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
