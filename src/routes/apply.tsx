@@ -166,7 +166,7 @@ function ApplyPage() {
         <div className="mx-auto w-full max-w-3xl text-center space-y-5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Conversion Lab · Business Certification Program</p>
           <h1 className="text-4xl sm:text-5xl font-display font-bold tracking-tight leading-[1.05]">
-            Build Your Own Income Stream Under a System Brand -{" "}
+            Build Your Own Income Stream Under a Proven System -{" "}
             <span className="text-primary">No Experience Required</span>
           </h1>
           <p className="mx-auto max-w-xl text-base sm:text-lg text-muted-foreground">
