@@ -173,35 +173,6 @@ function ApplyPage() {
             Join the Conversion Lab Business Certification Program and start earning from day one.
           </p>
 
-          {/* VSL */}
-          <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
-            <div className="relative">
-              <video
-                src={vslAsset.url}
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls
-                preload="metadata"
-                ref={vslRef}
-                className="aspect-video w-full"
-              />
-              {vslMuted && (
-                <button
-                  type="button"
-                  onClick={unmuteVsl}
-                  className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors hover:bg-black/40"
-                  aria-label="Click to unmute"
-                >
-                  <span className="animate-pulse rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg ring-2 ring-primary/40">
-                    Click to unmute
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
-
           <div className="pt-2">
             <Button size="lg" className="h-12 px-8 text-base font-semibold" onClick={scrollToBooking}>
               Book Your Interview Now
@@ -210,43 +181,7 @@ function ApplyPage() {
         </div>
       </section>
 
-      {/* SOCIAL PROOF */}
-      <section className="border-y border-border bg-muted/30 px-4 py-14 sm:py-16">
-        <div className="mx-auto w-full max-w-2xl space-y-6 text-center">
-          <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-foreground">Testimonials</h2>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Real People. Real Results. First Week.</p>
-          <Card className="p-8 text-left">
-            <Quote className="h-8 w-8 text-primary/40" />
-            <blockquote className="mt-4 text-lg sm:text-xl font-medium leading-relaxed">
-              "Scarlett joined with zero sales experience and made over $1,000 in her very first week."
-            </blockquote>
-          </Card>
-          <Card className="p-8 text-left">
-            <Quote className="h-8 w-8 text-primary/40" />
-            <blockquote className="mt-4 text-lg sm:text-xl font-medium leading-relaxed">
-              "Suhanna joined and made over $2,000 in her very first week working about 2 hours a day."
-            </blockquote>
-          </Card>
-          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
-            <video
-              src={testimonialAsset.url}
-              controls
-              playsInline
-              preload="metadata"
-              className="aspect-video w-full"
-            />
-          </div>
-          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
-            <video
-              src={testimonial2Asset.url}
-              controls
-              playsInline
-              preload="metadata"
-              className="aspect-video w-full"
-            />
-          </div>
-        </div>
-      </section>
+
 
       {/* WHAT YOU GET */}
       <section className="px-4 py-14 sm:py-20">
