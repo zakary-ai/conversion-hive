@@ -1,21 +1,26 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useRef, useState } from "react";
 import {
   ArrowRight,
-  BadgeCheck,
-  Briefcase,
   CheckCircle2,
   GraduationCap,
-  Headphones,
+  LayoutGrid,
+  MessageCircle,
   PhoneCall,
-  ShieldCheck,
-  Sparkles,
+  Quote,
+  Star,
   Target,
   TrendingUp,
-  XCircle,
+  Users,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import logo from "@/assets/logo.png";
 import { Capacitor } from "@capacitor/core";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import logo from "@/assets/logo.png";
+import testimonialAsset from "@/assets/testimonial.mp4.asset.json";
+import testimonial2Asset from "@/assets/testimonial2.mp4.asset.json";
+import vslAsset from "@/assets/scarlett-vsl.mp4.asset.json";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -26,18 +31,13 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Conversion Lab — Sales training with a guaranteed role" },
+      { title: "Business Certification Program | Conversion Lab" },
       {
         name: "description",
-        content:
-          "Conversion Lab is a remote sales training program. Learn appointment setting and closing from working operators — and get placed into a guaranteed sales role the day you complete the program.",
+        content: "Build your own income stream under a proven brand with the Conversion Lab Business Certification Program. No experience required.",
       },
-      { property: "og:title", content: "Conversion Lab — Sales training with a guaranteed role" },
-      {
-        property: "og:description",
-        content:
-          "Train on real calls, real scripts, and real pipeline. Complete the program and you're placed into a paid sales role — guaranteed.",
-      },
+      { property: "og:title", content: "Conversion Lab Business Certification Program" },
+      { property: "og:description", content: "Build your own income stream under a proven brand. No experience required." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -45,262 +45,212 @@ export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
+const WHAT_YOU_GET = [
+  { icon: Target, text: "A personalized scalability plan built specifically for you" },
+  { icon: MessageCircle, text: "Direct access to the CEO" },
+  { icon: GraduationCap, text: "A dedicated coach doing exactly what she teaches" },
+  { icon: Star, text: "A 5 star certification curriculum" },
+  { icon: PhoneCall, text: "2 to 3 live group coaching calls per week" },
+  { icon: Users, text: "A one on one coaching session dedicated to you each week" },
+  { icon: LayoutGrid, text: "The Conversion Lab app with everything in one place" },
+  { icon: TrendingUp, text: "A progressive community that unlocks as you advance" },
+];
+
+const STEPS = [
+  "Book your interview to see if you qualify",
+  "Enroll and get immediate access to everything",
+  "Run your program and start earning from day one",
+  "Complete your 5 star certification and scale",
+];
+
+const FAQS = [
+  {
+    q: "Do I need experience?",
+    a: "No. The program is designed to teach you the skills, systems, and daily actions you need from the ground up.",
+  },
+  {
+    q: "How much can I make?",
+    a: "Earnings depend on your effort, consistency, and performance. Results vary from person to person.",
+  },
+  {
+    q: "How long is the program?",
+    a: "The certification consists of 5 stars. Your coach determines when you are ready to advance, so you move at the pace your competency develops.",
+  },
+  {
+    q: "Who is my coach?",
+    a: "Your dedicated coach is Caryn, an active high ticket sales professional who teaches the same work she does every day.",
+  },
+];
+
 function LandingPage() {
+  const vslRef = useRef<HTMLVideoElement>(null);
+  const [vslMuted, setVslMuted] = useState(true);
+
+  const unmuteVsl = () => {
+    const video = vslRef.current;
+    if (!video) return;
+    video.muted = false;
+    video.currentTime = 0;
+    void video.play();
+    setVslMuted(false);
+  };
+
   return (
-    <div className="dark min-h-dvh bg-background text-foreground">
-      {/* Ambient liquid-glass background */}
-      <div className="relative min-h-dvh overflow-hidden">
-        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute -top-40 left-1/2 h-[42rem] w-[42rem] -translate-x-1/2 rounded-full bg-primary/35 blur-[120px]" />
-          <div className="absolute top-1/3 -left-40 h-[30rem] w-[30rem] rounded-full bg-purple-500/30 blur-[120px]" />
-          <div className="absolute bottom-0 -right-32 h-[34rem] w-[34rem] rounded-full bg-sky-400/25 blur-[130px]" />
+    <div className="min-h-dvh overflow-x-clip bg-background text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/90 px-4 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <img src={logo} alt="Conversion Lab" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+            <span className="truncate font-display text-base font-semibold sm:text-lg">Conversion Lab</span>
+          </div>
+          <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label="Main navigation">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/app/auth">Sign in</Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link to="/apply">Apply <ArrowRight className="ml-1 h-4 w-4" /></Link>
+            </Button>
+          </nav>
         </div>
+      </header>
 
-        {/* Header */}
-        <div className="sticky top-0 z-30 px-4 pt-4">
-          <header className="glass mx-auto flex max-w-6xl items-center justify-between rounded-full px-4 py-2.5 sm:px-6">
-            <div className="flex min-w-0 items-center gap-2">
-              <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full glow-primary">
-                <img src={logo} alt="Conversion Lab" className="h-full w-full object-cover" />
-              </div>
-              <span className="truncate font-display text-base font-semibold tracking-tight sm:text-lg">
-                Conversion Lab
-              </span>
-            </div>
-            <nav className="flex shrink-0 items-center gap-1 sm:gap-2">
-              <Button variant="ghost" size="sm" className="rounded-full" asChild>
-                <Link to="/app/auth">Sign in</Link>
-              </Button>
-              <Button size="sm" className="rounded-full" asChild>
-                <Link to="/apply">
-                  Apply <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-            </nav>
-          </header>
-        </div>
-
-        <main className="mx-auto max-w-6xl px-6 pb-24 pt-14 sm:pt-20">
-          {/* Hero */}
-          <section className="flex flex-col items-center text-center">
-            <div className="glass mb-7 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              Remote sales training · Guaranteed placement
-            </div>
-            <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-6xl">
-              Learn to sell.
-              <br />
-              <span className="bg-gradient-to-r from-primary via-sky-300 to-purple-400 bg-clip-text text-transparent">
-                Finish with a role waiting.
-              </span>
+      <main>
+        <section className="px-4 pb-16 pt-14 sm:pb-20 sm:pt-20">
+          <div className="mx-auto w-full max-w-3xl space-y-6 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Conversion Lab · Business Certification Program</p>
+            <h1 className="font-display text-4xl font-bold leading-[1.05] sm:text-6xl">
+              Build Your Own Income Stream Under a Proven Brand
+              <span className="mt-2 block text-primary">No Experience Required</span>
             </h1>
-            <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-              Conversion Lab is a hands-on sales training program for people who want a real remote career.
-              You learn appointment setting and closing from operators running live pipeline every day — and when
-              you complete the program, you're placed into a paid sales role. Guaranteed.
+            <p className="mx-auto max-w-xl text-base text-muted-foreground sm:text-lg">
+              Join the Conversion Lab Business Certification Program, learn a proven system, and start building your business from day one.
             </p>
-            <div className="mt-10 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
-              <Button size="lg" className="w-full rounded-full sm:w-auto" asChild>
-                <Link to="/apply">
-                  Apply to the program <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="w-full rounded-full sm:w-auto" asChild>
-                <Link to="/app/auth">Student sign in</Link>
-              </Button>
-            </div>
 
-            {/* Glass stat strip */}
-            <div className="mt-14 grid w-full gap-4 sm:grid-cols-3">
-              {[
-                { icon: ShieldCheck, stat: "Guaranteed role", label: "Placed on completion" },
-                { icon: Headphones, stat: "Live call reviews", label: "Your calls, broken down" },
-                { icon: Briefcase, stat: "100% remote", label: "Work from anywhere" },
-              ].map(({ icon: Icon, stat, label }) => (
-                <div key={stat} className="glass glass-sheen rounded-3xl p-5 text-left">
-                  <Icon className="h-5 w-5 text-primary" />
-                  <div className="mt-3 font-display text-lg font-semibold tracking-tight">{stat}</div>
-                  <div className="text-sm text-muted-foreground">{label}</div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* The guarantee */}
-          <section className="mt-28 sm:mt-32">
-            <div className="glass-strong glass-sheen rounded-[2rem] p-8 sm:p-12">
-              <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                <div className="min-w-0">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-xs text-primary">
-                    <BadgeCheck className="h-3.5 w-3.5" /> The guarantee
-                  </div>
-                  <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-                    Complete the program, get the role.
-                  </h2>
-                  <p className="mt-4 max-w-2xl text-muted-foreground">
-                    We don't hand you a certificate and wish you luck. Conversion Lab trains sales talent for our own
-                    sales floor and our partner companies — so finishing the program means stepping straight onto a
-                    team with leads, scripts, and a manager who already knows your reps.
-                  </p>
-                  <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-                    {[
-                      "Show up, do the reps, hit the standard — you're placed",
-                      "Paid role with commission from day one",
-                      "Setter or closer track, based on where you're strongest",
-                      "Ongoing coaching after you're placed",
-                    ].map((item) => (
-                      <li key={item} className="glass flex items-start gap-3 rounded-2xl p-4">
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                        <span className="text-sm">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="glass mx-auto flex h-40 w-40 shrink-0 flex-col items-center justify-center rounded-full text-center">
-                  <GraduationCap className="h-8 w-8 text-primary" />
-                  <div className="mt-2 font-display text-sm font-semibold leading-tight">
-                    Finish
-                    <br />
-                    = Hired
-                  </div>
-                </div>
+            <div className="mx-auto max-w-2xl overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+              <div className="relative">
+                <video
+                  ref={vslRef}
+                  src={vslAsset.url}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controls
+                  preload="metadata"
+                  className="aspect-video w-full"
+                />
+                {vslMuted && (
+                  <Button
+                    type="button"
+                    onClick={unmuteVsl}
+                    className="absolute left-1/2 top-1/2 h-12 -translate-x-1/2 -translate-y-1/2 px-6 font-bold shadow-lg"
+                    aria-label="Unmute video"
+                  >
+                    Click to unmute
+                  </Button>
+                )}
               </div>
             </div>
-          </section>
 
-          {/* What you learn */}
-          <section className="mt-28 sm:mt-32">
-            <div className="text-center">
-              <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-                What you actually learn
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-                No theory-only modules. You learn the skills a sales floor pays for, in the order you'll use them.
-              </p>
-            </div>
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
+            <Button size="lg" className="h-12 px-8 text-base font-semibold" asChild>
+              <Link to="/apply">Book Your Interview Now <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+          </div>
+        </section>
+
+        <section className="border-y border-border bg-muted/30 px-4 py-14 sm:py-16">
+          <div className="mx-auto w-full max-w-3xl space-y-6 text-center">
+            <h2 className="font-display text-3xl font-bold sm:text-4xl">Testimonials</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Real People. Real Results.</p>
+            <div className="grid gap-4 sm:grid-cols-2">
               {[
-                {
-                  icon: PhoneCall,
-                  title: "Appointment setting",
-                  body: "Openers, tonality, objection handling, and follow-up discipline. You'll run live dials with your calls recorded and reviewed until the basics are automatic.",
-                },
-                {
-                  icon: Target,
-                  title: "Discovery & closing",
-                  body: "How to run a real sales conversation — qualify properly, build urgency honestly, present the offer, and close without pressure games.",
-                },
-                {
-                  icon: TrendingUp,
-                  title: "Pipeline & consistency",
-                  body: "CRM habits, follow-up cadences, and the daily numbers that separate reps who spike from reps who compound month after month.",
-                },
-              ].map(({ icon: Icon, title, body }) => (
-                <div key={title} className="glass glass-sheen rounded-3xl p-6">
-                  <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="font-display text-xl font-semibold">{title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-                </div>
+                "Scarlett joined with zero sales experience and made over $1,000 in her very first week.",
+                "Suhanna joined and made over $2,000 in her very first week working about 2 hours a day.",
+              ].map((quote) => (
+                <Card key={quote} className="p-6 text-left">
+                  <Quote className="h-7 w-7 text-primary/40" />
+                  <blockquote className="mt-4 text-base font-medium leading-relaxed">“{quote}”</blockquote>
+                </Card>
               ))}
             </div>
-          </section>
-
-          {/* How it works */}
-          <section className="mt-28 sm:mt-32">
-            <div className="text-center">
-              <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-                How the program runs
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-                Apply, train, get placed. Everything happens inside one app — modules, call reviews, and your live pipeline.
-              </p>
-            </div>
-            <div className="mt-12 grid gap-6 md:grid-cols-4">
-              {[
-                { step: "01", title: "Apply", body: "Short application and an intro call so we can see whether you're coachable and serious." },
-                { step: "02", title: "Train", body: "Video modules, scripts, and quizzes you work through at your own pace inside the app." },
-                { step: "03", title: "Reps", body: "Live calls with real leads. Your recordings get reviewed and you get direct feedback." },
-                { step: "04", title: "Placed", body: "Hit the completion standard and you're onboarded into a paid sales role on a team." },
-              ].map(({ step, title, body }) => (
-                <div key={step} className="glass rounded-3xl p-6">
-                  <span className="font-mono text-xs text-primary">{step}</span>
-                  <h3 className="mt-3 font-display text-lg font-semibold">{title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{body}</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[testimonialAsset, testimonial2Asset].map((asset) => (
+                <div key={asset.url} className="overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+                  <video src={asset.url} controls playsInline preload="metadata" className="aspect-video w-full" />
                 </div>
               ))}
-            </div>
-          </section>
-
-          {/* Fit */}
-          <section className="mt-28 grid gap-6 sm:mt-32 md:grid-cols-2">
-            <div className="glass rounded-3xl border-destructive/25 p-6">
-              <h3 className="font-display text-xl font-semibold">This isn't for you if…</h3>
-              <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-                {[
-                  "You're looking for passive income with no phone time.",
-                  "You won't take feedback on your own recorded calls.",
-                  "You expect a role without meeting the completion standard.",
-                ].map((t) => (
-                  <li key={t} className="flex gap-2">
-                    <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="glass rounded-3xl border-primary/25 p-6">
-              <h3 className="font-display text-xl font-semibold">This is for you if…</h3>
-              <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-                {[
-                  "You want a remote career with income tied to your effort.",
-                  "You're willing to make calls every day and get coached hard.",
-                  "You'd rather be trained by people still selling than by a course.",
-                ].map((t) => (
-                  <li key={t} className="flex gap-2">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          {/* Final CTA */}
-          <section className="glass-strong glass-sheen mt-28 rounded-[2rem] p-8 text-center sm:mt-32 sm:p-16">
-            <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-5xl">
-              No experience required.
-              <br />
-              <span className="bg-gradient-to-r from-primary via-sky-300 to-purple-400 bg-clip-text text-transparent">
-                A role guaranteed on completion.
-              </span>
-            </h2>
-            <p className="mx-auto mt-6 max-w-2xl text-muted-foreground">
-              Cohorts are limited because every student gets their calls reviewed personally. If you're ready to learn a
-              skill that pays for the rest of your career, start with the application.
-            </p>
-            <div className="mt-10">
-              <Button size="lg" className="rounded-full" asChild>
-                <Link to="/apply">
-                  Apply to the program <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </section>
-        </main>
-
-        <footer className="px-4 pb-6">
-          <div className="glass mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 rounded-3xl px-6 py-5 text-xs text-muted-foreground sm:flex-row">
-            <div>© {new Date().getFullYear()} Conversion Lab. All rights reserved.</div>
-            <div className="flex gap-4">
-              <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-              <Link to="/terms" className="hover:text-foreground">Terms</Link>
-              <Link to="/support" className="hover:text-foreground">Support</Link>
             </div>
           </div>
-        </footer>
-      </div>
+        </section>
+
+        <section className="px-4 py-14 sm:py-20">
+          <div className="mx-auto w-full max-w-4xl space-y-8">
+            <div className="text-center">
+              <h2 className="font-display text-3xl font-bold sm:text-4xl">Here&apos;s Everything Included</h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {WHAT_YOU_GET.map(({ icon: Icon, text }) => (
+                <Card key={text} className="flex items-start gap-3 p-5">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="text-sm leading-relaxed">{text}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-border bg-muted/30 px-4 py-14 sm:py-20">
+          <div className="mx-auto w-full max-w-4xl space-y-8">
+            <h2 className="text-center font-display text-3xl font-bold sm:text-4xl">Simple. Straightforward. Proven.</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {STEPS.map((step, index) => (
+                <Card key={step} className="p-5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{index + 1}</div>
+                  <p className="mt-4 text-sm font-medium leading-relaxed">{step}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 py-14 sm:py-20">
+          <div className="mx-auto w-full max-w-2xl space-y-8">
+            <h2 className="text-center font-display text-3xl font-bold sm:text-4xl">Frequently Asked Questions</h2>
+            <Accordion type="single" collapsible className="w-full">
+              {FAQS.map((faq, index) => (
+                <AccordionItem key={faq.q} value={`faq-${index}`}>
+                  <AccordionTrigger className="text-left text-base font-medium">{faq.q}</AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground">{faq.a}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
+
+        <section className="border-t border-border bg-muted/30 px-4 py-16 text-center sm:py-20">
+          <div className="mx-auto max-w-2xl">
+            <CheckCircle2 className="mx-auto h-9 w-9 text-primary" />
+            <h2 className="mt-5 font-display text-3xl font-bold sm:text-4xl">Ready to Get Started?</h2>
+            <p className="mx-auto mt-4 max-w-xl text-muted-foreground">Spots are limited. We only take people we believe can succeed.</p>
+            <Button size="lg" className="mt-8 h-12 px-8 text-base font-semibold" asChild>
+              <Link to="/apply">Book Your Interview Now <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-border px-4 py-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-xs text-muted-foreground sm:flex-row">
+          <div>© {new Date().getFullYear()} Conversion Lab. Results vary.</div>
+          <div className="flex gap-4">
+            <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+            <Link to="/terms" className="hover:text-foreground">Terms</Link>
+            <Link to="/support" className="hover:text-foreground">Support</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

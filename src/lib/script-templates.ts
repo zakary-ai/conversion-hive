@@ -23,7 +23,7 @@ export const CALL_SCRIPTS: ScriptTemplate[] = [
     id: "offer",
     title: "3. The offer",
     body:
-      "Ok cool, and if I guaranteed you an additional 20 warm leads in the next 30 days do you feel that would benefit your business?\n\n(they respond)",
+      "Ok cool, and if we could help you generate an additional 20 warm leads in the next 30 days, do you feel that would benefit your business?\n\n(they respond)",
   },
   {
     id: "book",
