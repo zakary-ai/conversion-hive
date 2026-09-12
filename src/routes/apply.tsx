@@ -52,10 +52,8 @@ export const Route = createFileRoute("/apply")({
 
 const CURRENT_INCOME = ["Under $1,500", "$1,500-$3,000", "$3,000-$5,000", "$5,000+"] as const;
 const DESIRED_INCOME = ["$3,000-$5,000", "$5,000-$8,000", "$8,000-$12,000", "$12,000+"] as const;
-const CREDIT = ["Below 600", "600-650", "650-700", "700-750", "750-800", "800-850"] as const;
-type Credit = typeof CREDIT[number];
-const REFERRERS = ["Tyler", "Eli", "Bailie", "Lucas"] as const;
-type Referrer = typeof REFERRERS[number];
+const INVESTMENT_OPTIONS = ["Yes", "No", "Maybe"] as const;
+type InvestmentOption = typeof INVESTMENT_OPTIONS[number];
 
 type Step = "form" | "book" | "done";
 
@@ -141,8 +139,7 @@ function ApplyPage() {
     email: "",
     current_monthly_income: "",
     desired_monthly_income: "",
-    credit_score_range: "" as Credit | "",
-    referred_by: "" as Referrer | "",
+    open_to_invest: "" as InvestmentOption | "",
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -153,8 +150,8 @@ function ApplyPage() {
       email: form.email.trim() || null,
       current_monthly_income: form.current_monthly_income,
       desired_monthly_income: form.desired_monthly_income,
-      credit_score_range: form.credit_score_range as Credit,
-      referred_by: dmSlug ? null : (form.referred_by || null),
+      open_to_invest: form.open_to_invest as InvestmentOption,
+      referred_by: null,
       dm_slug: dmSlug ?? null,
     } }),
     onSuccess: (res) => {
@@ -173,8 +170,7 @@ function ApplyPage() {
     form.email.trim() &&
     form.current_monthly_income &&
     form.desired_monthly_income &&
-    form.credit_score_range &&
-    (dmSlug ? true : form.referred_by);
+    form.open_to_invest;
 
   const scrollToBooking = useCallback(() => {
     bookRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -386,32 +382,14 @@ function ApplyPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>What is your credit score?</Label>
-                  <Select value={form.credit_score_range} onValueChange={(v) => set("credit_score_range", v as Credit)}>
-                    <SelectTrigger><SelectValue placeholder="Select a range" /></SelectTrigger>
+                  <Label>Are you willing to invest in yourself to get there?</Label>
+                  <Select value={form.open_to_invest} onValueChange={(v) => set("open_to_invest", v as InvestmentOption)}>
+                    <SelectTrigger><SelectValue placeholder="Select an answer" /></SelectTrigger>
                     <SelectContent>
-                      {CREDIT.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                      {INVESTMENT_OPTIONS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                {dmSlug ? (
-                  <div>
-                    <Label>Referred by</Label>
-                    <div className="mt-1 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm">
-                      {dmSetter?.full_name ?? (dmSlug ? "Loading…" : "")}
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <Label>Referred by</Label>
-                    <Select value={form.referred_by} onValueChange={(v) => set("referred_by", v as Referrer)}>
-                      <SelectTrigger><SelectValue placeholder="Who referred you?" /></SelectTrigger>
-                      <SelectContent>
-                        {REFERRERS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
 
                 {error && <p className="text-sm text-destructive">{error}</p>}
 
