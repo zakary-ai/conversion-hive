@@ -1,5 +1,4 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useRef, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -20,7 +19,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import logo from "@/assets/logo.png";
 import testimonialAsset from "@/assets/testimonial.mp4.asset.json";
 import testimonial2Asset from "@/assets/testimonial2.mp4.asset.json";
-import vslAsset from "@/assets/scarlett-vsl.mp4.asset.json";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -83,18 +81,6 @@ const FAQS = [
 ];
 
 function LandingPage() {
-  const vslRef = useRef<HTMLVideoElement>(null);
-  const [vslMuted, setVslMuted] = useState(true);
-
-  const unmuteVsl = () => {
-    const video = vslRef.current;
-    if (!video) return;
-    video.muted = false;
-    video.currentTime = 0;
-    void video.play();
-    setVslMuted(false);
-  };
-
   return (
     <div className="min-h-dvh overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 px-4 backdrop-blur-xl">

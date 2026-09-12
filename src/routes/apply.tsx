@@ -23,6 +23,7 @@ import {
   Target,
   MessageCircle,
   Star,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
@@ -235,6 +236,20 @@ function ApplyPage() {
               </AccordionItem>
             ))}
           </Accordion>
+        </div>
+      </section>
+
+      {/* REFUND POLICY */}
+      <section className="border-y border-border bg-muted/30 px-4 py-14 sm:py-20">
+        <div className="mx-auto w-full max-w-2xl space-y-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <ShieldCheck className="h-7 w-7" />
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-display font-bold tracking-tight">We Stand Behind This</h2>
+          <p className="mx-auto max-w-xl text-base sm:text-lg font-medium">
+            If you do the work and don't make $5,000 profit within 4 months, we refund you everything.
+          </p>
+          <p className="text-sm text-muted-foreground">No games. No fine print. We only win when you win.</p>
         </div>
       </section>
 
