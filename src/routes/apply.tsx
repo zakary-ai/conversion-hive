@@ -99,21 +99,10 @@ function ApplyPage() {
   const { dm: dmSlug, reapply: reapplyToken } = Route.useSearch();
   const pageRef = useRef<HTMLDivElement>(null);
   const bookRef = useRef<HTMLDivElement>(null);
-  const vslRef = useRef<HTMLVideoElement>(null);
-  const [vslMuted, setVslMuted] = useState(true);
   const [step, setStep] = useState<Step>(reapplyToken ? "book" : "form");
   const [appInfo, setAppInfo] = useState<{ id: string; token: string } | null>(
     reapplyToken ? { id: "reapply", token: reapplyToken } : null,
   );
-
-  const unmuteVsl = () => {
-    const v = vslRef.current;
-    if (!v) return;
-    v.muted = false;
-    v.currentTime = 0;
-    v.play();
-    setVslMuted(false);
-  };
 
   const reapplyQuery = useQuery({
     queryKey: ["reapply", reapplyToken],
