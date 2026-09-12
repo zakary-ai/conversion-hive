@@ -20,16 +20,12 @@ import {
   MessagesSquare,
   Users,
   TrendingUp,
-  Quote,
   Target,
   MessageCircle,
   Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
-import testimonialAsset from "@/assets/testimonial.mp4.asset.json";
-import testimonial2Asset from "@/assets/testimonial2.mp4.asset.json";
-import vslAsset from "@/assets/scarlett-vsl.mp4.asset.json";
 
 export const Route = createFileRoute("/apply")({
   validateSearch: z.object({
