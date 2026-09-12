@@ -119,7 +119,7 @@ function LandingPage() {
           <div className="mx-auto w-full max-w-3xl space-y-6 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Conversion Lab · Business Certification Program</p>
             <h1 className="font-display text-4xl font-bold leading-[1.05] sm:text-6xl">
-              Build Your Own Income Stream Under a Proven Brand
+              Build Your Own Income Stream Under a Proven System
               <span className="mt-2 block text-primary">No Experience Required</span>
             </h1>
             <p className="mx-auto max-w-xl text-base text-muted-foreground sm:text-lg">
