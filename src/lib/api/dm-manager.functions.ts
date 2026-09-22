@@ -402,7 +402,7 @@ async function ensureManagerSelfCloser(manager: ManagerIdentity) {
     if (!byEmail.user_id) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabaseAdmin.from("closers") as any)
-        .update({ user_id: manager.user_id, active: true })
+        .update({ user_id: manager.user_id, ...(byEmail.owner_manager_id === manager.id ? { active: true } : {}) })
         .eq("id", byEmail.id);
     }
     return { id: byEmail.id as string, full_name: byEmail.full_name as string, email: byEmail.email as string };
