@@ -22,6 +22,16 @@ import { toast } from "sonner";
 import { CalendarClock, ChevronDown, Copy, Mail, Phone, Video, UserPlus, Trash2, Plus, Save } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/dm-manager/calendar")({
+  head: () => ({
+    meta: [
+      { title: "My Calendar | Conversion Lab" },
+      { name: "description", content: "Manage your DM manager booking link, calls, availability, and closers in Conversion Lab." },
+      { property: "og:title", content: "My Calendar | Conversion Lab" },
+      { property: "og:description", content: "Manage your DM manager booking link, calls, availability, and closers in Conversion Lab." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: ManagerCalendarPage,
 });
 

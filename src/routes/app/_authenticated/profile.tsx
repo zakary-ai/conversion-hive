@@ -39,6 +39,16 @@ const TIMEZONES: { value: string; label: string }[] = [
 ];
 
 export const Route = createFileRoute("/app/_authenticated/profile")({
+  head: () => ({
+    meta: [
+      { title: "Profile | Conversion Lab" },
+      { name: "description", content: "Manage your Conversion Lab profile, password, calendar, Zoom, and account settings." },
+      { property: "og:title", content: "Profile | Conversion Lab" },
+      { property: "og:description", content: "Manage your Conversion Lab profile, password, calendar, Zoom, and account settings." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: ProfilePage,
 });
 

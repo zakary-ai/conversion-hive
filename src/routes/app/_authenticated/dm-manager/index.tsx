@@ -14,6 +14,16 @@ import { SupportButton } from "@/components/support-button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/_authenticated/dm-manager/")({
+  head: () => ({
+    meta: [
+      { title: "DM Manager Home | Conversion Lab" },
+      { name: "description", content: "View your DM progress, booking link, and setter team in Conversion Lab." },
+      { property: "og:title", content: "DM Manager Home | Conversion Lab" },
+      { property: "og:description", content: "View your DM progress, booking link, and setter team in Conversion Lab." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: DmManagerHome,
   errorComponent: ({ error, reset }) => {
     console.error("[dm-manager] route error:", error);
