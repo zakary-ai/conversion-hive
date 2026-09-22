@@ -125,7 +125,184 @@ type Booking = {
   meeting_url: string | null;
   status: string;
   notes: string | null;
+  assigned_closer_id: string | null;
+  closers?: { id: string; full_name: string; email: string } | null;
 };
+
+type MyCloser = { id: string; full_name: string; email: string; active: boolean; has_zoom: boolean };
+
+const SHORT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+type Rule = { day_of_week: number; start_minute: number; end_minute: number };
+
+function MyClosersCard() {
+  const qc = useQueryClient();
+  const { data: closers = [] } = useQuery({ queryKey: ["my-manager-closers"], queryFn: () => listMyClosers() });
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ full_name: "", email: "" });
+
+  const invite = useMutation({
+    mutationFn: () => inviteMyCloser({ data: form }),
+    onSuccess: (res) => {
+      toast.success(`Closer added. Temporary password: ${res.default_password}`, { duration: 15000 });
+      qc.invalidateQueries({ queryKey: ["my-manager-closers"] });
+      setOpen(false);
+      setForm({ full_name: "", email: "" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="text-sm font-medium">My closers</div>
+          <p className="text-xs text-muted-foreground">People on your team who can take the calls booked on your link.</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm"><UserPlus className="h-4 w-4 mr-1" /> Invite closer</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Invite a closer</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label>Full name</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+              <div><Label>Login email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <p className="text-xs text-muted-foreground">They get an email with their login and a temporary password.</p>
+              <Button className="w-full" disabled={!form.full_name || !form.email || invite.isPending} onClick={() => invite.mutate()}>
+                {invite.isPending ? "Sending…" : "Send invite"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="grid gap-2">
+        {closers.length === 0 && (
+          <div className="text-xs text-muted-foreground">No closers yet. Invite one and you can hand calls to them.</div>
+        )}
+        {(closers as MyCloser[]).map((c) => <MyCloserRow key={c.id} closer={c} />)}
+      </div>
+    </Card>
+  );
+}
+
+function MyCloserRow({ closer }: { closer: MyCloser }) {
+  const qc = useQueryClient();
+  const [availOpen, setAvailOpen] = useState(false);
+  const toggle = useMutation({
+    mutationFn: (active: boolean) => updateMyCloser({ data: { closer_id: closer.id, active } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-manager-closers"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const del = useMutation({
+    mutationFn: () => deleteMyCloser({ data: { closer_id: closer.id } }),
+    onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["my-manager-closers"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <div className="rounded-lg border border-border p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <div className="font-medium text-sm truncate">{closer.full_name}</div>
+        <div className="text-xs text-muted-foreground truncate">{closer.email}</div>
+        <div className={`text-xs mt-0.5 ${closer.has_zoom ? "text-emerald-600" : "text-amber-600"}`}>
+          {closer.has_zoom ? "Own Zoom connected" : "Using your Zoom"}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Active</span>
+          <Switch checked={closer.active} onCheckedChange={(v) => toggle.mutate(v)} />
+        </div>
+        <Dialog open={availOpen} onOpenChange={setAvailOpen}>
+          <DialogTrigger asChild><Button size="sm" variant="outline">Availability</Button></DialogTrigger>
+          <DialogContent className="max-w-xl">
+            <DialogHeader><DialogTitle>{closer.full_name}'s availability</DialogTitle></DialogHeader>
+            <MyCloserAvailability closerId={closer.id} />
+          </DialogContent>
+        </Dialog>
+        <Button size="icon" variant="ghost" onClick={() => del.mutate()} aria-label="Remove closer">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function MyCloserAvailability({ closerId }: { closerId: string }) {
+  const qc = useQueryClient();
+  const { data = [] } = useQuery({
+    queryKey: ["my-closer-avail", closerId],
+    queryFn: () => getMyCloserAvailability({ data: { closer_id: closerId } }),
+  });
+  const [byDay, setByDay] = useState<Record<number, Rule[]>>({});
+  const rowsKey = (data as Rule[]).map((r) => `${r.day_of_week}-${r.start_minute}-${r.end_minute}`).join("|");
+  useEffect(() => {
+    const m: Record<number, Rule[]> = {};
+    for (const r of data as Rule[]) (m[r.day_of_week] ??= []).push(r);
+    setByDay(m);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowsKey]);
+
+  const save = useMutation({
+    mutationFn: () => {
+      const rules: Rule[] = [];
+      for (const list of Object.values(byDay)) for (const r of list) if (r.end_minute > r.start_minute) rules.push(r);
+      return saveMyCloserAvailability({ data: { closer_id: closerId, rules } });
+    },
+    onSuccess: () => { toast.success("Availability saved"); qc.invalidateQueries({ queryKey: ["my-closer-avail", closerId] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+      {SHORT_DAYS.map((label, dow) => {
+        const enabled = !!byDay[dow];
+        const ranges = byDay[dow] ?? [];
+        return (
+          <div key={dow} className="rounded-lg border border-border p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Switch checked={enabled} onCheckedChange={(v) => setByDay((b) => {
+                  const next = { ...b };
+                  if (v) next[dow] = next[dow]?.length ? next[dow] : [{ day_of_week: dow, start_minute: 9 * 60, end_minute: 17 * 60 }];
+                  else delete next[dow];
+                  return next;
+                })} />
+                <div className="font-medium w-12">{label}</div>
+              </div>
+              {enabled && (
+                <Button size="sm" variant="ghost" onClick={() => setByDay((b) => ({ ...b, [dow]: [...(b[dow] ?? []), { day_of_week: dow, start_minute: 9 * 60, end_minute: 17 * 60 }] }))}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add
+                </Button>
+              )}
+            </div>
+            {enabled && (
+              <div className="mt-2 space-y-2">
+                {ranges.map((r, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input type="time" step={1800} value={minutesToTime(r.start_minute)}
+                      onChange={(e) => setByDay((b) => { const list = [...(b[dow] ?? [])]; list[idx] = { ...list[idx], start_minute: timeToMinutes(e.target.value) } as Rule; return { ...b, [dow]: list }; })}
+                      className="w-32" />
+                    <span className="text-muted-foreground text-sm">to</span>
+                    <Input type="time" step={1800} value={minutesToTime(r.end_minute)}
+                      onChange={(e) => setByDay((b) => { const list = [...(b[dow] ?? [])]; list[idx] = { ...list[idx], end_minute: timeToMinutes(e.target.value) } as Rule; return { ...b, [dow]: list }; })}
+                      className="w-32" />
+                    <Button size="icon" variant="ghost" onClick={() => setByDay((b) => {
+                      const list = (b[dow] ?? []).filter((_, i) => i !== idx);
+                      const next = { ...b }; if (list.length === 0) delete next[dow]; else next[dow] = list; return next;
+                    })}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">
+        <Save className="h-4 w-4 mr-1" /> Save availability
+      </Button>
+    </div>
+  );
+}
 
 type DayState = { enabled: boolean; start: string; end: string };
 
