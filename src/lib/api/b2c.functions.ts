@@ -329,7 +329,7 @@ export const createCloserBooking = createServerFn({ method: "POST" })
 
     // capacity check
     const { data: activeClosers } = await supabaseAdmin
-      .from("closers").select("id").eq("active", true);
+      .from("closers").select("id").eq("active", true).is("owner_manager_id", null);
     const totalActive = (activeClosers ?? []).length;
     const { data: same } = await supabaseAdmin
       .from("closer_bookings").select("id").eq("slot_start", start.toISOString())
@@ -387,7 +387,7 @@ export const listClosers = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context);
     const { data, error } = await context.supabase
-      .from("closers").select("*").order("created_at", { ascending: false });
+      .from("closers").select("*").is("owner_manager_id", null).order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -1065,7 +1065,7 @@ export const createReapplyBooking = createServerFn({ method: "POST" })
 
     // Capacity check (same as public booking)
     const { data: activeClosers } = await supabaseAdmin
-      .from("closers").select("id").eq("active", true);
+      .from("closers").select("id").eq("active", true).is("owner_manager_id", null);
     const totalActive = (activeClosers ?? []).length;
     const { data: same } = await supabaseAdmin
       .from("closer_bookings").select("id").eq("slot_start", start.toISOString())
@@ -1821,7 +1821,7 @@ export const listB2cManualLookups = createServerFn({ method: "GET" })
 
     const [{ data: setters }, { data: closerRows }] = await Promise.all([
       supabase.from("dm_setters").select("id, full_name, email, is_manager, user_id").order("full_name"),
-      supabase.from("closers").select("id, full_name, email, user_id, active").eq("active", true).order("full_name"),
+      supabase.from("closers").select("id, full_name, email, user_id, active").eq("active", true).is("owner_manager_id", null).order("full_name"),
     ]);
 
     type DmRow = { id: string; full_name: string | null; email: string | null; is_manager: boolean; user_id: string | null };
