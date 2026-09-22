@@ -553,7 +553,8 @@ export const listMyClosers = createServerFn({ method: "GET" })
       .select("id, user_id, full_name, email, active, created_at")
       .eq("owner_manager_id", me.id)
       .order("full_name");
-    const rows = ((data ?? []) as { id: string; user_id: string | null }[]).filter((r) => r.user_id !== context.userId);
+    const rows = ((data ?? []) as { id: string; user_id: string | null; full_name: string; email: string; active: boolean }[])
+      .filter((r) => r.user_id !== context.userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: creds } = await (supabaseAdmin.from("closer_zoom_credentials") as any)
       .select("closer_id, zoom_account_id, zoom_client_id, zoom_client_secret");

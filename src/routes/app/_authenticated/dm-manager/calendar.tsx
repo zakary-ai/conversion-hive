@@ -5,13 +5,12 @@ import {
   getMyManagerCalendar, saveMyManagerAvailability, updateMyManagerBooking,
   listMyClosers, inviteMyCloser, updateMyCloser, deleteMyCloser,
   getMyCloserAvailability, saveMyCloserAvailability,
-  assignCloserToManagerBooking, unassignManagerBooking,
+  assignCloserToManagerBooking, assignMeToManagerBooking, unassignManagerBooking,
 } from "@/lib/api/dm-manager.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -48,6 +47,7 @@ type Booking = {
   status: string;
   notes: string | null;
   assigned_closer_id: string | null;
+  assigned_is_me?: boolean;
   closers?: { id: string; full_name: string; email: string } | null;
 };
 
@@ -101,7 +101,7 @@ function MyClosersCard() {
         {closers.length === 0 && (
           <div className="text-xs text-muted-foreground">No closers yet. Invite one and you can hand calls to them.</div>
         )}
-        {(closers as MyCloser[]).map((c) => <MyCloserRow key={c.id} closer={c} />)}
+        {closers.map((c) => <MyCloserRow key={c.id} closer={c} />)}
       </div>
     </Card>
   );
@@ -242,7 +242,7 @@ function sameDay(a: Date, b: Date) {
 function ManagerCalendarPage() {
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({ queryKey: ["my-manager-calendar"], queryFn: () => getMyManagerCalendar() });
-  const bookings = (data?.bookings ?? []) as Booking[];
+  const bookings = data?.bookings ?? [];
 
   const [days, setDays] = useState<DayState[]>(
     DAYS.map(() => ({ enabled: false, start: "09:00", end: "17:00" })),
@@ -280,11 +280,21 @@ function ManagerCalendarPage() {
   });
 
   const { data: myClosersData = [] } = useQuery({ queryKey: ["my-manager-closers"], queryFn: () => listMyClosers() });
-  const myClosers = myClosersData as MyCloser[];
+  const myClosers = myClosersData;
 
   const assign = useMutation({
     mutationFn: (v: { booking_id: string; closer_id: string }) => assignCloserToManagerBooking({ data: v }),
     onSuccess: () => { toast.success("Closer assigned"); qc.invalidateQueries({ queryKey: ["my-manager-calendar"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const assignMe = useMutation({
+    mutationFn: (booking_id: string) => assignMeToManagerBooking({ data: { booking_id } }),
+    onSuccess: () => {
+      toast.success("Assigned to you");
+      qc.invalidateQueries({ queryKey: ["my-manager-calendar"] });
+      qc.invalidateQueries({ queryKey: ["my-manager-closers"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -334,21 +344,10 @@ function ManagerCalendarPage() {
           </Card>
 
           <Card className="p-4 space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+            <div className="grid gap-4 md:grid-cols-[auto_1fr]">
+              <div className="space-y-2">
                 <div className="text-sm font-medium">Calendar</div>
-                <h2 className="text-sm uppercase tracking-widest text-muted-foreground">
-                  {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "Select a day"}
-                </h2>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="justify-between sm:min-w-52">
-                    {date ? date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Pick a date"}
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-auto p-2">
+                <div className="rounded-lg border border-border p-2 w-fit">
                   <Calendar
                     mode="single"
                     selected={date}
@@ -356,10 +355,12 @@ function ManagerCalendarPage() {
                     modifiers={{ booked: bookedDays }}
                     modifiersClassNames={{ booked: "bg-primary/20 text-primary font-semibold" }}
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
+                </div>
+              </div>
+              <div className="space-y-2 min-w-0">
+                <h2 className="text-sm uppercase tracking-widest text-muted-foreground">
+                  {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "Select a day"}
+                </h2>
               {dayRows.length === 0 && (
                 <div className="rounded-lg border border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">No calls this day.</div>
               )}
@@ -377,7 +378,7 @@ function ManagerCalendarPage() {
                   </div>
                   {b.closers && (
                     <div className="text-xs text-muted-foreground">
-                      Closer: <span className="text-foreground">{b.closers.full_name}</span>
+                      Closer: <span className="text-foreground">{b.assigned_is_me ? "Me" : b.closers.full_name}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 flex-wrap">
@@ -403,21 +404,20 @@ function ManagerCalendarPage() {
                     ) : (
                       <Select onValueChange={(closerId) => assign.mutate({ booking_id: b.id, closer_id: closerId })}>
                         <SelectTrigger className="h-7 w-40 text-xs">
-                          <SelectValue placeholder={assign.isPending ? "Assigning…" : "Assign closer…"} />
+                          <SelectValue placeholder={assign.isPending || assignMe.isPending ? "Assigning…" : "Assign closer…"} />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="__me" className="text-xs" onSelect={(e) => { e.preventDefault(); assignMe.mutate(b.id); }}>Me</SelectItem>
                           {myClosers.filter((c) => c.active).map((c) => (
                             <SelectItem key={c.id} value={c.id} className="text-xs">{c.full_name}</SelectItem>
                           ))}
-                          {myClosers.filter((c) => c.active).length === 0 && (
-                            <div className="px-2 py-1.5 text-xs text-muted-foreground">No active closers yet</div>
-                          )}
                         </SelectContent>
                       </Select>
                     )}
                   </div>
                 </div>
               ))}
+              </div>
             </div>
           </Card>
 
