@@ -1,16 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMyManagerCalendar, saveMyManagerAvailability, updateMyManagerBooking, getMyManagerZoom, saveMyManagerZoom, testMyManagerZoom } from "@/lib/api/dm-manager.functions";
+import {
+  getMyManagerCalendar, saveMyManagerAvailability, updateMyManagerBooking,
+  getMyManagerZoom, saveMyManagerZoom, testMyManagerZoom,
+  listMyClosers, inviteMyCloser, updateMyCloser, deleteMyCloser,
+  getMyCloserAvailability, saveMyCloserAvailability,
+  assignCloserToManagerBooking, unassignManagerBooking,
+} from "@/lib/api/dm-manager.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { CalendarClock, Copy, Mail, Phone, Video, CheckCircle2, AlertCircle } from "lucide-react";
+import { CalendarClock, Copy, Mail, Phone, Video, CheckCircle2, AlertCircle, UserPlus, Trash2, Plus, Save } from "lucide-react";
 
 function ZoomCredentialsCard() {
   const qc = useQueryClient();
