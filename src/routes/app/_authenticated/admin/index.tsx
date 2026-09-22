@@ -17,6 +17,7 @@ type Row = Overview["upcomingCalls"][number];
 const overviewOpts = queryOptions({
   queryKey: ["admin-overview", "b2c"],
   queryFn: () => getAdminOverview({ data: { channel: "b2c" } }),
+  retry: false,
 });
 
 export const Route = createFileRoute("/app/_authenticated/admin/")({
