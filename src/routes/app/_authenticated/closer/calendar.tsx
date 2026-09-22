@@ -132,6 +132,40 @@ function CloserCalendar() {
               </Card>
             );
           })}
+          {dayManagerCalls.map((m) => {
+            const time = new Date(m.scheduled_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+            return (
+              <Card key={m.id} className="p-4 flex items-center justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <div className="font-medium flex items-center gap-2">
+                    <span>{m.name}</span>
+                    <Badge variant="outline" className="text-[10px]">1-on-1</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                    <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {time}</span>
+                    <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {m.email}</span>
+                    {m.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {m.phone}</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {m.meeting_url && (
+                    <a href={m.meeting_url} target="_blank" rel="noreferrer">
+                      <Button size="sm" className="gap-1"><Video className="h-3 w-3" /> Join</Button>
+                    </a>
+                  )}
+                  <Select value={m.status} onValueChange={(v) => setMStatus.mutate({ id: m.id, status: v as "scheduled" })}>
+                    <SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="scheduled" className="text-xs">Scheduled</SelectItem>
+                      <SelectItem value="completed" className="text-xs">Completed</SelectItem>
+                      <SelectItem value="no_show" className="text-xs">No show</SelectItem>
+                      <SelectItem value="cancelled" className="text-xs">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
