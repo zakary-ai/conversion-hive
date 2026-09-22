@@ -1,5 +1,4 @@
 // Server-only. Do NOT import from browser bundles.
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { callAsAppUser } from "@/integrations/lovable/appUserConnector";
 
 export const GCAL_CONNECTOR_ID = "google_calendar";
@@ -11,14 +10,16 @@ function cryptoKey(): Buffer {
   return Buffer.from(raw, "base64");
 }
 
-export function encryptConnectionKey(plaintext: string): string {
+export async function encryptConnectionKey(plaintext: string): Promise<string> {
+  const { createCipheriv, randomBytes } = await import("node:crypto");
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", cryptoKey(), iv);
   const ct = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   return Buffer.concat([iv, cipher.getAuthTag(), ct]).toString("base64");
 }
 
-export function decryptConnectionKey(stored: string): string {
+export async function decryptConnectionKey(stored: string): Promise<string> {
+  const { createDecipheriv } = await import("node:crypto");
   const buf = Buffer.from(stored, "base64");
   const iv = buf.subarray(0, 12);
   const tag = buf.subarray(12, 28);
@@ -47,7 +48,7 @@ export async function saveConnectionKeyForUser(
       {
         user_id: userId,
         connector_id: connectorId,
-        connection_key_ciphertext: encryptConnectionKey(connectionAPIKey),
+        connection_key_ciphertext: await encryptConnectionKey(connectionAPIKey),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,connector_id" },
@@ -80,7 +81,7 @@ export async function getConnectionKeyForUser(
     .eq("connector_id", connectorId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return data ? decryptConnectionKey(data.connection_key_ciphertext) : null;
+  return data ? await decryptConnectionKey(data.connection_key_ciphertext) : null;
 }
 
 export async function deleteConnectionKeyForUser(userId: string, connectorId: string) {
