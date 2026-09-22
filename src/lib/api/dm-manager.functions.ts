@@ -101,7 +101,19 @@ export const getMyManagerCalendar = createServerFn({ method: "GET" })
       .select("*, closers:assigned_closer_id(id, full_name, email, user_id)")
       .eq("manager_id", me.id).order("scheduled_at", { ascending: true });
     const rules = await getManagerRules(me.id);
-    const safeBookings = ((bookings ?? []) as Array<Record<string, any>>).map((booking) => {
+    const safeBookings = ((bookings ?? []) as Array<{
+      id: string;
+      name: string;
+      email: string;
+      phone: string | null;
+      scheduled_at: string;
+      timezone: string | null;
+      meeting_url: string | null;
+      status: string;
+      notes: string | null;
+      assigned_closer_id: string | null;
+      closers: { id: string; full_name: string; email: string; user_id: string | null } | null;
+    }>).map((booking) => {
       const closer = booking.closers as { id: string; full_name: string; email: string; user_id: string | null } | null;
       return {
         ...booking,

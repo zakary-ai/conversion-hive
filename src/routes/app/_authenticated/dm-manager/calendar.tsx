@@ -242,7 +242,7 @@ function sameDay(a: Date, b: Date) {
 function ManagerCalendarPage() {
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({ queryKey: ["my-manager-calendar"], queryFn: () => getMyManagerCalendar() });
-  const bookings = data?.bookings ?? [];
+  const bookings = (data?.bookings ?? []) as Booking[];
 
   const [days, setDays] = useState<DayState[]>(
     DAYS.map(() => ({ enabled: false, start: "09:00", end: "17:00" })),
@@ -280,7 +280,7 @@ function ManagerCalendarPage() {
   });
 
   const { data: myClosersData = [] } = useQuery({ queryKey: ["my-manager-closers"], queryFn: () => listMyClosers() });
-  const myClosers = myClosersData;
+  const myClosers = myClosersData as MyCloser[];
 
   const assign = useMutation({
     mutationFn: (v: { booking_id: string; closer_id: string }) => assignCloserToManagerBooking({ data: v }),
@@ -402,12 +402,15 @@ function ManagerCalendarPage() {
                         Reassign
                       </Button>
                     ) : (
-                      <Select onValueChange={(closerId) => assign.mutate({ booking_id: b.id, closer_id: closerId })}>
+                      <Select onValueChange={(closerId) => {
+                        if (closerId === "__me") assignMe.mutate(b.id);
+                        else assign.mutate({ booking_id: b.id, closer_id: closerId });
+                      }}>
                         <SelectTrigger className="h-7 w-40 text-xs">
                           <SelectValue placeholder={assign.isPending || assignMe.isPending ? "Assigning…" : "Assign closer…"} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__me" className="text-xs" onSelect={(e) => { e.preventDefault(); assignMe.mutate(b.id); }}>Me</SelectItem>
+                          <SelectItem value="__me" className="text-xs">Me</SelectItem>
                           {myClosers.filter((c) => c.active).map((c) => (
                             <SelectItem key={c.id} value={c.id} className="text-xs">{c.full_name}</SelectItem>
                           ))}
