@@ -354,7 +354,7 @@ function ManagerCalendarPage() {
                 <div className="rounded-lg border border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">No calls this day.</div>
               )}
               {dayRows.map((b) => (
-                <Card key={b.id} className="p-4 space-y-2">
+                <div key={b.id} className="rounded-lg border border-border bg-card p-4 space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium">{b.name}</span>
                     <Badge variant="outline" className="text-[10px]">{b.status}</Badge>
@@ -406,7 +406,7 @@ function ManagerCalendarPage() {
                       </Select>
                     )}
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           </Card>
