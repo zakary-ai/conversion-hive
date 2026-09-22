@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { LogOut, Trash2 } from "lucide-react";
 import { GoogleCalendarConnectCard } from "@/components/google-calendar-connect";
+import { DmManagerZoomCard } from "@/components/dm-manager-zoom-card";
 import { toast } from "sonner";
 
 const TIMEZONES: { value: string; label: string }[] = [
@@ -128,6 +129,8 @@ function ProfilePage() {
           </Button>
         </div>
       </Card>
+
+      {me.isDmSetterManager && <DmManagerZoomCard />}
 
       <GoogleCalendarConnectCard />
 

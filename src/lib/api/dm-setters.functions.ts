@@ -645,11 +645,15 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
     }
     const { data: myLog } = await supabaseAdmin
       .from("dm_daily_logs").select("*").eq("dm_setter_id", me.id).eq("log_date", todayKey()).maybeSingle();
-    if (!me.is_manager) return { manager: me, myStats, myLog, team: [] };
+    const { managerBookingLink } = await import("@/lib/dm-manager-booking.server");
+    const bookingSlug = (me as { booking_slug?: string | null; apply_slug?: string | null }).booking_slug ?? me.apply_slug;
+    const manager = { ...me, booking_link: bookingSlug ? managerBookingLink(bookingSlug) : null };
+
+    if (!me.is_manager) return { manager, myStats, myLog, team: [] };
 
     const { data: team } = await supabaseAdmin.from("dm_setters").select("*").eq("manager_id", me.id);
     const teamList = team ?? [];
-    if (teamList.length === 0) return { manager: me, myStats, myLog, team: [] };
+    if (teamList.length === 0) return { manager, myStats, myLog, team: [] };
 
     const teamIds = teamList.map((s) => s.id);
     const today = todayKey();
@@ -708,10 +712,7 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
     for (const a of apps ?? []) if (a.dm_setter_id) appliedBySetter.set(a.dm_setter_id, (appliedBySetter.get(a.dm_setter_id) ?? 0) + 1);
     for (const r of rows) r.stats.applied = appliedBySetter.get(r.setter.id) ?? 0;
 
-    const { managerBookingLink } = await import("@/lib/dm-manager-booking.server");
-    const bookingSlug = (me as { booking_slug?: string | null }).booking_slug ?? me.apply_slug;
-
-    return { manager: { ...me, booking_link: bookingSlug ? managerBookingLink(bookingSlug) : null }, myStats, myLog, team: rows };
+    return { manager, myStats, myLog, team: rows };
   });
 
 /* -------------------------------------------------------------------------- */

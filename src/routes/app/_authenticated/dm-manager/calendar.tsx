@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getMyManagerCalendar, saveMyManagerAvailability, updateMyManagerBooking,
-  getMyManagerZoom, saveMyManagerZoom, testMyManagerZoom,
   listMyClosers, inviteMyCloser, updateMyCloser, deleteMyCloser,
   getMyCloserAvailability, saveMyCloserAvailability,
   assignCloserToManagerBooking, unassignManagerBooking,
@@ -11,6 +10,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -18,96 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { CalendarClock, Copy, Mail, Phone, Video, CheckCircle2, AlertCircle, UserPlus, Trash2, Plus, Save } from "lucide-react";
-
-function ZoomCredentialsCard() {
-  const qc = useQueryClient();
-  const { data } = useQuery({ queryKey: ["my-manager-zoom"], queryFn: () => getMyManagerZoom() });
-  const [form, setForm] = useState({ accountId: "", clientId: "", clientSecret: "", hostEmail: "" });
-
-  useEffect(() => {
-    if (!data) return;
-    setForm({
-      accountId: data.zoom_account_id,
-      clientId: data.zoom_client_id,
-      clientSecret: "",
-      hostEmail: data.zoom_host_email,
-    });
-  }, [data]);
-
-  const save = useMutation({
-    mutationFn: () =>
-      saveMyManagerZoom({
-        data: {
-          zoom_account_id: form.accountId,
-          zoom_client_id: form.clientId,
-          ...(form.clientSecret ? { zoom_client_secret: form.clientSecret } : {}),
-          zoom_host_email: form.hostEmail,
-        },
-      }),
-    onSuccess: () => {
-      toast.success("Zoom credentials saved");
-      setForm((f) => ({ ...f, clientSecret: "" }));
-      qc.invalidateQueries({ queryKey: ["my-manager-zoom"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const test = useMutation({
-    mutationFn: () => testMyManagerZoom(),
-    onSuccess: () => toast.success("Zoom connected — a test meeting was created successfully"),
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  return (
-    <Card className="p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="text-sm font-medium">Zoom for your 1-on-1 calls</div>
-        {data?.configured ? (
-          <Badge variant="outline" className="text-[10px] gap-1"><CheckCircle2 className="h-3 w-3" /> Connected</Badge>
-        ) : (
-          <Badge variant="outline" className="text-[10px] gap-1"><AlertCircle className="h-3 w-3" /> Not set up</Badge>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Create a Zoom <span className="font-medium">Server-to-Server OAuth</span> app in your Zoom account and paste the
-        values below. Bookings on your link will then create meetings on your own Zoom. Until then, the company Zoom
-        account is used.
-      </p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Account ID</label>
-          <Input value={form.accountId} onChange={(e) => setForm({ ...form, accountId: e.target.value })} placeholder="Account ID" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Client ID</label>
-          <Input value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })} placeholder="Client ID" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Client Secret</label>
-          <Input
-            type="password"
-            value={form.clientSecret}
-            onChange={(e) => setForm({ ...form, clientSecret: e.target.value })}
-            placeholder={data?.has_secret ? "•••••••• (leave blank to keep)" : "Client Secret"}
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Zoom host email (optional)</label>
-          <Input value={form.hostEmail} onChange={(e) => setForm({ ...form, hostEmail: e.target.value })} placeholder="you@example.com" />
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
-          {save.isPending ? "Saving…" : "Save Zoom keys"}
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => test.mutate()} disabled={test.isPending || !data?.configured}>
-          {test.isPending ? "Testing…" : "Test connection"}
-        </Button>
-      </div>
-    </Card>
-  );
-}
+import { CalendarClock, ChevronDown, Copy, Mail, Phone, Video, UserPlus, Trash2, Plus, Save } from "lucide-react";
 
 export const Route = createFileRoute("/app/_authenticated/dm-manager/calendar")({
   component: ManagerCalendarPage,
@@ -411,61 +323,35 @@ function ManagerCalendarPage() {
             <p className="text-xs text-muted-foreground">Bookings are 30 minutes and hours are set in Eastern time.</p>
           </Card>
 
-          <ZoomCredentialsCard />
-
-          <MyClosersCard />
-
-          <Card className="p-4 space-y-3">
-            <div className="text-sm font-medium">Weekly availability (ET)</div>
-            <div className="space-y-2">
-              {days.map((d, i) => (
-                <div key={i} className="flex items-center gap-3 flex-wrap">
-                  <Switch
-                    checked={d.enabled}
-                    onCheckedChange={(v) => setDays(days.map((x, j) => (j === i ? { ...x, enabled: v } : x)))}
+          <Card className="p-4 space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-sm font-medium">Calendar</div>
+                <h2 className="text-sm uppercase tracking-widest text-muted-foreground">
+                  {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "Select a day"}
+                </h2>
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="justify-between sm:min-w-52">
+                    {date ? date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Pick a date"}
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-auto p-2">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    modifiers={{ booked: bookedDays }}
+                    modifiersClassNames={{ booked: "bg-primary/20 text-primary font-semibold" }}
                   />
-                  <span className="w-24 text-sm">{DAYS[i]}</span>
-                  <Select value={d.start} onValueChange={(v) => setDays(days.map((x, j) => (j === i ? { ...x, start: v } : x)))}>
-                    <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 48 }, (_, k) => minutesToTime(k * 30)).map((t) => (
-                        <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <span className="text-xs text-muted-foreground">to</span>
-                  <Select value={d.end} onValueChange={(v) => setDays(days.map((x, j) => (j === i ? { ...x, end: v } : x)))}>
-                    <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 48 }, (_, k) => minutesToTime(k * 30)).map((t) => (
-                        <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
+                </PopoverContent>
+              </Popover>
             </div>
-            <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
-              {save.isPending ? "Saving…" : "Save availability"}
-            </Button>
-          </Card>
-
-          <div className="grid md:grid-cols-[auto_1fr] gap-4">
-            <Card className="p-2 w-fit">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                modifiers={{ booked: bookedDays }}
-                modifiersClassNames={{ booked: "bg-primary/20 text-primary font-semibold" }}
-              />
-            </Card>
             <div className="space-y-2">
-              <h2 className="text-sm uppercase tracking-widest text-muted-foreground">
-                {date ? date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "Select a day"}
-              </h2>
               {dayRows.length === 0 && (
-                <Card className="p-6 text-center text-sm text-muted-foreground">No calls this day.</Card>
+                <div className="rounded-lg border border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">No calls this day.</div>
               )}
               {dayRows.map((b) => (
                 <Card key={b.id} className="p-4 space-y-2">
@@ -523,7 +409,53 @@ function ManagerCalendarPage() {
                 </Card>
               ))}
             </div>
-          </div>
+          </Card>
+
+          <Collapsible>
+            <Card className="p-4 space-y-3">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="h-auto w-full justify-between p-0 text-left hover:bg-transparent">
+                  <span className="text-sm font-medium">Weekly availability (ET)</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-3">
+                <div className="space-y-2">
+                  {days.map((d, i) => (
+                    <div key={i} className="flex items-center gap-3 flex-wrap">
+                      <Switch
+                        checked={d.enabled}
+                        onCheckedChange={(v) => setDays(days.map((x, j) => (j === i ? { ...x, enabled: v } : x)))}
+                      />
+                      <span className="w-24 text-sm">{DAYS[i]}</span>
+                      <Select value={d.start} onValueChange={(v) => setDays(days.map((x, j) => (j === i ? { ...x, start: v } : x)))}>
+                        <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 48 }, (_, k) => minutesToTime(k * 30)).map((t) => (
+                            <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-xs text-muted-foreground">to</span>
+                      <Select value={d.end} onValueChange={(v) => setDays(days.map((x, j) => (j === i ? { ...x, end: v } : x)))}>
+                        <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 48 }, (_, k) => minutesToTime(k * 30)).map((t) => (
+                            <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+                <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+                  {save.isPending ? "Saving…" : "Save availability"}
+                </Button>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          <MyClosersCard />
         </>
       )}
     </div>
