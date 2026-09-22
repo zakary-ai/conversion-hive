@@ -92,7 +92,8 @@ export const getMyManagerCalendar = createServerFn({ method: "GET" })
     const { managerBookingLink, getManagerRules } = await import("@/lib/dm-manager-booking.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: bookings } = await (supabaseAdmin.from("dm_manager_bookings") as any)
-      .select("*").eq("manager_id", me.id).order("scheduled_at", { ascending: true });
+      .select("*, closers:assigned_closer_id(id, full_name, email)")
+      .eq("manager_id", me.id).order("scheduled_at", { ascending: true });
     const rules = await getManagerRules(me.id);
     return {
       manager: { id: me.id, full_name: me.full_name, slug: me.slug, link: managerBookingLink(me.slug) },
@@ -341,6 +342,8 @@ async function requireOwnedCloser(managerId: string, closerId: string) {
   return data as { id: string; full_name: string; email: string; active: boolean };
 }
 
+const DEFAULT_CLOSER_PASSWORD = "ConversionLab1095!";
+
 export const listMyClosers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -372,7 +375,6 @@ export const inviteMyCloser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const me = await requireManager(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { DEFAULT_CLOSER_PASSWORD } = await import("@/lib/api/b2c.functions");
     const email = data.email.toLowerCase();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
