@@ -115,9 +115,11 @@ export const getMyManagerCalendar = createServerFn({ method: "GET" })
       closers: { id: string; full_name: string; email: string; user_id: string | null } | null;
     }>).map((booking) => {
       const closer = booking.closers as { id: string; full_name: string; email: string; user_id: string | null } | null;
+      const closerEmail = closer?.email?.trim().toLowerCase() ?? null;
+      const managerEmail = me.email?.trim().toLowerCase() ?? null;
       return {
         ...booking,
-        assigned_is_me: closer?.user_id === context.userId,
+        assigned_is_me: closer?.user_id === context.userId || (!!closerEmail && closerEmail === managerEmail),
         closers: closer ? { id: closer.id, full_name: closer.full_name, email: closer.email } : null,
       };
     });
@@ -565,8 +567,9 @@ export const listMyClosers = createServerFn({ method: "GET" })
       .select("id, user_id, full_name, email, active, created_at")
       .eq("owner_manager_id", me.id)
       .order("full_name");
+    const managerEmail = me.email?.trim().toLowerCase() ?? null;
     const rows = ((data ?? []) as { id: string; user_id: string | null; full_name: string; email: string; active: boolean }[])
-      .filter((r) => r.user_id !== context.userId);
+      .filter((r) => r.user_id !== context.userId && r.email.trim().toLowerCase() !== managerEmail);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: creds } = await (supabaseAdmin.from("closer_zoom_credentials") as any)
       .select("closer_id, zoom_account_id, zoom_client_id, zoom_client_secret");
