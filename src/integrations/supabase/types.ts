@@ -1065,6 +1065,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          owner_manager_id: string | null
           updated_at: string
           user_id: string | null
         }
@@ -1075,6 +1076,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          owner_manager_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -1085,10 +1087,19 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          owner_manager_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "closers_owner_manager_id_fkey"
+            columns: ["owner_manager_id"]
+            isOneToOne: false
+            referencedRelation: "dm_setters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       commissions: {
         Row: {
@@ -1293,6 +1304,7 @@ export type Database = {
       }
       dm_manager_bookings: {
         Row: {
+          assigned_closer_id: string | null
           created_at: string
           email: string
           id: string
@@ -1309,6 +1321,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_closer_id?: string | null
           created_at?: string
           email: string
           id?: string
@@ -1325,6 +1338,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_closer_id?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -1341,6 +1355,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "dm_manager_bookings_assigned_closer_id_fkey"
+            columns: ["assigned_closer_id"]
+            isOneToOne: false
+            referencedRelation: "closers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dm_manager_bookings_manager_id_fkey"
             columns: ["manager_id"]
@@ -2888,6 +2909,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_closer_id_for_user: { Args: { _user_id: string }; Returns: string }
       get_dm_setter_id_for_user: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
