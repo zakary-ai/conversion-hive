@@ -14,6 +14,16 @@ import { SupportButton } from "@/components/support-button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/_authenticated/dm-manager/")({
+  head: () => ({
+    meta: [
+      { title: "DM Manager Home | Conversion Lab" },
+      { name: "description", content: "View your DM progress, booking link, and setter team in Conversion Lab." },
+      { property: "og:title", content: "DM Manager Home | Conversion Lab" },
+      { property: "og:description", content: "View your DM progress, booking link, and setter team in Conversion Lab." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: DmManagerHome,
   errorComponent: ({ error, reset }) => {
     console.error("[dm-manager] route error:", error);
@@ -90,20 +100,17 @@ function DmManagerHome() {
     );
   }
 
-  const totalCommission = data.team.reduce((s, r) => s + (r.manager_commission ?? 0), 0);
   const target = data.manager?.daily_target ?? 100;
   const totalToday = (data.myLog?.ai_count ?? 0) + (data.myLog?.manual_adjustment ?? 0);
   const pct = Math.min(100, Math.round((totalToday / target) * 100));
-  const link = data.manager?.apply_slug
-    ? `https://conversionlab.space/apply?dm=${data.manager.apply_slug}`
-    : "";
+  const link = data.manager?.booking_link ?? "";
 
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold">DM Manager Home</h1>
-          <p className="text-sm text-muted-foreground">Your DMs, your apply link, and your team.</p>
+          <p className="text-sm text-muted-foreground">Your DMs, booking link, and team.</p>
         </div>
         <SupportButton />
       </div>
@@ -121,7 +128,7 @@ function DmManagerHome() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Your apply link</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Your booking link</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           <div className="rounded-md bg-muted/50 px-3 py-2 text-sm font-mono break-all">{link || "—"}</div>
           <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }}>
@@ -129,25 +136,6 @@ function DmManagerHome() {
           </Button>
         </CardContent>
       </Card>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle className="text-base">My leads (7.5%)</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">${data.myStats.total_commission.toFixed(2)}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {data.myStats.applied} applied · {data.myStats.booked} booked · {data.myStats.closed} closed
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-base">Team override (2.5%)</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">${totalCommission.toFixed(2)}</div>
-            <div className="text-xs text-muted-foreground mt-1">Across {data.team.length} setter(s)</div>
-          </CardContent>
-        </Card>
-      </div>
 
       <div>
         <div className="flex items-center justify-between mb-2">

@@ -38,8 +38,6 @@ const closerItems = [
 const dmSetterItems = [
   { title: "Home", url: "/app/dm-setter", icon: LayoutDashboard },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
-  { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
-  { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
   { title: "Support", url: "/app/tickets", icon: LifeBuoy },
@@ -51,8 +49,6 @@ const dmManagerItems = [
   { title: "My Calendar", url: "/app/dm-manager/calendar", icon: CalendarCheck },
   { title: "My Modules", url: "/app/dm-manager/modules", icon: GraduationCap },
   { title: "Log DMs", url: "/app/dm-setter/logs", icon: Camera },
-  { title: "Email", url: "/app/dm-setter/inbox", icon: Inbox },
-  { title: "Calendar", url: "/app/dm-setter/calendar", icon: CalendarIcon },
   { title: "Training", url: "/app/training", icon: GraduationCap },
   { title: "Commissions", url: "/app/commissions", icon: DollarSign },
   { title: "Support", url: "/app/tickets", icon: LifeBuoy },
