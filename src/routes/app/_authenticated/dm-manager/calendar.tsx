@@ -357,6 +357,22 @@ function ManagerCalendarPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const { data: myClosersData = [] } = useQuery({ queryKey: ["my-manager-closers"], queryFn: () => listMyClosers() });
+  const myClosers = myClosersData as MyCloser[];
+
+  const assign = useMutation({
+    mutationFn: (v: { booking_id: string; closer_id: string }) => assignCloserToManagerBooking({ data: v }),
+    onSuccess: () => { toast.success("Closer assigned"); qc.invalidateQueries({ queryKey: ["my-manager-calendar"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const unassign = useMutation({
+    mutationFn: (booking_id: string) => unassignManagerBooking({ data: { booking_id } }),
+    onSuccess: () => { toast.success("Unassigned"); qc.invalidateQueries({ queryKey: ["my-manager-calendar"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const bookedDays = useMemo(() => bookings.map((b) => new Date(b.scheduled_at)), [bookings]);
   const dayRows = useMemo(
     () => (date ? bookings.filter((b) => sameDay(new Date(b.scheduled_at), date)) : []),
@@ -396,6 +412,8 @@ function ManagerCalendarPage() {
           </Card>
 
           <ZoomCredentialsCard />
+
+          <MyClosersCard />
 
           <Card className="p-4 space-y-3">
             <div className="text-sm font-medium">Weekly availability (ET)</div>
