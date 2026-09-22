@@ -461,6 +461,11 @@ function ManagerCalendarPage() {
                     <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {b.email}</span>
                     {b.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {b.phone}</span>}
                   </div>
+                  {b.closers && (
+                    <div className="text-xs text-muted-foreground">
+                      Closer: <span className="text-foreground">{b.closers.full_name}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 flex-wrap">
                     {b.meeting_url && (
                       <a href={b.meeting_url} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1">
@@ -476,6 +481,26 @@ function ManagerCalendarPage() {
                         <SelectItem value="cancelled" className="text-xs">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
+                    {b.assigned_closer_id ? (
+                      <Button size="sm" variant="outline" className="h-7 text-xs"
+                        onClick={() => unassign.mutate(b.id)} disabled={unassign.isPending}>
+                        Reassign
+                      </Button>
+                    ) : (
+                      <Select onValueChange={(closerId) => assign.mutate({ booking_id: b.id, closer_id: closerId })}>
+                        <SelectTrigger className="h-7 w-40 text-xs">
+                          <SelectValue placeholder={assign.isPending ? "Assigning…" : "Assign closer…"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {myClosers.filter((c) => c.active).map((c) => (
+                            <SelectItem key={c.id} value={c.id} className="text-xs">{c.full_name}</SelectItem>
+                          ))}
+                          {myClosers.filter((c) => c.active).length === 0 && (
+                            <div className="px-2 py-1.5 text-xs text-muted-foreground">No active closers yet</div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </Card>
               ))}
