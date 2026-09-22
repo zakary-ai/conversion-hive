@@ -20,8 +20,21 @@ const overviewOpts = queryOptions({
 });
 
 export const Route = createFileRoute("/app/_authenticated/admin/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(overviewOpts),
   component: AdminDashboard,
+  errorComponent: ({ error }) => {
+    const msg = error instanceof Error ? error.message : String(error);
+    const forbidden = /forbidden/i.test(msg);
+    return (
+      <div className="max-w-md space-y-2 rounded-lg border border-border bg-card p-4">
+        <div className="font-semibold">
+          {forbidden ? "You don't have access to the admin dashboard" : "Couldn't load the dashboard"}
+        </div>
+        <p className="text-sm text-muted-foreground break-words">
+          {forbidden ? "Head back to your own workspace from the menu." : msg}
+        </p>
+      </div>
+    );
+  },
 });
 
 type MetricKey = "scheduledLeads" | "callsGoingLiveToday" | "callsBookedToday" | "callsClosedToday";
