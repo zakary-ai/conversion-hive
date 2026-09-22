@@ -1,12 +1,15 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { listCloserBookings } from "@/lib/api/b2c.functions";
+import { listMyAssignedManagerCalls, updateMyAssignedManagerCall } from "@/lib/api/dm-manager.functions";
 import { meQueryOptions } from "@/routes/app/_authenticated/route";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, Phone, Video, CalendarClock, ClipboardCheck } from "lucide-react";
 import { LeadPreviewDialog } from "@/components/lead-preview-dialog";
 import { OutcomeDialog } from "@/components/closer-outcome-dialog";
