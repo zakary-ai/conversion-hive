@@ -48,7 +48,7 @@ export async function saveConnectionKeyForUser(
       {
         user_id: userId,
         connector_id: connectorId,
-        connection_key_ciphertext: encryptConnectionKey(connectionAPIKey),
+        connection_key_ciphertext: await encryptConnectionKey(connectionAPIKey),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,connector_id" },
@@ -81,7 +81,7 @@ export async function getConnectionKeyForUser(
     .eq("connector_id", connectorId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return data ? decryptConnectionKey(data.connection_key_ciphertext) : null;
+  return data ? await decryptConnectionKey(data.connection_key_ciphertext) : null;
 }
 
 export async function deleteConnectionKeyForUser(userId: string, connectorId: string) {
