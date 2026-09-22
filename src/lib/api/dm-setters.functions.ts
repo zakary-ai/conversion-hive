@@ -708,7 +708,10 @@ export const getMyDmTeam = createServerFn({ method: "GET" })
     for (const a of apps ?? []) if (a.dm_setter_id) appliedBySetter.set(a.dm_setter_id, (appliedBySetter.get(a.dm_setter_id) ?? 0) + 1);
     for (const r of rows) r.stats.applied = appliedBySetter.get(r.setter.id) ?? 0;
 
-    return { manager: me, myStats, myLog, team: rows };
+    const { managerBookingLink } = await import("@/lib/dm-manager-booking.server");
+    const bookingSlug = (me as { booking_slug?: string | null }).booking_slug ?? me.apply_slug;
+
+    return { manager: { ...me, booking_link: bookingSlug ? managerBookingLink(bookingSlug) : null }, myStats, myLog, team: rows };
   });
 
 /* -------------------------------------------------------------------------- */
