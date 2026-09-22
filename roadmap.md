@@ -1,3 +1,1 @@
-- Add a “Me” option when assigning DM manager calls as closer.
-- Ensure manager self-assigned calls appear on their calendar.
-- Make the calendar selector always visible instead of a dropdown.
+No open tasks.

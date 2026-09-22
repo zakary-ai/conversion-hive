@@ -21,7 +21,13 @@ async function requireManager(userId: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabaseAdmin.from("dm_setters") as any).update({ booking_slug: slug }).eq("id", data.id);
   }
-  return { id: data.id as string, full_name: (data.full_name as string | null) ?? null, slug };
+  return {
+    id: data.id as string,
+    user_id: userId,
+    full_name: (data.full_name as string | null) ?? null,
+    email: (data.email as string | null) ?? null,
+    slug,
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,13 +98,35 @@ export const getMyManagerCalendar = createServerFn({ method: "GET" })
     const { managerBookingLink, getManagerRules } = await import("@/lib/dm-manager-booking.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: bookings } = await (supabaseAdmin.from("dm_manager_bookings") as any)
-      .select("*, closers:assigned_closer_id(id, full_name, email)")
+      .select("*, closers:assigned_closer_id(id, full_name, email, user_id)")
       .eq("manager_id", me.id).order("scheduled_at", { ascending: true });
     const rules = await getManagerRules(me.id);
+    const safeBookings = ((bookings ?? []) as Array<{
+      id: string;
+      name: string;
+      email: string;
+      phone: string | null;
+      scheduled_at: string;
+      timezone: string | null;
+      meeting_url: string | null;
+      status: string;
+      notes: string | null;
+      assigned_closer_id: string | null;
+      closers: { id: string; full_name: string; email: string; user_id: string | null } | null;
+    }>).map((booking) => {
+      const closer = booking.closers as { id: string; full_name: string; email: string; user_id: string | null } | null;
+      const closerEmail = closer?.email?.trim().toLowerCase() ?? null;
+      const managerEmail = me.email?.trim().toLowerCase() ?? null;
+      return {
+        ...booking,
+        assigned_is_me: closer?.user_id === context.userId || (!!closerEmail && closerEmail === managerEmail),
+        closers: closer ? { id: closer.id, full_name: closer.full_name, email: closer.email } : null,
+      };
+    });
     return {
       manager: { id: me.id, full_name: me.full_name, slug: me.slug, link: managerBookingLink(me.slug) },
       rules,
-      bookings: bookings ?? [],
+      bookings: safeBookings,
     };
   });
 
@@ -342,6 +370,191 @@ async function requireOwnedCloser(managerId: string, closerId: string) {
   return data as { id: string; full_name: string; email: string; active: boolean };
 }
 
+type ManagerIdentity = Awaited<ReturnType<typeof requireManager>>;
+type AssignableCloser = { id: string; full_name: string; email: string };
+
+async function ensureManagerSelfCloser(manager: ManagerIdentity) {
+  const email = manager.email?.trim().toLowerCase();
+  if (!email) throw new Error("Add an email to your profile before assigning yourself.");
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: byUser } = await (supabaseAdmin.from("closers") as any)
+    .select("id, full_name, email, user_id, owner_manager_id")
+    .eq("user_id", manager.user_id)
+    .maybeSingle();
+  if (byUser) {
+    if (byUser.owner_manager_id && byUser.owner_manager_id !== manager.id) {
+      throw new Error("This account is already connected to another manager's closer calendar.");
+    }
+    return { id: byUser.id as string, full_name: byUser.full_name as string, email: byUser.email as string };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: byEmail } = await (supabaseAdmin.from("closers") as any)
+    .select("id, full_name, email, user_id, owner_manager_id")
+    .eq("email", email)
+    .maybeSingle();
+  if (byEmail) {
+    if (byEmail.owner_manager_id && byEmail.owner_manager_id !== manager.id) {
+      throw new Error("This email is already connected to another manager's closer calendar.");
+    }
+    if (!byEmail.user_id) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabaseAdmin.from("closers") as any)
+        .update({ user_id: manager.user_id, ...(byEmail.owner_manager_id === manager.id ? { active: true } : {}) })
+        .eq("id", byEmail.id);
+    }
+    return { id: byEmail.id as string, full_name: byEmail.full_name as string, email: byEmail.email as string };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: inserted, error } = await (supabaseAdmin.from("closers") as any)
+    .insert({
+      user_id: manager.user_id,
+      owner_manager_id: manager.id,
+      full_name: manager.full_name || email,
+      email,
+      active: true,
+    })
+    .select("id, full_name, email")
+    .single();
+  if (error || !inserted) throw new Error(error?.message || "Could not add you as a closer.");
+  return inserted as AssignableCloser;
+}
+
+async function assignManagerBookingToCloser({
+  manager,
+  bookingId,
+  closer,
+  companyZoom,
+}: {
+  manager: ManagerIdentity;
+  bookingId: string;
+  closer: AssignableCloser;
+  companyZoom: { accountId: string | null; clientId: string | null; clientSecret: string | null };
+}) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: booking } = await (supabaseAdmin.from("dm_manager_bookings") as any)
+    .select("*").eq("id", bookingId).eq("manager_id", manager.id).maybeSingle();
+  if (!booking) throw new Error("Call not found on your calendar.");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: clash } = await (supabaseAdmin.from("dm_manager_bookings") as any)
+    .select("id")
+    .eq("assigned_closer_id", closer.id)
+    .eq("scheduled_at", booking.scheduled_at)
+    .neq("id", bookingId)
+    .neq("status", "cancelled");
+  if ((clash ?? []).length > 0) throw new Error("That closer already has a call at this time.");
+
+  const { MANAGER_SLOT_MINUTES } = await import("@/lib/dm-manager-booking.server");
+  const { createZoomMeetingOnCloserAccount, formatScheduledLabel, EST_TZ } = await import("@/lib/b2b-booking.server");
+  const topic = `${booking.name} - 1-on-1 call`;
+
+  // Prefer the assigned person's Zoom, then the manager's, then the company account.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: closerCreds } = await (supabaseAdmin.from("closer_zoom_credentials") as any)
+    .select("zoom_account_id, zoom_client_id, zoom_client_secret")
+    .eq("closer_id", closer.id)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: mgrCreds } = await (supabaseAdmin.from("dm_manager_zoom_credentials") as any)
+    .select("zoom_account_id, zoom_client_id, zoom_client_secret, zoom_host_email")
+    .eq("manager_id", manager.id)
+    .maybeSingle();
+
+  const attempts: { accountId: string | null; clientId: string | null; clientSecret: string | null; hostEmail: string | null }[] = [
+    {
+      accountId: (closerCreds?.zoom_account_id as string | null) ?? null,
+      clientId: (closerCreds?.zoom_client_id as string | null) ?? null,
+      clientSecret: (closerCreds?.zoom_client_secret as string | null) ?? null,
+      hostEmail: closer.email,
+    },
+    {
+      accountId: (mgrCreds?.zoom_account_id as string | null) ?? null,
+      clientId: (mgrCreds?.zoom_client_id as string | null) ?? null,
+      clientSecret: (mgrCreds?.zoom_client_secret as string | null) ?? null,
+      hostEmail: (mgrCreds?.zoom_host_email as string | null) ?? null,
+    },
+    {
+      accountId: companyZoom.accountId,
+      clientId: companyZoom.clientId,
+      clientSecret: companyZoom.clientSecret,
+      hostEmail: null,
+    },
+  ];
+
+  let meetingUrl: string | null = null;
+  for (const a of attempts) {
+    if (!a.accountId || !a.clientId || !a.clientSecret) continue;
+    try {
+      meetingUrl = await createZoomMeetingOnCloserAccount({
+        ...a,
+        topic,
+        start_time: booking.scheduled_at as string,
+        duration: MANAGER_SLOT_MINUTES,
+      });
+    } catch {
+      meetingUrl = null;
+    }
+    if (meetingUrl) break;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabaseAdmin.from("dm_manager_bookings") as any)
+    .update({
+      assigned_closer_id: closer.id,
+      ...(meetingUrl ? { meeting_url: meetingUrl } : {}),
+    })
+    .eq("id", bookingId)
+    .eq("manager_id", manager.id);
+  if (error) throw new Error(error.message);
+
+  const finalUrl = meetingUrl ?? ((booking.meeting_url as string | null) ?? null);
+  const scheduledLabel = formatScheduledLabel(booking.scheduled_at as string, (booking.timezone as string | null) ?? EST_TZ);
+  const closerLabel = formatScheduledLabel(booking.scheduled_at as string, EST_TZ);
+
+  try {
+    const { sendTransactional } = await import("@/lib/email/transactional.server");
+    await sendTransactional({
+      templateName: "one-on-one-call-manager",
+      recipientEmail: closer.email,
+      idempotencyKey: `dm-manager-assign-closer-${bookingId}-${closer.id}`,
+      templateData: {
+        managerName: closer.full_name,
+        name: booking.name,
+        email: booking.email,
+        phone: (booking.phone as string | null) || null,
+        scheduledLabel: closerLabel,
+        meetingUrl: finalUrl,
+        durationMinutes: MANAGER_SLOT_MINUTES,
+        timezone: (booking.timezone as string | null) || null,
+      },
+    });
+    if (meetingUrl) {
+      await sendTransactional({
+        templateName: "one-on-one-call",
+        recipientEmail: booking.email as string,
+        idempotencyKey: `dm-manager-assign-applicant-${bookingId}-${closer.id}`,
+        templateData: {
+          name: booking.name,
+          managerName: closer.full_name,
+          scheduledLabel,
+          meetingUrl: finalUrl,
+          durationMinutes: MANAGER_SLOT_MINUTES,
+        },
+      });
+    }
+  } catch (e) {
+    console.error("[assignCloserToManagerBooking] email failed", e);
+  }
+
+  return { ok: true, meeting_url: finalUrl };
+}
+
 const DEFAULT_CLOSER_PASSWORD = "ConversionLab1095!";
 
 export const listMyClosers = createServerFn({ method: "GET" })
@@ -351,10 +564,12 @@ export const listMyClosers = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabaseAdmin.from("closers") as any)
-      .select("id, full_name, email, active, created_at")
+      .select("id, user_id, full_name, email, active, created_at")
       .eq("owner_manager_id", me.id)
       .order("full_name");
-    const rows = (data ?? []) as { id: string }[];
+    const managerEmail = me.email?.trim().toLowerCase() ?? null;
+    const rows = ((data ?? []) as { id: string; user_id: string | null; full_name: string; email: string; active: boolean }[])
+      .filter((r) => r.user_id !== context.userId && r.email.trim().toLowerCase() !== managerEmail);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: creds } = await (supabaseAdmin.from("closer_zoom_credentials") as any)
       .select("closer_id, zoom_account_id, zoom_client_id, zoom_client_secret");
@@ -501,127 +716,34 @@ export const assignCloserToManagerBooking = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const me = await requireManager(context.userId);
     const closer = await requireOwnedCloser(me.id, data.closer_id);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: booking } = await (supabaseAdmin.from("dm_manager_bookings") as any)
-      .select("*").eq("id", data.booking_id).eq("manager_id", me.id).maybeSingle();
-    if (!booking) throw new Error("Call not found on your calendar.");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: clash } = await (supabaseAdmin.from("dm_manager_bookings") as any)
-      .select("id")
-      .eq("assigned_closer_id", data.closer_id)
-      .eq("scheduled_at", booking.scheduled_at)
-      .neq("id", data.booking_id)
-      .neq("status", "cancelled");
-    if ((clash ?? []).length > 0) throw new Error("That closer already has a call at this time.");
-
-    const { MANAGER_SLOT_MINUTES } = await import("@/lib/dm-manager-booking.server");
-    const { createZoomMeetingOnCloserAccount, formatScheduledLabel, EST_TZ } = await import("@/lib/b2b-booking.server");
-    const topic = `${booking.name} - 1-on-1 call`;
-
-    // Prefer the closer's own Zoom, then the manager's, then the company account.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: closerCreds } = await (supabaseAdmin.from("closer_zoom_credentials") as any)
-      .select("zoom_account_id, zoom_client_id, zoom_client_secret")
-      .eq("closer_id", data.closer_id)
-      .maybeSingle();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: mgrCreds } = await (supabaseAdmin.from("dm_manager_zoom_credentials") as any)
-      .select("zoom_account_id, zoom_client_id, zoom_client_secret, zoom_host_email")
-      .eq("manager_id", me.id)
-      .maybeSingle();
-
-    const attempts: { accountId: string | null; clientId: string | null; clientSecret: string | null; hostEmail: string | null }[] = [
-      {
-        accountId: (closerCreds?.zoom_account_id as string | null) ?? null,
-        clientId: (closerCreds?.zoom_client_id as string | null) ?? null,
-        clientSecret: (closerCreds?.zoom_client_secret as string | null) ?? null,
-        hostEmail: closer.email,
-      },
-      {
-        accountId: (mgrCreds?.zoom_account_id as string | null) ?? null,
-        clientId: (mgrCreds?.zoom_client_id as string | null) ?? null,
-        clientSecret: (mgrCreds?.zoom_client_secret as string | null) ?? null,
-        hostEmail: (mgrCreds?.zoom_host_email as string | null) ?? null,
-      },
-      {
+    return assignManagerBookingToCloser({
+      manager: me,
+      bookingId: data.booking_id,
+      closer,
+      companyZoom: {
         accountId: process.env["ZOOM_ACCOUNT_ID"] ?? null,
         clientId: process.env["ZOOM_CLIENT_ID"] ?? null,
         clientSecret: process.env["ZOOM_CLIENT_SECRET"] ?? null,
-        hostEmail: null,
       },
-    ];
+    });
+  });
 
-    let meetingUrl: string | null = null;
-    for (const a of attempts) {
-      if (!a.accountId || !a.clientId || !a.clientSecret) continue;
-      try {
-        meetingUrl = await createZoomMeetingOnCloserAccount({
-          ...a,
-          topic,
-          start_time: booking.scheduled_at as string,
-          duration: MANAGER_SLOT_MINUTES,
-        });
-      } catch {
-        meetingUrl = null;
-      }
-      if (meetingUrl) break;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabaseAdmin.from("dm_manager_bookings") as any)
-      .update({
-        assigned_closer_id: data.closer_id,
-        ...(meetingUrl ? { meeting_url: meetingUrl } : {}),
-      })
-      .eq("id", data.booking_id)
-      .eq("manager_id", me.id);
-    if (error) throw new Error(error.message);
-
-    const finalUrl = meetingUrl ?? ((booking.meeting_url as string | null) ?? null);
-    const scheduledLabel = formatScheduledLabel(booking.scheduled_at as string, (booking.timezone as string | null) ?? EST_TZ);
-    const closerLabel = formatScheduledLabel(booking.scheduled_at as string, EST_TZ);
-
-    try {
-      const { sendTransactional } = await import("@/lib/email/transactional.server");
-      // Tell the closer about the call they now own.
-      await sendTransactional({
-        templateName: "one-on-one-call-manager",
-        recipientEmail: closer.email,
-        idempotencyKey: `dm-manager-assign-closer-${data.booking_id}-${data.closer_id}`,
-        templateData: {
-          managerName: closer.full_name,
-          name: booking.name,
-          email: booking.email,
-          phone: (booking.phone as string | null) || null,
-          scheduledLabel: closerLabel,
-          meetingUrl: finalUrl,
-          durationMinutes: MANAGER_SLOT_MINUTES,
-          timezone: (booking.timezone as string | null) || null,
-        },
-      });
-      // Re-send the applicant their details when the Zoom link changed.
-      if (meetingUrl) {
-        await sendTransactional({
-          templateName: "one-on-one-call",
-          recipientEmail: booking.email as string,
-          idempotencyKey: `dm-manager-assign-applicant-${data.booking_id}-${data.closer_id}`,
-          templateData: {
-            name: booking.name,
-            managerName: closer.full_name,
-            scheduledLabel,
-            meetingUrl: finalUrl,
-            durationMinutes: MANAGER_SLOT_MINUTES,
-          },
-        });
-      }
-    } catch (e) {
-      console.error("[assignCloserToManagerBooking] email failed", e);
-    }
-
-    return { ok: true, meeting_url: finalUrl };
+export const assignMeToManagerBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ booking_id: z.string().uuid() }).parse)
+  .handler(async ({ data, context }) => {
+    const me = await requireManager(context.userId);
+    const closer = await ensureManagerSelfCloser(me);
+    return assignManagerBookingToCloser({
+      manager: me,
+      bookingId: data.booking_id,
+      closer,
+      companyZoom: {
+        accountId: process.env["ZOOM_ACCOUNT_ID"] ?? null,
+        clientId: process.env["ZOOM_CLIENT_ID"] ?? null,
+        clientSecret: process.env["ZOOM_CLIENT_SECRET"] ?? null,
+      },
+    });
   });
 
 export const unassignManagerBooking = createServerFn({ method: "POST" })
