@@ -33,6 +33,16 @@ type B = {
   applicant_phone: string | null;
 };
 
+type MC = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  scheduled_at: string;
+  meeting_url: string | null;
+  status: string;
+};
+
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
@@ -44,9 +54,29 @@ function CloserCalendar() {
   const [previewFor, setPreviewFor] = useState<B | null>(null);
   const [outcomeFor, setOutcomeFor] = useState<B | null>(null);
 
-  const bookedDays = useMemo(() => rows.map((r) => new Date(r.slot_start)), [rows]);
+  const qc = useQueryClient();
+  const { data: managerCalls = [] } = useQuery({
+    queryKey: ["my-assigned-manager-calls"],
+    queryFn: () => listMyAssignedManagerCalls(),
+  });
+  const mCalls = managerCalls as MC[];
+  const setMStatus = useMutation({
+    mutationFn: (v: { id: string; status: "scheduled" | "completed" | "cancelled" | "no_show" }) =>
+      updateMyAssignedManagerCall({ data: v }),
+    onSuccess: () => { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["my-assigned-manager-calls"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bookedDays = useMemo(
+    () => [...rows.map((r) => new Date(r.slot_start)), ...mCalls.map((m) => new Date(m.scheduled_at))],
+    [rows, mCalls],
+  );
   const dayBookings = useMemo(() => date ? rows.filter((r) => sameDay(new Date(r.slot_start), date)) : [], [rows, date]);
-  const totalDayCalls = dayBookings.length;
+  const dayManagerCalls = useMemo(
+    () => date ? mCalls.filter((m) => sameDay(new Date(m.scheduled_at), date)) : [],
+    [mCalls, date],
+  );
+  const totalDayCalls = dayBookings.length + dayManagerCalls.length;
 
   return (
     <div className="space-y-6 max-w-4xl">
